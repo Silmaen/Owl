@@ -1,0 +1,526 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: speed, type: float, default: "3"}
+    - {name: turn_speed, type: float, default: "1.8"}
+    - {name: mouse_turn, type: float, default: "0.006"}
+    - {name: run_factor, type: float, default: "1.7", min: 1}
+    - {name: yaw, type: float, default: "0", exposed: false}
+    - {name: last_mouse_x, type: float, default: "0", exposed: false}
+    - {name: start_yaw, type: float, default: "0", exposed: false}
+    - {name: turn, type: float, default: "0", exposed: false}
+    - {name: mouse_x, type: float, default: "0", exposed: false}
+    - {name: px, type: float, default: "0", exposed: false}
+    - {name: py, type: float, default: "0", exposed: false}
+    - {name: walk_, type: float, default: "0", exposed: false}
+    - {name: shake_applied, type: float, default: "0", exposed: false}
+  customNodes:
+    - name: init_state
+      title: Init State
+      inputs: []
+      outputs: []
+      code: |
+        last_mouse_x = nil
+  nodes:
+    - id: 6848800001
+      type: event.on_create
+      position: [340, 0]
+    - id: 6848800002
+      type: call.physics.set_gravity_scale
+      position: [680, 0]
+      values:
+        scale: "0"
+    - id: 6848800003
+      type: value.self
+      position: [510, 160]
+    - id: 6848800004
+      type: call.transform.get_rotation
+      position: [510, 280]
+      values:
+        split.rotation: "true"
+    - id: 6848800005
+      type: value.self
+      position: [510, 400]
+    - id: 6848800006
+      type: var.set
+      position: [1020, 0]
+      values:
+        variable: start_yaw
+    - id: 6848800007
+      type: var.get
+      position: [850, 160]
+      values:
+        variable: start_yaw
+    - id: 6848800008
+      type: var.set
+      position: [1360, 0]
+      values:
+        variable: yaw
+    - id: 6848800009
+      type: event.on_update
+      position: [340, 660]
+    - id: 6848800010
+      type: call.ui.is_transition_active
+      position: [170, 820]
+    - id: 6848800011
+      type: flow.branch
+      position: [680, 660]
+    - id: 6848800012
+      type: call.gamestate.get
+      position: [1020, 660]
+      values:
+        key: wolf_leaving
+        default: "0"
+    - id: 6848800013
+      type: compare.equal
+      position: [850, 820]
+      values:
+        B: "1"
+    - id: 6848800014
+      type: flow.branch
+      position: [1360, 660]
+    - id: 6848800015
+      type: call.gamestate.get
+      position: [1700, 660]
+      values:
+        key: wolf_paused
+        default: "false"
+    - id: 6848800016
+      type: flow.branch
+      position: [2040, 660]
+    - id: 6848800017
+      type: call.physics.set_velocity
+      position: [2380, 660]
+      values:
+        split.velocity: "true"
+        vx: "0"
+        vy: "0"
+    - id: 6848800018
+      type: value.self
+      position: [2210, 820]
+    - id: 6848800019
+      type: call.input.get_action_value
+      position: [2210, 940]
+      values:
+        action: turn
+    - id: 6848800020
+      type: var.get
+      position: [2210, 1060]
+      values:
+        variable: turn_speed
+    - id: 6848800021
+      type: math.multiply
+      position: [2210, 1180]
+    - id: 6848800022
+      type: math.multiply
+      position: [2210, 1300]
+    - id: 6848800023
+      type: var.set
+      position: [2720, 660]
+      values:
+        variable: turn
+    - id: 6848800024
+      type: call.input.get_mouse_x
+      position: [2550, 820]
+    - id: 6848800025
+      type: var.set
+      position: [3060, 660]
+      values:
+        variable: mouse_x
+    - id: 6848800026
+      type: call.input.is_action_pressed
+      position: [2890, 820]
+      values:
+        action: mouse_look
+    - id: 6848800027
+      type: var.get
+      position: [2890, 940]
+      values:
+        variable: last_mouse_x
+    - id: 6848800028
+      type: compare.not_equal
+      position: [2890, 1060]
+    - id: 6848800029
+      type: value.nil
+      position: [2890, 1180]
+    - id: 6848800030
+      type: logic.and
+      position: [2890, 1300]
+    - id: 6848800031
+      type: flow.branch
+      position: [3400, 660]
+    - id: 6848800032
+      type: var.get
+      position: [3230, 820]
+      values:
+        variable: turn
+    - id: 6848800033
+      type: var.get
+      position: [3230, 940]
+      values:
+        variable: mouse_x
+    - id: 6848800034
+      type: var.get
+      position: [3230, 1060]
+      values:
+        variable: last_mouse_x
+    - id: 6848800035
+      type: math.subtract
+      position: [3230, 1180]
+    - id: 6848800036
+      type: var.get
+      position: [3230, 1300]
+      values:
+        variable: mouse_turn
+    - id: 6848800037
+      type: math.multiply
+      position: [3230, 1420]
+    - id: 6848800038
+      type: call.settings.get
+      position: [3740, 660]
+      values:
+        key: mouse_sensitivity
+        default: "1"
+    - id: 6848800039
+      type: math.multiply
+      position: [3570, 820]
+    - id: 6848800040
+      type: math.subtract
+      position: [3570, 940]
+    - id: 6848800041
+      type: var.set
+      position: [4080, 660]
+      values:
+        variable: turn
+    - id: 6848800042
+      type: var.get
+      position: [3910, 820]
+      values:
+        variable: mouse_x
+    - id: 6848800043
+      type: var.set
+      position: [4420, 660]
+      values:
+        variable: last_mouse_x
+    - id: 6848800044
+      type: call.transform.get_position
+      position: [4250, 820]
+      values:
+        split.xyz: "true"
+    - id: 6848800045
+      type: value.self
+      position: [4250, 940]
+    - id: 6848800046
+      type: var.set
+      position: [4760, 660]
+      values:
+        variable: px
+    - id: 6848800047
+      type: var.set
+      position: [5100, 660]
+      values:
+        variable: py
+    - id: 6848800048
+      type: var.get
+      position: [4930, 820]
+      values:
+        variable: turn
+    - id: 6848800049
+      type: compare.not_equal
+      position: [4930, 940]
+      values:
+        B: "0"
+    - id: 6848800050
+      type: flow.branch
+      position: [5440, 660]
+    - id: 6848800051
+      type: var.get
+      position: [5270, 820]
+      values:
+        variable: yaw
+    - id: 6848800052
+      type: var.get
+      position: [5270, 940]
+      values:
+        variable: turn
+    - id: 6848800053
+      type: math.add
+      position: [5270, 1060]
+    - id: 6848800054
+      type: math.pi
+      position: [5270, 1180]
+    - id: 6848800055
+      type: math.add
+      position: [5270, 1300]
+    - id: 6848800056
+      type: math.pi
+      position: [5270, 1420]
+    - id: 6848800057
+      type: math.multiply
+      position: [5270, 1540]
+      values:
+        A: "2"
+    - id: 6848800058
+      type: math.modulo
+      position: [5270, 1660]
+    - id: 6848800059
+      type: math.pi
+      position: [5270, 1780]
+    - id: 6848800060
+      type: math.subtract
+      position: [5270, 1900]
+    - id: 6848800061
+      type: var.set
+      position: [5780, 660]
+      values:
+        variable: yaw
+    - id: 6848800062
+      type: call.physics.set_transform
+      position: [6120, 660]
+      values:
+        split.xy: "true"
+        split.rotation: "true"
+    - id: 6848800063
+      type: value.self
+      position: [5950, 820]
+    - id: 6848800064
+      type: var.get
+      position: [5950, 940]
+      values:
+        variable: px
+    - id: 6848800065
+      type: var.get
+      position: [5950, 1060]
+      values:
+        variable: py
+    - id: 6848800066
+      type: var.get
+      position: [5950, 1180]
+      values:
+        variable: yaw
+    - id: 6848800067
+      type: call.input.get_action_value
+      position: [5950, 1300]
+      values:
+        action: walk
+    - id: 6848800068
+      type: var.get
+      position: [5950, 1420]
+      values:
+        variable: speed
+    - id: 6848800069
+      type: math.multiply
+      position: [5950, 1540]
+    - id: 6848800070
+      type: var.set
+      position: [6460, 660]
+      values:
+        variable: walk_
+    - id: 6848800071
+      type: call.input.is_action_pressed
+      position: [6290, 820]
+      values:
+        action: run
+    - id: 6848800072
+      type: flow.branch
+      position: [6800, 660]
+    - id: 6848800073
+      type: var.get
+      position: [6630, 820]
+      values:
+        variable: walk_
+    - id: 6848800074
+      type: var.get
+      position: [6630, 940]
+      values:
+        variable: run_factor
+    - id: 6848800075
+      type: math.multiply
+      position: [6630, 1060]
+    - id: 6848800076
+      type: var.set
+      position: [7140, 660]
+      values:
+        variable: walk_
+    - id: 6848800077
+      type: call.physics.set_velocity
+      position: [7480, 660]
+      values:
+        split.velocity: "true"
+    - id: 6848800078
+      type: value.self
+      position: [7310, 820]
+    - id: 6848800079
+      type: var.get
+      position: [7310, 940]
+      values:
+        variable: yaw
+    - id: 6848800080
+      type: math.sin
+      position: [7310, 1060]
+    - id: 6848800081
+      type: math.negate
+      position: [7310, 1180]
+    - id: 6848800082
+      type: var.get
+      position: [7310, 1300]
+      values:
+        variable: walk_
+    - id: 6848800083
+      type: math.multiply
+      position: [7310, 1420]
+    - id: 6848800084
+      type: var.get
+      position: [7310, 1540]
+      values:
+        variable: yaw
+    - id: 6848800085
+      type: math.cos
+      position: [7310, 1660]
+    - id: 6848800086
+      type: var.get
+      position: [7310, 1780]
+      values:
+        variable: walk_
+    - id: 6848800087
+      type: math.multiply
+      position: [7310, 1900]
+    - id: 6848800088
+      type: custom.call
+      position: [170, 0]
+      values:
+        custom: init_state
+    - id: 6848800201
+      type: call.gamestate.get
+      position: [4930, 1060]
+      values:
+        key: wolf_shake_yaw
+        default: "0"
+    - id: 6848800202
+      type: var.get
+      position: [4760, 1180]
+      values:
+        variable: shake_applied
+    - id: 6848800203
+      type: compare.not_equal
+      position: [4930, 1300]
+    - id: 6848800204
+      type: logic.or
+      position: [5100, 1060]
+    - id: 6848800205
+      type: math.add
+      position: [5950, 2020]
+    - id: 6848800206
+      type: var.set
+      position: [6290, 1960]
+      values:
+        variable: shake_applied
+  links:
+    - {from: 6848800003, fromPin: Result, to: 6848800002, toPin: entity_id}
+    - {from: 6848800088, fromPin: Then, to: 6848800002, toPin: Exec}
+    - {from: 6848800005, fromPin: Result, to: 6848800004, toPin: entity_id}
+    - {from: 6848800004, fromPin: rz, to: 6848800006, toPin: Value}
+    - {from: 6848800002, fromPin: Then, to: 6848800006, toPin: Exec}
+    - {from: 6848800007, fromPin: Value, to: 6848800008, toPin: Value}
+    - {from: 6848800006, fromPin: Then, to: 6848800008, toPin: Exec}
+    - {from: 6848800010, fromPin: active, to: 6848800011, toPin: Condition}
+    - {from: 6848800009, fromPin: Then, to: 6848800011, toPin: Exec}
+    - {from: 6848800011, fromPin: "False", to: 6848800012, toPin: Exec}
+    - {from: 6848800012, fromPin: value, to: 6848800013, toPin: A}
+    - {from: 6848800013, fromPin: Result, to: 6848800014, toPin: Condition}
+    - {from: 6848800012, fromPin: Then, to: 6848800014, toPin: Exec}
+    - {from: 6848800014, fromPin: "False", to: 6848800015, toPin: Exec}
+    - {from: 6848800015, fromPin: value, to: 6848800016, toPin: Condition}
+    - {from: 6848800015, fromPin: Then, to: 6848800016, toPin: Exec}
+    - {from: 6848800018, fromPin: Result, to: 6848800017, toPin: entity_id}
+    - {from: 6848800011, fromPin: "True", to: 6848800017, toPin: Exec}
+    - {from: 6848800014, fromPin: "True", to: 6848800017, toPin: Exec}
+    - {from: 6848800016, fromPin: "True", to: 6848800017, toPin: Exec}
+    - {from: 6848800019, fromPin: value, to: 6848800021, toPin: A}
+    - {from: 6848800020, fromPin: Value, to: 6848800021, toPin: B}
+    - {from: 6848800021, fromPin: Result, to: 6848800022, toPin: A}
+    - {from: 6848800009, fromPin: dt, to: 6848800022, toPin: B}
+    - {from: 6848800022, fromPin: Result, to: 6848800023, toPin: Value}
+    - {from: 6848800016, fromPin: "False", to: 6848800023, toPin: Exec}
+    - {from: 6848800024, fromPin: x, to: 6848800025, toPin: Value}
+    - {from: 6848800023, fromPin: Then, to: 6848800025, toPin: Exec}
+    - {from: 6848800027, fromPin: Value, to: 6848800028, toPin: A}
+    - {from: 6848800029, fromPin: Result, to: 6848800028, toPin: B}
+    - {from: 6848800026, fromPin: pressed, to: 6848800030, toPin: A}
+    - {from: 6848800028, fromPin: Result, to: 6848800030, toPin: B}
+    - {from: 6848800030, fromPin: Result, to: 6848800031, toPin: Condition}
+    - {from: 6848800025, fromPin: Then, to: 6848800031, toPin: Exec}
+    - {from: 6848800033, fromPin: Value, to: 6848800035, toPin: A}
+    - {from: 6848800034, fromPin: Value, to: 6848800035, toPin: B}
+    - {from: 6848800035, fromPin: Result, to: 6848800037, toPin: A}
+    - {from: 6848800036, fromPin: Value, to: 6848800037, toPin: B}
+    - {from: 6848800031, fromPin: "True", to: 6848800038, toPin: Exec}
+    - {from: 6848800037, fromPin: Result, to: 6848800039, toPin: A}
+    - {from: 6848800038, fromPin: value, to: 6848800039, toPin: B}
+    - {from: 6848800032, fromPin: Value, to: 6848800040, toPin: A}
+    - {from: 6848800039, fromPin: Result, to: 6848800040, toPin: B}
+    - {from: 6848800040, fromPin: Result, to: 6848800041, toPin: Value}
+    - {from: 6848800038, fromPin: Then, to: 6848800041, toPin: Exec}
+    - {from: 6848800042, fromPin: Value, to: 6848800043, toPin: Value}
+    - {from: 6848800041, fromPin: Then, to: 6848800043, toPin: Exec}
+    - {from: 6848800031, fromPin: "False", to: 6848800043, toPin: Exec}
+    - {from: 6848800045, fromPin: Result, to: 6848800044, toPin: entity_id}
+    - {from: 6848800044, fromPin: x, to: 6848800046, toPin: Value}
+    - {from: 6848800043, fromPin: Then, to: 6848800046, toPin: Exec}
+    - {from: 6848800044, fromPin: y, to: 6848800047, toPin: Value}
+    - {from: 6848800046, fromPin: Then, to: 6848800047, toPin: Exec}
+    - {from: 6848800048, fromPin: Value, to: 6848800049, toPin: A}
+    - {from: 6848800049, fromPin: Result, to: 6848800204, toPin: A}
+    - {from: 6848800201, fromPin: value, to: 6848800203, toPin: A}
+    - {from: 6848800202, fromPin: Value, to: 6848800203, toPin: B}
+    - {from: 6848800203, fromPin: Result, to: 6848800204, toPin: B}
+    - {from: 6848800204, fromPin: Result, to: 6848800050, toPin: Condition}
+    - {from: 6848800047, fromPin: Then, to: 6848800201, toPin: Exec}
+    - {from: 6848800201, fromPin: Then, to: 6848800050, toPin: Exec}
+    - {from: 6848800051, fromPin: Value, to: 6848800053, toPin: A}
+    - {from: 6848800052, fromPin: Value, to: 6848800053, toPin: B}
+    - {from: 6848800053, fromPin: Result, to: 6848800055, toPin: A}
+    - {from: 6848800054, fromPin: Result, to: 6848800055, toPin: B}
+    - {from: 6848800056, fromPin: Result, to: 6848800057, toPin: B}
+    - {from: 6848800055, fromPin: Result, to: 6848800058, toPin: A}
+    - {from: 6848800057, fromPin: Result, to: 6848800058, toPin: B}
+    - {from: 6848800058, fromPin: Result, to: 6848800060, toPin: A}
+    - {from: 6848800059, fromPin: Result, to: 6848800060, toPin: B}
+    - {from: 6848800060, fromPin: Result, to: 6848800061, toPin: Value}
+    - {from: 6848800050, fromPin: "True", to: 6848800061, toPin: Exec}
+    - {from: 6848800063, fromPin: Result, to: 6848800062, toPin: entity_id}
+    - {from: 6848800064, fromPin: Value, to: 6848800062, toPin: x}
+    - {from: 6848800065, fromPin: Value, to: 6848800062, toPin: y}
+    - {from: 6848800066, fromPin: Value, to: 6848800205, toPin: A}
+    - {from: 6848800201, fromPin: value, to: 6848800205, toPin: B}
+    - {from: 6848800205, fromPin: Result, to: 6848800062, toPin: rotation_or_z}
+    - {from: 6848800061, fromPin: Then, to: 6848800062, toPin: Exec}
+    - {from: 6848800067, fromPin: value, to: 6848800069, toPin: A}
+    - {from: 6848800068, fromPin: Value, to: 6848800069, toPin: B}
+    - {from: 6848800069, fromPin: Result, to: 6848800070, toPin: Value}
+    - {from: 6848800062, fromPin: Then, to: 6848800206, toPin: Exec}
+    - {from: 6848800201, fromPin: value, to: 6848800206, toPin: Value}
+    - {from: 6848800206, fromPin: Then, to: 6848800070, toPin: Exec}
+    - {from: 6848800050, fromPin: "False", to: 6848800070, toPin: Exec}
+    - {from: 6848800071, fromPin: pressed, to: 6848800072, toPin: Condition}
+    - {from: 6848800070, fromPin: Then, to: 6848800072, toPin: Exec}
+    - {from: 6848800073, fromPin: Value, to: 6848800075, toPin: A}
+    - {from: 6848800074, fromPin: Value, to: 6848800075, toPin: B}
+    - {from: 6848800075, fromPin: Result, to: 6848800076, toPin: Value}
+    - {from: 6848800072, fromPin: "True", to: 6848800076, toPin: Exec}
+    - {from: 6848800078, fromPin: Result, to: 6848800077, toPin: entity_id}
+    - {from: 6848800079, fromPin: Value, to: 6848800080, toPin: A}
+    - {from: 6848800080, fromPin: Result, to: 6848800081, toPin: A}
+    - {from: 6848800081, fromPin: Result, to: 6848800083, toPin: A}
+    - {from: 6848800082, fromPin: Value, to: 6848800083, toPin: B}
+    - {from: 6848800083, fromPin: Result, to: 6848800077, toPin: vx}
+    - {from: 6848800084, fromPin: Value, to: 6848800085, toPin: A}
+    - {from: 6848800085, fromPin: Result, to: 6848800087, toPin: A}
+    - {from: 6848800086, fromPin: Value, to: 6848800087, toPin: B}
+    - {from: 6848800087, fromPin: Result, to: 6848800077, toPin: vy}
+    - {from: 6848800076, fromPin: Then, to: 6848800077, toPin: Exec}
+    - {from: 6848800072, fromPin: "False", to: 6848800077, toPin: Exec}
+    - {from: 6848800001, fromPin: Then, to: 6848800088, toPin: Exec}
+  groups:
+    - {id: 6848890000, title: on_create, position: [146, -52], size: [1510, 600], color: Red}
+    - {id: 6848890001, title: on_update, position: [146, 608], size: [7630, 1440], color: Red}

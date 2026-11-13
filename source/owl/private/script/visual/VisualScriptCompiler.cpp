@@ -20,6 +20,7 @@
 #include <format>
 #include <functional>
 #include <iterator>
+#include <limits>
 #include <map>
 #include <optional>
 #include <ranges>
@@ -462,6 +463,9 @@ struct Usage {
 	std::set<PinKey> escaped;
 };
 
+// The successor of a branch side linked to nothing: the end of its path.
+constexpr uint64_t g_pathEnd = std::numeric_limits<uint64_t>::max();
+
 // The parts of the Lua source, in order; the lines of a node are counted in its part and shifted when joined.
 enum struct Part : uint8_t { Header, Custom, Declarations, Functions, Joins, Events };
 constexpr size_t g_partCount = 6;
@@ -510,6 +514,7 @@ public:
 	}
 
 	auto run() -> expected<std::string, std::vector<CompileDiagnostic>> {
+		checkLinkPins();
 		m_part = Part::Header;
 		emitProperties();
 		emitLibraries();
@@ -551,8 +556,30 @@ public:
 	[[nodiscard]] auto getUsage() const -> const Usage& { return m_record; }
 
 private:
+	// A link to a pin its node lacks (a pin, a grouped pin or a component) would be dropped, its input defaulted.
+	void checkLinkPins() {
+		const auto hasPin = [](const std::vector<PinSpec>& iPins, const std::string& iName) -> bool {
+			return std::ranges::any_of(iPins, [&iName](const PinSpec& iPin) -> bool {
+				return iPin.name == iName || iPin.group == iName || std::ranges::contains(iPin.components, iName);
+			});
+		};
+		for (const auto& link: m_script.links) {
+			const auto* from = m_script.findNode(link.fromNode);
+			const auto* to = m_script.findNode(link.toNode);
+			if (from == nullptr || to == nullptr || findNodeType(from->type) == nullptr ||
+				findNodeType(to->type) == nullptr)
+				continue;
+			if (!hasPin(getNodePins(m_script, *from).outputs, link.fromPin))
+				error(from->id, std::format("A link leaves '{}', a pin the node does not have.", link.fromPin));
+			if (!hasPin(getNodePins(m_script, *to).inputs, link.toPin))
+				error(to->id, std::format("A link reaches '{}', a pin the node does not have.", link.toPin));
+		}
+	}
+
 	const VisualScript& m_script;
 	bool m_debug;
+	// Whether the value being written is a lazy operand of the debug build: inlined, without probes.
+	bool m_lazy{false};
 	const Usage* m_usage;
 	Usage m_record;
 	std::string m_prefix;
@@ -972,11 +999,27 @@ private:
 				continue;
 			if (pin.group == pin.name && isGroup(pin.type)) {
 				for (auto& arg: groupArguments(iNode, pin)) args.push_back(std::move(arg));
+			} else if (m_debug && !m_lazy && isLazyInput(iNode, pin.name)) {
+				// Written in the expression, without locals nor probes: Lua evaluates it only when it counts.
+				m_lazy = true;
+				args.push_back(inputExpression(iNode, pin));
+				m_lazy = false;
 			} else {
 				args.push_back(inputExpression(iNode, pin));
 			}
 		}
 		return args;
+	}
+
+	// An operand Lua evaluates only when the others ask for it: the right side of `and`, `or`, the branches of `if`.
+	static auto isLazyInput(const GraphNode& iNode, const std::string_view iPin) -> bool {
+		if (iNode.type == "logic.and" || iNode.type == "logic.or")
+			return iPin == "B";
+		if (iNode.type == "logic.default")
+			return iPin == "Default";
+		if (iNode.type == "logic.select")
+			return iPin == "True" || iPin == "False";
+		return false;
 	}
 
 	auto variableName(const GraphNode& iNode) -> std::optional<std::string> {
@@ -1028,7 +1071,8 @@ private:
 
 	// A single plain output read by one input is written where it is read, in Game output only.
 	[[nodiscard]] auto canInline(const GraphNode& iNode, const NodeType& iType, const NodePins& iPins) const -> bool {
-		if (m_debug || iPins.outputs.size() != 1 || iPins.outputs.front().group == iPins.outputs.front().name)
+		if ((m_debug && !m_lazy) || iPins.outputs.size() != 1 ||
+			iPins.outputs.front().group == iPins.outputs.front().name)
 			return false;
 		if (const auto readers = m_outputReaders.find({iNode.id, iPins.outputs.front().name});
 			readers != m_outputReaders.end() && readers->second > 1)
@@ -1150,7 +1194,7 @@ private:
 	}
 
 	void probe(const core::UUID iNode, const NodePins& iPins, const std::vector<std::string>& iValues) {
-		if (!m_debug)
+		if (!m_debug || m_lazy)
 			return;
 		for (size_t i = 0; i < iPins.outputs.size() && i < iValues.size(); ++i)
 			line(std::format("__vs[{}] = {}", quote(getProbeKey(iNode, iPins.outputs[i].name)), iValues[i]));
@@ -1261,8 +1305,8 @@ private:
 		return std::format("{{ {} }}", joined(*values));
 	}
 
-	// The Lua literal of the default of a variable, nil when it does not parse.
-	auto variableLiteral(const GraphVariable& iVariable) -> std::optional<std::string> {
+	// Lua default of a variable, nil when unparsed: a property is read by index, a graph variable keyed by component.
+	auto variableLiteral(const GraphVariable& iVariable, const bool iProperty) -> std::optional<std::string> {
 		const auto type = getVariablePinType(iVariable.type);
 		if (type == PinType::Table)
 			return listDefault(iVariable);
@@ -1277,8 +1321,12 @@ private:
 			return iVariable.defaultValue.empty() || iVariable.defaultValue == "0" || iVariable.defaultValue == "self"
 						   ? std::string{"0"}
 						   : quote(iVariable.defaultValue);
-		if (isGroup(type))
+		if (isGroup(type) && iProperty)
 			return arrayLiteral(pin, iVariable.defaultValue);
+		if (isGroup(type)) {
+			const auto values = groupLiteral(0, pin, iVariable.defaultValue);
+			return values.has_value() ? componentTable(type, *values) : std::string{"nil"};
+		}
 		return literal(0, pin, iVariable.defaultValue);
 	}
 
@@ -1295,7 +1343,7 @@ private:
 			for (const auto& variable: m_script.variables) {
 				if (!variable.exposed || !valid(variable))
 					continue;
-				const auto value = variableLiteral(variable);
+				const auto value = variableLiteral(variable, true);
 				if (!value.has_value())
 					continue;
 				std::string bounds;
@@ -1312,7 +1360,7 @@ private:
 		for (const auto& variable: m_script.variables) {
 			if (variable.exposed || !valid(variable))
 				continue;
-			if (const auto value = variableLiteral(variable); value.has_value())
+			if (const auto value = variableLiteral(variable, false); value.has_value())
 				line(std::format("{} = {}", variable.name, *value));
 		}
 	}
@@ -1572,9 +1620,12 @@ private:
 				break;
 		}
 		std::vector<uint64_t> out;
-		for (const auto& pin: pins)
+		for (const auto& pin: pins) {
 			if (const auto link = m_execLinks.find({iNode, pin}); link != m_execLinks.end())
 				out.push_back(static_cast<uint64_t>(link->second->toNode));
+			else if (type->kind == NodeKind::Branch)
+				out.push_back(g_pathEnd);
+		}
 		return out;
 	}
 
@@ -1587,6 +1638,11 @@ private:
 			return none;
 		std::optional<std::set<uint64_t>> common;
 		for (const auto next: successors(iNode)) {
+			// A side of a branch that runs nothing ends its path: no node runs after both sides.
+			if (next == g_pathEnd) {
+				common = std::set<uint64_t>{};
+				continue;
+			}
 			const auto& after = postDominators(next);
 			if (!common.has_value()) {
 				common = after;
@@ -1932,8 +1988,20 @@ private:
 
 	void emitLoop(const GraphNode& iNode, const NodePins& iPins) {
 		const auto bounds = bareAll(arguments(iNode, iPins));
+		if (iNode.type == "flow.while") {
+			line(std::format("while {} do", bounds.front()));
+			++m_indent;
+			emitChain(iNode, "Body");
+			--m_indent;
+			line("end");
+			return;
+		}
 		const auto index = allocate("i");
-		line(std::format("for {} = {}, {} do", index, bounds[0], bounds[1]));
+		// A step of 1 is the default of a Lua `for`: it is left out.
+		if (bounds.size() > 2 && bounds[2] != "1" && bounds[2] != "nil")
+			line(std::format("for {} = {}, {}, {} do", index, bounds[0], bounds[1], bounds[2]));
+		else
+			line(std::format("for {} = {}, {} do", index, bounds[0], bounds[1]));
 		++m_indent;
 		if (const auto stored = target(iNode.id, "Index"); stored.has_value())
 			line(std::format("{} = {}", *stored, index));
@@ -1942,17 +2010,20 @@ private:
 		line("end");
 	}
 
-	// `for i, item in ipairs(list)`: the loop variables are the outputs, copied out when read after the loop.
+	// `for i, item in ipairs(list)`, `pairs` for a pair loop: the outputs are the loop variables, kept when read after.
 	void emitForEach(const GraphNode& iNode, const NodePins& iPins) {
 		const auto list = bare(arguments(iNode, iPins).front());
-		const std::array<std::pair<std::string, std::string_view>, 2> outputs{{{"Index", "i"}, {"Item", "item"}}};
+		const bool pairs = iNode.type == "flow.for_each_pair";
+		const std::array<std::pair<std::string, std::string_view>, 2> outputs =
+				pairs ? std::array<std::pair<std::string, std::string_view>, 2>{{{"Key", "key"}, {"Value", "value"}}}
+					  : std::array<std::pair<std::string, std::string_view>, 2>{{{"Index", "i"}, {"Item", "item"}}};
 		std::vector<std::string> names;
 		names.reserve(outputs.size());
 		for (const auto& [pin, base]: outputs)
 			names.push_back(m_debug || isRead({iNode.id, pin}) ? allocate(base) : std::string{"_"});
 		auto declared = names;
 		while (declared.size() > 1 && declared.back() == "_") declared.pop_back();
-		line(std::format("for {} in ipairs({}) do", joined(declared), list));
+		line(std::format("for {} in {}({}) do", joined(declared), pairs ? "pairs" : "ipairs", list));
 		++m_indent;
 		for (size_t i = 0; i < outputs.size(); ++i) {
 			const PinKey key{iNode.id, outputs[i].first};

@@ -1,0 +1,15 @@
+# Lunar Lander view: the chase camera starts behind the lander, Q / E turn it around the lander, Z / X zoom it, the
+# right stick turns it too.
+scene: ../../../samples/lunar_lander/scenes/landing_1.owl
+steps:
+  - frames: 5
+  - expect: {gamestate: lander_view_yaw, equals: 0, tolerance: 0.001}
+  - expect: {gamestate: lander_view_zoom, equals: 1, tolerance: 0.001}
+  - input: {key: E, frames: 30}
+  - expect: {gamestate: lander_view_yaw, greater: 0.6}
+  - input: {key: X, frames: 30}
+  - expect: {gamestate: lander_view_zoom, greater: 1.3}
+  - input: {key: Z, frames: 60}
+  - expect: {gamestate: lander_view_zoom, less: 1}
+  - input: {gamepad: {right_x: -1}, frames: 60}
+  - expect: {gamestate: lander_view_yaw, less: 0}

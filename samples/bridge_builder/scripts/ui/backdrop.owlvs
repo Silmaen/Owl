@@ -1,0 +1,77 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: amplitude, type: float, default: 0.1}
+    - {name: period, type: float, default: 24, min: 0.1}
+    - {name: clock, type: float, default: 0, exposed: false}
+  nodes:
+    - id: 6540000000000000001
+      type: event.on_update
+      position: [0, 0]
+    - id: 6540000000000000002
+      type: var.get
+      position: [0, 450]
+      values:
+        variable: amplitude
+    - id: 6540000000000000003
+      type: var.get
+      position: [-440, 830]
+      values:
+        variable: clock
+    - id: 6540000000000000004
+      type: var.get
+      position: [-640, 1060]
+      values:
+        variable: period
+    - id: 6540000000000000005
+      type: math.divide
+      position: [-480, 910]
+      values:
+        A: 6.2832
+    - id: 6540000000000000006
+      type: math.multiply
+      position: [-280, 680]
+    - id: 6540000000000000007
+      type: math.sin
+      position: [-80, 530]
+    - id: 6540000000000000008
+      type: math.multiply
+      position: [160, 300]
+    - id: 6540000000000000009
+      type: var.get
+      position: [-60, 300]
+      values:
+        variable: clock
+    - id: 6540000000000000010
+      type: math.add
+      position: [100, 150]
+    - id: 6540000000000000011
+      type: var.set
+      position: [300, 0]
+      values:
+        variable: clock
+    - id: 6540000000000000012
+      type: math.make_vector3
+      position: [360, 150]
+      values:
+        X: 0
+        Z: 0
+    - id: 6540000000000000013
+      type: call.transform.set_rotation
+      position: [600, 0]
+  links:
+    - {from: 6540000000000000004, fromPin: Value, to: 6540000000000000005, toPin: B}
+    - {from: 6540000000000000003, fromPin: Value, to: 6540000000000000006, toPin: A}
+    - {from: 6540000000000000005, fromPin: Result, to: 6540000000000000006, toPin: B}
+    - {from: 6540000000000000006, fromPin: Result, to: 6540000000000000007, toPin: A}
+    - {from: 6540000000000000002, fromPin: Value, to: 6540000000000000008, toPin: A}
+    - {from: 6540000000000000007, fromPin: Result, to: 6540000000000000008, toPin: B}
+    - {from: 6540000000000000009, fromPin: Value, to: 6540000000000000010, toPin: A}
+    - {from: 6540000000000000001, fromPin: dt, to: 6540000000000000010, toPin: B}
+    - {from: 6540000000000000010, fromPin: Result, to: 6540000000000000011, toPin: Value}
+    - {from: 6540000000000000008, fromPin: Result, to: 6540000000000000012, toPin: Y}
+    - {from: 6540000000000000012, fromPin: Result, to: 6540000000000000013, toPin: rotation}
+    - {from: 6540000000000000001, fromPin: Then, to: 6540000000000000011, toPin: Exec}
+    - {from: 6540000000000000011, fromPin: Then, to: 6540000000000000013, toPin: Exec}
+  groups:
+    - {id: 6540000000000000014, title: on_update, position: [-100, -60], size: [1000, 500], color: Red}

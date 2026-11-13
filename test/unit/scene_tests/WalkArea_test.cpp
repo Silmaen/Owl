@@ -14,6 +14,8 @@
 #include <scene/Scene.h>
 #include <scene/SceneSerializer.h>
 #include <scene/component/components.h>
+#include <scene/nav/NavBake.h>
+#include <scene/nav/NavMesh.h>
 #include <scene/nav/WalkMesh.h>
 #include <scene/nav/WalkQueries.h>
 
@@ -366,4 +368,38 @@ TEST(WalkMesh, AStartOnAnInnerEdgeKeepsTheStraightLine) {
 	EXPECT_EQ(path.size(), 2u);
 	ASSERT_TRUE(mesh.findPath({1.f, 1.f}, {8.f, 1.f}, path));
 	EXPECT_EQ(path.size(), 2u);
+}
+
+TEST_F(WalkAreaTest, ANavMeshVolumeBakesTheWalkAreasOfA2dRoom) {
+	auto scene = mkShared<Scene>();
+	auto floor = scene->createEntity("Floor");
+	floor.getComponent<component::Transform>().transform.translation() = {1.f, 0.f, 0.f};
+	auto& area = floor.addComponent<component::WalkArea>();
+	area.polygons.push_back({.outline = rectangle(0.f, 0.f, 10.f, 4.f), .holes = {rectangle(4.f, 1.f, 6.f, 3.f)}});
+	auto room = scene->createEntity("RoomNav");
+	auto& volume = room.addComponent<component::NavMeshVolume>();
+	volume.sources = component::NavMeshVolume::Sources::WalkAreas;
+	volume.size = {40.f, 40.f, 40.f};
+	EXPECT_TRUE(volume.isWalkPlane());
+	ASSERT_TRUE(nav::bakeNavMesh(*scene, room).has_value());
+	EXPECT_TRUE(volume.isBaked());
+	// The mesh lies in the plane (x, z) of the navigation: the corners of the floor, moved by its entity.
+	for (const auto& vertex: volume.vertices) {
+		EXPECT_FLOAT_EQ(vertex.y(), 0.f);
+		EXPECT_GE(vertex.x(), 1.f);
+		EXPECT_LE(vertex.z(), 4.f);
+	}
+	EXPECT_NEAR(volume.getMesh().getArea(), 40.f - 4.f, 1e-3f);
+	// A path across the hole turns at its corners, given and read back in the plane (x, y).
+	std::vector<nav::NavPathPoint> path;
+	ASSERT_TRUE(
+			volume.getMesh().findPath(volume.toMeshSpace({2.f, 2.f, 0.f}), volume.toMeshSpace({10.f, 2.f, 0.f}), path));
+	ASSERT_GE(path.size(), 3u);
+	const auto corner = volume.toWorldSpace(path[1].position);
+	EXPECT_NEAR(std::abs(corner.y() - 2.f), 1.f, 1e-3f);
+	EXPECT_NEAR(corner.z(), 0.f, 1e-6f);
+	// Out of the box, a walk area is not read.
+	volume.size = {0.5f, 0.5f, 0.5f};
+	room.getComponent<component::Transform>().transform.translation() = {-20.f, 0.f, 0.f};
+	EXPECT_FALSE(nav::bakeNavMesh(*scene, room).has_value());
 }

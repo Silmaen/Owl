@@ -1,0 +1,15 @@
+# Tower defence, Skip tutorial clicked with the mouse on the briefing of Greenmarch Ford, the visual scripts built as
+# Play in Owl Nest builds them: the briefing closes, the tutorial is off and stays off. At 1600x960 the button is at
+# the bottom right of the briefing card.
+scene: ../../../samples/tower_defence/scenes/level_01.owl
+debug_scripts: true
+steps:
+  - frames: 30
+  - expect: {gamestate: tower_tutorial_offered, equals: true}
+  - input: {mouse_pos: [900, 738], frames: 3}
+  - input: {mouse: Left, mouse_pos: [900, 738], frames: 2}
+  - frames: 10
+  - expect: {gamestate: tower_briefing, equals: false}
+  - expect: {gamestate: tower_tutorial_state, equals: skipped}
+  - frames: 300
+  - expect: {gamestate: tower_tutorial_step, equals: "off"}

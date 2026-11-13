@@ -23,6 +23,7 @@
 #include <scene/SettingsManager.h>
 #include <scene/WorldHash.h>
 #include <scene/component/components.h>
+#include <script/ScriptDebugger.h>
 
 #include <algorithm>
 #include <array>
@@ -415,6 +416,9 @@ auto ScenarioTest::load(const std::filesystem::path& iFile) -> expected<Scenario
 				return unexpected<std::string>{replay.error()};
 			scenario.mp_replay = mkShared<const scene::Replay>(std::move(*replay));
 		}
+		// The visual scripts built as Play in Owl Nest builds them, with the probes of the wire values.
+		if (const auto debugNode = root["debug_scripts"]; debugNode && debugNode.as<bool>())
+			script::ScriptDebugger::setEnabled(true);
 		const double stepMs = root["timestep_ms"] ? root["timestep_ms"].as<double>() : 1000.0 / 60.0;
 		scenario.m_step.forceUpdate(std::chrono::duration_cast<core::Timestep::duration>(
 				std::chrono::duration<double, std::milli>{stepMs}));

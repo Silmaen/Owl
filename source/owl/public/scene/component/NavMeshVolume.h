@@ -28,7 +28,9 @@ namespace owl::scene::component {
  * The box is centred on the entity and aligned on the world axes (the rotation of the entity is ignored). A bake
  * (the **Bake** button of Owl Nest, the `nav.bake` command, Lua `nav.bake`) reads the static geometry inside it: the
  * colliders of the static bodies and the meshes of the `MeshRenderer`s without a body, except what moves (agents,
- * obstacles, spline followers, bodies that are not static, and their children). The baked triangles are saved with the scene, so a game loads the same mesh on every target; the
+ * obstacles, spline followers, bodies that are not static, and their children). With `WalkAreas` it reads the
+ * floors of the `WalkArea`s whose entity stands inside the box instead: the mesh of a 2D room, in the plane (x, y) of
+ * the areas, stored with the plane height as Z (see `toMeshSpace`). The baked triangles are saved with the scene, so a game loads the same mesh on every target; the
  * `NavLink`s are attached to it when it is read.
  */
 struct OWL_API NavMeshVolume {
@@ -37,6 +39,7 @@ struct OWL_API NavMeshVolume {
 		CollidersAndMeshes,///< Static colliders, and meshes of the entities without a body.
 		Colliders,///< Static colliders only.
 		Meshes,///< Meshes only.
+		WalkAreas,///< The floors of the `WalkArea`s inside the box (a 2D room, plane (x, y)).
 	};
 
 	/// Full size of the box, centred on the entity.
@@ -45,7 +48,7 @@ struct OWL_API NavMeshVolume {
 	nav::NavMeshSettings settings;
 	/// The geometry a bake reads.
 	Sources sources = Sources::CollidersAndMeshes;
-	/// Baked corners, in world space.
+	/// Baked corners, in world space (in the space of `toMeshSpace` for `WalkAreas`).
 	std::vector<math::vec3> vertices;
 	/// Baked triangles, three indices in `vertices` each.
 	std::vector<uint32_t> indices;
@@ -98,6 +101,34 @@ struct OWL_API NavMeshVolume {
 	 * @return True when triangles were baked.
 	 */
 	[[nodiscard]] auto isBaked() const -> bool { return indices.size() >= 3; }
+
+	/**
+	 * @brief
+	 *  Check if the mesh lies in the plane (x, y) of walk areas.
+	 * @return True for the `WalkAreas` sources.
+	 */
+	[[nodiscard]] auto isWalkPlane() const -> bool { return sources == Sources::WalkAreas; }
+
+	/**
+	 * @brief
+	 *  A world point in the space of the mesh: unchanged, or (x, 0, y) for a mesh of walk areas, whose floor is the
+	 *  plane (x, z) of a navigation mesh.
+	 * @param[in] iPoint The world point.
+	 * @return The point the mesh is searched with.
+	 */
+	[[nodiscard]] auto toMeshSpace(const math::vec3& iPoint) const -> math::vec3 {
+		return isWalkPlane() ? math::vec3{iPoint.x(), 0.f, iPoint.y()} : iPoint;
+	}
+
+	/**
+	 * @brief
+	 *  A point of the mesh in world space: unchanged, or (x, z, 0) for a mesh of walk areas.
+	 * @param[in] iPoint The point of the mesh.
+	 * @return The world point.
+	 */
+	[[nodiscard]] auto toWorldSpace(const math::vec3& iPoint) const -> math::vec3 {
+		return isWalkPlane() ? math::vec3{iPoint.x(), iPoint.z(), 0.f} : iPoint;
+	}
 
 	/// Runtime: the mesh read from `vertices` and `indices`.
 	mutable nav::NavMesh m_mesh;

@@ -1,0 +1,12 @@
+# The Sunken Shrine paused: Escape opens the pause window and the hero cannot walk; Escape closes it.
+scene: ../../../samples/sunken_shrine/scenes/room_1.owl
+steps:
+  - frames: 10
+  - input: {key: Escape, frames: 1}
+  - frames: 2
+  - expect: {gamestate: shrine_paused, equals: true}
+  - input: {key: D, frames: 30}
+  - expect: {gamestate: shrine_x, equals: 0}
+  - input: {key: Escape, frames: 1}
+  - frames: 2
+  - expect: {gamestate: shrine_paused, equals: false}

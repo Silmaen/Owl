@@ -767,21 +767,38 @@ Nest can turn the walker.
 | `turnRate`         | `float` | `1.2`   | Pitch and yaw rate of the `look` action at full deflection, in rad/s       |
 | `rollRate`         | `float` | `1.6`   | Roll rate of `ship_roll` at full deflection, in rad/s                      |
 | `mouseSensitivity` | `float` | `0.002` | Radians of pitch and yaw per pixel while the cursor is captured            |
-| `angularResponse`  | `float` | `6`     | How fast the rotation rate follows the controls, per second                |
+| `angularResponse`  | `float` | `6`     | How fast the rotation rate follows the controls, per second; 0 at once     |
 | `assistDamping`    | `float` | `1.2`   | Strength of the flight assist dampers on the velocity no thruster pushes   |
 | `flightAssist`     | `bool`  | `true`  | Whether the flight assist stabilises the ship; `ship_assist` toggles it    |
-| `captureCursor`    | `bool`  | `true`  | Clicking the view captures the cursor for mouse steering                   |
+| `captureCursor`    | `bool`  | `true`  | Clicking the view captures the cursor (mouse steering or the game's aim)   |
+| `mouseSteer`       | `bool`  | `true`  | The captured mouse pitches and yaws; off leaves the mouse to the game      |
+| `invertPitch`      | `bool`  | `false` | Stick or mouse forward raises the nose (inverted pitch)                    |
+| `levelRate`        | `float` | `0`     | With the assist, how fast the wings roll back level once the roll is freed |
+| `maxPitch`         | `float` | `0`     | Arcade flight above 0: yaw about the world up, nose within this angle (rad) |
+| `throttleRate`     | `float` | `0`     | Persistent throttle above 0: `ship_thrust` moves it at this rate per second |
+| `minThrottle`      | `float` | `-1`    | Lowest persistent throttle: -1 full reverse, 0 none                         |
 
 YAML key: `ShipController`, system `owl.ships` (`PrePhysics`). Flies the entity (its camera is the cockpit) with
 inertia: `ship_thrust` pushes along the nose, `ship_strafe` slides sideways and up or down, `ship_roll` rolls, `look`
-and the captured mouse pitch and yaw about the body axes, and `ship_assist` toggles the flight assist. The velocity is
-kept from frame to frame; with the assist on, dampers remove the motion along every body axis no thruster pushes and
-the rotation once the controls are released, so the ship flies where it points; with the assist off it drifts and
-spins on. The rotation of the `Transform` is the attitude: a script or the editor turning the entity turns the ship.
-A root entity with a [`WorldPosition`](#world-positions) moves in double precision: its float translation is
-placed again from the double position each frame, never accumulated, so the floating origin follows it without drift.
-Lua: `entity.get_ship_velocity`, `entity.get_ship_speed`, `entity.get_ship_throttle`, `entity.set_ship_assist`,
-`entity.is_ship_assist_on` ([Lua API](lua-api.md)).
+and the captured mouse pitch and yaw about the body axes, and `ship_assist` toggles the flight assist. With
+`mouseSteer` off only `look` (keys, sticks) turns the ship and the captured mouse is left to the game, an aim on the
+screen for instance (`scene.get_view_ray` gives the ray through a pixel). An `angularResponse` of 0 removes the
+rotational inertia: the rate is the command, with or without the assist, and the turn stops when the controls are
+released. The velocity is
+kept from frame to frame; with the assist on, dampers remove the motion along every body axis no thruster pushes and the
+rotation once the controls are released, so the ship flies where it points, and a `levelRate` rolls the wings back level
+with the world up axis; with the assist off it drifts and spins on. A `maxPitch` above 0 flies like a first-person view: the yaw turns about the world up axis and the nose stays within that angle of the horizon, so turning never rolls the ship. A mouse step of more than 200 pixels in one frame (a
+capture, a warp of the cursor) does not turn the ship. A `throttleRate` above 0 makes the throttle persistent:
+`ship_thrust` (W / S, the triggers) moves it up or down at that rate, between `minThrottle` and 1, and the ship keeps it
+once the controls are released; the main engine (at most `thrust`, and the assist dampers when on) then holds the speed
+along the nose at the throttle times `maxSpeed` (with a `maxSpeed` of 0 the throttle pushes like a held key). A script
+adds its own turn each frame with `entity.set_ship_turn(id, x, y)`, shares of the turn rate in screen directions (x
+right, y down, never inverted) added to `look`: steering toward a cursor while a button is held, for instance. The rotation of the `Transform` is the attitude: a script or the
+editor turning the entity turns the ship. A root entity with a [`WorldPosition`](#world-positions) moves in double
+precision: its float translation is placed again from the double position each frame, never accumulated, so the floating
+origin follows it without drift. Lua: `entity.get_ship_velocity`, `entity.set_ship_velocity` (a rebound, a knock),
+`entity.get_ship_speed`, `entity.get_ship_throttle`, `entity.set_ship_throttle` (cut the throttle),
+`entity.set_ship_turn`, `entity.set_ship_assist`, `entity.is_ship_assist_on` ([Lua API](lua-api.md)).
 
 #### PhysicBody
 

@@ -1,0 +1,107 @@
+FormatVersion: 1
+BehaviourTree:
+  blackboard:
+    - name: damage
+      type: Number
+      value: 0
+      description: "Damage taken since the last frame, added by the shots of the player."
+    - name: dead
+      type: Bool
+      value: false
+      description: "Set by the graph when the health runs out."
+  nodes:
+    - id: 7102000000000000001
+      type: root
+      position: [0, 320]
+    - id: 7102000000000000002
+      type: composite.selector
+      position: [220, 320]
+      values:
+        reactive: true
+      comment: "The first branch that holds wins, checked at every tick."
+    - id: 7102000000000000003
+      type: composite.sequence
+      position: [480, 0]
+      comment: "Dead: lies still until the graph removes the body."
+    - id: 7102000000000000004
+      type: condition.compare
+      position: [700, -40]
+      values:
+        key: dead
+        op: "=="
+        value: true
+    - id: 7102000000000000005
+      type: action.wait
+      position: [700, 40]
+      values:
+        seconds: 10
+    - id: 7102000000000000006
+      type: composite.sequence
+      position: [480, 140]
+      comment: "Hit: flinches a moment."
+    - id: 7102000000000000007
+      type: condition.lua
+      position: [700, 110]
+      values:
+        function: guard_in_pain
+    - id: 7102000000000000008
+      type: action.lua
+      position: [700, 190]
+      values:
+        function: guard_flinch
+    - id: 7102000000000000009
+      type: composite.sequence
+      position: [480, 300]
+      comment: "Fires at the player in sight, once in a while."
+    - id: 7102000000000000010
+      type: condition.lua
+      position: [700, 260]
+      values:
+        function: guard_can_fire
+    - id: 7102000000000000011
+      type: decorator.cooldown
+      position: [700, 340]
+      values:
+        seconds: 0.9
+    - id: 7102000000000000012
+      type: action.lua
+      position: [920, 340]
+      values:
+        function: guard_fire
+    - id: 7102000000000000013
+      type: composite.sequence
+      position: [480, 460]
+      comment: "Alerted: runs after the player over the floor."
+    - id: 7102000000000000014
+      type: condition.lua
+      position: [700, 430]
+      values:
+        function: guard_notices
+      comment: "Hears a shot in range, or sees the player ahead."
+    - id: 7102000000000000015
+      type: action.lua
+      position: [700, 510]
+      values:
+        function: guard_chase
+    - id: 7102000000000000016
+      type: action.lua
+      position: [480, 620]
+      values:
+        function: guard_patrol
+      comment: "Walks between its cell and its patrol cell, or stands."
+  links:
+    - {parent: 7102000000000000001, child: 7102000000000000002}
+    - {parent: 7102000000000000002, child: 7102000000000000003}
+    - {parent: 7102000000000000003, child: 7102000000000000004}
+    - {parent: 7102000000000000003, child: 7102000000000000005}
+    - {parent: 7102000000000000002, child: 7102000000000000006}
+    - {parent: 7102000000000000006, child: 7102000000000000007}
+    - {parent: 7102000000000000006, child: 7102000000000000008}
+    - {parent: 7102000000000000002, child: 7102000000000000009}
+    - {parent: 7102000000000000009, child: 7102000000000000010}
+    - {parent: 7102000000000000009, child: 7102000000000000011}
+    - {parent: 7102000000000000011, child: 7102000000000000012}
+    - {parent: 7102000000000000002, child: 7102000000000000013}
+    - {parent: 7102000000000000013, child: 7102000000000000014}
+    - {parent: 7102000000000000013, child: 7102000000000000015}
+    - {parent: 7102000000000000002, child: 7102000000000000016}

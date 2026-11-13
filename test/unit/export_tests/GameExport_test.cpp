@@ -617,7 +617,7 @@ void checkProjectPlaysFromItsExportFolder(const std::filesystem::path& iBinDir, 
 								   workDir.string(), (moved / "launch.sh").string()));
 	const auto log = readFile(gameLog);
 	EXPECT_EQ(exitCode, 0) << readFile(workDir / "runner.txt");
-	EXPECT_EQ(logProblems(log), "");
+	EXPECT_EQ(logProblems(log), "") << readFile(workDir / "export.txt");
 	EXPECT_NE(log.find(std::format("Smoke test passed on {} scene(s)", sceneCount)), std::string::npos) << log;
 
 	// The GPU run loads every shader, texture, font and sound, all from the pack.

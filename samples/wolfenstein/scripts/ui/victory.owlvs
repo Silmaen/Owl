@@ -1,0 +1,189 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: score, type: float, default: "0", exposed: false}
+    - {name: label, type: entity, default: "0", exposed: false}
+  nodes:
+    - id: 2284400001
+      type: event.on_create
+      position: [340, 0]
+    - id: 2284400002
+      type: call.ui.is_transition_active
+      position: [170, 160]
+    - id: 2284400003
+      type: logic.not
+      position: [170, 280]
+    - id: 2284400004
+      type: flow.branch
+      position: [680, 0]
+    - id: 2284400005
+      type: call.ui.transition_play
+      position: [1020, 0]
+      values:
+        split.rgba: "true"
+        kind: fade_in
+        duration: "0.5"
+        r: "0.22"
+        g: "0.02"
+        b: "0.02"
+    - id: 2284400006
+      type: call.sound.play
+      position: [1360, 0]
+      values:
+        asset_path: sounds/ui/victory.wav
+    - id: 2284400007
+      type: call.gamestate.get
+      position: [1700, 0]
+      values:
+        key: wolf_score
+        default: "0"
+    - id: 2284400008
+      type: var.set
+      position: [2040, 0]
+      values:
+        variable: score
+    - id: 2284400009
+      type: var.get
+      position: [1870, 160]
+      values:
+        variable: score
+    - id: 2284400010
+      type: call.settings.get
+      position: [2380, 0]
+      values:
+        key: wolf_best_score
+        default: "0"
+    - id: 2284400011
+      type: compare.greater
+      position: [2210, 160]
+    - id: 2284400012
+      type: flow.branch
+      position: [2720, 0]
+    - id: 2284400013
+      type: call.settings.set
+      position: [3060, 0]
+      values:
+        key: wolf_best_score
+    - id: 2284400014
+      type: var.get
+      position: [2890, 160]
+      values:
+        variable: score
+    - id: 2284400015
+      type: call.settings.save
+      position: [3400, 0]
+    - id: 2284400016
+      type: call.scene.find_entity
+      position: [3230, 160]
+      values:
+        name: ScoreLabel
+    - id: 2284400017
+      type: var.set
+      position: [3740, 0]
+      values:
+        variable: label
+    - id: 2284400018
+      type: var.get
+      position: [3570, 160]
+      values:
+        variable: label
+    - id: 2284400019
+      type: compare.not_equal
+      position: [3570, 280]
+      values:
+        B: "0"
+    - id: 2284400020
+      type: flow.branch
+      position: [4080, 0]
+    - id: 2284400021
+      type: call.ui.set_text
+      position: [4420, 0]
+    - id: 2284400022
+      type: var.get
+      position: [4250, 160]
+      values:
+        variable: label
+    - id: 2284400023
+      type: var.get
+      position: [4250, 280]
+      values:
+        variable: score
+    - id: 2284400024
+      type: call.settings.get
+      position: [4760, 0]
+      values:
+        key: wolf_best_score
+        default: "0"
+    - id: 2284400025
+      type: text.concat
+      position: [4590, 160]
+    - id: 2284400026
+      type: value.string
+      position: [4590, 280]
+      values:
+        Value: "     BEST "
+    - id: 2284400027
+      type: text.concat
+      position: [4590, 400]
+    - id: 2284400028
+      type: text.join
+      position: [4590, 520]
+      values:
+        A: "FINAL SCORE "
+    - id: 2284400029
+      type: event.custom
+      position: [340, 780]
+      values:
+        function: on_menu_clicked
+    - id: 2284400030
+      type: call.gamestate.clear
+      position: [680, 780]
+    - id: 2284400031
+      type: call.scene.transition_to
+      position: [1020, 780]
+      values:
+        split.rgba: "true"
+        scene_path: scenes/title.owl
+        kind: fade_out
+        duration: "0.4"
+        r: "0.22"
+        g: "0.02"
+        b: "0.02"
+  links:
+    - {from: 2284400002, fromPin: active, to: 2284400003, toPin: A}
+    - {from: 2284400003, fromPin: Result, to: 2284400004, toPin: Condition}
+    - {from: 2284400001, fromPin: Then, to: 2284400004, toPin: Exec}
+    - {from: 2284400004, fromPin: "True", to: 2284400005, toPin: Exec}
+    - {from: 2284400005, fromPin: Then, to: 2284400006, toPin: Exec}
+    - {from: 2284400004, fromPin: "False", to: 2284400006, toPin: Exec}
+    - {from: 2284400006, fromPin: Then, to: 2284400007, toPin: Exec}
+    - {from: 2284400007, fromPin: value, to: 2284400008, toPin: Value}
+    - {from: 2284400007, fromPin: Then, to: 2284400008, toPin: Exec}
+    - {from: 2284400008, fromPin: Then, to: 2284400010, toPin: Exec}
+    - {from: 2284400009, fromPin: Value, to: 2284400011, toPin: A}
+    - {from: 2284400010, fromPin: value, to: 2284400011, toPin: B}
+    - {from: 2284400011, fromPin: Result, to: 2284400012, toPin: Condition}
+    - {from: 2284400010, fromPin: Then, to: 2284400012, toPin: Exec}
+    - {from: 2284400014, fromPin: Value, to: 2284400013, toPin: value}
+    - {from: 2284400012, fromPin: "True", to: 2284400013, toPin: Exec}
+    - {from: 2284400013, fromPin: Then, to: 2284400015, toPin: Exec}
+    - {from: 2284400016, fromPin: entity_id, to: 2284400017, toPin: Value}
+    - {from: 2284400015, fromPin: Then, to: 2284400017, toPin: Exec}
+    - {from: 2284400012, fromPin: "False", to: 2284400017, toPin: Exec}
+    - {from: 2284400018, fromPin: Value, to: 2284400019, toPin: A}
+    - {from: 2284400019, fromPin: Result, to: 2284400020, toPin: Condition}
+    - {from: 2284400017, fromPin: Then, to: 2284400020, toPin: Exec}
+    - {from: 2284400022, fromPin: Value, to: 2284400021, toPin: entity_id}
+    - {from: 2284400020, fromPin: "True", to: 2284400024, toPin: Exec}
+    - {from: 2284400026, fromPin: Result, to: 2284400025, toPin: A}
+    - {from: 2284400024, fromPin: value, to: 2284400025, toPin: B}
+    - {from: 2284400023, fromPin: Value, to: 2284400027, toPin: A}
+    - {from: 2284400025, fromPin: Result, to: 2284400027, toPin: B}
+    - {from: 2284400027, fromPin: Result, to: 2284400028, toPin: B}
+    - {from: 2284400028, fromPin: Result, to: 2284400021, toPin: text}
+    - {from: 2284400024, fromPin: Then, to: 2284400021, toPin: Exec}
+    - {from: 2284400029, fromPin: Then, to: 2284400030, toPin: Exec}
+    - {from: 2284400030, fromPin: Then, to: 2284400031, toPin: Exec}
+  groups:
+    - {id: 2284490000, title: on_create, position: [146, -52], size: [4910, 720], color: Red}
+    - {id: 2284490001, title: on_menu_clicked, position: [316, 728], size: [1000, 200], color: Red}

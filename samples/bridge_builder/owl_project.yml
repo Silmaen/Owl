@@ -1,0 +1,24 @@
+OwlProject:
+  name: OwlBridgeBuilder
+  firstScene: scenes/title.owl
+  author: Silmaen
+  description: Bridge Builder, a sample game of the Owl Engine
+  icon: logo/logo_owl.png
+  gamepadMappings: input/gamecontrollerdb.txt
+  window:
+    width: 1280
+    height: 720
+    fullscreen: false
+    resizable: true
+  RendererStack:
+    - Type: Renderer2D
+      Name: world
+    - Type: RendererMesh
+      Name: mesh_world
+      DefaultConfig:
+        SunDirection: [-0.4, -0.6, -0.7]
+        Ambient: [0.25, 0.27, 0.3]
+    - Type: Renderer2D
+      Name: ui
+    - Type: Renderer2D
+      Name: overlay

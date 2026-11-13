@@ -92,6 +92,7 @@ function M.segment_distance(s0, x0, y0, s1, x1, y1, ps, px, py)
     return math.sqrt(qs * qs + qx * qx + qy * qy)
 end
 
+---@param path any
 function M.play(path)
     sound.play(path)
 end
@@ -137,6 +138,7 @@ function M.hurt(amount, source)
     fx.shake(0.35)
 end
 
+---@param points any
 function M.add_score(points)
     M.state.score = M.state.score + points
 end

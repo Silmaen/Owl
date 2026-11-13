@@ -1,0 +1,567 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: glade_scene, type: string, default: scenes/glade.owl}
+    - {name: hotspots, type: strings, default: "jar pick, crust pick, barnaby talk, lantern use, door exit glade_scene, window look, fireplace look, shelf look, table look"}
+    - {name: ending_scene, type: string, default: scenes/ending.owl}
+    - {name: ending_delay, type: float, default: "2.5", min: 0}
+    - {name: adventure, type: float, default: "0", exposed: false}
+    - {name: ids, type: numbers, default: "", exposed: false}
+    - {name: ending_timer, type: float, default: "0", exposed: false}
+    - {name: tmp_1, type: float, default: "0", exposed: false}
+    - {name: tmp_2, type: float, default: "0", exposed: false}
+  functions:
+    - name: refresh
+      inputs: []
+      outputs: []
+      exported: true
+    - name: has_moonstone
+      inputs: []
+      outputs: [{name: result, type: any}]
+      exported: true
+    - name: has_spark
+      inputs: []
+      outputs: [{name: result, type: any}]
+      exported: true
+    - name: knows_troll
+      inputs: []
+      outputs: [{name: result, type: any}]
+      exported: true
+    - name: act
+      inputs: [{name: id, type: any}, {name: verb, type: any}, {name: item, type: any}]
+      outputs: [{name: result, type: any}]
+      exported: true
+  customNodes:
+    - name: init_state
+      title: Init State
+      inputs: []
+      outputs: []
+      code: |
+        adventure = nil
+        ids = {}
+        ending_timer = nil
+    - name: pick
+      title: Pick
+      inputs: [{name: flag, type: any}, {name: item, type: any}, {name: remark, type: any}]
+      outputs: []
+      code: |
+        adventure.act_animation(function()
+            adventure.set_flag(flag)
+            adventure.give(item)
+            refresh()
+            adventure.say(remark)
+        end)
+    - name: use_lantern
+      title: Use lantern
+      inputs: [{name: item, type: any}]
+      outputs: []
+      code: |
+        if item == "moonstone" then
+            adventure.take("moonstone")
+            adventure.set_flag("moonstone_set")
+            adventure.say(adventure.flag("spark_set") and "say.cottage.lantern_stone_last" or "say.cottage.lantern_stone")
+        elseif item == "firefly_jar" then
+            adventure.take("firefly_jar")
+            adventure.give("jar")
+            adventure.set_flag("spark_set")
+            adventure.say(adventure.flag("moonstone_set") and "say.cottage.lantern_spark_last" or "say.cottage.lantern_spark")
+        elseif item ~= nil then
+            adventure.say("say.cottage.lantern_item")
+            return
+        elseif adventure.flag("moonstone_set") then
+            adventure.say("say.cottage.lantern_needs_spark")
+            return
+        else
+            adventure.say("say.cottage.lantern_needs_stone")
+            return
+        end
+        if adventure.flag("moonstone_set") and adventure.flag("spark_set") then
+            adventure.set_flag("lantern_lit")
+            refresh()
+            sound.play("sounds/pickup.wav")
+            ending_timer = ending_delay
+            gamestate.set("lantern_lit", true)
+        end
+    - name: do_act
+      title: Act
+      inputs: [{name: id, type: any}, {name: verb, type: any}, {name: item, type: any}]
+      outputs: [{name: r1, type: any}]
+      code: |
+        if id == "jar" and verb == "pick" then
+            pick("jar_taken", "jar", "say.cottage.jar")
+            return true
+        end
+        if id == "crust" and verb == "pick" then
+            pick("crust_taken", "crust", "say.cottage.crust")
+            return true
+        end
+        if id == "barnaby" and verb ~= "look" then
+            if item ~= nil then
+                adventure.say("say.cottage.barnaby_item")
+            else
+                animator.trigger(ids.barnaby, "talk")
+                adventure.talk("dialogues/barnaby.owldlg")
+            end
+            return true
+        end
+        if id == "lantern" and verb ~= "look" then
+            use_lantern(item)
+            return true
+        end
+        return false
+    - name: do_on_create
+      title: On create
+      inputs: []
+      outputs: []
+      code: |
+        adventure = require("scripts.game.adventure")
+        ids.jar = scene.find_entity("Prop_jar")
+        ids.crust = scene.find_entity("Prop_crust")
+        ids.lantern = scene.find_entity("Prop_lantern")
+        ids.barnaby = scene.find_entity("Barnaby")
+        adventure.start({ name = "cottage", hotspots = hotspots, act = act })
+        refresh()
+        if gamestate.get("intro_done", false) == false then
+            gamestate.set("intro_done", true)
+            adventure.say("say.cottage.intro")
+        end
+  nodes:
+    - id: 3288100001
+      type: func.entry
+      position: [340, 0]
+      values:
+        function: refresh
+    - id: 3288100002
+      type: call.ui.set_visible
+      position: [680, 0]
+    - id: 3288100003
+      type: var.get
+      position: [510, 160]
+      values:
+        variable: ids
+    - id: 3288100004
+      type: table.get
+      position: [510, 280]
+      values:
+        Key: jar
+    - id: 3288100005
+      type: lua.call
+      position: [1020, 0]
+      values:
+        module: scripts.game.adventure
+        function: flag
+        name: jar_taken
+    - id: 3288100006
+      type: logic.not
+      position: [850, 160]
+    - id: 3288100007
+      type: lua.call
+      position: [1360, 0]
+      values:
+        module: scripts.game.adventure
+        function: set_hotspot_enabled
+        id: jar
+    - id: 3288100008
+      type: lua.call
+      position: [1700, 0]
+      values:
+        module: scripts.game.adventure
+        function: flag
+        name: jar_taken
+    - id: 3288100009
+      type: logic.not
+      position: [1530, 160]
+    - id: 3288100010
+      type: call.ui.set_visible
+      position: [2040, 0]
+    - id: 3288100011
+      type: var.get
+      position: [1870, 160]
+      values:
+        variable: ids
+    - id: 3288100012
+      type: table.get
+      position: [1870, 280]
+      values:
+        Key: crust
+    - id: 3288100013
+      type: lua.call
+      position: [2380, 0]
+      values:
+        module: scripts.game.adventure
+        function: flag
+        name: crust_taken
+    - id: 3288100014
+      type: logic.not
+      position: [2210, 160]
+    - id: 3288100015
+      type: lua.call
+      position: [2720, 0]
+      values:
+        module: scripts.game.adventure
+        function: set_hotspot_enabled
+        id: crust
+    - id: 3288100016
+      type: lua.call
+      position: [3060, 0]
+      values:
+        module: scripts.game.adventure
+        function: flag
+        name: crust_taken
+    - id: 3288100017
+      type: logic.not
+      position: [2890, 160]
+    - id: 3288100018
+      type: call.isometric.set_sprite_frame
+      position: [3400, 0]
+    - id: 3288100019
+      type: var.get
+      position: [3230, 160]
+      values:
+        variable: ids
+    - id: 3288100020
+      type: table.get
+      position: [3230, 280]
+      values:
+        Key: lantern
+    - id: 3288100021
+      type: lua.call
+      position: [3740, 0]
+      values:
+        module: scripts.game.adventure
+        function: flag
+        name: lantern_lit
+    - id: 3288100022
+      type: logic.select
+      position: [3570, 160]
+      values:
+        "True": "1"
+        "False": "0"
+    - id: 3288100023
+      type: func.entry
+      position: [340, 840]
+      values:
+        function: has_moonstone
+    - id: 3288100024
+      type: lua.call
+      position: [680, 840]
+      values:
+        module: scripts.game.adventure
+        function: has
+        item: moonstone
+    - id: 3288100025
+      type: var.set
+      position: [1020, 840]
+      values:
+        variable: tmp_1
+    - id: 3288100026
+      type: flow.branch
+      position: [1360, 840]
+    - id: 3288100027
+      type: var.get
+      position: [1190, 1000]
+      values:
+        variable: tmp_1
+    - id: 3288100028
+      type: lua.call
+      position: [1700, 840]
+      values:
+        module: scripts.game.adventure
+        function: flag
+        name: moonstone_set
+    - id: 3288100029
+      type: var.set
+      position: [2040, 840]
+      values:
+        variable: tmp_1
+    - id: 3288100030
+      type: var.get
+      position: [1870, 1000]
+      values:
+        variable: tmp_1
+    - id: 3288100031
+      type: func.return
+      position: [2380, 840]
+      values:
+        function: has_moonstone
+    - id: 3288100032
+      type: func.entry
+      position: [340, 1380]
+      values:
+        function: has_spark
+    - id: 3288100033
+      type: lua.call
+      position: [680, 1380]
+      values:
+        module: scripts.game.adventure
+        function: has
+        item: firefly_jar
+    - id: 3288100034
+      type: var.set
+      position: [1020, 1380]
+      values:
+        variable: tmp_2
+    - id: 3288100035
+      type: flow.branch
+      position: [1360, 1380]
+    - id: 3288100036
+      type: var.get
+      position: [1190, 1540]
+      values:
+        variable: tmp_2
+    - id: 3288100037
+      type: lua.call
+      position: [1700, 1380]
+      values:
+        module: scripts.game.adventure
+        function: flag
+        name: spark_set
+    - id: 3288100038
+      type: var.set
+      position: [2040, 1380]
+      values:
+        variable: tmp_2
+    - id: 3288100039
+      type: var.get
+      position: [1870, 1540]
+      values:
+        variable: tmp_2
+    - id: 3288100040
+      type: func.return
+      position: [2380, 1380]
+      values:
+        function: has_spark
+    - id: 3288100041
+      type: func.entry
+      position: [340, 1920]
+      values:
+        function: knows_troll
+    - id: 3288100042
+      type: lua.call
+      position: [680, 1920]
+      values:
+        module: scripts.game.adventure
+        function: flag
+        name: heard_troll
+    - id: 3288100043
+      type: func.return
+      position: [1020, 1920]
+      values:
+        function: knows_troll
+    - id: 3288100044
+      type: event.custom
+      position: [340, 2220]
+      values:
+        function: on_heard_troll
+    - id: 3288100045
+      type: lua.call
+      position: [680, 2220]
+      values:
+        module: scripts.game.adventure
+        function: set_flag
+        name: heard_troll
+    - id: 3288100046
+      type: event.on_update
+      position: [340, 2820]
+    - id: 3288100047
+      type: lua.call
+      position: [680, 2820]
+      values:
+        module: scripts.game.adventure
+        function: update
+    - id: 3288100048
+      type: var.get
+      position: [510, 2980]
+      values:
+        variable: ending_timer
+    - id: 3288100049
+      type: compare.not_equal
+      position: [510, 3100]
+    - id: 3288100050
+      type: value.nil
+      position: [510, 3220]
+    - id: 3288100051
+      type: flow.branch
+      position: [1020, 2820]
+    - id: 3288100052
+      type: var.get
+      position: [850, 2980]
+      values:
+        variable: ending_timer
+    - id: 3288100053
+      type: math.subtract
+      position: [850, 3100]
+    - id: 3288100054
+      type: var.set
+      position: [1360, 2820]
+      values:
+        variable: ending_timer
+    - id: 3288100055
+      type: var.get
+      position: [1190, 2980]
+      values:
+        variable: ending_timer
+    - id: 3288100056
+      type: compare.less_equal
+      position: [1190, 3100]
+      values:
+        B: "0"
+    - id: 3288100057
+      type: flow.branch
+      position: [1700, 2820]
+    - id: 3288100058
+      type: var.set
+      position: [2040, 2820]
+      values:
+        variable: ending_timer
+    - id: 3288100059
+      type: value.nil
+      position: [1870, 2980]
+    - id: 3288100060
+      type: call.save.delete_save
+      position: [2380, 2820]
+      values:
+        slot: "1"
+    - id: 3288100061
+      type: call.scene.transition_to
+      position: [2720, 2820]
+      values:
+        split.rgba: "true"
+        kind: fade_out
+        duration: "1.2"
+        r: "0.85"
+        g: "0.9"
+        b: "1"
+    - id: 3288100062
+      type: var.get
+      position: [2550, 2980]
+      values:
+        variable: ending_scene
+    - id: 3288100063
+      type: func.entry
+      position: [340, 540]
+      values:
+        function: act
+    - id: 3288100064
+      type: custom.call
+      position: [680, 540]
+      values:
+        custom: do_act
+    - id: 3288100065
+      type: func.return
+      position: [1020, 540]
+      values:
+        function: act
+    - id: 3288100066
+      type: event.on_create
+      position: [340, 2520]
+    - id: 3288100067
+      type: custom.call
+      position: [680, 2520]
+      values:
+        custom: do_on_create
+    - id: 3288100068
+      type: custom.call
+      position: [170, 2520]
+      values:
+        custom: init_state
+    - id: 3288100069
+      type: logic.select
+      position: [1190, 1120]
+      values:
+        Condition: "true"
+    - id: 3288100070
+      type: logic.select
+      position: [1190, 1660]
+      values:
+        Condition: "true"
+  links:
+    - {from: 3288100003, fromPin: Value, to: 3288100004, toPin: Table}
+    - {from: 3288100004, fromPin: Result, to: 3288100002, toPin: entity_id}
+    - {from: 3288100001, fromPin: Then, to: 3288100005, toPin: Exec}
+    - {from: 3288100005, fromPin: result, to: 3288100006, toPin: A}
+    - {from: 3288100006, fromPin: Result, to: 3288100002, toPin: visible}
+    - {from: 3288100005, fromPin: Then, to: 3288100002, toPin: Exec}
+    - {from: 3288100002, fromPin: Then, to: 3288100008, toPin: Exec}
+    - {from: 3288100008, fromPin: result, to: 3288100009, toPin: A}
+    - {from: 3288100009, fromPin: Result, to: 3288100007, toPin: enabled}
+    - {from: 3288100008, fromPin: Then, to: 3288100007, toPin: Exec}
+    - {from: 3288100011, fromPin: Value, to: 3288100012, toPin: Table}
+    - {from: 3288100012, fromPin: Result, to: 3288100010, toPin: entity_id}
+    - {from: 3288100007, fromPin: Then, to: 3288100013, toPin: Exec}
+    - {from: 3288100013, fromPin: result, to: 3288100014, toPin: A}
+    - {from: 3288100014, fromPin: Result, to: 3288100010, toPin: visible}
+    - {from: 3288100013, fromPin: Then, to: 3288100010, toPin: Exec}
+    - {from: 3288100010, fromPin: Then, to: 3288100016, toPin: Exec}
+    - {from: 3288100016, fromPin: result, to: 3288100017, toPin: A}
+    - {from: 3288100017, fromPin: Result, to: 3288100015, toPin: enabled}
+    - {from: 3288100016, fromPin: Then, to: 3288100015, toPin: Exec}
+    - {from: 3288100019, fromPin: Value, to: 3288100020, toPin: Table}
+    - {from: 3288100020, fromPin: Result, to: 3288100018, toPin: entity_id}
+    - {from: 3288100015, fromPin: Then, to: 3288100021, toPin: Exec}
+    - {from: 3288100021, fromPin: result, to: 3288100022, toPin: Condition}
+    - {from: 3288100022, fromPin: Result, to: 3288100018, toPin: frame}
+    - {from: 3288100021, fromPin: Then, to: 3288100018, toPin: Exec}
+    - {from: 3288100023, fromPin: Then, to: 3288100024, toPin: Exec}
+    - {from: 3288100024, fromPin: result, to: 3288100025, toPin: Value}
+    - {from: 3288100024, fromPin: Then, to: 3288100025, toPin: Exec}
+    - {from: 3288100027, fromPin: Value, to: 3288100069, toPin: "True"}
+    - {from: 3288100069, fromPin: Result, to: 3288100026, toPin: Condition}
+    - {from: 3288100025, fromPin: Then, to: 3288100026, toPin: Exec}
+    - {from: 3288100026, fromPin: "False", to: 3288100028, toPin: Exec}
+    - {from: 3288100028, fromPin: result, to: 3288100029, toPin: Value}
+    - {from: 3288100028, fromPin: Then, to: 3288100029, toPin: Exec}
+    - {from: 3288100030, fromPin: Value, to: 3288100031, toPin: result}
+    - {from: 3288100029, fromPin: Then, to: 3288100031, toPin: Exec}
+    - {from: 3288100026, fromPin: "True", to: 3288100031, toPin: Exec}
+    - {from: 3288100032, fromPin: Then, to: 3288100033, toPin: Exec}
+    - {from: 3288100033, fromPin: result, to: 3288100034, toPin: Value}
+    - {from: 3288100033, fromPin: Then, to: 3288100034, toPin: Exec}
+    - {from: 3288100036, fromPin: Value, to: 3288100070, toPin: "True"}
+    - {from: 3288100070, fromPin: Result, to: 3288100035, toPin: Condition}
+    - {from: 3288100034, fromPin: Then, to: 3288100035, toPin: Exec}
+    - {from: 3288100035, fromPin: "False", to: 3288100037, toPin: Exec}
+    - {from: 3288100037, fromPin: result, to: 3288100038, toPin: Value}
+    - {from: 3288100037, fromPin: Then, to: 3288100038, toPin: Exec}
+    - {from: 3288100039, fromPin: Value, to: 3288100040, toPin: result}
+    - {from: 3288100038, fromPin: Then, to: 3288100040, toPin: Exec}
+    - {from: 3288100035, fromPin: "True", to: 3288100040, toPin: Exec}
+    - {from: 3288100041, fromPin: Then, to: 3288100042, toPin: Exec}
+    - {from: 3288100042, fromPin: result, to: 3288100043, toPin: result}
+    - {from: 3288100042, fromPin: Then, to: 3288100043, toPin: Exec}
+    - {from: 3288100044, fromPin: Then, to: 3288100045, toPin: Exec}
+    - {from: 3288100046, fromPin: dt, to: 3288100047, toPin: dt}
+    - {from: 3288100046, fromPin: Then, to: 3288100047, toPin: Exec}
+    - {from: 3288100048, fromPin: Value, to: 3288100049, toPin: A}
+    - {from: 3288100050, fromPin: Result, to: 3288100049, toPin: B}
+    - {from: 3288100049, fromPin: Result, to: 3288100051, toPin: Condition}
+    - {from: 3288100047, fromPin: Then, to: 3288100051, toPin: Exec}
+    - {from: 3288100052, fromPin: Value, to: 3288100053, toPin: A}
+    - {from: 3288100046, fromPin: dt, to: 3288100053, toPin: B}
+    - {from: 3288100053, fromPin: Result, to: 3288100054, toPin: Value}
+    - {from: 3288100051, fromPin: "True", to: 3288100054, toPin: Exec}
+    - {from: 3288100055, fromPin: Value, to: 3288100056, toPin: A}
+    - {from: 3288100056, fromPin: Result, to: 3288100057, toPin: Condition}
+    - {from: 3288100054, fromPin: Then, to: 3288100057, toPin: Exec}
+    - {from: 3288100059, fromPin: Result, to: 3288100058, toPin: Value}
+    - {from: 3288100057, fromPin: "True", to: 3288100058, toPin: Exec}
+    - {from: 3288100058, fromPin: Then, to: 3288100060, toPin: Exec}
+    - {from: 3288100062, fromPin: Value, to: 3288100061, toPin: scene_path}
+    - {from: 3288100060, fromPin: Then, to: 3288100061, toPin: Exec}
+    - {from: 3288100063, fromPin: id, to: 3288100064, toPin: id}
+    - {from: 3288100063, fromPin: verb, to: 3288100064, toPin: verb}
+    - {from: 3288100063, fromPin: item, to: 3288100064, toPin: item}
+    - {from: 3288100063, fromPin: Then, to: 3288100064, toPin: Exec}
+    - {from: 3288100064, fromPin: r1, to: 3288100065, toPin: result}
+    - {from: 3288100064, fromPin: Then, to: 3288100065, toPin: Exec}
+    - {from: 3288100068, fromPin: Then, to: 3288100067, toPin: Exec}
+    - {from: 3288100066, fromPin: Then, to: 3288100068, toPin: Exec}
+  groups:
+    - {id: 3288190000, title: refresh, position: [316, -52], size: [3720, 480], color: Teal}
+    - {id: 3288190001, title: has_moonstone, position: [316, 788], size: [2360, 480], color: Teal}
+    - {id: 3288190002, title: has_spark, position: [316, 1328], size: [2360, 480], color: Teal}
+    - {id: 3288190003, title: knows_troll, position: [316, 1868], size: [1000, 200], color: Teal}
+    - {id: 3288190004, title: on_heard_troll, position: [316, 2168], size: [660, 200], color: Red}
+    - {id: 3288190005, title: on_update, position: [316, 2768], size: [2700, 600], color: Red}
+    - {id: 3288190006, title: act, position: [316, 488], size: [1000, 200], color: Teal}
+    - {id: 3288190007, title: on_create, position: [146, 2468], size: [830, 200], color: Red}

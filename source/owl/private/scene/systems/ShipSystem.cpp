@@ -31,6 +31,8 @@ namespace {
 using Basis = std::array<math::vec3, 3>;
 
 constexpr float g_deadZone = 1e-3f;
+// A mouse step longer than this in one frame is a jump of the cursor (a capture, a warp, a focus change), not a turn.
+constexpr float g_maxMouseStep = 200.f;
 
 // The basis of the `Transform` rotation (Rz * Ry * Rx, the order of `math::Transform`).
 auto toBasis(const math::vec3& iEuler) -> Basis {
@@ -62,10 +64,16 @@ auto rotated(const math::vec3& iVector, const math::vec3& iAxisAngle) -> math::v
 	return iVector * c + (axis ^ iVector) * math::sin(angle) + axis * ((axis * iVector) * (1.f - c));
 }
 
-// Turn the body by angles about its own axes (pitch about right, yaw about up, roll about back).
-void turn(Basis& ioBasis, const math::vec3& iBodyAngles) {
-	const math::vec3 axisAngle =
-			ioBasis[0] * iBodyAngles.x() + ioBasis[1] * iBodyAngles.y() + ioBasis[2] * iBodyAngles.z();
+// Turn the body: pitch about its right, roll about its back, yaw about its up (arcade flight: the world up).
+void turn(Basis& ioBasis, const math::vec3& iBodyAngles, const float iMaxPitch) {
+	math::vec3 yawAxis = ioBasis[1];
+	float pitch = iBodyAngles.x();
+	if (iMaxPitch > 0.f) {
+		yawAxis = {0.f, 1.f, 0.f};
+		const float elevation = math::asin(std::clamp(-ioBasis[2].y(), -1.f, 1.f));
+		pitch = std::clamp(elevation + pitch, -iMaxPitch, iMaxPitch) - elevation;
+	}
+	const math::vec3 axisAngle = ioBasis[0] * pitch + yawAxis * iBodyAngles.y() + ioBasis[2] * iBodyAngles.z();
 	for (auto& axis: ioBasis) axis = rotated(axis, axisAngle);
 	// Gram-Schmidt keeps the basis orthonormal against the drift of the float rotations.
 	ioBasis[2] = ioBasis[2].normalized();
@@ -82,16 +90,39 @@ auto readMouse(component::ShipController& ioShip, const bool iCaptured, const ma
 	const math::vec2 delta = ioShip.m_mouseValid ? mouse - ioShip.m_lastMouse : math::vec2{0.f, 0.f};
 	ioShip.m_lastMouse = mouse;
 	ioShip.m_mouseValid = true;
+	if (!std::isfinite(delta.x()) || !std::isfinite(delta.y()) || delta.norm() > g_maxMouseStep)
+		return {0.f, 0.f};
 	return delta;
+}
+
+// Roll rate levelling the wings: the angle from the body up to the world up about the nose, times the level rate.
+auto levelling(const component::ShipController& iShip, const Basis& iBasis) -> float {
+	const math::vec3 back = iBasis[2];
+	const math::vec3 worldUp{0.f, 1.f, 0.f};
+	const math::vec3 wanted = worldUp - back * (worldUp * back);
+	if (wanted.norm() < 0.1f)
+		return 0.f;
+	const math::vec3 target = wanted.normalized();
+	const float error = math::atan2((iBasis[1] ^ target) * back, iBasis[1] * target);
+	return std::clamp(error * iShip.levelRate, -iShip.rollRate, iShip.rollRate);
 }
 
 void steer(component::ShipController& ioShip, Basis& ioBasis, const input::ActionFrame& iActions,
 		   const math::vec2& iMouse, const float iDt) {
+	const float pitchSign = ioShip.invertPitch ? -1.f : 1.f;
 	const math::vec2 look = iActions.getVector("look");
-	const math::vec3 wanted{-look.y() * ioShip.turnRate, -look.x() * ioShip.turnRate,
-							-iActions.getValue("ship_roll") * ioShip.rollRate};
+	const float roll = iActions.getValue("ship_roll");
+	const float pitchInput = std::clamp(look.y() * pitchSign + ioShip.m_turnInput.y(), -1.f, 1.f);
+	const float yawInput = std::clamp(look.x() + ioShip.m_turnInput.x(), -1.f, 1.f);
+	ioShip.m_turnInput = {0.f, 0.f};
+	math::vec3 wanted{-pitchInput * ioShip.turnRate, -yawInput * ioShip.turnRate, -roll * ioShip.rollRate};
+	if (ioShip.flightAssist && ioShip.levelRate > 0.f && std::abs(roll) <= g_deadZone)
+		wanted.z() = levelling(ioShip, ioBasis);
 	auto& rate = ioShip.m_angularVelocity;
-	if (ioShip.flightAssist) {
+	if (ioShip.angularResponse <= 0.f) {
+		// No rotational inertia: the rate is the command, released controls stop the turn.
+		rate = wanted;
+	} else if (ioShip.flightAssist) {
 		const float keep = math::exp(-ioShip.angularResponse * iDt);
 		rate = wanted + (rate - wanted) * keep;
 	} else {
@@ -99,25 +130,52 @@ void steer(component::ShipController& ioShip, Basis& ioBasis, const input::Actio
 		const math::vec3 limit{ioShip.turnRate, ioShip.turnRate, ioShip.rollRate};
 		for (size_t axis = 0; axis < 3; ++axis) rate[axis] = std::clamp(rate[axis], -limit[axis], limit[axis]);
 	}
-	const math::vec3 mouseTurn{-iMouse.y() * ioShip.mouseSensitivity, -iMouse.x() * ioShip.mouseSensitivity, 0.f};
-	turn(ioBasis, rate * iDt + mouseTurn);
+	const math::vec3 mouseTurn{-iMouse.y() * pitchSign * ioShip.mouseSensitivity, -iMouse.x() * ioShip.mouseSensitivity,
+							   0.f};
+	turn(ioBasis, rate * iDt + mouseTurn, ioShip.maxPitch);
+}
+
+auto isCruising(const component::ShipController& iShip) -> bool {
+	return iShip.throttleRate > 0.f && iShip.maxSpeed > 0.f;
+}
+
+// Persistent throttle: the engine (at most full thrust) or the assist dampers bring the nose speed to the command.
+void cruise(component::ShipController& ioShip, const math::vec3& iForward, const float iDt) {
+	auto& velocity = ioShip.m_velocity;
+	const float along = velocity * iForward;
+	const float wanted = ioShip.m_throttle * ioShip.maxSpeed;
+	const float step = ioShip.thrust * iDt;
+	float next = along + std::clamp(wanted - along, -step, step);
+	if (ioShip.flightAssist) {
+		const float damped = wanted + (along - wanted) * math::exp(-ioShip.assistDamping * iDt);
+		if (std::abs(damped - wanted) < std::abs(next - wanted))
+			next = damped;
+	}
+	velocity += iForward * (next - along);
 }
 
 void accelerate(component::ShipController& ioShip, const Basis& iBasis, const input::ActionFrame& iActions,
 				const float iDt) {
-	const float throttle = std::clamp(iActions.getValue("ship_thrust"), -1.f, 1.f);
+	const float input = std::clamp(iActions.getValue("ship_thrust"), -1.f, 1.f);
+	if (ioShip.throttleRate > 0.f)
+		ioShip.m_throttle = std::clamp(ioShip.m_throttle + input * ioShip.throttleRate * iDt, ioShip.minThrottle, 1.f);
+	else
+		ioShip.m_throttle = input;
+	const float throttle = ioShip.m_throttle;
+	const bool cruising = isCruising(ioShip);
 	const math::vec2 strafe = iActions.getVector("ship_strafe");
-	ioShip.m_throttle = throttle;
 	const math::vec3 forward = -iBasis[2];
 	auto& velocity = ioShip.m_velocity;
-	velocity += (forward * (throttle * ioShip.thrust) + iBasis[0] * (strafe.x() * ioShip.strafeThrust) +
-				 iBasis[1] * (strafe.y() * ioShip.strafeThrust)) *
+	velocity += (forward * (cruising ? 0.f : throttle * ioShip.thrust) +
+				 iBasis[0] * (strafe.x() * ioShip.strafeThrust) + iBasis[1] * (strafe.y() * ioShip.strafeThrust)) *
 				iDt;
+	if (cruising)
+		cruise(ioShip, forward, iDt);
 	if (ioShip.flightAssist) {
 		// The dampers remove the motion along every body axis no thruster pushes.
 		const float keep = math::exp(-ioShip.assistDamping * iDt);
 		const std::array<bool, 3> pushed{std::abs(strafe.x()) > g_deadZone, std::abs(strafe.y()) > g_deadZone,
-										 std::abs(throttle) > g_deadZone};
+										 cruising || std::abs(throttle) > g_deadZone};
 		for (size_t axis = 0; axis < 3; ++axis) {
 			if (pushed[axis])
 				continue;
@@ -169,15 +227,19 @@ void updateShips(Scene& ioScene, const SystemContext& iContext) {
 	const auto& actions = ioScene.getActions();
 	for (const auto handle: view) {
 		auto [transform, ship] = view.get<component::Transform, component::ShipController>(handle);
-		if (!ship.enabled)
+		if (!ship.enabled) {
+			ship.m_turnInput = {0.f, 0.f};
 			continue;
+		}
 		if (actions.isJustPressed("ship_assist"))
 			ship.flightAssist = !ship.flightAssist;
 		auto& pose = transform.transform;
 		// The transform holds the attitude: a script or the editor turning the entity turns the ship.
 		Basis basis = toBasis(pose.rotation());
 		steer(ship, basis, actions,
-			  readMouse(ship, cursorCaptured && ship.captureCursor, ioScene.getInputFrame().getCursor()), dt);
+			  readMouse(ship, cursorCaptured && ship.captureCursor && ship.mouseSteer,
+						ioScene.getInputFrame().getCursor()),
+			  dt);
 		pose.rotation() = toEuler(basis);
 		// The mean speed of the frame: the distance flown under thrust does not depend on the frame rate.
 		const math::vec3 startVelocity = ship.m_velocity;

@@ -1,0 +1,119 @@
+# Bridge Builder replay: once the bridge holds, REPLAY THE RUN on the result rebuilds the bodies from the design and
+# plays the same test run again, to the same end.
+scene: ../../../samples/bridge_builder/scenes/level_1.owl
+steps:
+  - frames: 10
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: X, frames: 1}
+  - frames: 1
+  - input: {key: D2, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Up, frames: 1}
+  - frames: 1
+  - input: {key: Up, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Up, frames: 1}
+  - frames: 1
+  - input: {key: Up, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: X, frames: 1}
+  - frames: 1
+  - expect: {gamestate: bridge_parts, equals: 9}
+  - expect: {gamestate: bridge_cost, less: 2600}
+  - input: {key: R, frames: 1}
+  - frames: 60
+  - expect: {gamestate: bridge_state, equals: run}
+  - expect: {gamestate: bridge_breaks, equals: 0}
+  - frames: 840
+  - expect: {gamestate: bridge_state, equals: won}
+  - expect: {gamestate: bridge_arrived, equals: 1}
+  - input: {key: Down, frames: 1}
+  - frames: 2
+  - input: {key: Enter, frames: 1}
+  - frames: 60
+  - expect: {gamestate: bridge_state, equals: run}
+  - expect: {gamestate: bridge_arrived, equals: 0}
+  - frames: 840
+  - expect: {gamestate: bridge_state, equals: won}
+  - expect: {gamestate: bridge_arrived, equals: 1}

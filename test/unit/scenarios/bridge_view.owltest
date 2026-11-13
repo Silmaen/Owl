@@ -1,0 +1,58 @@
+# Bridge Builder view, with the visual scripts built as Play in Owl Nest builds them: the camera zooms in and out
+# within its limits, pans with the right stick within reach of the gap, follows the cursor moved by the keys, and the
+# grid shows and hides (G).
+scene: ../../../samples/bridge_builder/scenes/level_1.owl
+debug_scripts: true
+steps:
+  - frames: 10
+  - expect: {entity: LevelCamera, translation.z: {equals: 24.8, tolerance: 0.01}}
+  - actions: {view_zoom: 1, frames: 30}
+  - expect: {entity: LevelCamera, translation.z: {less: 24}}
+  - actions: {view_zoom: 1, frames: 300}
+  - frames: 1
+  - expect: {gamestate: bridge_zoom, equals: 0.55, tolerance: 0.001}
+  - expect: {entity: LevelCamera, translation.z: {equals: 13.64, tolerance: 0.01}}
+  - actions: {view_pan: [1, 0], frames: 600}
+  - frames: 1
+  - expect: {entity: LevelCamera, translation.x: {greater: 8}}
+  - expect: {entity: LevelCamera, translation.x: {less: 16.5}}
+  - actions: {view_pan: [-1, 0], frames: 600}
+  - frames: 1
+  - expect: {entity: LevelCamera, translation.x: {less: 0}}
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - expect: {entity: LevelCamera, translation.x: {greater: 0}}
+  - actions: {view_zoom: -1, frames: 400}
+  - frames: 1
+  - expect: {gamestate: bridge_zoom, equals: 1.15, tolerance: 0.001}
+  - expect: {entity: GridLine, exists: false}
+  - input: {key: G, frames: 1}
+  - frames: 1
+  - expect: {gamestate: bridge_grid, equals: true}
+  - expect: {entity: GridLine, exists: true}
+  - input: {key: G, frames: 1}
+  - frames: 1
+  - expect: {gamestate: bridge_grid, equals: false}
+  - expect: {entity: GridLine, exists: false}

@@ -1,0 +1,583 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: sweep_color, type: color, default: "0, 0.05, 0.14, 1"}
+    - {name: leaving, type: bool, default: "false", exposed: false}
+    - {name: window_id, type: entity, default: "0", exposed: false}
+    - {name: back_id, type: entity, default: "0", exposed: false}
+    - {name: how_to_id, type: entity, default: "0", exposed: false}
+    - {name: best, type: float, default: "0", exposed: false}
+    - {name: medal, type: float, default: "0", exposed: false}
+    - {name: best_id, type: entity, default: "0", exposed: false}
+    - {name: medal_id, type: entity, default: "0", exposed: false}
+  functions:
+    - name: leave
+      inputs: [{name: path, type: any}, {name: jingle, type: any}]
+      outputs: []
+    - name: on_how_to_closed
+      inputs: []
+      outputs: []
+      exported: true
+  nodes:
+    - id: 9442300001
+      type: func.entry
+      position: [340, 0]
+      values:
+        function: leave
+    - id: 9442300002
+      type: var.get
+      position: [170, 160]
+      values:
+        variable: leaving
+    - id: 9442300003
+      type: flow.branch
+      position: [680, 0]
+    - id: 9442300004
+      type: func.return
+      position: [1020, 0]
+      values:
+        function: leave
+    - id: 9442300005
+      type: var.set
+      position: [1360, 0]
+      values:
+        variable: leaving
+        Value: "true"
+    - id: 9442300006
+      type: flow.branch
+      position: [1700, 0]
+    - id: 9442300007
+      type: call.sound.play
+      position: [2040, 0]
+      values:
+        asset_path: sounds/ui/start.wav
+    - id: 9442300008
+      type: call.scene.transition_to
+      position: [2380, 0]
+      values:
+        split.rgba: "true"
+        kind: wipe_right
+        duration: "0.45"
+    - id: 9442300009
+      type: var.get
+      position: [2210, 160]
+      values:
+        variable: sweep_color
+    - id: 9442300010
+      type: math.break_color
+      position: [2210, 280]
+    - id: 9442300011
+      type: var.get
+      position: [2210, 400]
+      values:
+        variable: sweep_color
+    - id: 9442300012
+      type: math.break_color
+      position: [2210, 520]
+    - id: 9442300013
+      type: var.get
+      position: [2210, 640]
+      values:
+        variable: sweep_color
+    - id: 9442300014
+      type: math.break_color
+      position: [2210, 760]
+    - id: 9442300015
+      type: event.on_create
+      position: [340, 1020]
+    - id: 9442300016
+      type: call.ui.is_transition_active
+      position: [170, 1180]
+    - id: 9442300017
+      type: logic.not
+      position: [170, 1300]
+    - id: 9442300018
+      type: flow.branch
+      position: [680, 1020]
+    - id: 9442300019
+      type: call.ui.transition_play
+      position: [1020, 1020]
+      values:
+        split.rgba: "true"
+        kind: wipe_right
+        duration: "0.5"
+    - id: 9442300020
+      type: var.get
+      position: [850, 1180]
+      values:
+        variable: sweep_color
+    - id: 9442300021
+      type: math.break_color
+      position: [850, 1300]
+    - id: 9442300022
+      type: var.get
+      position: [850, 1420]
+      values:
+        variable: sweep_color
+    - id: 9442300023
+      type: math.break_color
+      position: [850, 1540]
+    - id: 9442300024
+      type: var.get
+      position: [850, 1660]
+      values:
+        variable: sweep_color
+    - id: 9442300025
+      type: math.break_color
+      position: [850, 1780]
+    - id: 9442300026
+      type: call.scene.find_entity
+      position: [850, 1900]
+      values:
+        name: HowToWindow
+    - id: 9442300027
+      type: var.set
+      position: [1360, 1020]
+      values:
+        variable: window_id
+    - id: 9442300028
+      type: call.scene.find_entity
+      position: [1190, 1180]
+      values:
+        name: HowToBackButton
+    - id: 9442300029
+      type: var.set
+      position: [1700, 1020]
+      values:
+        variable: back_id
+    - id: 9442300030
+      type: call.scene.find_entity
+      position: [1530, 1180]
+      values:
+        name: HowToButton
+    - id: 9442300031
+      type: var.set
+      position: [2040, 1020]
+      values:
+        variable: how_to_id
+    - id: 9442300032
+      type: call.settings.get
+      position: [2380, 1020]
+      values:
+        key: rail_best
+        default: "0"
+    - id: 9442300033
+      type: var.set
+      position: [2720, 1020]
+      values:
+        variable: best
+    - id: 9442300034
+      type: call.settings.get
+      position: [3060, 1020]
+      values:
+        key: rail_best_medal
+        default: "0"
+    - id: 9442300035
+      type: var.set
+      position: [3400, 1020]
+      values:
+        variable: medal
+    - id: 9442300036
+      type: call.gamestate.set
+      position: [3740, 1020]
+      values:
+        key: rail_title_best
+    - id: 9442300037
+      type: var.get
+      position: [3570, 1180]
+      values:
+        variable: best
+    - id: 9442300038
+      type: call.scene.find_entity
+      position: [3570, 1300]
+      values:
+        name: BestText
+    - id: 9442300039
+      type: var.set
+      position: [4080, 1020]
+      values:
+        variable: best_id
+    - id: 9442300040
+      type: var.get
+      position: [3910, 1180]
+      values:
+        variable: best_id
+    - id: 9442300041
+      type: compare.not_equal
+      position: [3910, 1300]
+      values:
+        B: "0"
+    - id: 9442300042
+      type: flow.branch
+      position: [4420, 1020]
+    - id: 9442300043
+      type: call.ui.set_text
+      position: [4760, 1020]
+    - id: 9442300044
+      type: var.get
+      position: [4590, 1180]
+      values:
+        variable: best_id
+    - id: 9442300045
+      type: var.get
+      position: [4590, 1300]
+      values:
+        variable: best
+    - id: 9442300046
+      type: compare.greater
+      position: [4590, 1420]
+      values:
+        B: "0"
+    - id: 9442300047
+      type: var.get
+      position: [4590, 1540]
+      values:
+        variable: best
+    - id: 9442300048
+      type: text.format
+      position: [4590, 1660]
+      values:
+        Format: "BEST %06d"
+    - id: 9442300049
+      type: logic.select
+      position: [4590, 1780]
+      values:
+        "False": NO FLIGHT YET
+    - id: 9442300050
+      type: call.scene.find_entity
+      position: [4590, 1900]
+      values:
+        name: BestMedal
+    - id: 9442300051
+      type: var.set
+      position: [5100, 1020]
+      values:
+        variable: medal_id
+    - id: 9442300052
+      type: var.get
+      position: [4930, 1180]
+      values:
+        variable: medal_id
+    - id: 9442300053
+      type: compare.not_equal
+      position: [4930, 1300]
+      values:
+        B: "0"
+    - id: 9442300054
+      type: flow.branch
+      position: [5440, 1020]
+    - id: 9442300055
+      type: call.ui.set_image_frame
+      position: [5780, 1020]
+    - id: 9442300056
+      type: var.get
+      position: [5610, 1180]
+      values:
+        variable: medal_id
+    - id: 9442300057
+      type: var.get
+      position: [5610, 1300]
+      values:
+        variable: medal
+    - id: 9442300058
+      type: call.ui.set_visible
+      position: [6120, 1020]
+    - id: 9442300059
+      type: var.get
+      position: [5950, 1180]
+      values:
+        variable: medal_id
+    - id: 9442300060
+      type: var.get
+      position: [5950, 1300]
+      values:
+        variable: medal
+    - id: 9442300061
+      type: compare.greater
+      position: [5950, 1420]
+      values:
+        B: "0"
+    - id: 9442300062
+      type: call.gamestate.set
+      position: [6460, 1020]
+      values:
+        key: rail_how_to
+        value: "false"
+    - id: 9442300063
+      type: event.on_update
+      position: [340, 2160]
+    - id: 9442300064
+      type: call.gamestate.get
+      position: [680, 2160]
+      values:
+        key: rail_how_to
+        default: "false"
+    - id: 9442300065
+      type: call.input.is_action_just_pressed
+      position: [510, 2320]
+      values:
+        action: ui_cancel
+    - id: 9442300066
+      type: logic.and
+      position: [510, 2440]
+    - id: 9442300067
+      type: flow.branch
+      position: [1020, 2160]
+    - id: 9442300068
+      type: func.call
+      position: [1360, 2160]
+      values:
+        function: on_how_to_closed
+    - id: 9442300069
+      type: event.custom
+      position: [340, 2700]
+      values:
+        function: on_play_clicked
+    - id: 9442300070
+      type: call.gamestate.clear
+      position: [680, 2700]
+    - id: 9442300071
+      type: func.call
+      position: [1020, 2700]
+      values:
+        function: leave
+        path: scenes/level.owl
+        jingle: "true"
+    - id: 9442300072
+      type: event.custom
+      position: [340, 3000]
+      values:
+        function: on_how_to_clicked
+    - id: 9442300073
+      type: var.get
+      position: [170, 3160]
+      values:
+        variable: leaving
+    - id: 9442300074
+      type: var.get
+      position: [170, 3280]
+      values:
+        variable: window_id
+    - id: 9442300075
+      type: compare.equal
+      position: [170, 3400]
+      values:
+        B: "0"
+    - id: 9442300076
+      type: logic.or
+      position: [170, 3520]
+    - id: 9442300077
+      type: flow.branch
+      position: [680, 3000]
+    - id: 9442300078
+      type: call.ui.set_visible
+      position: [1020, 3000]
+      values:
+        visible: "true"
+    - id: 9442300079
+      type: var.get
+      position: [850, 3160]
+      values:
+        variable: window_id
+    - id: 9442300080
+      type: call.ui.raise_window
+      position: [1360, 3000]
+    - id: 9442300081
+      type: var.get
+      position: [1190, 3160]
+      values:
+        variable: window_id
+    - id: 9442300082
+      type: call.ui.set_focus
+      position: [1700, 3000]
+    - id: 9442300083
+      type: var.get
+      position: [1530, 3160]
+      values:
+        variable: back_id
+    - id: 9442300084
+      type: call.gamestate.set
+      position: [2040, 3000]
+      values:
+        key: rail_how_to
+        value: "true"
+    - id: 9442300085
+      type: func.entry
+      position: [340, 3780]
+      values:
+        function: on_how_to_closed
+    - id: 9442300086
+      type: var.get
+      position: [170, 3940]
+      values:
+        variable: window_id
+    - id: 9442300087
+      type: compare.equal
+      position: [170, 4060]
+      values:
+        B: "0"
+    - id: 9442300088
+      type: flow.branch
+      position: [680, 3780]
+    - id: 9442300089
+      type: func.return
+      position: [1020, 3780]
+      values:
+        function: on_how_to_closed
+    - id: 9442300090
+      type: call.ui.set_visible
+      position: [1360, 3780]
+      values:
+        visible: "false"
+    - id: 9442300091
+      type: var.get
+      position: [1190, 3940]
+      values:
+        variable: window_id
+    - id: 9442300092
+      type: call.ui.set_focus
+      position: [1700, 3780]
+    - id: 9442300093
+      type: var.get
+      position: [1530, 3940]
+      values:
+        variable: how_to_id
+    - id: 9442300094
+      type: call.gamestate.set
+      position: [2040, 3780]
+      values:
+        key: rail_how_to
+        value: "false"
+    - id: 9442300095
+      type: event.custom
+      position: [340, 4320]
+      values:
+        function: on_settings_clicked
+    - id: 9442300096
+      type: func.call
+      position: [680, 4320]
+      values:
+        function: leave
+        path: scenes/settings.owl
+        jingle: "false"
+    - id: 9442300097
+      type: event.custom
+      position: [340, 4620]
+      values:
+        function: on_quit_clicked
+    - id: 9442300098
+      type: call.scene.quit
+      position: [680, 4620]
+    - id: 9442300099
+      type: math.floor
+      position: [5610, 1420]
+  links:
+    - {from: 9442300002, fromPin: Value, to: 9442300003, toPin: Condition}
+    - {from: 9442300001, fromPin: Then, to: 9442300003, toPin: Exec}
+    - {from: 9442300003, fromPin: "True", to: 9442300004, toPin: Exec}
+    - {from: 9442300003, fromPin: "False", to: 9442300005, toPin: Exec}
+    - {from: 9442300001, fromPin: jingle, to: 9442300006, toPin: Condition}
+    - {from: 9442300005, fromPin: Then, to: 9442300006, toPin: Exec}
+    - {from: 9442300006, fromPin: "True", to: 9442300007, toPin: Exec}
+    - {from: 9442300001, fromPin: path, to: 9442300008, toPin: scene_path}
+    - {from: 9442300009, fromPin: Value, to: 9442300010, toPin: Value}
+    - {from: 9442300010, fromPin: R, to: 9442300008, toPin: r}
+    - {from: 9442300011, fromPin: Value, to: 9442300012, toPin: Value}
+    - {from: 9442300012, fromPin: G, to: 9442300008, toPin: g}
+    - {from: 9442300013, fromPin: Value, to: 9442300014, toPin: Value}
+    - {from: 9442300014, fromPin: B, to: 9442300008, toPin: b}
+    - {from: 9442300007, fromPin: Then, to: 9442300008, toPin: Exec}
+    - {from: 9442300006, fromPin: "False", to: 9442300008, toPin: Exec}
+    - {from: 9442300016, fromPin: active, to: 9442300017, toPin: A}
+    - {from: 9442300017, fromPin: Result, to: 9442300018, toPin: Condition}
+    - {from: 9442300015, fromPin: Then, to: 9442300018, toPin: Exec}
+    - {from: 9442300020, fromPin: Value, to: 9442300021, toPin: Value}
+    - {from: 9442300021, fromPin: R, to: 9442300019, toPin: r}
+    - {from: 9442300022, fromPin: Value, to: 9442300023, toPin: Value}
+    - {from: 9442300023, fromPin: G, to: 9442300019, toPin: g}
+    - {from: 9442300024, fromPin: Value, to: 9442300025, toPin: Value}
+    - {from: 9442300025, fromPin: B, to: 9442300019, toPin: b}
+    - {from: 9442300018, fromPin: "True", to: 9442300019, toPin: Exec}
+    - {from: 9442300026, fromPin: entity_id, to: 9442300027, toPin: Value}
+    - {from: 9442300019, fromPin: Then, to: 9442300027, toPin: Exec}
+    - {from: 9442300018, fromPin: "False", to: 9442300027, toPin: Exec}
+    - {from: 9442300028, fromPin: entity_id, to: 9442300029, toPin: Value}
+    - {from: 9442300027, fromPin: Then, to: 9442300029, toPin: Exec}
+    - {from: 9442300030, fromPin: entity_id, to: 9442300031, toPin: Value}
+    - {from: 9442300029, fromPin: Then, to: 9442300031, toPin: Exec}
+    - {from: 9442300031, fromPin: Then, to: 9442300032, toPin: Exec}
+    - {from: 9442300032, fromPin: value, to: 9442300033, toPin: Value}
+    - {from: 9442300032, fromPin: Then, to: 9442300033, toPin: Exec}
+    - {from: 9442300033, fromPin: Then, to: 9442300034, toPin: Exec}
+    - {from: 9442300034, fromPin: value, to: 9442300035, toPin: Value}
+    - {from: 9442300034, fromPin: Then, to: 9442300035, toPin: Exec}
+    - {from: 9442300037, fromPin: Value, to: 9442300036, toPin: value}
+    - {from: 9442300035, fromPin: Then, to: 9442300036, toPin: Exec}
+    - {from: 9442300038, fromPin: entity_id, to: 9442300039, toPin: Value}
+    - {from: 9442300036, fromPin: Then, to: 9442300039, toPin: Exec}
+    - {from: 9442300040, fromPin: Value, to: 9442300041, toPin: A}
+    - {from: 9442300041, fromPin: Result, to: 9442300042, toPin: Condition}
+    - {from: 9442300039, fromPin: Then, to: 9442300042, toPin: Exec}
+    - {from: 9442300044, fromPin: Value, to: 9442300043, toPin: entity_id}
+    - {from: 9442300045, fromPin: Value, to: 9442300046, toPin: A}
+    - {from: 9442300047, fromPin: Value, to: 9442300048, toPin: A}
+    - {from: 9442300046, fromPin: Result, to: 9442300049, toPin: Condition}
+    - {from: 9442300048, fromPin: Result, to: 9442300049, toPin: "True"}
+    - {from: 9442300049, fromPin: Result, to: 9442300043, toPin: text}
+    - {from: 9442300042, fromPin: "True", to: 9442300043, toPin: Exec}
+    - {from: 9442300050, fromPin: entity_id, to: 9442300051, toPin: Value}
+    - {from: 9442300043, fromPin: Then, to: 9442300051, toPin: Exec}
+    - {from: 9442300042, fromPin: "False", to: 9442300051, toPin: Exec}
+    - {from: 9442300052, fromPin: Value, to: 9442300053, toPin: A}
+    - {from: 9442300053, fromPin: Result, to: 9442300054, toPin: Condition}
+    - {from: 9442300051, fromPin: Then, to: 9442300054, toPin: Exec}
+    - {from: 9442300056, fromPin: Value, to: 9442300055, toPin: entity_id}
+    - {from: 9442300057, fromPin: Value, to: 9442300099, toPin: A}
+    - {from: 9442300099, fromPin: Result, to: 9442300055, toPin: frame}
+    - {from: 9442300054, fromPin: "True", to: 9442300055, toPin: Exec}
+    - {from: 9442300059, fromPin: Value, to: 9442300058, toPin: entity_id}
+    - {from: 9442300060, fromPin: Value, to: 9442300061, toPin: A}
+    - {from: 9442300061, fromPin: Result, to: 9442300058, toPin: visible}
+    - {from: 9442300055, fromPin: Then, to: 9442300058, toPin: Exec}
+    - {from: 9442300058, fromPin: Then, to: 9442300062, toPin: Exec}
+    - {from: 9442300054, fromPin: "False", to: 9442300062, toPin: Exec}
+    - {from: 9442300063, fromPin: Then, to: 9442300064, toPin: Exec}
+    - {from: 9442300064, fromPin: value, to: 9442300066, toPin: A}
+    - {from: 9442300065, fromPin: pressed, to: 9442300066, toPin: B}
+    - {from: 9442300066, fromPin: Result, to: 9442300067, toPin: Condition}
+    - {from: 9442300064, fromPin: Then, to: 9442300067, toPin: Exec}
+    - {from: 9442300067, fromPin: "True", to: 9442300068, toPin: Exec}
+    - {from: 9442300069, fromPin: Then, to: 9442300070, toPin: Exec}
+    - {from: 9442300070, fromPin: Then, to: 9442300071, toPin: Exec}
+    - {from: 9442300074, fromPin: Value, to: 9442300075, toPin: A}
+    - {from: 9442300073, fromPin: Value, to: 9442300076, toPin: A}
+    - {from: 9442300075, fromPin: Result, to: 9442300076, toPin: B}
+    - {from: 9442300076, fromPin: Result, to: 9442300077, toPin: Condition}
+    - {from: 9442300072, fromPin: Then, to: 9442300077, toPin: Exec}
+    - {from: 9442300079, fromPin: Value, to: 9442300078, toPin: entity_id}
+    - {from: 9442300077, fromPin: "False", to: 9442300078, toPin: Exec}
+    - {from: 9442300081, fromPin: Value, to: 9442300080, toPin: entity_id}
+    - {from: 9442300078, fromPin: Then, to: 9442300080, toPin: Exec}
+    - {from: 9442300083, fromPin: Value, to: 9442300082, toPin: entity_id}
+    - {from: 9442300080, fromPin: Then, to: 9442300082, toPin: Exec}
+    - {from: 9442300082, fromPin: Then, to: 9442300084, toPin: Exec}
+    - {from: 9442300086, fromPin: Value, to: 9442300087, toPin: A}
+    - {from: 9442300087, fromPin: Result, to: 9442300088, toPin: Condition}
+    - {from: 9442300085, fromPin: Then, to: 9442300088, toPin: Exec}
+    - {from: 9442300088, fromPin: "True", to: 9442300089, toPin: Exec}
+    - {from: 9442300091, fromPin: Value, to: 9442300090, toPin: entity_id}
+    - {from: 9442300088, fromPin: "False", to: 9442300090, toPin: Exec}
+    - {from: 9442300093, fromPin: Value, to: 9442300092, toPin: entity_id}
+    - {from: 9442300090, fromPin: Then, to: 9442300092, toPin: Exec}
+    - {from: 9442300092, fromPin: Then, to: 9442300094, toPin: Exec}
+    - {from: 9442300095, fromPin: Then, to: 9442300096, toPin: Exec}
+    - {from: 9442300097, fromPin: Then, to: 9442300098, toPin: Exec}
+  groups:
+    - {id: 9442390000, title: leave, position: [146, -52], size: [2530, 960], color: Teal}
+    - {id: 9442390001, title: on_create, position: [146, 968], size: [6610, 1080], color: Red}
+    - {id: 9442390002, title: on_update, position: [316, 2108], size: [1340, 480], color: Red}
+    - {id: 9442390003, title: on_play_clicked, position: [316, 2648], size: [1000, 200], color: Red}
+    - {id: 9442390004, title: on_how_to_clicked, position: [146, 2948], size: [2190, 720], color: Red}
+    - {id: 9442390005, title: on_how_to_closed, position: [146, 3728], size: [2190, 480], color: Red}
+    - {id: 9442390006, title: on_settings_clicked, position: [316, 4268], size: [660, 200], color: Red}
+    - {id: 9442390007, title: on_quit_clicked, position: [316, 4568], size: [660, 200], color: Red}

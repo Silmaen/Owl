@@ -1,6 +1,6 @@
 FormatVersion: 1
 # Actions of Sokoban, on top of the built-in ones (the `ui_*` actions drive the menus). One step per press of a
-# `step_*` action; `step_stick` reads the left stick as four directions (scripts/game/sokoban.lua).
+# `step_*` action; `step_stick` reads the left stick as four directions (scripts/game/sokoban.owlvs).
 actions:
   - name: step_left
     type: button

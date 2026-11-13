@@ -1,0 +1,522 @@
+Scene: room_2
+FormatVersion: 7
+Hud: gid:dd713d4ba74b32fc:huds/play.owlhud
+SceneScript:
+  scriptPath: gid:685f1850b11c16d3:scripts/game/room.owlvs
+  properties:
+    - name: room
+      type: int
+      value: 2
+    - name: room_name
+      type: string
+      value: THE SLIME PIT
+    - name: this_scene
+      type: string
+      value: scenes/room_2.owl
+    - name: door_rule
+      type: string
+      value: none
+    - name: braziers
+      type: int
+      value: 1
+    - name: end_scene
+      type: string
+      value: scenes/victory.owl
+EnabledRenderers:
+  - {Name: world, Enabled: true}
+  - {Name: ui, Enabled: false}
+Physics:
+  solverSubSteps: 1
+  interpolate: true
+  workerCount: 0
+  gravity: [0, 0, 0]
+Entities:
+  - Entity: 7700000000000020001
+    Tag:
+      tag: RoomCamera
+    Transform:
+      translation: [0, -0.6, 5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Camera:
+      camera:
+        projectionType: Orthographic
+        perspectiveFOV: 0.7853982
+        perspectiveNear: 0.01
+        perspectiveFar: 1000
+        orthographicSize: 11
+        orthographicNear: -1
+        orthographicFar: 10
+      primary: true
+      fixedAspectRatio: false
+  - Entity: 7700000000000020002
+    Tag:
+      tag: Background
+    Transform:
+      translation: [0, 0, -1]
+      rotation: [0, 0, 0]
+      scale: [40, 26, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    BackgroundTexture:
+      mode: 0
+      type: 0
+      color: [0.08, 0.05, 0.07, 1]
+      topColor: [0.8, 0.9, 1, 1]
+  - Entity: 7700000000000020003
+    Tag:
+      tag: Room
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Tilemap:
+      tilemapPath: gid:f091ab4069a97f19:tilemaps/room_2.owltilemap
+  - Entity: 7700000000000020004
+    Tag:
+      tag: Ambient
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Light2D: {type: Ambient, enabled: true, color: [0.85, 0.8, 1], intensity: 0.72, radius: 5, falloff: 2, height: 1, castShadows: false}
+  - Entity: 7700000000000020005
+    Tag:
+      tag: Torch
+    Transform:
+      translation: [-6, 3, 0.05]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Light2D: {type: Point, enabled: true, color: [1, 0.65, 0.3], intensity: 1.4, radius: 4.5, falloff: 2, height: 1, castShadows: false}
+  - Entity: 7700000000000020006
+    Tag:
+      tag: Chest
+    Transform:
+      translation: [0, 3, 0.05]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: gid:007111dca97df923:textures/tiles/dungeon.png
+      columns: 12
+      rows: 11
+      firstFrame: 89
+      lastFrame: 89
+      frameDuration: 0.1
+      loop: false
+    PhysicBody:
+      type: Static
+      shape: Box
+      fixedRotation: true
+      colliderSize: [0.9, 0.8, 1]
+      density: 1
+      restitution: 0
+      friction: 0
+      gravityScale: 0
+  - Entity: 7700000000000020007
+    Tag:
+      tag: Torch
+    Transform:
+      translation: [6, 3, 0.05]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Light2D: {type: Point, enabled: true, color: [1, 0.65, 0.3], intensity: 1.4, radius: 4.5, falloff: 2, height: 1, castShadows: false}
+  - Entity: 7700000000000020008
+    Tag:
+      tag: Slime1
+    Transform:
+      translation: [-4, 1, 0.05]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: gid:007111dca97df923:textures/tiles/dungeon.png
+      columns: 12
+      rows: 11
+      firstFrame: 108
+      lastFrame: 108
+      frameDuration: 0.1
+      loop: false
+    PhysicBody:
+      type: Kinematic
+      shape: Sphere
+      fixedRotation: true
+      colliderSize: [0.7, 0.7, 1]
+      density: 1
+      restitution: 0
+      friction: 0
+      gravityScale: 0
+      layer: 2
+      mask: 255
+    SteeringAgent:
+      enabled: true
+      plane: Plane2D
+      maxSpeed: 1.8
+      maxAcceleration: 14
+      radius: 0.4
+      turn: false
+      target: 0
+      targetPoint: [0, 0, 0]
+      weights: {seek: 0, flee: 0, arrive: 0, pursue: 0, evade: 0, wander: 1, separation: 1, alignment: 0, cohesion: 0, avoidance: 1, formation: 0}
+      slowRadius: 0.5
+      panicDistance: 0
+      prediction: 0.5
+      wander: {radius: 1, distance: 1.5, jitter: 3}
+      flock: ''
+      neighbourRadius: 2
+      separationDistance: 0.8
+      lookAhead: 1
+      leader: 0
+      slot: [0, 0, -2]
+    BehaviourTreeAgent:
+      enabled: true
+      tree: scripts/game/creature.owlbt
+      overrides: []
+    LuaScript:
+      scriptPath: gid:1356efa292e99187:scripts/game/creature.owlvs
+      properties:
+        - name: hits
+          type: float
+          value: 2.0
+  - Entity: 7700000000000020009
+    Tag:
+      tag: Slime2
+    Transform:
+      translation: [4, 1, 0.05]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: gid:007111dca97df923:textures/tiles/dungeon.png
+      columns: 12
+      rows: 11
+      firstFrame: 108
+      lastFrame: 108
+      frameDuration: 0.1
+      loop: false
+    PhysicBody:
+      type: Kinematic
+      shape: Sphere
+      fixedRotation: true
+      colliderSize: [0.7, 0.7, 1]
+      density: 1
+      restitution: 0
+      friction: 0
+      gravityScale: 0
+      layer: 2
+      mask: 255
+    SteeringAgent:
+      enabled: true
+      plane: Plane2D
+      maxSpeed: 1.8
+      maxAcceleration: 14
+      radius: 0.4
+      turn: false
+      target: 0
+      targetPoint: [0, 0, 0]
+      weights: {seek: 0, flee: 0, arrive: 0, pursue: 0, evade: 0, wander: 1, separation: 1, alignment: 0, cohesion: 0, avoidance: 1, formation: 0}
+      slowRadius: 0.5
+      panicDistance: 0
+      prediction: 0.5
+      wander: {radius: 1, distance: 1.5, jitter: 3}
+      flock: ''
+      neighbourRadius: 2
+      separationDistance: 0.8
+      lookAhead: 1
+      leader: 0
+      slot: [0, 0, -2]
+    BehaviourTreeAgent:
+      enabled: true
+      tree: scripts/game/creature.owlbt
+      overrides: []
+    LuaScript:
+      scriptPath: gid:1356efa292e99187:scripts/game/creature.owlvs
+      properties:
+        - name: hits
+          type: float
+          value: 2.0
+  - Entity: 7700000000000020010
+    Tag:
+      tag: Slime3
+    Transform:
+      translation: [0, -1, 0.05]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: gid:007111dca97df923:textures/tiles/dungeon.png
+      columns: 12
+      rows: 11
+      firstFrame: 108
+      lastFrame: 108
+      frameDuration: 0.1
+      loop: false
+    PhysicBody:
+      type: Kinematic
+      shape: Sphere
+      fixedRotation: true
+      colliderSize: [0.7, 0.7, 1]
+      density: 1
+      restitution: 0
+      friction: 0
+      gravityScale: 0
+      layer: 2
+      mask: 255
+    SteeringAgent:
+      enabled: true
+      plane: Plane2D
+      maxSpeed: 1.8
+      maxAcceleration: 14
+      radius: 0.4
+      turn: false
+      target: 0
+      targetPoint: [0, 0, 0]
+      weights: {seek: 0, flee: 0, arrive: 0, pursue: 0, evade: 0, wander: 1, separation: 1, alignment: 0, cohesion: 0, avoidance: 1, formation: 0}
+      slowRadius: 0.5
+      panicDistance: 0
+      prediction: 0.5
+      wander: {radius: 1, distance: 1.5, jitter: 3}
+      flock: ''
+      neighbourRadius: 2
+      separationDistance: 0.8
+      lookAhead: 1
+      leader: 0
+      slot: [0, 0, -2]
+    BehaviourTreeAgent:
+      enabled: true
+      tree: scripts/game/creature.owlbt
+      overrides: []
+    LuaScript:
+      scriptPath: gid:1356efa292e99187:scripts/game/creature.owlvs
+      properties:
+        - name: hits
+          type: float
+          value: 2.0
+  - Entity: 7700000000000020011
+    Tag:
+      tag: Torch
+    Transform:
+      translation: [-6, -3, 0.05]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Light2D: {type: Point, enabled: true, color: [1, 0.65, 0.3], intensity: 1.4, radius: 4.5, falloff: 2, height: 1, castShadows: false}
+  - Entity: 7700000000000020012
+    Tag:
+      tag: Torch
+    Transform:
+      translation: [6, -3, 0.05]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Light2D: {type: Point, enabled: true, color: [1, 0.65, 0.3], intensity: 1.4, radius: 4.5, falloff: 2, height: 1, castShadows: false}
+  - Entity: 7700000000000020013
+    Tag:
+      tag: ExitS
+    Transform:
+      translation: [0, -4, 0.05]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    PhysicBody:
+      type: Static
+      shape: Box
+      fixedRotation: true
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0
+      gravityScale: 0
+      sensor: true
+      layer: 3
+      mask: 255
+    LuaScript:
+      scriptPath: gid:a52876968871c6fd:scripts/game/exit.owlvs
+      properties:
+        - name: target_scene
+          type: string
+          value: scenes/room_1.owl
+        - name: entry
+          type: string
+          value: SpawnN
+  - Entity: 7700000000000020014
+    Tag:
+      tag: SpawnN
+    Transform:
+      translation: [0, 3, 0.1]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+  - Entity: 7700000000000020015
+    Tag:
+      tag: SpawnS
+    Transform:
+      translation: [0, -3, 0.1]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+  - Entity: 7700000000000020016
+    Tag:
+      tag: SpawnE
+    Transform:
+      translation: [6, 0, 0.1]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+  - Entity: 7700000000000020017
+    Tag:
+      tag: SpawnW
+    Transform:
+      translation: [-6, 0, 0.1]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+  - Entity: 7700000000000020018
+    Tag:
+      tag: SpawnStart
+    Transform:
+      translation: [0, -2, 0.1]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+  - Entity: 7700000000000020019
+    Tag:
+      tag: Player
+    Transform:
+      translation: [0, -2, 0.1]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: gid:a4944d5973cab170:textures/fx/hero.png
+      columns: 4
+      rows: 1
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 0.1
+      loop: false
+    PhysicBody:
+      type: Dynamic
+      shape: Sphere
+      fixedRotation: true
+      colliderSize: [0.72, 0.72, 1]
+      density: 1
+      restitution: 0
+      friction: 0
+      gravityScale: 0
+      layer: 1
+      mask: 255
+    LuaScript:
+      scriptPath: gid:b3131b548ae9a4e6:scripts/game/player.owlvs
+  - Entity: 7700000000000020020
+    Tag:
+      tag: PlayerLight
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7700000000000020019
+    Light2D: {type: Point, enabled: true, color: [1, 0.85, 0.6], intensity: 0.5, radius: 2.5, falloff: 2, height: 1, castShadows: false}
+  - Entity: 7700000000000020021
+    Tag:
+      tag: Slash
+    Transform:
+      translation: [0.8, 0, 0.1]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: gid:042798d33981c888:textures/fx/slash.png
+  - Entity: 7700000000000020022
+    Tag:
+      tag: Blade
+    Transform:
+      translation: [0.6, 0, 0.25]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: gid:007111dca97df923:textures/tiles/dungeon.png
+      columns: 12
+      rows: 11
+      firstFrame: 104
+      lastFrame: 104
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7700000000000020024
+    Tag:
+      tag: RoomMusic
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SoundSource:
+      soundAsset: gid:3f5c3c4ce8029cb0:sounds/music/shrine.wav
+      category: Music
+      volume: 0.45
+      pitch: 1
+      loop: true
+      spatial: false
+      playOnStart: true
+      maxDistance: 50
+      rolloff: 1

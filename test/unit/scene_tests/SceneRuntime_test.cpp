@@ -77,6 +77,21 @@ TEST_F(SceneRuntimeTest, SoundListenerAndSourceOnStart) {
 	scn.onEndRuntime();
 }
 
+// A spawned SoundSource asks to play when the sound system runs; without it (or without the asset) nothing plays.
+TEST_F(SceneRuntimeTest, SpawnedSoundSourceStartsSafely) {
+	scene::Scene scn;
+	scn.onStartRuntime();
+	auto source = scn.createEntity("spawned");
+	auto& [snd] = source.addComponent<scene::component::SoundSource>();
+	snd.playOnStart = true;
+	snd.spatial = true;
+	snd.soundAsset = "missing.wav";
+	scn.startSpawnedSubtree(source);
+	scn.onUpdateRuntime(makeStep(16), false);
+	EXPECT_EQ(source.getComponent<scene::component::SoundSource>().sound.runtimeHandle, sound::invalidSoundHandle);
+	scn.onEndRuntime();
+}
+
 // SoundSource with empty asset is silently skipped at startup.
 TEST_F(SceneRuntimeTest, SoundSourceEmptyAssetSkipped) {
 	scene::Scene scn;

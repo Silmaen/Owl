@@ -62,12 +62,12 @@ Entities:
       gameVisible: true
     Hierarchy: {}
     LuaScript:
-      scriptPath: gid:f8c55a7c027a7f22:scripts/ui/neon_bricks.lua
+      scriptPath: gid:f8c55a7c027a7f22:scripts/ui/neon_bricks.owlvs
   - Entity: 7200000000000000005
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-18.4, 5.9, 0]
+      translation: [-18.4, 2.6, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -82,7 +82,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-16.8, 5.9, 0]
+      translation: [-16.8, 2.6, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -97,7 +97,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-15.2, 5.9, 0]
+      translation: [-15.2, 2.6, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -112,7 +112,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-13.6, 5.9, 0]
+      translation: [-13.6, 2.6, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -127,7 +127,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-12, 5.9, 0]
+      translation: [-12, 2.6, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -142,7 +142,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-10.4, 5.9, 0]
+      translation: [-10.4, 2.6, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -157,7 +157,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-8.8, 5.9, 0]
+      translation: [-8.8, 2.6, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -172,7 +172,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-7.2, 5.9, 0]
+      translation: [-7.2, 2.6, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -187,7 +187,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-5.6, 5.9, 0]
+      translation: [-5.6, 2.6, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -202,7 +202,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-4, 5.9, 0]
+      translation: [-4, 2.6, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -217,7 +217,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-2.4, 5.9, 0]
+      translation: [-2.4, 2.6, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -232,7 +232,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-0.8, 5.9, 0]
+      translation: [-0.8, 2.6, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -247,7 +247,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [0.8, 5.9, 0]
+      translation: [0.8, 2.6, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -262,7 +262,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [2.4, 5.9, 0]
+      translation: [2.4, 2.6, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -277,7 +277,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [4, 5.9, 0]
+      translation: [4, 2.6, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -292,7 +292,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [5.6, 5.9, 0]
+      translation: [5.6, 2.6, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -307,7 +307,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [7.2, 5.9, 0]
+      translation: [7.2, 2.6, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -322,7 +322,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [8.8, 5.9, 0]
+      translation: [8.8, 2.6, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -337,7 +337,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [10.4, 5.9, 0]
+      translation: [10.4, 2.6, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -352,7 +352,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [12, 5.9, 0]
+      translation: [12, 2.6, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -367,7 +367,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [13.6, 5.9, 0]
+      translation: [13.6, 2.6, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -382,7 +382,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [15.2, 5.9, 0]
+      translation: [15.2, 2.6, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -397,7 +397,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [16.8, 5.9, 0]
+      translation: [16.8, 2.6, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -412,7 +412,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [18.4, 5.9, 0]
+      translation: [18.4, 2.6, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -427,7 +427,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-18.4, 5.3, 0]
+      translation: [-18.4, 2, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -442,7 +442,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-16.8, 5.3, 0]
+      translation: [-16.8, 2, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -457,7 +457,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-15.2, 5.3, 0]
+      translation: [-15.2, 2, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -472,7 +472,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-13.6, 5.3, 0]
+      translation: [-13.6, 2, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -487,7 +487,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-12, 5.3, 0]
+      translation: [-12, 2, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -502,7 +502,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-10.4, 5.3, 0]
+      translation: [-10.4, 2, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -517,7 +517,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-8.8, 5.3, 0]
+      translation: [-8.8, 2, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -532,7 +532,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-7.2, 5.3, 0]
+      translation: [-7.2, 2, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -547,7 +547,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-5.6, 5.3, 0]
+      translation: [-5.6, 2, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -562,7 +562,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-4, 5.3, 0]
+      translation: [-4, 2, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -577,7 +577,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-2.4, 5.3, 0]
+      translation: [-2.4, 2, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -592,7 +592,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-0.8, 5.3, 0]
+      translation: [-0.8, 2, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -607,7 +607,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [0.8, 5.3, 0]
+      translation: [0.8, 2, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -622,7 +622,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [2.4, 5.3, 0]
+      translation: [2.4, 2, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -637,7 +637,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [4, 5.3, 0]
+      translation: [4, 2, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -652,7 +652,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [5.6, 5.3, 0]
+      translation: [5.6, 2, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -667,7 +667,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [7.2, 5.3, 0]
+      translation: [7.2, 2, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -682,7 +682,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [8.8, 5.3, 0]
+      translation: [8.8, 2, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -697,7 +697,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [10.4, 5.3, 0]
+      translation: [10.4, 2, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -712,7 +712,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [12, 5.3, 0]
+      translation: [12, 2, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -727,7 +727,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [13.6, 5.3, 0]
+      translation: [13.6, 2, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -742,7 +742,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [15.2, 5.3, 0]
+      translation: [15.2, 2, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -757,7 +757,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [16.8, 5.3, 0]
+      translation: [16.8, 2, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -772,7 +772,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [18.4, 5.3, 0]
+      translation: [18.4, 2, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -787,7 +787,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-18.4, 4.7, 0]
+      translation: [-18.4, 1.4, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -802,7 +802,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-16.8, 4.7, 0]
+      translation: [-16.8, 1.4, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -817,7 +817,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-15.2, 4.7, 0]
+      translation: [-15.2, 1.4, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -832,7 +832,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-13.6, 4.7, 0]
+      translation: [-13.6, 1.4, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -847,7 +847,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-12, 4.7, 0]
+      translation: [-12, 1.4, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -862,7 +862,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-10.4, 4.7, 0]
+      translation: [-10.4, 1.4, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -877,7 +877,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-8.8, 4.7, 0]
+      translation: [-8.8, 1.4, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -892,7 +892,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-7.2, 4.7, 0]
+      translation: [-7.2, 1.4, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -907,7 +907,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-5.6, 4.7, 0]
+      translation: [-5.6, 1.4, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -922,7 +922,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-4, 4.7, 0]
+      translation: [-4, 1.4, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -937,7 +937,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-2.4, 4.7, 0]
+      translation: [-2.4, 1.4, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -952,7 +952,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [-0.8, 4.7, 0]
+      translation: [-0.8, 1.4, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -967,7 +967,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [0.8, 4.7, 0]
+      translation: [0.8, 1.4, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -982,7 +982,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [2.4, 4.7, 0]
+      translation: [2.4, 1.4, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -997,7 +997,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [4, 4.7, 0]
+      translation: [4, 1.4, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -1012,7 +1012,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [5.6, 4.7, 0]
+      translation: [5.6, 1.4, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -1027,7 +1027,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [7.2, 4.7, 0]
+      translation: [7.2, 1.4, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -1042,7 +1042,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [8.8, 4.7, 0]
+      translation: [8.8, 1.4, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -1057,7 +1057,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [10.4, 4.7, 0]
+      translation: [10.4, 1.4, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -1072,7 +1072,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [12, 4.7, 0]
+      translation: [12, 1.4, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -1087,7 +1087,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [13.6, 4.7, 0]
+      translation: [13.6, 1.4, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -1102,7 +1102,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [15.2, 4.7, 0]
+      translation: [15.2, 1.4, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -1117,7 +1117,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [16.8, 4.7, 0]
+      translation: [16.8, 1.4, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -1132,7 +1132,7 @@ Entities:
     Tag:
       tag: MenuBrick
     Transform:
-      translation: [18.4, 4.7, 0]
+      translation: [18.4, 1.4, 0]
       rotation: [0, 0, 0]
       scale: [1.5, 0.5, 1]
     Visibility:
@@ -1144,366 +1144,6 @@ Entities:
       tilingFactor: 1
       texture: gid:c0d75b630aa224df:textures/brick.png
   - Entity: 7200000000000000077
-    Tag:
-      tag: MenuBrick
-    Transform:
-      translation: [-18.4, 4.1, 0]
-      rotation: [0, 0, 0]
-      scale: [1.5, 0.5, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7200000000000000004
-    SpriteRenderer:
-      color: [0.3, 0.8, 1, 1]
-      tilingFactor: 1
-      texture: gid:c0d75b630aa224df:textures/brick.png
-  - Entity: 7200000000000000078
-    Tag:
-      tag: MenuBrick
-    Transform:
-      translation: [-16.8, 4.1, 0]
-      rotation: [0, 0, 0]
-      scale: [1.5, 0.5, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7200000000000000004
-    SpriteRenderer:
-      color: [0.3, 0.8, 1, 1]
-      tilingFactor: 1
-      texture: gid:c0d75b630aa224df:textures/brick.png
-  - Entity: 7200000000000000079
-    Tag:
-      tag: MenuBrick
-    Transform:
-      translation: [-15.2, 4.1, 0]
-      rotation: [0, 0, 0]
-      scale: [1.5, 0.5, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7200000000000000004
-    SpriteRenderer:
-      color: [0.3, 0.8, 1, 1]
-      tilingFactor: 1
-      texture: gid:c0d75b630aa224df:textures/brick.png
-  - Entity: 7200000000000000080
-    Tag:
-      tag: MenuBrick
-    Transform:
-      translation: [-13.6, 4.1, 0]
-      rotation: [0, 0, 0]
-      scale: [1.5, 0.5, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7200000000000000004
-    SpriteRenderer:
-      color: [0.3, 0.8, 1, 1]
-      tilingFactor: 1
-      texture: gid:c0d75b630aa224df:textures/brick.png
-  - Entity: 7200000000000000081
-    Tag:
-      tag: MenuBrick
-    Transform:
-      translation: [-12, 4.1, 0]
-      rotation: [0, 0, 0]
-      scale: [1.5, 0.5, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7200000000000000004
-    SpriteRenderer:
-      color: [0.3, 0.8, 1, 1]
-      tilingFactor: 1
-      texture: gid:c0d75b630aa224df:textures/brick.png
-  - Entity: 7200000000000000082
-    Tag:
-      tag: MenuBrick
-    Transform:
-      translation: [-10.4, 4.1, 0]
-      rotation: [0, 0, 0]
-      scale: [1.5, 0.5, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7200000000000000004
-    SpriteRenderer:
-      color: [0.3, 0.8, 1, 1]
-      tilingFactor: 1
-      texture: gid:c0d75b630aa224df:textures/brick.png
-  - Entity: 7200000000000000083
-    Tag:
-      tag: MenuBrick
-    Transform:
-      translation: [-8.8, 4.1, 0]
-      rotation: [0, 0, 0]
-      scale: [1.5, 0.5, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7200000000000000004
-    SpriteRenderer:
-      color: [0.3, 0.8, 1, 1]
-      tilingFactor: 1
-      texture: gid:c0d75b630aa224df:textures/brick.png
-  - Entity: 7200000000000000084
-    Tag:
-      tag: MenuBrick
-    Transform:
-      translation: [-7.2, 4.1, 0]
-      rotation: [0, 0, 0]
-      scale: [1.5, 0.5, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7200000000000000004
-    SpriteRenderer:
-      color: [0.3, 0.8, 1, 1]
-      tilingFactor: 1
-      texture: gid:c0d75b630aa224df:textures/brick.png
-  - Entity: 7200000000000000085
-    Tag:
-      tag: MenuBrick
-    Transform:
-      translation: [-5.6, 4.1, 0]
-      rotation: [0, 0, 0]
-      scale: [1.5, 0.5, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7200000000000000004
-    SpriteRenderer:
-      color: [0.3, 0.8, 1, 1]
-      tilingFactor: 1
-      texture: gid:c0d75b630aa224df:textures/brick.png
-  - Entity: 7200000000000000086
-    Tag:
-      tag: MenuBrick
-    Transform:
-      translation: [-4, 4.1, 0]
-      rotation: [0, 0, 0]
-      scale: [1.5, 0.5, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7200000000000000004
-    SpriteRenderer:
-      color: [0.3, 0.8, 1, 1]
-      tilingFactor: 1
-      texture: gid:c0d75b630aa224df:textures/brick.png
-  - Entity: 7200000000000000087
-    Tag:
-      tag: MenuBrick
-    Transform:
-      translation: [-2.4, 4.1, 0]
-      rotation: [0, 0, 0]
-      scale: [1.5, 0.5, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7200000000000000004
-    SpriteRenderer:
-      color: [0.3, 0.8, 1, 1]
-      tilingFactor: 1
-      texture: gid:c0d75b630aa224df:textures/brick.png
-  - Entity: 7200000000000000088
-    Tag:
-      tag: MenuBrick
-    Transform:
-      translation: [-0.8, 4.1, 0]
-      rotation: [0, 0, 0]
-      scale: [1.5, 0.5, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7200000000000000004
-    SpriteRenderer:
-      color: [0.3, 0.8, 1, 1]
-      tilingFactor: 1
-      texture: gid:c0d75b630aa224df:textures/brick.png
-  - Entity: 7200000000000000089
-    Tag:
-      tag: MenuBrick
-    Transform:
-      translation: [0.8, 4.1, 0]
-      rotation: [0, 0, 0]
-      scale: [1.5, 0.5, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7200000000000000004
-    SpriteRenderer:
-      color: [0.3, 0.8, 1, 1]
-      tilingFactor: 1
-      texture: gid:c0d75b630aa224df:textures/brick.png
-  - Entity: 7200000000000000090
-    Tag:
-      tag: MenuBrick
-    Transform:
-      translation: [2.4, 4.1, 0]
-      rotation: [0, 0, 0]
-      scale: [1.5, 0.5, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7200000000000000004
-    SpriteRenderer:
-      color: [0.3, 0.8, 1, 1]
-      tilingFactor: 1
-      texture: gid:c0d75b630aa224df:textures/brick.png
-  - Entity: 7200000000000000091
-    Tag:
-      tag: MenuBrick
-    Transform:
-      translation: [4, 4.1, 0]
-      rotation: [0, 0, 0]
-      scale: [1.5, 0.5, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7200000000000000004
-    SpriteRenderer:
-      color: [0.3, 0.8, 1, 1]
-      tilingFactor: 1
-      texture: gid:c0d75b630aa224df:textures/brick.png
-  - Entity: 7200000000000000092
-    Tag:
-      tag: MenuBrick
-    Transform:
-      translation: [5.6, 4.1, 0]
-      rotation: [0, 0, 0]
-      scale: [1.5, 0.5, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7200000000000000004
-    SpriteRenderer:
-      color: [0.3, 0.8, 1, 1]
-      tilingFactor: 1
-      texture: gid:c0d75b630aa224df:textures/brick.png
-  - Entity: 7200000000000000093
-    Tag:
-      tag: MenuBrick
-    Transform:
-      translation: [7.2, 4.1, 0]
-      rotation: [0, 0, 0]
-      scale: [1.5, 0.5, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7200000000000000004
-    SpriteRenderer:
-      color: [0.3, 0.8, 1, 1]
-      tilingFactor: 1
-      texture: gid:c0d75b630aa224df:textures/brick.png
-  - Entity: 7200000000000000094
-    Tag:
-      tag: MenuBrick
-    Transform:
-      translation: [8.8, 4.1, 0]
-      rotation: [0, 0, 0]
-      scale: [1.5, 0.5, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7200000000000000004
-    SpriteRenderer:
-      color: [0.3, 0.8, 1, 1]
-      tilingFactor: 1
-      texture: gid:c0d75b630aa224df:textures/brick.png
-  - Entity: 7200000000000000095
-    Tag:
-      tag: MenuBrick
-    Transform:
-      translation: [10.4, 4.1, 0]
-      rotation: [0, 0, 0]
-      scale: [1.5, 0.5, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7200000000000000004
-    SpriteRenderer:
-      color: [0.3, 0.8, 1, 1]
-      tilingFactor: 1
-      texture: gid:c0d75b630aa224df:textures/brick.png
-  - Entity: 7200000000000000096
-    Tag:
-      tag: MenuBrick
-    Transform:
-      translation: [12, 4.1, 0]
-      rotation: [0, 0, 0]
-      scale: [1.5, 0.5, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7200000000000000004
-    SpriteRenderer:
-      color: [0.3, 0.8, 1, 1]
-      tilingFactor: 1
-      texture: gid:c0d75b630aa224df:textures/brick.png
-  - Entity: 7200000000000000097
-    Tag:
-      tag: MenuBrick
-    Transform:
-      translation: [13.6, 4.1, 0]
-      rotation: [0, 0, 0]
-      scale: [1.5, 0.5, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7200000000000000004
-    SpriteRenderer:
-      color: [0.3, 0.8, 1, 1]
-      tilingFactor: 1
-      texture: gid:c0d75b630aa224df:textures/brick.png
-  - Entity: 7200000000000000098
-    Tag:
-      tag: MenuBrick
-    Transform:
-      translation: [15.2, 4.1, 0]
-      rotation: [0, 0, 0]
-      scale: [1.5, 0.5, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7200000000000000004
-    SpriteRenderer:
-      color: [0.3, 0.8, 1, 1]
-      tilingFactor: 1
-      texture: gid:c0d75b630aa224df:textures/brick.png
-  - Entity: 7200000000000000099
-    Tag:
-      tag: MenuBrick
-    Transform:
-      translation: [16.8, 4.1, 0]
-      rotation: [0, 0, 0]
-      scale: [1.5, 0.5, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7200000000000000004
-    SpriteRenderer:
-      color: [0.3, 0.8, 1, 1]
-      tilingFactor: 1
-      texture: gid:c0d75b630aa224df:textures/brick.png
-  - Entity: 7200000000000000100
-    Tag:
-      tag: MenuBrick
-    Transform:
-      translation: [18.4, 4.1, 0]
-      rotation: [0, 0, 0]
-      scale: [1.5, 0.5, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7200000000000000004
-    SpriteRenderer:
-      color: [0.3, 0.8, 1, 1]
-      tilingFactor: 1
-      texture: gid:c0d75b630aa224df:textures/brick.png
-  - Entity: 7200000000000000101
     Tag:
       tag: MenuPaddle
     Transform:
@@ -1517,7 +1157,7 @@ Entities:
       color: [1, 1, 1, 1]
       tilingFactor: 1
       texture: gid:a7746526d6cca35a:textures/paddle.png
-  - Entity: 7200000000000000102
+  - Entity: 7200000000000000078
     Tag:
       tag: MenuBall
     Transform:
@@ -1531,7 +1171,7 @@ Entities:
       color: [1, 1, 1, 1]
       tilingFactor: 1
       texture: gid:e29842660f453bf4:textures/ball.png
-  - Entity: 7200000000000000103
+  - Entity: 7200000000000000079
     Tag:
       tag: MenuCanvas
     Transform:
@@ -1547,10 +1187,10 @@ Entities:
       referenceResolution: [1280, 720]
       scaleMode: ScaleWithHeight
     LuaScript:
-      scriptPath: gid:4c8d050320b9efd7:scripts/ui/title.lua
-  - Entity: 7200000000000000104
+      scriptPath: gid:4c8d050320b9efd7:scripts/ui/title.owlvs
+  - Entity: 7200000000000000080
     Tag:
-      tag: ScoreBar
+      tag: Marquee
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -1558,30 +1198,29 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7200000000000000103
+      parentId: 7200000000000000079
     UiRect:
       anchorMin: [0.5, 0]
       anchorMax: [0.5, 0]
       pivot: [0.5, 0]
-      size: [1.2, 0.06]
+      size: [1.22, 0.3]
       sizeUnit: [ScreenHeight, ScreenHeight]
-      offset: [0, 0.012]
+      offset: [0, 0.015]
       offsetUnit: [ScreenHeight, ScreenHeight]
-    UiText:
-      outlineWidth: 2
-      outlineColor: [0.25, 0.02, 0.3, 1]
-      text: 'HI-SCORE 000000     CLEARED 0/5'
-      color: [1, 0.88, 0.3, 1]
-      fontSize: 30
-      horizontalAlignment: Center
-      verticalAlignment: Middle
-      kerning: 0
-      lineSpacing: 0
-      wrap: false
-      fit: Shrink
-      minFontSize: 12
-      font: JetBrainsMono-Regular
-  - Entity: 7200000000000000105
+    UiPanel:
+      backgroundColor: [0.09, 0.01, 0.16, 0.94]
+      borderColor: [0.55, 0.45, 0.3, 0.6]
+      borderWidth: 1
+      clipChildren: false
+      Box:
+        cornerRadius: 18
+        bottomTint: [0.35, 0.3, 0.6, 1]
+        borderColor: [1, 0.3, 0.8, 1]
+        borderWidth: 3
+        shadowColor: [1, 0.25, 0.8, 0.55]
+        shadowOffset: [0, 0]
+        shadowBlur: 22
+  - Entity: 7200000000000000081
     Tag:
       tag: TitleArt
     Transform:
@@ -1591,16 +1230,16 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7200000000000000103
+      parentId: 7200000000000000080
     UiRect:
       anchorMin: [0.5, 0]
       anchorMax: [0.5, 0]
       pivot: [0.5, 0]
       size: [0.86, 0.215]
       sizeUnit: [ScreenHeight, ScreenHeight]
-      offset: [0, 0.27]
+      offset: [0, 0.012]
       offsetUnit: [ScreenHeight, ScreenHeight]
-  - Entity: 7200000000000000106
+  - Entity: 7200000000000000082
     Tag:
       tag: TitleFace
     Transform:
@@ -1610,7 +1249,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7200000000000000105
+      parentId: 7200000000000000081
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1621,7 +1260,7 @@ Entities:
     UiImage:
       tint: [1, 1, 1, 1]
       texture: gid:dec369cf90c69c29:textures/ui/title.png
-  - Entity: 7200000000000000107
+  - Entity: 7200000000000000083
     Tag:
       tag: TitleGlow
     Transform:
@@ -1631,7 +1270,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7200000000000000105
+      parentId: 7200000000000000081
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1642,7 +1281,39 @@ Entities:
     UiImage:
       tint: [1, 1, 1, 1]
       texture: gid:aecd85f05919e5d9:textures/ui/title_glow.png
-  - Entity: 7200000000000000108
+  - Entity: 7200000000000000084
+    Tag:
+      tag: ScoreBar
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7200000000000000080
+    UiRect:
+      anchorMin: [0.5, 0.9]
+      anchorMax: [0.5, 0.9]
+      pivot: [0.5, 0.9]
+      size: [0.9, 0.16]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.25, 0.02, 0.3, 1]
+      text: 'HI-SCORE 000000     CLEARED 0/5'
+      color: [1, 0.88, 0.3, 1]
+      fontSize: 20
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: PressStart2P-Regular
+  - Entity: 7200000000000000085
     Tag:
       tag: ButtonPanel
     Transform:
@@ -1652,23 +1323,23 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7200000000000000103
+      parentId: 7200000000000000079
     UiRect:
       anchorMin: [0.5, 0]
       anchorMax: [0.5, 0]
       pivot: [0.5, 0]
-      size: [0.46, 0.42]
+      size: [0.5, 0.4]
       sizeUnit: [ScreenHeight, ScreenHeight]
-      offset: [0, 0.515]
+      offset: [0, 0.555]
       offsetUnit: [ScreenHeight, ScreenHeight]
     UiLayout:
       arrangement: Column
       crossAlign: Center
-      spacing: 6
+      spacing: 9
       padding: 0
       columns: 1
       cellSize: [0, 0]
-  - Entity: 7200000000000000109
+  - Entity: 7200000000000000086
     Tag:
       tag: QuitButton
     Transform:
@@ -1678,26 +1349,33 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7200000000000000108
+      parentId: 7200000000000000085
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.9, 0.16]
+      size: [0.9, 0.14]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.07, 0.02, 0.14, 1]
-      hoverColor: [0.32, 0.05, 0.42, 1]
-      pressedColor: [0.55, 0.1, 0.6, 1]
+      normalColor: [0.05, 0.01, 0.12, 0.55]
+      hoverColor: [0.78, 0.12, 0.66, 1]
+      pressedColor: [1, 0.45, 0.9, 1]
       disabledColor: [0.06, 0.04, 0.08, 0.6]
       onClickCallback: on_quit_clicked
+      Box:
+        cornerRadius: 100
+        borderColor: [0.6, 0.97, 1, 1]
+        borderWidth: 2.5
+        shadowColor: [1, 0.2, 0.75, 0.75]
+        shadowOffset: [0, 0]
+        shadowBlur: 14
     UiText:
       outlineWidth: 2
       outlineColor: [0.25, 0.02, 0.3, 1]
       text: 'QUIT'
-      color: [0.6, 0.97, 1, 1]
-      fontSize: 30
+      color: [0.9, 0.99, 1, 1]
+      fontSize: 22
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -1705,35 +1383,14 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBoldItalic
+      font: PressStart2P-Regular
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: ''
-      highlightColor: [1, 0.3, 0.8, 1]
-      highlightThickness: 3
-  - Entity: 7200000000000000110
-    Tag:
-      tag: QuitButtonFrame
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7200000000000000109
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:a1d187b64ee5d0ed:textures/ui/button_frame.png
-  - Entity: 7200000000000000111
+      highlightColor: [1, 0.88, 0.3, 1]
+      highlightThickness: 2
+  - Entity: 7200000000000000087
     Tag:
       tag: SettingsButton
     Transform:
@@ -1743,26 +1400,33 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7200000000000000108
+      parentId: 7200000000000000085
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.9, 0.16]
+      size: [0.9, 0.14]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.07, 0.02, 0.14, 1]
-      hoverColor: [0.32, 0.05, 0.42, 1]
-      pressedColor: [0.55, 0.1, 0.6, 1]
+      normalColor: [0.05, 0.01, 0.12, 0.55]
+      hoverColor: [0.78, 0.12, 0.66, 1]
+      pressedColor: [1, 0.45, 0.9, 1]
       disabledColor: [0.06, 0.04, 0.08, 0.6]
       onClickCallback: on_settings_clicked
+      Box:
+        cornerRadius: 100
+        borderColor: [0.6, 0.97, 1, 1]
+        borderWidth: 2.5
+        shadowColor: [1, 0.2, 0.75, 0.75]
+        shadowOffset: [0, 0]
+        shadowBlur: 14
     UiText:
       outlineWidth: 2
       outlineColor: [0.25, 0.02, 0.3, 1]
       text: 'SETTINGS'
-      color: [0.6, 0.97, 1, 1]
-      fontSize: 30
+      color: [0.9, 0.99, 1, 1]
+      fontSize: 22
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -1770,35 +1434,14 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBoldItalic
+      font: PressStart2P-Regular
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: ''
-      highlightColor: [1, 0.3, 0.8, 1]
-      highlightThickness: 3
-  - Entity: 7200000000000000112
-    Tag:
-      tag: SettingsButtonFrame
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7200000000000000111
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:a1d187b64ee5d0ed:textures/ui/button_frame.png
-  - Entity: 7200000000000000113
+      highlightColor: [1, 0.88, 0.3, 1]
+      highlightThickness: 2
+  - Entity: 7200000000000000088
     Tag:
       tag: HowToButton
     Transform:
@@ -1808,26 +1451,33 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7200000000000000108
+      parentId: 7200000000000000085
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.9, 0.16]
+      size: [0.9, 0.14]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.07, 0.02, 0.14, 1]
-      hoverColor: [0.32, 0.05, 0.42, 1]
-      pressedColor: [0.55, 0.1, 0.6, 1]
+      normalColor: [0.05, 0.01, 0.12, 0.55]
+      hoverColor: [0.78, 0.12, 0.66, 1]
+      pressedColor: [1, 0.45, 0.9, 1]
       disabledColor: [0.06, 0.04, 0.08, 0.6]
       onClickCallback: on_how_to_clicked
+      Box:
+        cornerRadius: 100
+        borderColor: [0.6, 0.97, 1, 1]
+        borderWidth: 2.5
+        shadowColor: [1, 0.2, 0.75, 0.75]
+        shadowOffset: [0, 0]
+        shadowBlur: 14
     UiText:
       outlineWidth: 2
       outlineColor: [0.25, 0.02, 0.3, 1]
       text: 'HOW TO PLAY'
-      color: [0.6, 0.97, 1, 1]
-      fontSize: 30
+      color: [0.9, 0.99, 1, 1]
+      fontSize: 22
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -1835,35 +1485,14 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBoldItalic
+      font: PressStart2P-Regular
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: ''
-      highlightColor: [1, 0.3, 0.8, 1]
-      highlightThickness: 3
-  - Entity: 7200000000000000114
-    Tag:
-      tag: HowToButtonFrame
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7200000000000000113
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:a1d187b64ee5d0ed:textures/ui/button_frame.png
-  - Entity: 7200000000000000115
+      highlightColor: [1, 0.88, 0.3, 1]
+      highlightThickness: 2
+  - Entity: 7200000000000000089
     Tag:
       tag: LevelsButton
     Transform:
@@ -1873,26 +1502,33 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7200000000000000108
+      parentId: 7200000000000000085
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.9, 0.16]
+      size: [0.9, 0.14]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.07, 0.02, 0.14, 1]
-      hoverColor: [0.32, 0.05, 0.42, 1]
-      pressedColor: [0.55, 0.1, 0.6, 1]
+      normalColor: [0.05, 0.01, 0.12, 0.55]
+      hoverColor: [0.78, 0.12, 0.66, 1]
+      pressedColor: [1, 0.45, 0.9, 1]
       disabledColor: [0.06, 0.04, 0.08, 0.6]
       onClickCallback: on_levels_clicked
+      Box:
+        cornerRadius: 100
+        borderColor: [0.6, 0.97, 1, 1]
+        borderWidth: 2.5
+        shadowColor: [1, 0.2, 0.75, 0.75]
+        shadowOffset: [0, 0]
+        shadowBlur: 14
     UiText:
       outlineWidth: 2
       outlineColor: [0.25, 0.02, 0.3, 1]
       text: 'LEVEL SELECT'
-      color: [0.6, 0.97, 1, 1]
-      fontSize: 30
+      color: [0.9, 0.99, 1, 1]
+      fontSize: 22
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -1900,35 +1536,14 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBoldItalic
+      font: PressStart2P-Regular
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: ''
-      highlightColor: [1, 0.3, 0.8, 1]
-      highlightThickness: 3
-  - Entity: 7200000000000000116
-    Tag:
-      tag: LevelsButtonFrame
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7200000000000000115
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:a1d187b64ee5d0ed:textures/ui/button_frame.png
-  - Entity: 7200000000000000117
+      highlightColor: [1, 0.88, 0.3, 1]
+      highlightThickness: 2
+  - Entity: 7200000000000000090
     Tag:
       tag: PlayButton
     Transform:
@@ -1938,26 +1553,33 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7200000000000000108
+      parentId: 7200000000000000085
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.9, 0.16]
+      size: [0.9, 0.14]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.07, 0.02, 0.14, 1]
-      hoverColor: [0.32, 0.05, 0.42, 1]
-      pressedColor: [0.55, 0.1, 0.6, 1]
+      normalColor: [0.05, 0.01, 0.12, 0.55]
+      hoverColor: [0.78, 0.12, 0.66, 1]
+      pressedColor: [1, 0.45, 0.9, 1]
       disabledColor: [0.06, 0.04, 0.08, 0.6]
       onClickCallback: on_play_clicked
+      Box:
+        cornerRadius: 100
+        borderColor: [0.6, 0.97, 1, 1]
+        borderWidth: 2.5
+        shadowColor: [1, 0.2, 0.75, 0.75]
+        shadowOffset: [0, 0]
+        shadowBlur: 14
     UiText:
       outlineWidth: 2
       outlineColor: [0.25, 0.02, 0.3, 1]
       text: 'PLAY'
-      color: [0.6, 0.97, 1, 1]
-      fontSize: 30
+      color: [0.9, 0.99, 1, 1]
+      fontSize: 22
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -1965,35 +1587,14 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBoldItalic
+      font: PressStart2P-Regular
     UiFocus:
       focusable: true
       initial: true
       onFocusCallback: ''
-      highlightColor: [1, 0.3, 0.8, 1]
-      highlightThickness: 3
-  - Entity: 7200000000000000118
-    Tag:
-      tag: PlayButtonFrame
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7200000000000000117
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:a1d187b64ee5d0ed:textures/ui/button_frame.png
-  - Entity: 7200000000000000119
+      highlightColor: [1, 0.88, 0.3, 1]
+      highlightThickness: 2
+  - Entity: 7200000000000000091
     Tag:
       tag: HowToWindow
     Transform:
@@ -2003,7 +1604,7 @@ Entities:
     Visibility:
       gameVisible: false
     Hierarchy:
-      parentId: 7200000000000000103
+      parentId: 7200000000000000079
     UiRect:
       anchorMin: [0.5, 0.5]
       anchorMax: [0.5, 0.5]
@@ -2028,7 +1629,7 @@ Entities:
       padding: 10
       columns: 1
       cellSize: [0, 0]
-  - Entity: 7200000000000000120
+  - Entity: 7200000000000000092
     Tag:
       tag: HowToBackButton
     Transform:
@@ -2038,7 +1639,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7200000000000000119
+      parentId: 7200000000000000091
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -2047,17 +1648,24 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.07, 0.02, 0.14, 1]
-      hoverColor: [0.32, 0.05, 0.42, 1]
-      pressedColor: [0.55, 0.1, 0.6, 1]
+      normalColor: [0.05, 0.01, 0.12, 0.55]
+      hoverColor: [0.78, 0.12, 0.66, 1]
+      pressedColor: [1, 0.45, 0.9, 1]
       disabledColor: [0.06, 0.04, 0.08, 0.6]
       onClickCallback: on_how_to_closed
+      Box:
+        cornerRadius: 100
+        borderColor: [0.6, 0.97, 1, 1]
+        borderWidth: 2.5
+        shadowColor: [1, 0.2, 0.75, 0.75]
+        shadowOffset: [0, 0]
+        shadowBlur: 14
     UiText:
       outlineWidth: 2
       outlineColor: [0.25, 0.02, 0.3, 1]
       text: 'BACK'
-      color: [0.6, 0.97, 1, 1]
-      fontSize: 30
+      color: [0.9, 0.99, 1, 1]
+      fontSize: 22
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -2065,35 +1673,14 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBoldItalic
+      font: PressStart2P-Regular
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: ''
-      highlightColor: [1, 0.3, 0.8, 1]
-      highlightThickness: 3
-  - Entity: 7200000000000000121
-    Tag:
-      tag: HowToBackButtonFrame
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7200000000000000120
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:a1d187b64ee5d0ed:textures/ui/button_frame.png
-  - Entity: 7200000000000000122
+      highlightColor: [1, 0.88, 0.3, 1]
+      highlightThickness: 2
+  - Entity: 7200000000000000093
     Tag:
       tag: HowToControls
     Transform:
@@ -2103,7 +1690,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7200000000000000119
+      parentId: 7200000000000000091
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -2123,8 +1710,8 @@ Entities:
       wrap: true
       fit: Shrink
       minFontSize: 12
-      font: JetBrainsMono-Regular
-  - Entity: 7200000000000000123
+      font: PressStart2P-Regular
+  - Entity: 7200000000000000094
     Tag:
       tag: HowToRules
     Transform:
@@ -2134,7 +1721,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7200000000000000119
+      parentId: 7200000000000000091
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]

@@ -1,0 +1,1095 @@
+Scene: landing_1
+FormatVersion: 7
+Hud: gid:beafe62ee38f7fc0:huds/play.owlhud
+SceneScript:
+  scriptPath: gid:1178e1bb84862778:scripts/game/landing.owlvs
+  properties:
+    - name: landing
+      type: int
+      value: 1
+    - name: this_scene
+      type: string
+      value: scenes/landing_1.owl
+    - name: next_scene
+      type: string
+      value: scenes/landing_2.owl
+    - name: pad_tag
+      type: string
+      value: Pad1
+    - name: pad_name
+      type: string
+      value: TRANQUILITY BASE
+    - name: fuel_max
+      type: float
+      value: 45.0
+    - name: start_velocity
+      type: vec3
+      value: [0, 0, 0]
+EnabledRenderers:
+  - {Name: world, Enabled: false}
+  - {Name: mesh_world, Enabled: true}
+  - {Name: planet_world, Enabled: true}
+  - {Name: ui, Enabled: false}
+Physics:
+  solverSubSteps: 2
+  interpolate: true
+  workerCount: 0
+  gravity: [0, 0, 0]
+Entities:
+  - Entity: 7400000000000010001
+    Tag:
+      tag: Sun
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [-0.35, 0.9, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Light: {type: Directional, enabled: true, color: [1, 0.97, 0.92], intensity: 3600, castShadows: false}
+  - Entity: 7400000000000010002
+    Tag:
+      tag: Sky
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Environment: {hdri: textures/sky/starfield.hdr, ambient: [0.05, 0.05, 0.06], intensity: 9000, rotation: 0.2, showSky: true}
+  - Entity: 7400000000000010003
+    Tag:
+      tag: Earth
+    Transform:
+      translation: [-26000, 9000, -32000]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    WorldPosition: {position: [-26000, 9000, -32000]}
+    Planet:
+      graph: ''
+      seed: 3
+      heightResolution: 128
+      radius: 6000
+      heightScale: 90
+      seaLevel: 0.55
+      detailAmplitude: 0.3
+      detailFrequency: 5
+      maxLevel: 6
+      lodFactor: 2
+      chunkResolution: 16
+      seaColor: [0.05, 0.18, 0.45]
+      lowColor: [0.25, 0.45, 0.25]
+      highColor: [0.6, 0.55, 0.45]
+      peakColor: [0.95, 0.95, 0.97]
+      atmosphere: true
+      atmosphereHeight: 400
+      rayleighDepth: [0.046, 0.108, 0.265]
+      mieDepth: 0.02
+      scatteringIntensity: 3
+      scaledSpaceDistance: 0
+  - Entity: 7400000000000010004
+    Tag:
+      tag: Moon
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:51c4939e982e0cee:models/moon.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    PhysicBody:
+      type: Static
+      dimension: Space
+      shape: Mesh
+      fixedRotation: false
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.8
+    GravitySource: {type: Spherical, enabled: true, strength: 1.62, radius: 160, range: 0, direction: [0, -1, 0]}
+  - Entity: 7400000000000010005
+    Tag:
+      tag: Pad1
+    Transform:
+      translation: [157.668, 27.8011, 0]
+      rotation: [1.3963, 1.5708, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:4356bae256236839:models/pad.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 6000}}
+    RendererTag:
+      Name: mesh_world
+    PhysicBody:
+      type: Static
+      dimension: Space
+      shape: Box
+      fixedRotation: false
+      colliderSize: [8.4, 0.4, 8.4]
+      density: 1
+      restitution: 0
+      friction: 0.8
+    HudMarker:
+      enabled: true
+      icon: nam:textures/hud/pad.png
+      color: [1, 0.8, 0.35, 1]
+      size: [28, 28]
+      offset: [0, 1.5, 0]
+      label: 'TRANQUILITY BASE'
+      labelColor: [1, 0.9, 0.7, 1]
+      fontSize: 16
+      showDistance: true
+      maxDistance: 0
+      offscreenIndicator: true
+      edgeMargin: 40
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7400000000000010006
+    Tag:
+      tag: PadLight
+    Transform:
+      translation: [0, 3, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000010005
+    Light:
+      type: Point
+      enabled: true
+      color: [1, 0.75, 0.4]
+      intensity: 4000
+      range: 18
+  - Entity: 7400000000000010007
+    Tag:
+      tag: Pad2
+    Transform:
+      translation: [131.456, 65.1186, -64.1156]
+      rotation: [-1.9897, 1.117, 3.1416]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:4356bae256236839:models/pad.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 400}}
+    RendererTag:
+      Name: mesh_world
+    PhysicBody:
+      type: Static
+      dimension: Space
+      shape: Box
+      fixedRotation: false
+      colliderSize: [8.4, 0.4, 8.4]
+      density: 1
+      restitution: 0
+      friction: 0.8
+    HudMarker:
+      enabled: false
+      icon: nam:textures/hud/pad.png
+      color: [1, 0.8, 0.35, 1]
+      size: [28, 28]
+      offset: [0, 1.5, 0]
+      label: 'HADLEY RILLE'
+      labelColor: [1, 0.9, 0.7, 1]
+      fontSize: 16
+      showDistance: true
+      maxDistance: 0
+      offscreenIndicator: true
+      edgeMargin: 40
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7400000000000010008
+    Tag:
+      tag: Pad3
+    Transform:
+      translation: [82.32, -38.7317, -131.739]
+      rotation: [-1.3265, 0.5585, 3.1416]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:4356bae256236839:models/pad.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 400}}
+    RendererTag:
+      Name: mesh_world
+    PhysicBody:
+      type: Static
+      dimension: Space
+      shape: Box
+      fixedRotation: false
+      colliderSize: [8.4, 0.4, 8.4]
+      density: 1
+      restitution: 0
+      friction: 0.8
+    HudMarker:
+      enabled: false
+      icon: nam:textures/hud/pad.png
+      color: [1, 0.8, 0.35, 1]
+      size: [28, 28]
+      offset: [0, 1.5, 0]
+      label: 'COPERNICUS RIM'
+      labelColor: [1, 0.9, 0.7, 1]
+      fontSize: 16
+      showDistance: true
+      maxDistance: 0
+      offscreenIndicator: true
+      edgeMargin: 40
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7400000000000010009
+    Tag:
+      tag: Pad4
+    Transform:
+      translation: [-77.6722, -98.5674, -99.4158]
+      rotation: [-0.9076, -0.6632, 3.1416]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:4356bae256236839:models/pad.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 400}}
+    RendererTag:
+      Name: mesh_world
+    PhysicBody:
+      type: Static
+      dimension: Space
+      shape: Box
+      fixedRotation: false
+      colliderSize: [8.4, 0.4, 8.4]
+      density: 1
+      restitution: 0
+      friction: 0.8
+    HudMarker:
+      enabled: false
+      icon: nam:textures/hud/pad.png
+      color: [1, 0.8, 0.35, 1]
+      size: [28, 28]
+      offset: [0, 1.5, 0]
+      label: 'SHACKLETON RIDGE'
+      labelColor: [1, 0.9, 0.7, 1]
+      fontSize: 16
+      showDistance: true
+      maxDistance: 0
+      offscreenIndicator: true
+      edgeMargin: 40
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7400000000000010010
+    Tag:
+      tag: Pad5
+    Transform:
+      translation: [-146.363, 16.0033, 41.9689]
+      rotation: [1.4661, -1.2915, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:4356bae256236839:models/pad.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 400}}
+    RendererTag:
+      Name: mesh_world
+    PhysicBody:
+      type: Static
+      dimension: Space
+      shape: Box
+      fixedRotation: false
+      colliderSize: [8.4, 0.4, 8.4]
+      density: 1
+      restitution: 0
+      friction: 0.8
+    HudMarker:
+      enabled: false
+      icon: nam:textures/hud/pad.png
+      color: [1, 0.8, 0.35, 1]
+      size: [28, 28]
+      offset: [0, 1.5, 0]
+      label: 'DAEDALUS CRATER'
+      labelColor: [1, 0.9, 0.7, 1]
+      fontSize: 16
+      showDistance: true
+      maxDistance: 0
+      offscreenIndicator: true
+      edgeMargin: 40
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7400000000000010011
+    Tag:
+      tag: Lander
+    Transform:
+      translation: [186.326, 32.8543, 0]
+      rotation: [1.3963, 1.5708, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7e21e7a3c0377b9c:models/lander_hull.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    PhysicBody:
+      type: Dynamic
+      dimension: Space
+      shape: Box
+      fixedRotation: false
+      colliderSize: [1.6, 1.1, 1.6]
+      density: 1
+      restitution: 0
+      friction: 0.6
+      layer: 1
+      mask: 1
+    LuaScript:
+      scriptPath: gid:0a5981516711ffdd:scripts/game/hull.owlvs
+  - Entity: 7400000000000010012
+    Tag:
+      tag: Leg1
+    Transform:
+      translation: [0.7425, -0.75, 0.7425]
+      rotation: [0, 2.3562, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000010011
+    MeshRenderer:
+      mesh: gid:d9e545019f52222e:models/lander_leg.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    PhysicBody:
+      type: Dynamic
+      dimension: Space
+      shape: Box
+      fixedRotation: false
+      colliderSize: [0.45, 1, 0.45]
+      density: 0.8
+      restitution: 0
+      friction: 0.9
+      layer: 1
+      mask: 1
+    PhysicJoint:
+      type: Fixed
+      connected: 7400000000000010011
+      anchor: [0, 0.5, 0]
+      connectedAnchor: [0, 0, 0]
+      axis: [0, 0, 1]
+      limited: false
+      lowerLimit: 0
+      upperLimit: 0
+      motor: false
+      motorSpeed: 0
+      motorForce: 100
+      springFrequency: 0
+      springDamping: 0
+      breakForce: 125
+      breakTorque: 75
+  - Entity: 7400000000000010013
+    Tag:
+      tag: Leg2
+    Transform:
+      translation: [-0.7425, -0.75, 0.7425]
+      rotation: [0, 0.7854, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000010011
+    MeshRenderer:
+      mesh: gid:d9e545019f52222e:models/lander_leg.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    PhysicBody:
+      type: Dynamic
+      dimension: Space
+      shape: Box
+      fixedRotation: false
+      colliderSize: [0.45, 1, 0.45]
+      density: 0.8
+      restitution: 0
+      friction: 0.9
+      layer: 1
+      mask: 1
+    PhysicJoint:
+      type: Fixed
+      connected: 7400000000000010011
+      anchor: [0, 0.5, 0]
+      connectedAnchor: [0, 0, 0]
+      axis: [0, 0, 1]
+      limited: false
+      lowerLimit: 0
+      upperLimit: 0
+      motor: false
+      motorSpeed: 0
+      motorForce: 100
+      springFrequency: 0
+      springDamping: 0
+      breakForce: 125
+      breakTorque: 75
+  - Entity: 7400000000000010014
+    Tag:
+      tag: Leg3
+    Transform:
+      translation: [-0.7425, -0.75, -0.7425]
+      rotation: [0, -0.7854, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000010011
+    MeshRenderer:
+      mesh: gid:d9e545019f52222e:models/lander_leg.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    PhysicBody:
+      type: Dynamic
+      dimension: Space
+      shape: Box
+      fixedRotation: false
+      colliderSize: [0.45, 1, 0.45]
+      density: 0.8
+      restitution: 0
+      friction: 0.9
+      layer: 1
+      mask: 1
+    PhysicJoint:
+      type: Fixed
+      connected: 7400000000000010011
+      anchor: [0, 0.5, 0]
+      connectedAnchor: [0, 0, 0]
+      axis: [0, 0, 1]
+      limited: false
+      lowerLimit: 0
+      upperLimit: 0
+      motor: false
+      motorSpeed: 0
+      motorForce: 100
+      springFrequency: 0
+      springDamping: 0
+      breakForce: 125
+      breakTorque: 75
+  - Entity: 7400000000000010015
+    Tag:
+      tag: Leg4
+    Transform:
+      translation: [0.7425, -0.75, -0.7425]
+      rotation: [0, -2.3562, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000010011
+    MeshRenderer:
+      mesh: gid:d9e545019f52222e:models/lander_leg.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    PhysicBody:
+      type: Dynamic
+      dimension: Space
+      shape: Box
+      fixedRotation: false
+      colliderSize: [0.45, 1, 0.45]
+      density: 0.8
+      restitution: 0
+      friction: 0.9
+      layer: 1
+      mask: 1
+    PhysicJoint:
+      type: Fixed
+      connected: 7400000000000010011
+      anchor: [0, 0.5, 0]
+      connectedAnchor: [0, 0, 0]
+      axis: [0, 0, 1]
+      limited: false
+      lowerLimit: 0
+      upperLimit: 0
+      motor: false
+      motorSpeed: 0
+      motorForce: 100
+      springFrequency: 0
+      springDamping: 0
+      breakForce: 125
+      breakTorque: 75
+  - Entity: 7400000000000010016
+    Tag:
+      tag: Flame
+    Transform:
+      translation: [0, -0.95, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 0.01, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7400000000000010011
+    MeshRenderer:
+      mesh: gid:ea26959deb0d25c5:models/flame.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 20000}}
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7400000000000010017
+    Tag:
+      tag: FlameLight
+    Transform:
+      translation: [0, -1, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7400000000000010016
+    Light:
+      type: Point
+      enabled: true
+      color: [1, 0.6, 0.3]
+      intensity: 0
+      range: 12
+  - Entity: 7400000000000010018
+    Tag:
+      tag: ChaseCamera
+    Transform:
+      translation: [194.204, 34.2435, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Camera:
+      camera:
+        projectionType: Perspective
+        perspectiveFOV: 0.9
+        perspectiveNear: 0.1
+        perspectiveFar: 400000
+        orthographicSize: 8
+        orthographicNear: -1
+        orthographicFar: 10
+        toneMapping: Aces
+        postProcess: {ev100: 10, exposure: 0, autoExposure: false, bloom: true, bloomThreshold: 1.6, bloomKnee: 0.5, bloomIntensity: 0.1, bloomScatter: 0.7, vignette: true, vignetteIntensity: 0.3, vignetteSmoothness: 0.5, vignetteColor: [0, 0, 0]}
+      primary: true
+      fixedAspectRatio: false
+  - Entity: 7400000000000010019
+    Tag:
+      tag: Bead1
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:9d6deb0302b046cd:models/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 3000}}
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7400000000000010020
+    Tag:
+      tag: Bead2
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:9d6deb0302b046cd:models/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 3000}}
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7400000000000010021
+    Tag:
+      tag: Bead3
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:9d6deb0302b046cd:models/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 3000}}
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7400000000000010022
+    Tag:
+      tag: Bead4
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:9d6deb0302b046cd:models/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 3000}}
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7400000000000010023
+    Tag:
+      tag: Bead5
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:9d6deb0302b046cd:models/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 3000}}
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7400000000000010024
+    Tag:
+      tag: Bead6
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:9d6deb0302b046cd:models/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 3000}}
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7400000000000010025
+    Tag:
+      tag: Bead7
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:9d6deb0302b046cd:models/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 3000}}
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7400000000000010026
+    Tag:
+      tag: Bead8
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:9d6deb0302b046cd:models/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 3000}}
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7400000000000010027
+    Tag:
+      tag: Bead9
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:9d6deb0302b046cd:models/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 3000}}
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7400000000000010028
+    Tag:
+      tag: Bead10
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:9d6deb0302b046cd:models/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 3000}}
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7400000000000010029
+    Tag:
+      tag: Bead11
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:9d6deb0302b046cd:models/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 3000}}
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7400000000000010030
+    Tag:
+      tag: Bead12
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:9d6deb0302b046cd:models/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 3000}}
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7400000000000010031
+    Tag:
+      tag: Bead13
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:9d6deb0302b046cd:models/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 3000}}
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7400000000000010032
+    Tag:
+      tag: Bead14
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:9d6deb0302b046cd:models/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 3000}}
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7400000000000010033
+    Tag:
+      tag: Bead15
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:9d6deb0302b046cd:models/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 3000}}
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7400000000000010034
+    Tag:
+      tag: Bead16
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:9d6deb0302b046cd:models/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 3000}}
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7400000000000010035
+    Tag:
+      tag: Bead17
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:9d6deb0302b046cd:models/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 3000}}
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7400000000000010036
+    Tag:
+      tag: Bead18
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:9d6deb0302b046cd:models/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 3000}}
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7400000000000010037
+    Tag:
+      tag: Bead19
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:9d6deb0302b046cd:models/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 3000}}
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7400000000000010038
+    Tag:
+      tag: Bead20
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:9d6deb0302b046cd:models/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 3000}}
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7400000000000010039
+    Tag:
+      tag: Bead21
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:9d6deb0302b046cd:models/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 3000}}
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7400000000000010040
+    Tag:
+      tag: Bead22
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:9d6deb0302b046cd:models/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 3000}}
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7400000000000010041
+    Tag:
+      tag: Bead23
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:9d6deb0302b046cd:models/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 3000}}
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7400000000000010042
+    Tag:
+      tag: Bead24
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:9d6deb0302b046cd:models/bead.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 3000}}
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7400000000000010043
+    Tag:
+      tag: ImpactMarker
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:851e9238ac5437f7:models/impact.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 5000}}
+    RendererTag:
+      Name: mesh_world
+    HudMarker:
+      enabled: false
+      icon: nam:textures/hud/impact.png
+      color: [1, 0.4, 0.3, 1]
+      size: [28, 28]
+      offset: [0, 1.5, 0]
+      label: ''
+      labelColor: [1, 0.9, 0.7, 1]
+      fontSize: 16
+      showDistance: false
+      maxDistance: 0
+      offscreenIndicator: true
+      edgeMargin: 40
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7400000000000010044
+    Tag:
+      tag: FlightMusic
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SoundSource:
+      soundAsset: gid:2a5a29657744d52a:sounds/music/flight.wav
+      category: Music
+      volume: 0.5
+      pitch: 1
+      loop: true
+      spatial: false
+      playOnStart: true
+      maxDistance: 50
+      rolloff: 1

@@ -1,0 +1,23 @@
+Tileset: dungeon
+FormatVersion: 1
+texture: gid:007111dca97df923:textures/tiles/dungeon.png
+tileWidth: 16
+tileHeight: 16
+columns: 12
+rows: 11
+filterMode: Nearest
+tiles:
+  - index: 12
+    name: dark
+  - index: 24
+    name: dark_b
+  - index: 29
+    collidable: true
+    name: torch
+  - index: 40
+    collidable: true
+    name: wall
+  - index: 48
+    name: floor
+  - index: 49
+    name: floor_b

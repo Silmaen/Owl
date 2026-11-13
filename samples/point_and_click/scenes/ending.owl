@@ -1,7 +1,7 @@
 Scene: ending
 FormatVersion: 7
 SceneScript:
-  scriptPath: gid:c6ff9bdec89cdb54:scripts/ui/ending.lua
+  scriptPath: gid:c6ff9bdec89cdb54:scripts/ui/ending.owlvs
 EnabledRenderers:
 - {Name: actors, Enabled: true}
 - {Name: world, Enabled: true}

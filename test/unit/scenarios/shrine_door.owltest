@@ -1,0 +1,9 @@
+# The Sunken Shrine, the dark crypt: the hero walks north against the shut door of the unlit braziers; the door holds
+# and the hero stays in the crypt.
+scene: ../../../samples/sunken_shrine/scenes/room_4.owl
+steps:
+  - frames: 5
+  - input: {key: W, frames: 150}
+  - frames: 40
+  - expect: {gamestate: shrine_room, equals: 4}
+  - expect: {gamestate: shrine_state, equals: play}

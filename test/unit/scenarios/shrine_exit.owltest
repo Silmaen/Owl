@@ -1,0 +1,11 @@
+# The Sunken Shrine, the hall: the hero walks round the old man and out by the east exit, into the armoury by its
+# west door.
+scene: ../../../samples/sunken_shrine/scenes/room_1.owl
+steps:
+  - frames: 5
+  - input: {key: D, frames: 20}
+  - input: {key: W, frames: 27}
+  - input: {key: D, frames: 100}
+  - frames: 60
+  - expect: {gamestate: shrine_room, equals: 3}
+  - expect: {gamestate: shrine_entry, equals: SpawnW}

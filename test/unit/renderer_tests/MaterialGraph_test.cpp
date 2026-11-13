@@ -282,6 +282,30 @@ TEST(MaterialGraph, EngineDemoGraphsCompile) {
 	EXPECT_GE(graphs, 2u);
 	core::Log::invalidate();
 }
+
+TEST(MaterialGraph, SampleGameGraphsCompile) {
+	core::Log::init(core::Log::Level::Off);
+	const auto source = meshShader("mesh3d");
+	size_t graphs = 0;
+	for (const auto& entry: std::filesystem::recursive_directory_iterator(findRoot() / "samples")) {
+		if (entry.path().extension() != ".owlmat")
+			continue;
+		const auto asset = MaterialAsset::load(entry.path());
+		ASSERT_TRUE(asset.has_value()) << entry.path();
+		if (!asset->graph.has_value())
+			continue;
+		++graphs;
+		const auto program = compileMaterialGraph(*asset->graph);
+		for (const auto& diagnostic: program.diagnostics) ADD_FAILURE() << entry.path() << ": " << diagnostic.message;
+		ASSERT_TRUE(program.isValid()) << entry.path();
+		const auto inserted = insertMaterialProgram(source, program);
+		ASSERT_TRUE(inserted.has_value());
+		EXPECT_TRUE(utils::compileSlangToSpirv(*inserted, "sample_material", /*iForVulkan=*/true).success)
+				<< entry.path();
+	}
+	EXPECT_GE(graphs, 3u);
+	core::Log::invalidate();
+}
 #endif
 
 TEST(MaterialGraph, AssetKeepsTheGraphThroughYaml) {

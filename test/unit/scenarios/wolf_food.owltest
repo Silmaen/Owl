@@ -1,0 +1,19 @@
+# Wolfenstein combat: food heals, as in Wolf3D (a roast dinner +10 %, dog food +4 %, never above 100 %), and stays
+# on the floor while the health is full. A roast dinner is brought next to the start: walked over at full health it
+# stays; once the guard of the start room has hit the player, it is taken and gives health back.
+scene: ../../../samples/wolfenstein/scenes/level_1.owl
+project: ../../../samples/wolfenstein
+steps:
+  - frames: 30
+  - {command: entity.set_transform, args: {entity: Food, translation: [-12.5, -11.5, 0]}}
+  - actions: {walk: 1, frames: 20}
+  - frames: 5
+  - expect: {gamestate: wolf_health, equals: 100}
+  - expect: {gamestate: wolf_items, equals: 0}
+  - actions: {walk: -1, frames: 20}
+  - actions: {fire: true, frames: 1}
+  - frames: 300
+  - expect: {gamestate: wolf_health, less: 91}
+  - actions: {walk: 1, frames: 20}
+  - frames: 3
+  - expect: {gamestate: wolf_items, equals: 1}

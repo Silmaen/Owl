@@ -130,7 +130,8 @@ function Foes.rally_of(foe)
     return 1.0
 end
 
--- The fallen: the three frames of the fall, then a fade.
+--- The fallen: the three frames of the fall, then a fade.
+---@param dt any
 function Foes.update_corpses(dt)
     local index = 1
     while index <= #S.corpses do
@@ -158,7 +159,29 @@ function Foes.direction_of(dx, dz)
     return math.floor(angle / (2.0 * math.pi / C.DIRECTIONS) + 0.5) % C.DIRECTIONS
 end
 
+-- The smallest distance on the ground between two walking enemies, mirrored once a second in `tower_spacing` (the
+-- steering keeps the Horde apart).
+local function measure_spacing(dt)
+    S.spacing_clock = (S.spacing_clock or 0.0) + dt
+    if S.spacing_clock < 1.0 or #S.enemies < 2 then return end
+    S.spacing_clock = 0.0
+    local nearest = nil
+    for i = 1, #S.enemies do
+        local a = S.enemies[i]
+        for j = i + 1, #S.enemies do
+            local b = S.enemies[j]
+            if not a.dead and not b.dead and a.distance < S.routes[a.road].total and b.distance < S.routes[b.road].total then
+                local d = math.sqrt((a.x - b.x) ^ 2 + (a.z - b.z) ^ 2)
+                if nearest == nil or d < nearest then nearest = d end
+            end
+        end
+    end
+    if nearest ~= nil then gamestate.set("tower_spacing", math.floor(nearest * 100 + 0.5) / 100) end
+end
+
+---@param dt any
 function Foes.update_enemies(dt)
+    measure_spacing(dt)
     local index = 1
     while index <= #S.enemies do
         local foe = S.enemies[index]
@@ -206,7 +229,16 @@ function Foes.update_enemies(dt)
                     index = index + 1
                 end
             else
+                -- The lane point at the distance walked is the target of the steering agent of the enemy: it arrives
+                -- there, keeps its distance from the others of the Horde and steps around them (`SteeringAgent`).
                 local x, y, z, dx, dz = World.along(foe.distance, foe.road, foe.lane)
+                local bx, by, bz = Cam.billboard_at(x, y, z, foe.lift)
+                steer.set_target_point(foe.id, bx, by, bz)
+                steer.set_max_speed(foe.id, math.max(0.6, speed * 1.8))
+                local ax, _, az = transform.get_position(foe.id)
+                -- The agent moves on the ground plane: the height follows the road (ramps, bridges).
+                transform.set_position(foe.id, ax, by, az)
+                x, z = ax - (bx - x), az - (bz - z)
                 foe.x, foe.y, foe.z, foe.dx, foe.dz = x, y, z, dx, dz
                 foe.walk = foe.walk + step * 3.2
                 local frame = (math.floor(foe.walk) % 4) * C.DIRECTIONS + Foes.direction_of(dx, dz)
@@ -215,7 +247,6 @@ function Foes.update_enemies(dt)
                     foe.frame = frame
                     isometric.set_sprite_frame(foe.id, frame)
                 end
-                transform.set_position(foe.id, Cam.billboard_at(x, y, z, foe.lift))
                 if foe.bar ~= 0 then
                     transform.set_position(foe.bar, Cam.billboard_at(x, y, z, C.BAR_HEIGHT[foe.kind]))
                 end

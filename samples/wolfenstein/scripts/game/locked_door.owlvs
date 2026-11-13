@@ -1,0 +1,340 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: key, type: string, default: gold}
+    - {name: range, type: float, default: "1.5", min: 0}
+    - {name: player_id, type: entity, default: "0", exposed: false}
+    - {name: tmp_1, type: bool, default: "false", exposed: false}
+    - {name: px, type: float, default: "0", exposed: false}
+    - {name: py, type: float, default: "0", exposed: false}
+    - {name: x, type: float, default: "0", exposed: false}
+    - {name: y, type: float, default: "0", exposed: false}
+  nodes:
+    - id: 7116100001
+      type: event.on_create
+      position: [340, 0]
+    - id: 7116100002
+      type: call.scene.find_entity
+      position: [170, 160]
+      values:
+        name: Player
+    - id: 7116100003
+      type: var.set
+      position: [680, 0]
+      values:
+        variable: player_id
+    - id: 7116100004
+      type: event.on_update
+      position: [340, 420]
+    - id: 7116100005
+      type: var.get
+      position: [170, 580]
+      values:
+        variable: player_id
+    - id: 7116100006
+      type: compare.equal
+      position: [170, 700]
+      values:
+        B: "0"
+    - id: 7116100007
+      type: var.set
+      position: [680, 420]
+      values:
+        variable: tmp_1
+    - id: 7116100008
+      type: flow.branch
+      position: [1020, 420]
+    - id: 7116100009
+      type: var.get
+      position: [850, 580]
+      values:
+        variable: tmp_1
+    - id: 7116100010
+      type: call.gamestate.get
+      position: [1360, 420]
+      values:
+        key: wolf_paused
+        default: "false"
+    - id: 7116100011
+      type: var.set
+      position: [1700, 420]
+      values:
+        variable: tmp_1
+    - id: 7116100012
+      type: var.get
+      position: [1530, 580]
+      values:
+        variable: tmp_1
+    - id: 7116100013
+      type: call.input.is_action_just_pressed
+      position: [1530, 700]
+      values:
+        action: interact
+    - id: 7116100014
+      type: logic.not
+      position: [1530, 820]
+    - id: 7116100015
+      type: logic.default
+      position: [1530, 940]
+    - id: 7116100016
+      type: call.door.get_state
+      position: [1530, 1060]
+    - id: 7116100017
+      type: value.self
+      position: [1530, 1180]
+    - id: 7116100018
+      type: compare.not_equal
+      position: [1530, 1300]
+      values:
+        B: idle
+    - id: 7116100019
+      type: logic.default
+      position: [1530, 1420]
+    - id: 7116100020
+      type: flow.branch
+      position: [2040, 420]
+    - id: 7116100021
+      type: call.transform.get_position
+      position: [1870, 580]
+      values:
+        split.xyz: "true"
+    - id: 7116100022
+      type: var.get
+      position: [1870, 700]
+      values:
+        variable: player_id
+    - id: 7116100023
+      type: var.set
+      position: [2380, 420]
+      values:
+        variable: px
+    - id: 7116100024
+      type: var.set
+      position: [2720, 420]
+      values:
+        variable: py
+    - id: 7116100025
+      type: call.transform.get_position
+      position: [2550, 580]
+      values:
+        split.xyz: "true"
+    - id: 7116100026
+      type: value.self
+      position: [2550, 700]
+    - id: 7116100027
+      type: var.set
+      position: [3060, 420]
+      values:
+        variable: x
+    - id: 7116100028
+      type: var.set
+      position: [3400, 420]
+      values:
+        variable: y
+    - id: 7116100029
+      type: var.get
+      position: [3230, 580]
+      values:
+        variable: px
+    - id: 7116100030
+      type: var.get
+      position: [3230, 700]
+      values:
+        variable: x
+    - id: 7116100031
+      type: math.subtract
+      position: [3230, 820]
+    - id: 7116100032
+      type: math.power
+      position: [3230, 940]
+      values:
+        Exponent: "2"
+    - id: 7116100033
+      type: var.get
+      position: [3230, 1060]
+      values:
+        variable: py
+    - id: 7116100034
+      type: var.get
+      position: [3230, 1180]
+      values:
+        variable: y
+    - id: 7116100035
+      type: math.subtract
+      position: [3230, 1300]
+    - id: 7116100036
+      type: math.power
+      position: [3230, 1420]
+      values:
+        Exponent: "2"
+    - id: 7116100037
+      type: math.add
+      position: [3230, 1540]
+    - id: 7116100038
+      type: var.get
+      position: [3230, 1660]
+      values:
+        variable: range
+    - id: 7116100039
+      type: var.get
+      position: [3230, 1780]
+      values:
+        variable: range
+    - id: 7116100040
+      type: math.multiply
+      position: [3230, 1900]
+    - id: 7116100041
+      type: compare.greater
+      position: [3230, 2020]
+    - id: 7116100042
+      type: flow.branch
+      position: [3740, 420]
+    - id: 7116100043
+      type: call.gamestate.get
+      position: [4080, 420]
+      values:
+        default: "0"
+    - id: 7116100044
+      type: var.get
+      position: [3910, 580]
+      values:
+        variable: key
+    - id: 7116100045
+      type: text.join
+      position: [3910, 700]
+      values:
+        A: wolf_key_
+    - id: 7116100046
+      type: compare.equal
+      position: [3910, 820]
+      values:
+        B: "1"
+    - id: 7116100047
+      type: flow.branch
+      position: [4420, 420]
+    - id: 7116100048
+      type: call.door.activate
+      position: [4760, 420]
+    - id: 7116100049
+      type: value.self
+      position: [4590, 580]
+    - id: 7116100050
+      type: call.gamestate.set
+      position: [5100, 420]
+      values:
+        key: wolf_doors_unlocked
+    - id: 7116100051
+      type: call.gamestate.get
+      position: [5440, 420]
+      values:
+        key: wolf_doors_unlocked
+        default: "0"
+    - id: 7116100052
+      type: math.add
+      position: [5270, 580]
+      values:
+        B: "1"
+    - id: 7116100053
+      type: call.gamestate.set
+      position: [5780, 420]
+      values:
+        key: wolf_locked_tries
+    - id: 7116100054
+      type: call.gamestate.get
+      position: [6120, 420]
+      values:
+        key: wolf_locked_tries
+        default: "0"
+    - id: 7116100055
+      type: math.add
+      position: [5950, 580]
+      values:
+        B: "1"
+    - id: 7116100056
+      type: call.gamestate.set
+      position: [6460, 420]
+      values:
+        key: wolf_toast
+    - id: 7116100057
+      type: var.get
+      position: [6290, 580]
+      values:
+        variable: key
+    - id: 7116100058
+      type: text.join
+      position: [6290, 700]
+      values:
+        B: " key"
+    - id: 7116100059
+      type: text.join
+      position: [6290, 820]
+      values:
+        A: "Locked: find the "
+  links:
+    - {from: 7116100002, fromPin: entity_id, to: 7116100003, toPin: Value}
+    - {from: 7116100001, fromPin: Then, to: 7116100003, toPin: Exec}
+    - {from: 7116100005, fromPin: Value, to: 7116100006, toPin: A}
+    - {from: 7116100006, fromPin: Result, to: 7116100007, toPin: Value}
+    - {from: 7116100004, fromPin: Then, to: 7116100007, toPin: Exec}
+    - {from: 7116100009, fromPin: Value, to: 7116100008, toPin: Condition}
+    - {from: 7116100007, fromPin: Then, to: 7116100008, toPin: Exec}
+    - {from: 7116100008, fromPin: "False", to: 7116100010, toPin: Exec}
+    - {from: 7116100010, fromPin: value, to: 7116100011, toPin: Value}
+    - {from: 7116100010, fromPin: Then, to: 7116100011, toPin: Exec}
+    - {from: 7116100013, fromPin: pressed, to: 7116100014, toPin: A}
+    - {from: 7116100012, fromPin: Value, to: 7116100015, toPin: Value}
+    - {from: 7116100014, fromPin: Result, to: 7116100015, toPin: Default}
+    - {from: 7116100017, fromPin: Result, to: 7116100016, toPin: entity_id}
+    - {from: 7116100016, fromPin: state, to: 7116100018, toPin: A}
+    - {from: 7116100015, fromPin: Result, to: 7116100019, toPin: Value}
+    - {from: 7116100018, fromPin: Result, to: 7116100019, toPin: Default}
+    - {from: 7116100019, fromPin: Result, to: 7116100020, toPin: Condition}
+    - {from: 7116100011, fromPin: Then, to: 7116100020, toPin: Exec}
+    - {from: 7116100008, fromPin: "True", to: 7116100020, toPin: Exec}
+    - {from: 7116100022, fromPin: Value, to: 7116100021, toPin: entity_id}
+    - {from: 7116100021, fromPin: x, to: 7116100023, toPin: Value}
+    - {from: 7116100020, fromPin: "False", to: 7116100023, toPin: Exec}
+    - {from: 7116100021, fromPin: y, to: 7116100024, toPin: Value}
+    - {from: 7116100023, fromPin: Then, to: 7116100024, toPin: Exec}
+    - {from: 7116100026, fromPin: Result, to: 7116100025, toPin: entity_id}
+    - {from: 7116100025, fromPin: x, to: 7116100027, toPin: Value}
+    - {from: 7116100024, fromPin: Then, to: 7116100027, toPin: Exec}
+    - {from: 7116100025, fromPin: y, to: 7116100028, toPin: Value}
+    - {from: 7116100027, fromPin: Then, to: 7116100028, toPin: Exec}
+    - {from: 7116100029, fromPin: Value, to: 7116100031, toPin: A}
+    - {from: 7116100030, fromPin: Value, to: 7116100031, toPin: B}
+    - {from: 7116100031, fromPin: Result, to: 7116100032, toPin: A}
+    - {from: 7116100033, fromPin: Value, to: 7116100035, toPin: A}
+    - {from: 7116100034, fromPin: Value, to: 7116100035, toPin: B}
+    - {from: 7116100035, fromPin: Result, to: 7116100036, toPin: A}
+    - {from: 7116100032, fromPin: Result, to: 7116100037, toPin: A}
+    - {from: 7116100036, fromPin: Result, to: 7116100037, toPin: B}
+    - {from: 7116100038, fromPin: Value, to: 7116100040, toPin: A}
+    - {from: 7116100039, fromPin: Value, to: 7116100040, toPin: B}
+    - {from: 7116100037, fromPin: Result, to: 7116100041, toPin: A}
+    - {from: 7116100040, fromPin: Result, to: 7116100041, toPin: B}
+    - {from: 7116100041, fromPin: Result, to: 7116100042, toPin: Condition}
+    - {from: 7116100028, fromPin: Then, to: 7116100042, toPin: Exec}
+    - {from: 7116100044, fromPin: Value, to: 7116100045, toPin: B}
+    - {from: 7116100045, fromPin: Result, to: 7116100043, toPin: key}
+    - {from: 7116100042, fromPin: "False", to: 7116100043, toPin: Exec}
+    - {from: 7116100043, fromPin: value, to: 7116100046, toPin: A}
+    - {from: 7116100046, fromPin: Result, to: 7116100047, toPin: Condition}
+    - {from: 7116100043, fromPin: Then, to: 7116100047, toPin: Exec}
+    - {from: 7116100049, fromPin: Result, to: 7116100048, toPin: entity_id}
+    - {from: 7116100047, fromPin: "True", to: 7116100048, toPin: Exec}
+    - {from: 7116100048, fromPin: Then, to: 7116100051, toPin: Exec}
+    - {from: 7116100051, fromPin: value, to: 7116100052, toPin: A}
+    - {from: 7116100052, fromPin: Result, to: 7116100050, toPin: value}
+    - {from: 7116100051, fromPin: Then, to: 7116100050, toPin: Exec}
+    - {from: 7116100047, fromPin: "False", to: 7116100054, toPin: Exec}
+    - {from: 7116100054, fromPin: value, to: 7116100055, toPin: A}
+    - {from: 7116100055, fromPin: Result, to: 7116100053, toPin: value}
+    - {from: 7116100054, fromPin: Then, to: 7116100053, toPin: Exec}
+    - {from: 7116100057, fromPin: Value, to: 7116100058, toPin: A}
+    - {from: 7116100058, fromPin: Result, to: 7116100059, toPin: B}
+    - {from: 7116100059, fromPin: Result, to: 7116100056, toPin: value}
+    - {from: 7116100053, fromPin: Then, to: 7116100056, toPin: Exec}
+  groups:
+    - {id: 7116190000, title: on_create, position: [146, -52], size: [830, 360], color: Red}
+    - {id: 7116190001, title: on_update, position: [146, 368], size: [6610, 1800], color: Red}

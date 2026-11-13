@@ -1,0 +1,1177 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: ui_scale_min, type: float, default: "0.75", min: 0.1}
+    - {name: ui_scale_max, type: float, default: "2", min: 0.1}
+    - {name: sensitivity_min, type: float, default: "0.25", min: 0.01}
+    - {name: sensitivity_max, type: float, default: "3", min: 0.01}
+    - {name: VOLUMES, type: numbers, default: "", exposed: false}
+    - {name: COLOR_BLIND_MODES, type: numbers, default: "", exposed: false}
+    - {name: COLOR_BLIND_NAMES, type: numbers, default: "", exposed: false}
+    - {name: RESET_KEYS, type: numbers, default: "", exposed: false}
+    - {name: ids, type: numbers, default: "", exposed: false}
+    - {name: leaving, type: bool, default: "false", exposed: false}
+    - {name: mode, type: float, default: "0", exposed: false}
+    - {name: current, type: float, default: "0", exposed: false}
+    - {name: next_mode, type: float, default: "0", exposed: false}
+    - {name: shown, type: bool, default: "false", exposed: false}
+  functions:
+    - name: percent
+      inputs: [{name: value, type: any}]
+      outputs: [{name: result, type: any}]
+    - name: on_off
+      inputs: [{name: value, type: any}]
+      outputs: [{name: result, type: any}]
+    - name: update_labels
+      inputs: []
+      outputs: []
+    - name: update_sliders
+      inputs: []
+      outputs: []
+    - name: set_volume
+      inputs: [{name: setting, type: any}]
+      outputs: []
+    - name: go_back
+      inputs: []
+      outputs: []
+      exported: true
+  customNodes:
+    - name: init_state
+      title: Init State
+      inputs: []
+      outputs: []
+      code: |
+        VOLUMES = {
+            { setting = "volume_master", slider = "MasterVolSlider", label = "MasterVolLabel", text = "Master volume" },
+            { setting = "volume_music", slider = "MusicVolSlider", label = "MusicVolLabel", text = "Music" },
+            { setting = "volume_sfx", slider = "SfxVolSlider", label = "SfxVolLabel", text = "Effects" },
+        }
+        COLOR_BLIND_MODES = { "none", "protanopia", "deuteranopia", "tritanopia" }
+        COLOR_BLIND_NAMES = { none = "STANDARD", protanopia = "PROTANOPIA", deuteranopia = "DEUTERANOPIA",
+                                    tritanopia = "TRITANOPIA" }
+        RESET_KEYS = { "volume_master", "volume_music", "volume_sfx", "volume_ambient", "mouse_sensitivity", "ui_scale",
+                             "color_blind_mode", "reduced_motion", "subtitles" }
+        ids = {}
+  nodes:
+    - id: 2855400001
+      type: func.entry
+      position: [340, 0]
+      values:
+        function: percent
+    - id: 2855400002
+      type: math.multiply
+      position: [170, 160]
+      values:
+        B: "100"
+    - id: 2855400003
+      type: math.add
+      position: [170, 280]
+      values:
+        B: "0.5"
+    - id: 2855400004
+      type: math.floor
+      position: [170, 400]
+    - id: 2855400005
+      type: func.return
+      position: [680, 0]
+      values:
+        function: percent
+    - id: 2855400006
+      type: func.entry
+      position: [340, 660]
+      values:
+        function: on_off
+    - id: 2855400007
+      type: logic.select
+      position: [170, 820]
+      values:
+        "True": "ON"
+        "False": "OFF"
+    - id: 2855400008
+      type: func.return
+      position: [680, 660]
+      values:
+        function: on_off
+    - id: 2855400009
+      type: func.entry
+      position: [340, 1080]
+      values:
+        function: update_labels
+    - id: 2855400010
+      type: var.get
+      position: [170, 1240]
+      values:
+        variable: VOLUMES
+    - id: 2855400011
+      type: flow.for_each
+      position: [680, 1080]
+    - id: 2855400012
+      type: call.ui.set_text
+      position: [1020, 1080]
+    - id: 2855400013
+      type: var.get
+      position: [850, 1240]
+      values:
+        variable: ids
+    - id: 2855400014
+      type: table.get
+      position: [850, 1360]
+      values:
+        Key: label
+    - id: 2855400015
+      type: table.get
+      position: [850, 1480]
+    - id: 2855400016
+      type: table.get
+      position: [850, 1600]
+      values:
+        Key: text
+    - id: 2855400017
+      type: func.call
+      position: [1360, 1080]
+      values:
+        function: percent
+    - id: 2855400018
+      type: call.settings.get
+      position: [1700, 1080]
+      values:
+        default: "1"
+    - id: 2855400019
+      type: table.get
+      position: [1530, 1240]
+      values:
+        Key: setting
+    - id: 2855400020
+      type: text.format
+      position: [1530, 1360]
+      values:
+        Format: "%s: %d%%"
+    - id: 2855400021
+      type: call.ui.set_text
+      position: [2040, 1080]
+    - id: 2855400022
+      type: var.get
+      position: [1870, 1240]
+      values:
+        variable: ids
+    - id: 2855400023
+      type: table.get
+      position: [1870, 1360]
+      values:
+        Key: MouseLabel
+    - id: 2855400024
+      type: call.settings.get
+      position: [2380, 1080]
+      values:
+        key: mouse_sensitivity
+        default: "1"
+    - id: 2855400025
+      type: text.format
+      position: [2210, 1240]
+      values:
+        Format: "Mouse turn: %.2f"
+    - id: 2855400026
+      type: call.ui.set_text
+      position: [2720, 1080]
+    - id: 2855400027
+      type: var.get
+      position: [2550, 1240]
+      values:
+        variable: ids
+    - id: 2855400028
+      type: table.get
+      position: [2550, 1360]
+      values:
+        Key: UiScaleLabel
+    - id: 2855400029
+      type: func.call
+      position: [3060, 1080]
+      values:
+        function: percent
+    - id: 2855400030
+      type: call.settings.get
+      position: [3400, 1080]
+      values:
+        key: ui_scale
+        default: "1"
+    - id: 2855400031
+      type: text.format
+      position: [3230, 1240]
+      values:
+        Format: "Interface size: %d%%"
+    - id: 2855400032
+      type: call.settings.get
+      position: [3740, 1080]
+      values:
+        key: color_blind_mode
+        default: none
+    - id: 2855400033
+      type: var.set
+      position: [4080, 1080]
+      values:
+        variable: mode
+    - id: 2855400034
+      type: call.ui.set_text
+      position: [4420, 1080]
+    - id: 2855400035
+      type: var.get
+      position: [4250, 1240]
+      values:
+        variable: ids
+    - id: 2855400036
+      type: table.get
+      position: [4250, 1360]
+      values:
+        Key: ColorBlindButton
+    - id: 2855400037
+      type: var.get
+      position: [4250, 1480]
+      values:
+        variable: COLOR_BLIND_NAMES
+    - id: 2855400038
+      type: var.get
+      position: [4250, 1600]
+      values:
+        variable: mode
+    - id: 2855400039
+      type: table.get
+      position: [4250, 1720]
+    - id: 2855400040
+      type: var.get
+      position: [4250, 1840]
+      values:
+        variable: mode
+    - id: 2855400041
+      type: text.upper
+      position: [4250, 1960]
+    - id: 2855400042
+      type: logic.default
+      position: [4250, 2080]
+    - id: 2855400043
+      type: text.concat
+      position: [4250, 2200]
+    - id: 2855400044
+      type: value.string
+      position: [4250, 2320]
+      values:
+        Value: "COLOUR VISION: "
+    - id: 2855400045
+      type: call.ui.set_text
+      position: [4760, 1080]
+    - id: 2855400046
+      type: var.get
+      position: [4590, 1240]
+      values:
+        variable: ids
+    - id: 2855400047
+      type: table.get
+      position: [4590, 1360]
+      values:
+        Key: ReducedMotionButton
+    - id: 2855400048
+      type: func.call
+      position: [5100, 1080]
+      values:
+        function: on_off
+    - id: 2855400049
+      type: call.settings.get
+      position: [5440, 1080]
+      values:
+        key: reduced_motion
+        default: "false"
+    - id: 2855400050
+      type: text.concat
+      position: [5270, 1240]
+    - id: 2855400051
+      type: value.string
+      position: [5270, 1360]
+      values:
+        Value: "REDUCED MOTION: "
+    - id: 2855400052
+      type: call.ui.set_text
+      position: [5780, 1080]
+    - id: 2855400053
+      type: var.get
+      position: [5610, 1240]
+      values:
+        variable: ids
+    - id: 2855400054
+      type: table.get
+      position: [5610, 1360]
+      values:
+        Key: SubtitlesButton
+    - id: 2855400055
+      type: func.call
+      position: [6120, 1080]
+      values:
+        function: on_off
+    - id: 2855400056
+      type: call.settings.get
+      position: [6460, 1080]
+      values:
+        key: subtitles
+        default: "true"
+    - id: 2855400057
+      type: text.concat
+      position: [6290, 1240]
+    - id: 2855400058
+      type: value.string
+      position: [6290, 1360]
+      values:
+        Value: "SUBTITLES: "
+    - id: 2855400059
+      type: func.entry
+      position: [340, 2700]
+      values:
+        function: update_sliders
+    - id: 2855400060
+      type: var.get
+      position: [170, 2860]
+      values:
+        variable: VOLUMES
+    - id: 2855400061
+      type: flow.for_each
+      position: [680, 2700]
+    - id: 2855400062
+      type: call.ui.set_slider_value
+      position: [1020, 2700]
+    - id: 2855400063
+      type: var.get
+      position: [850, 2860]
+      values:
+        variable: ids
+    - id: 2855400064
+      type: table.get
+      position: [850, 2980]
+      values:
+        Key: slider
+    - id: 2855400065
+      type: table.get
+      position: [850, 3100]
+    - id: 2855400066
+      type: call.settings.get
+      position: [1360, 2700]
+      values:
+        default: "1"
+    - id: 2855400067
+      type: table.get
+      position: [1190, 2860]
+      values:
+        Key: setting
+    - id: 2855400068
+      type: call.ui.set_slider_value
+      position: [1700, 2700]
+    - id: 2855400069
+      type: var.get
+      position: [1530, 2860]
+      values:
+        variable: ids
+    - id: 2855400070
+      type: table.get
+      position: [1530, 2980]
+      values:
+        Key: MouseSlider
+    - id: 2855400071
+      type: call.settings.get
+      position: [2040, 2700]
+      values:
+        key: mouse_sensitivity
+        default: "1"
+    - id: 2855400072
+      type: var.get
+      position: [1870, 2860]
+      values:
+        variable: sensitivity_min
+    - id: 2855400073
+      type: math.subtract
+      position: [1870, 2980]
+    - id: 2855400074
+      type: var.get
+      position: [1870, 3100]
+      values:
+        variable: sensitivity_max
+    - id: 2855400075
+      type: var.get
+      position: [1870, 3220]
+      values:
+        variable: sensitivity_min
+    - id: 2855400076
+      type: math.subtract
+      position: [1870, 3340]
+    - id: 2855400077
+      type: math.divide
+      position: [1870, 3460]
+    - id: 2855400078
+      type: call.ui.set_slider_value
+      position: [2380, 2700]
+    - id: 2855400079
+      type: var.get
+      position: [2210, 2860]
+      values:
+        variable: ids
+    - id: 2855400080
+      type: table.get
+      position: [2210, 2980]
+      values:
+        Key: UiScaleSlider
+    - id: 2855400081
+      type: call.settings.get
+      position: [2720, 2700]
+      values:
+        key: ui_scale
+        default: "1"
+    - id: 2855400082
+      type: var.get
+      position: [2550, 2860]
+      values:
+        variable: ui_scale_min
+    - id: 2855400083
+      type: math.subtract
+      position: [2550, 2980]
+    - id: 2855400084
+      type: var.get
+      position: [2550, 3100]
+      values:
+        variable: ui_scale_max
+    - id: 2855400085
+      type: var.get
+      position: [2550, 3220]
+      values:
+        variable: ui_scale_min
+    - id: 2855400086
+      type: math.subtract
+      position: [2550, 3340]
+    - id: 2855400087
+      type: math.divide
+      position: [2550, 3460]
+    - id: 2855400088
+      type: event.on_create
+      position: [340, 3720]
+    - id: 2855400089
+      type: call.ui.is_transition_active
+      position: [170, 3880]
+    - id: 2855400090
+      type: logic.not
+      position: [170, 4000]
+    - id: 2855400091
+      type: flow.branch
+      position: [680, 3720]
+    - id: 2855400092
+      type: call.ui.transition_play
+      position: [1020, 3720]
+      values:
+        split.rgba: "true"
+        kind: fade_in
+        duration: "0.5"
+        r: "0.22"
+        g: "0.02"
+        b: "0.02"
+    - id: 2855400093
+      type: value.table
+      position: [850, 3880]
+      values:
+        Value: "MasterVolLabel, MasterVolSlider, MusicVolLabel, MusicVolSlider, SfxVolLabel, SfxVolSlider, MouseLabel, MouseSlider, UiScaleLabel, UiScaleSlider, ColorBlindButton, ReducedMotionButton, SubtitlesButton"
+    - id: 2855400094
+      type: flow.for_each
+      position: [1360, 3720]
+    - id: 2855400095
+      type: call.scene.find_entity
+      position: [1190, 3880]
+    - id: 2855400096
+      type: var.get
+      position: [1190, 4000]
+      values:
+        variable: ids
+    - id: 2855400097
+      type: table.set
+      position: [1700, 3720]
+    - id: 2855400098
+      type: func.call
+      position: [2040, 3720]
+      values:
+        function: update_sliders
+    - id: 2855400099
+      type: func.call
+      position: [2380, 3720]
+      values:
+        function: update_labels
+    - id: 2855400100
+      type: event.on_update
+      position: [340, 4260]
+    - id: 2855400101
+      type: var.get
+      position: [170, 4420]
+      values:
+        variable: leaving
+    - id: 2855400102
+      type: logic.not
+      position: [170, 4540]
+    - id: 2855400103
+      type: call.input.is_action_just_pressed
+      position: [170, 4660]
+      values:
+        action: ui_cancel
+    - id: 2855400104
+      type: logic.and
+      position: [170, 4780]
+    - id: 2855400105
+      type: flow.branch
+      position: [680, 4260]
+    - id: 2855400106
+      type: func.call
+      position: [1020, 4260]
+      values:
+        function: go_back
+    - id: 2855400107
+      type: func.entry
+      position: [340, 5040]
+      values:
+        function: set_volume
+    - id: 2855400108
+      type: call.settings.set
+      position: [680, 5040]
+    - id: 2855400109
+      type: value.widget
+      position: [510, 5200]
+    - id: 2855400110
+      type: logic.default
+      position: [510, 5320]
+      values:
+        Default: "1"
+    - id: 2855400111
+      type: call.settings.apply
+      position: [1020, 5040]
+    - id: 2855400112
+      type: func.call
+      position: [1360, 5040]
+      values:
+        function: update_labels
+    - id: 2855400113
+      type: event.custom
+      position: [340, 5580]
+      values:
+        function: on_master_vol_changed
+    - id: 2855400114
+      type: func.call
+      position: [680, 5580]
+      values:
+        function: set_volume
+        setting: volume_master
+    - id: 2855400115
+      type: event.custom
+      position: [340, 5880]
+      values:
+        function: on_music_vol_changed
+    - id: 2855400116
+      type: func.call
+      position: [680, 5880]
+      values:
+        function: set_volume
+        setting: volume_music
+    - id: 2855400117
+      type: event.custom
+      position: [340, 6180]
+      values:
+        function: on_sfx_vol_changed
+    - id: 2855400118
+      type: call.settings.set
+      position: [680, 6180]
+      values:
+        key: volume_ambient
+    - id: 2855400119
+      type: value.widget
+      position: [510, 6340]
+    - id: 2855400120
+      type: logic.default
+      position: [510, 6460]
+      values:
+        Default: "1"
+    - id: 2855400121
+      type: func.call
+      position: [1020, 6180]
+      values:
+        function: set_volume
+        setting: volume_sfx
+    - id: 2855400122
+      type: call.sound.play
+      position: [1360, 6180]
+      values:
+        asset_path: sounds/game/key.wav
+    - id: 2855400123
+      type: event.custom
+      position: [340, 6720]
+      values:
+        function: on_mouse_changed
+    - id: 2855400124
+      type: call.settings.set
+      position: [680, 6720]
+      values:
+        key: mouse_sensitivity
+    - id: 2855400125
+      type: var.get
+      position: [510, 6880]
+      values:
+        variable: sensitivity_min
+    - id: 2855400126
+      type: value.widget
+      position: [510, 7000]
+    - id: 2855400127
+      type: logic.default
+      position: [510, 7120]
+      values:
+        Default: "0.3"
+    - id: 2855400128
+      type: var.get
+      position: [510, 7240]
+      values:
+        variable: sensitivity_max
+    - id: 2855400129
+      type: var.get
+      position: [510, 7360]
+      values:
+        variable: sensitivity_min
+    - id: 2855400130
+      type: math.subtract
+      position: [510, 7480]
+    - id: 2855400131
+      type: math.multiply
+      position: [510, 7600]
+    - id: 2855400132
+      type: math.add
+      position: [510, 7720]
+    - id: 2855400133
+      type: func.call
+      position: [1020, 6720]
+      values:
+        function: update_labels
+    - id: 2855400134
+      type: event.custom
+      position: [340, 7980]
+      values:
+        function: on_ui_scale_changed
+    - id: 2855400135
+      type: call.settings.set
+      position: [680, 7980]
+      values:
+        key: ui_scale
+    - id: 2855400136
+      type: var.get
+      position: [510, 8140]
+      values:
+        variable: ui_scale_min
+    - id: 2855400137
+      type: value.widget
+      position: [510, 8260]
+    - id: 2855400138
+      type: logic.default
+      position: [510, 8380]
+      values:
+        Default: "0.2"
+    - id: 2855400139
+      type: var.get
+      position: [510, 8500]
+      values:
+        variable: ui_scale_max
+    - id: 2855400140
+      type: var.get
+      position: [510, 8620]
+      values:
+        variable: ui_scale_min
+    - id: 2855400141
+      type: math.subtract
+      position: [510, 8740]
+    - id: 2855400142
+      type: math.multiply
+      position: [510, 8860]
+    - id: 2855400143
+      type: math.add
+      position: [510, 8980]
+    - id: 2855400144
+      type: func.call
+      position: [1020, 7980]
+      values:
+        function: update_labels
+    - id: 2855400145
+      type: event.custom
+      position: [340, 9240]
+      values:
+        function: on_color_blind_clicked
+    - id: 2855400146
+      type: call.settings.get
+      position: [680, 9240]
+      values:
+        key: color_blind_mode
+        default: none
+    - id: 2855400147
+      type: var.set
+      position: [1020, 9240]
+      values:
+        variable: current
+    - id: 2855400148
+      type: var.get
+      position: [850, 9400]
+      values:
+        variable: COLOR_BLIND_MODES
+    - id: 2855400149
+      type: table.get
+      position: [850, 9520]
+      values:
+        Key: "1"
+    - id: 2855400150
+      type: var.set
+      position: [1360, 9240]
+      values:
+        variable: next_mode
+    - id: 2855400151
+      type: var.get
+      position: [1190, 9400]
+      values:
+        variable: COLOR_BLIND_MODES
+    - id: 2855400152
+      type: flow.for_each
+      position: [1700, 9240]
+    - id: 2855400153
+      type: var.get
+      position: [1530, 9400]
+      values:
+        variable: current
+    - id: 2855400154
+      type: compare.equal
+      position: [1530, 9520]
+    - id: 2855400155
+      type: flow.branch
+      position: [2040, 9240]
+    - id: 2855400156
+      type: var.get
+      position: [1870, 9400]
+      values:
+        variable: COLOR_BLIND_MODES
+    - id: 2855400157
+      type: var.get
+      position: [1870, 9520]
+      values:
+        variable: COLOR_BLIND_MODES
+    - id: 2855400158
+      type: table.length
+      position: [1870, 9640]
+    - id: 2855400159
+      type: math.modulo
+      position: [1870, 9760]
+    - id: 2855400160
+      type: math.add
+      position: [1870, 9880]
+      values:
+        B: "1"
+    - id: 2855400161
+      type: table.get
+      position: [1870, 10000]
+    - id: 2855400162
+      type: var.set
+      position: [2380, 9240]
+      values:
+        variable: next_mode
+    - id: 2855400163
+      type: flow.break
+      position: [2720, 9240]
+    - id: 2855400164
+      type: call.settings.set
+      position: [3060, 9240]
+      values:
+        key: color_blind_mode
+    - id: 2855400165
+      type: var.get
+      position: [2890, 9400]
+      values:
+        variable: next_mode
+    - id: 2855400166
+      type: func.call
+      position: [3400, 9240]
+      values:
+        function: update_labels
+    - id: 2855400167
+      type: event.custom
+      position: [340, 10260]
+      values:
+        function: on_reduced_motion_clicked
+    - id: 2855400168
+      type: call.settings.set
+      position: [680, 10260]
+      values:
+        key: reduced_motion
+    - id: 2855400169
+      type: call.settings.get
+      position: [1020, 10260]
+      values:
+        key: reduced_motion
+        default: "false"
+    - id: 2855400170
+      type: logic.not
+      position: [850, 10420]
+    - id: 2855400171
+      type: call.settings.apply
+      position: [1360, 10260]
+    - id: 2855400172
+      type: func.call
+      position: [1700, 10260]
+      values:
+        function: update_labels
+    - id: 2855400173
+      type: event.custom
+      position: [340, 10680]
+      values:
+        function: on_subtitles_clicked
+    - id: 2855400174
+      type: call.settings.get
+      position: [680, 10680]
+      values:
+        key: subtitles
+        default: "true"
+    - id: 2855400175
+      type: logic.not
+      position: [510, 10840]
+    - id: 2855400176
+      type: var.set
+      position: [1020, 10680]
+      values:
+        variable: shown
+    - id: 2855400177
+      type: call.settings.set
+      position: [1360, 10680]
+      values:
+        key: subtitles
+    - id: 2855400178
+      type: var.get
+      position: [1190, 10840]
+      values:
+        variable: shown
+    - id: 2855400179
+      type: var.get
+      position: [1190, 10960]
+      values:
+        variable: shown
+    - id: 2855400180
+      type: flow.branch
+      position: [1700, 10680]
+    - id: 2855400181
+      type: call.ui.show_subtitle
+      position: [2040, 10680]
+      values:
+        text: "[Stone grinds: the wall slides away]"
+        seconds: "3"
+    - id: 2855400182
+      type: call.ui.clear_subtitles
+      position: [2380, 10680]
+    - id: 2855400183
+      type: func.call
+      position: [2720, 10680]
+      values:
+        function: update_labels
+    - id: 2855400184
+      type: event.custom
+      position: [340, 11220]
+      values:
+        function: on_reset_clicked
+    - id: 2855400185
+      type: var.get
+      position: [170, 11380]
+      values:
+        variable: RESET_KEYS
+    - id: 2855400186
+      type: flow.for_each
+      position: [680, 11220]
+    - id: 2855400187
+      type: call.settings.reset
+      position: [1020, 11220]
+    - id: 2855400188
+      type: call.settings.apply
+      position: [1360, 11220]
+    - id: 2855400189
+      type: func.call
+      position: [1700, 11220]
+      values:
+        function: update_sliders
+    - id: 2855400190
+      type: func.call
+      position: [2040, 11220]
+      values:
+        function: update_labels
+    - id: 2855400191
+      type: func.entry
+      position: [340, 11640]
+      values:
+        function: go_back
+    - id: 2855400192
+      type: var.get
+      position: [170, 11800]
+      values:
+        variable: leaving
+    - id: 2855400193
+      type: flow.branch
+      position: [680, 11640]
+    - id: 2855400194
+      type: func.return
+      position: [1020, 11640]
+      values:
+        function: go_back
+    - id: 2855400195
+      type: var.set
+      position: [1360, 11640]
+      values:
+        variable: leaving
+        Value: "true"
+    - id: 2855400196
+      type: call.settings.save
+      position: [1700, 11640]
+    - id: 2855400197
+      type: call.scene.transition_to
+      position: [2040, 11640]
+      values:
+        split.rgba: "true"
+        scene_path: scenes/title.owl
+        kind: fade_out
+        duration: "0.4"
+        r: "0.22"
+        g: "0.02"
+        b: "0.02"
+    - id: 2855400198
+      type: custom.call
+      position: [170, 3720]
+      values:
+        custom: init_state
+    - id: 2855400199
+      type: logic.select
+      position: [4250, 2440]
+      values:
+        Condition: "true"
+  links:
+    - {from: 2855400001, fromPin: value, to: 2855400002, toPin: A}
+    - {from: 2855400002, fromPin: Result, to: 2855400003, toPin: A}
+    - {from: 2855400003, fromPin: Result, to: 2855400004, toPin: A}
+    - {from: 2855400004, fromPin: Result, to: 2855400005, toPin: result}
+    - {from: 2855400001, fromPin: Then, to: 2855400005, toPin: Exec}
+    - {from: 2855400006, fromPin: value, to: 2855400007, toPin: Condition}
+    - {from: 2855400007, fromPin: Result, to: 2855400008, toPin: result}
+    - {from: 2855400006, fromPin: Then, to: 2855400008, toPin: Exec}
+    - {from: 2855400010, fromPin: Value, to: 2855400011, toPin: List}
+    - {from: 2855400009, fromPin: Then, to: 2855400011, toPin: Exec}
+    - {from: 2855400011, fromPin: Item, to: 2855400014, toPin: Table}
+    - {from: 2855400013, fromPin: Value, to: 2855400015, toPin: Table}
+    - {from: 2855400014, fromPin: Result, to: 2855400015, toPin: Key}
+    - {from: 2855400015, fromPin: Result, to: 2855400012, toPin: entity_id}
+    - {from: 2855400011, fromPin: Item, to: 2855400016, toPin: Table}
+    - {from: 2855400011, fromPin: Item, to: 2855400019, toPin: Table}
+    - {from: 2855400019, fromPin: Result, to: 2855400018, toPin: key}
+    - {from: 2855400011, fromPin: Body, to: 2855400018, toPin: Exec}
+    - {from: 2855400018, fromPin: value, to: 2855400017, toPin: value}
+    - {from: 2855400018, fromPin: Then, to: 2855400017, toPin: Exec}
+    - {from: 2855400016, fromPin: Result, to: 2855400020, toPin: A}
+    - {from: 2855400017, fromPin: result, to: 2855400020, toPin: B}
+    - {from: 2855400020, fromPin: Result, to: 2855400012, toPin: text}
+    - {from: 2855400017, fromPin: Then, to: 2855400012, toPin: Exec}
+    - {from: 2855400022, fromPin: Value, to: 2855400023, toPin: Table}
+    - {from: 2855400023, fromPin: Result, to: 2855400021, toPin: entity_id}
+    - {from: 2855400011, fromPin: Completed, to: 2855400024, toPin: Exec}
+    - {from: 2855400024, fromPin: value, to: 2855400025, toPin: A}
+    - {from: 2855400025, fromPin: Result, to: 2855400021, toPin: text}
+    - {from: 2855400024, fromPin: Then, to: 2855400021, toPin: Exec}
+    - {from: 2855400027, fromPin: Value, to: 2855400028, toPin: Table}
+    - {from: 2855400028, fromPin: Result, to: 2855400026, toPin: entity_id}
+    - {from: 2855400021, fromPin: Then, to: 2855400030, toPin: Exec}
+    - {from: 2855400030, fromPin: value, to: 2855400029, toPin: value}
+    - {from: 2855400030, fromPin: Then, to: 2855400029, toPin: Exec}
+    - {from: 2855400029, fromPin: result, to: 2855400031, toPin: A}
+    - {from: 2855400031, fromPin: Result, to: 2855400026, toPin: text}
+    - {from: 2855400029, fromPin: Then, to: 2855400026, toPin: Exec}
+    - {from: 2855400026, fromPin: Then, to: 2855400032, toPin: Exec}
+    - {from: 2855400032, fromPin: value, to: 2855400033, toPin: Value}
+    - {from: 2855400032, fromPin: Then, to: 2855400033, toPin: Exec}
+    - {from: 2855400035, fromPin: Value, to: 2855400036, toPin: Table}
+    - {from: 2855400036, fromPin: Result, to: 2855400034, toPin: entity_id}
+    - {from: 2855400037, fromPin: Value, to: 2855400039, toPin: Table}
+    - {from: 2855400038, fromPin: Value, to: 2855400039, toPin: Key}
+    - {from: 2855400040, fromPin: Value, to: 2855400199, toPin: "True"}
+    - {from: 2855400199, fromPin: Result, to: 2855400041, toPin: Text}
+    - {from: 2855400039, fromPin: Result, to: 2855400042, toPin: Value}
+    - {from: 2855400041, fromPin: Result, to: 2855400042, toPin: Default}
+    - {from: 2855400044, fromPin: Result, to: 2855400043, toPin: A}
+    - {from: 2855400042, fromPin: Result, to: 2855400043, toPin: B}
+    - {from: 2855400043, fromPin: Result, to: 2855400034, toPin: text}
+    - {from: 2855400033, fromPin: Then, to: 2855400034, toPin: Exec}
+    - {from: 2855400046, fromPin: Value, to: 2855400047, toPin: Table}
+    - {from: 2855400047, fromPin: Result, to: 2855400045, toPin: entity_id}
+    - {from: 2855400034, fromPin: Then, to: 2855400049, toPin: Exec}
+    - {from: 2855400049, fromPin: value, to: 2855400048, toPin: value}
+    - {from: 2855400049, fromPin: Then, to: 2855400048, toPin: Exec}
+    - {from: 2855400051, fromPin: Result, to: 2855400050, toPin: A}
+    - {from: 2855400048, fromPin: result, to: 2855400050, toPin: B}
+    - {from: 2855400050, fromPin: Result, to: 2855400045, toPin: text}
+    - {from: 2855400048, fromPin: Then, to: 2855400045, toPin: Exec}
+    - {from: 2855400053, fromPin: Value, to: 2855400054, toPin: Table}
+    - {from: 2855400054, fromPin: Result, to: 2855400052, toPin: entity_id}
+    - {from: 2855400045, fromPin: Then, to: 2855400056, toPin: Exec}
+    - {from: 2855400056, fromPin: value, to: 2855400055, toPin: value}
+    - {from: 2855400056, fromPin: Then, to: 2855400055, toPin: Exec}
+    - {from: 2855400058, fromPin: Result, to: 2855400057, toPin: A}
+    - {from: 2855400055, fromPin: result, to: 2855400057, toPin: B}
+    - {from: 2855400057, fromPin: Result, to: 2855400052, toPin: text}
+    - {from: 2855400055, fromPin: Then, to: 2855400052, toPin: Exec}
+    - {from: 2855400060, fromPin: Value, to: 2855400061, toPin: List}
+    - {from: 2855400059, fromPin: Then, to: 2855400061, toPin: Exec}
+    - {from: 2855400061, fromPin: Item, to: 2855400064, toPin: Table}
+    - {from: 2855400063, fromPin: Value, to: 2855400065, toPin: Table}
+    - {from: 2855400064, fromPin: Result, to: 2855400065, toPin: Key}
+    - {from: 2855400065, fromPin: Result, to: 2855400062, toPin: entity_id}
+    - {from: 2855400061, fromPin: Item, to: 2855400067, toPin: Table}
+    - {from: 2855400067, fromPin: Result, to: 2855400066, toPin: key}
+    - {from: 2855400061, fromPin: Body, to: 2855400066, toPin: Exec}
+    - {from: 2855400066, fromPin: value, to: 2855400062, toPin: value}
+    - {from: 2855400066, fromPin: Then, to: 2855400062, toPin: Exec}
+    - {from: 2855400069, fromPin: Value, to: 2855400070, toPin: Table}
+    - {from: 2855400070, fromPin: Result, to: 2855400068, toPin: entity_id}
+    - {from: 2855400061, fromPin: Completed, to: 2855400071, toPin: Exec}
+    - {from: 2855400071, fromPin: value, to: 2855400073, toPin: A}
+    - {from: 2855400072, fromPin: Value, to: 2855400073, toPin: B}
+    - {from: 2855400074, fromPin: Value, to: 2855400076, toPin: A}
+    - {from: 2855400075, fromPin: Value, to: 2855400076, toPin: B}
+    - {from: 2855400073, fromPin: Result, to: 2855400077, toPin: A}
+    - {from: 2855400076, fromPin: Result, to: 2855400077, toPin: B}
+    - {from: 2855400077, fromPin: Result, to: 2855400068, toPin: value}
+    - {from: 2855400071, fromPin: Then, to: 2855400068, toPin: Exec}
+    - {from: 2855400079, fromPin: Value, to: 2855400080, toPin: Table}
+    - {from: 2855400080, fromPin: Result, to: 2855400078, toPin: entity_id}
+    - {from: 2855400068, fromPin: Then, to: 2855400081, toPin: Exec}
+    - {from: 2855400081, fromPin: value, to: 2855400083, toPin: A}
+    - {from: 2855400082, fromPin: Value, to: 2855400083, toPin: B}
+    - {from: 2855400084, fromPin: Value, to: 2855400086, toPin: A}
+    - {from: 2855400085, fromPin: Value, to: 2855400086, toPin: B}
+    - {from: 2855400083, fromPin: Result, to: 2855400087, toPin: A}
+    - {from: 2855400086, fromPin: Result, to: 2855400087, toPin: B}
+    - {from: 2855400087, fromPin: Result, to: 2855400078, toPin: value}
+    - {from: 2855400081, fromPin: Then, to: 2855400078, toPin: Exec}
+    - {from: 2855400089, fromPin: active, to: 2855400090, toPin: A}
+    - {from: 2855400090, fromPin: Result, to: 2855400091, toPin: Condition}
+    - {from: 2855400198, fromPin: Then, to: 2855400091, toPin: Exec}
+    - {from: 2855400091, fromPin: "True", to: 2855400092, toPin: Exec}
+    - {from: 2855400093, fromPin: Result, to: 2855400094, toPin: List}
+    - {from: 2855400092, fromPin: Then, to: 2855400094, toPin: Exec}
+    - {from: 2855400091, fromPin: "False", to: 2855400094, toPin: Exec}
+    - {from: 2855400094, fromPin: Item, to: 2855400095, toPin: name}
+    - {from: 2855400096, fromPin: Value, to: 2855400097, toPin: Table}
+    - {from: 2855400094, fromPin: Item, to: 2855400097, toPin: Key}
+    - {from: 2855400095, fromPin: entity_id, to: 2855400097, toPin: Value}
+    - {from: 2855400094, fromPin: Body, to: 2855400097, toPin: Exec}
+    - {from: 2855400094, fromPin: Completed, to: 2855400098, toPin: Exec}
+    - {from: 2855400098, fromPin: Then, to: 2855400099, toPin: Exec}
+    - {from: 2855400101, fromPin: Value, to: 2855400102, toPin: A}
+    - {from: 2855400102, fromPin: Result, to: 2855400104, toPin: A}
+    - {from: 2855400103, fromPin: pressed, to: 2855400104, toPin: B}
+    - {from: 2855400104, fromPin: Result, to: 2855400105, toPin: Condition}
+    - {from: 2855400100, fromPin: Then, to: 2855400105, toPin: Exec}
+    - {from: 2855400105, fromPin: "True", to: 2855400106, toPin: Exec}
+    - {from: 2855400107, fromPin: setting, to: 2855400108, toPin: key}
+    - {from: 2855400109, fromPin: slider_value, to: 2855400110, toPin: Value}
+    - {from: 2855400110, fromPin: Result, to: 2855400108, toPin: value}
+    - {from: 2855400107, fromPin: Then, to: 2855400108, toPin: Exec}
+    - {from: 2855400108, fromPin: Then, to: 2855400111, toPin: Exec}
+    - {from: 2855400111, fromPin: Then, to: 2855400112, toPin: Exec}
+    - {from: 2855400113, fromPin: Then, to: 2855400114, toPin: Exec}
+    - {from: 2855400115, fromPin: Then, to: 2855400116, toPin: Exec}
+    - {from: 2855400119, fromPin: slider_value, to: 2855400120, toPin: Value}
+    - {from: 2855400120, fromPin: Result, to: 2855400118, toPin: value}
+    - {from: 2855400117, fromPin: Then, to: 2855400118, toPin: Exec}
+    - {from: 2855400118, fromPin: Then, to: 2855400121, toPin: Exec}
+    - {from: 2855400121, fromPin: Then, to: 2855400122, toPin: Exec}
+    - {from: 2855400126, fromPin: slider_value, to: 2855400127, toPin: Value}
+    - {from: 2855400128, fromPin: Value, to: 2855400130, toPin: A}
+    - {from: 2855400129, fromPin: Value, to: 2855400130, toPin: B}
+    - {from: 2855400127, fromPin: Result, to: 2855400131, toPin: A}
+    - {from: 2855400130, fromPin: Result, to: 2855400131, toPin: B}
+    - {from: 2855400125, fromPin: Value, to: 2855400132, toPin: A}
+    - {from: 2855400131, fromPin: Result, to: 2855400132, toPin: B}
+    - {from: 2855400132, fromPin: Result, to: 2855400124, toPin: value}
+    - {from: 2855400123, fromPin: Then, to: 2855400124, toPin: Exec}
+    - {from: 2855400124, fromPin: Then, to: 2855400133, toPin: Exec}
+    - {from: 2855400137, fromPin: slider_value, to: 2855400138, toPin: Value}
+    - {from: 2855400139, fromPin: Value, to: 2855400141, toPin: A}
+    - {from: 2855400140, fromPin: Value, to: 2855400141, toPin: B}
+    - {from: 2855400138, fromPin: Result, to: 2855400142, toPin: A}
+    - {from: 2855400141, fromPin: Result, to: 2855400142, toPin: B}
+    - {from: 2855400136, fromPin: Value, to: 2855400143, toPin: A}
+    - {from: 2855400142, fromPin: Result, to: 2855400143, toPin: B}
+    - {from: 2855400143, fromPin: Result, to: 2855400135, toPin: value}
+    - {from: 2855400134, fromPin: Then, to: 2855400135, toPin: Exec}
+    - {from: 2855400135, fromPin: Then, to: 2855400144, toPin: Exec}
+    - {from: 2855400145, fromPin: Then, to: 2855400146, toPin: Exec}
+    - {from: 2855400146, fromPin: value, to: 2855400147, toPin: Value}
+    - {from: 2855400146, fromPin: Then, to: 2855400147, toPin: Exec}
+    - {from: 2855400148, fromPin: Value, to: 2855400149, toPin: Table}
+    - {from: 2855400149, fromPin: Result, to: 2855400150, toPin: Value}
+    - {from: 2855400147, fromPin: Then, to: 2855400150, toPin: Exec}
+    - {from: 2855400151, fromPin: Value, to: 2855400152, toPin: List}
+    - {from: 2855400150, fromPin: Then, to: 2855400152, toPin: Exec}
+    - {from: 2855400152, fromPin: Item, to: 2855400154, toPin: A}
+    - {from: 2855400153, fromPin: Value, to: 2855400154, toPin: B}
+    - {from: 2855400154, fromPin: Result, to: 2855400155, toPin: Condition}
+    - {from: 2855400152, fromPin: Body, to: 2855400155, toPin: Exec}
+    - {from: 2855400157, fromPin: Value, to: 2855400158, toPin: List}
+    - {from: 2855400152, fromPin: Index, to: 2855400159, toPin: A}
+    - {from: 2855400158, fromPin: Result, to: 2855400159, toPin: B}
+    - {from: 2855400159, fromPin: Result, to: 2855400160, toPin: A}
+    - {from: 2855400156, fromPin: Value, to: 2855400161, toPin: Table}
+    - {from: 2855400160, fromPin: Result, to: 2855400161, toPin: Key}
+    - {from: 2855400161, fromPin: Result, to: 2855400162, toPin: Value}
+    - {from: 2855400155, fromPin: "True", to: 2855400162, toPin: Exec}
+    - {from: 2855400162, fromPin: Then, to: 2855400163, toPin: Exec}
+    - {from: 2855400165, fromPin: Value, to: 2855400164, toPin: value}
+    - {from: 2855400152, fromPin: Completed, to: 2855400164, toPin: Exec}
+    - {from: 2855400164, fromPin: Then, to: 2855400166, toPin: Exec}
+    - {from: 2855400167, fromPin: Then, to: 2855400169, toPin: Exec}
+    - {from: 2855400169, fromPin: value, to: 2855400170, toPin: A}
+    - {from: 2855400170, fromPin: Result, to: 2855400168, toPin: value}
+    - {from: 2855400169, fromPin: Then, to: 2855400168, toPin: Exec}
+    - {from: 2855400168, fromPin: Then, to: 2855400171, toPin: Exec}
+    - {from: 2855400171, fromPin: Then, to: 2855400172, toPin: Exec}
+    - {from: 2855400173, fromPin: Then, to: 2855400174, toPin: Exec}
+    - {from: 2855400174, fromPin: value, to: 2855400175, toPin: A}
+    - {from: 2855400175, fromPin: Result, to: 2855400176, toPin: Value}
+    - {from: 2855400174, fromPin: Then, to: 2855400176, toPin: Exec}
+    - {from: 2855400178, fromPin: Value, to: 2855400177, toPin: value}
+    - {from: 2855400176, fromPin: Then, to: 2855400177, toPin: Exec}
+    - {from: 2855400179, fromPin: Value, to: 2855400180, toPin: Condition}
+    - {from: 2855400177, fromPin: Then, to: 2855400180, toPin: Exec}
+    - {from: 2855400180, fromPin: "True", to: 2855400181, toPin: Exec}
+    - {from: 2855400180, fromPin: "False", to: 2855400182, toPin: Exec}
+    - {from: 2855400181, fromPin: Then, to: 2855400183, toPin: Exec}
+    - {from: 2855400182, fromPin: Then, to: 2855400183, toPin: Exec}
+    - {from: 2855400185, fromPin: Value, to: 2855400186, toPin: List}
+    - {from: 2855400184, fromPin: Then, to: 2855400186, toPin: Exec}
+    - {from: 2855400186, fromPin: Item, to: 2855400187, toPin: key}
+    - {from: 2855400186, fromPin: Body, to: 2855400187, toPin: Exec}
+    - {from: 2855400186, fromPin: Completed, to: 2855400188, toPin: Exec}
+    - {from: 2855400188, fromPin: Then, to: 2855400189, toPin: Exec}
+    - {from: 2855400189, fromPin: Then, to: 2855400190, toPin: Exec}
+    - {from: 2855400192, fromPin: Value, to: 2855400193, toPin: Condition}
+    - {from: 2855400191, fromPin: Then, to: 2855400193, toPin: Exec}
+    - {from: 2855400193, fromPin: "True", to: 2855400194, toPin: Exec}
+    - {from: 2855400193, fromPin: "False", to: 2855400195, toPin: Exec}
+    - {from: 2855400195, fromPin: Then, to: 2855400196, toPin: Exec}
+    - {from: 2855400196, fromPin: Then, to: 2855400197, toPin: Exec}
+    - {from: 2855400088, fromPin: Then, to: 2855400198, toPin: Exec}
+  groups:
+    - {id: 2855490000, title: percent, position: [146, -52], size: [830, 600], color: Teal}
+    - {id: 2855490001, title: on_off, position: [146, 608], size: [830, 360], color: Red}
+    - {id: 2855490002, title: update_labels, position: [146, 1028], size: [6610, 1560], color: Teal}
+    - {id: 2855490003, title: update_sliders, position: [146, 2648], size: [2870, 960], color: Teal}
+    - {id: 2855490004, title: on_create, position: [146, 3668], size: [2530, 480], color: Red}
+    - {id: 2855490005, title: on_update, position: [146, 4208], size: [1170, 720], color: Red}
+    - {id: 2855490006, title: set_volume, position: [316, 4988], size: [1340, 480], color: Teal}
+    - {id: 2855490007, title: on_master_vol_changed, position: [316, 5528], size: [660, 200], color: Red}
+    - {id: 2855490008, title: on_music_vol_changed, position: [316, 5828], size: [660, 200], color: Red}
+    - {id: 2855490009, title: on_sfx_vol_changed, position: [316, 6128], size: [1340, 480], color: Red}
+    - {id: 2855490010, title: on_mouse_changed, position: [316, 6668], size: [1000, 1200], color: Red}
+    - {id: 2855490011, title: on_ui_scale_changed, position: [316, 7928], size: [1000, 1200], color: Red}
+    - {id: 2855490012, title: on_color_blind_clicked, position: [316, 9188], size: [3380, 960], color: Red}
+    - {id: 2855490013, title: on_reduced_motion_clicked, position: [316, 10208], size: [1680, 360], color: Red}
+    - {id: 2855490014, title: on_subtitles_clicked, position: [316, 10628], size: [2700, 480], color: Red}
+    - {id: 2855490015, title: on_reset_clicked, position: [146, 11168], size: [2190, 360], color: Red}
+    - {id: 2855490016, title: go_back, position: [146, 11588], size: [2190, 360], color: Teal}

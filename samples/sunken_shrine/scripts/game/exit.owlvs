@@ -1,0 +1,120 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: target_scene, type: string, default: scenes/room_2.owl}
+    - {name: entry, type: string, default: SpawnS}
+    - {name: leaving, type: bool, default: false, exposed: false}
+  nodes:
+    - id: 6730000000000000001
+      type: event.on_trigger_enter
+      position: [0, 0]
+    - id: 6730000000000000002
+      type: call.scene.find_entity
+      position: [-280, 600]
+      values:
+        name: Player
+    - id: 6730000000000000003
+      type: compare.equal
+      position: [-120, 450]
+    - id: 6730000000000000004
+      type: call.input.get_action_vector
+      position: [-800, 980]
+      values:
+        action: move
+    - id: 6730000000000000005
+      type: math.vector2_length
+      position: [-640, 830]
+    - id: 6730000000000000006
+      type: compare.greater
+      position: [-440, 680]
+      values:
+        B: 0.3
+    - id: 6730000000000000007
+      type: call.gamestate.get
+      position: [300, 0]
+      values:
+        default: 0
+        key: shrine_in_room
+    - id: 6730000000000000008
+      type: compare.greater
+      position: [-360, 760]
+      values:
+        B: 0.5
+    - id: 6730000000000000009
+      type: logic.and
+      position: [-200, 530]
+    - id: 6730000000000000010
+      type: logic.and
+      position: [80, 300]
+    - id: 6730000000000000011
+      type: var.get
+      position: [-40, 530]
+      values:
+        variable: leaving
+    - id: 6730000000000000012
+      type: logic.not
+      position: [120, 380]
+    - id: 6730000000000000013
+      type: logic.and
+      position: [320, 150]
+    - id: 6730000000000000014
+      type: flow.branch
+      position: [600, 0]
+    - id: 6730000000000000015
+      type: var.set
+      position: [900, 0]
+      values:
+        Value: true
+        variable: leaving
+    - id: 6730000000000000016
+      type: var.get
+      position: [1040, 150]
+      values:
+        variable: entry
+    - id: 6730000000000000017
+      type: call.gamestate.set
+      position: [1200, 0]
+      values:
+        key: shrine_entry
+    - id: 6730000000000000018
+      type: call.gamestate.set
+      position: [1500, 0]
+      values:
+        key: shrine_state
+        value: leaving
+    - id: 6730000000000000019
+      type: var.get
+      position: [1640, 150]
+      values:
+        variable: target_scene
+    - id: 6730000000000000020
+      type: call.scene.transition_to
+      position: [1800, 0]
+      values:
+        duration: 0.35
+        kind: fade
+        rgba: '0.05, 0.02, 0.04, 1'
+  links:
+    - {from: 6730000000000000001, fromPin: other_id, to: 6730000000000000003, toPin: A}
+    - {from: 6730000000000000002, fromPin: entity_id, to: 6730000000000000003, toPin: B}
+    - {from: 6730000000000000004, fromPin: xy, to: 6730000000000000005, toPin: A}
+    - {from: 6730000000000000005, fromPin: Result, to: 6730000000000000006, toPin: A}
+    - {from: 6730000000000000007, fromPin: value, to: 6730000000000000008, toPin: A}
+    - {from: 6730000000000000006, fromPin: Result, to: 6730000000000000009, toPin: A}
+    - {from: 6730000000000000008, fromPin: Result, to: 6730000000000000009, toPin: B}
+    - {from: 6730000000000000003, fromPin: Result, to: 6730000000000000010, toPin: A}
+    - {from: 6730000000000000009, fromPin: Result, to: 6730000000000000010, toPin: B}
+    - {from: 6730000000000000011, fromPin: Value, to: 6730000000000000012, toPin: A}
+    - {from: 6730000000000000010, fromPin: Result, to: 6730000000000000013, toPin: A}
+    - {from: 6730000000000000012, fromPin: Result, to: 6730000000000000013, toPin: B}
+    - {from: 6730000000000000013, fromPin: Result, to: 6730000000000000014, toPin: Condition}
+    - {from: 6730000000000000016, fromPin: Value, to: 6730000000000000017, toPin: value}
+    - {from: 6730000000000000019, fromPin: Value, to: 6730000000000000020, toPin: scene_path}
+    - {from: 6730000000000000001, fromPin: Then, to: 6730000000000000007, toPin: Exec}
+    - {from: 6730000000000000007, fromPin: Then, to: 6730000000000000014, toPin: Exec}
+    - {from: 6730000000000000014, fromPin: True, to: 6730000000000000015, toPin: Exec}
+    - {from: 6730000000000000015, fromPin: Then, to: 6730000000000000017, toPin: Exec}
+    - {from: 6730000000000000017, fromPin: Then, to: 6730000000000000018, toPin: Exec}
+    - {from: 6730000000000000018, fromPin: Then, to: 6730000000000000020, toPin: Exec}
+  groups:
+    - {id: 6730000000000000021, title: on_trigger_enter, position: [-40, -60], size: [2140, 580], color: Red}

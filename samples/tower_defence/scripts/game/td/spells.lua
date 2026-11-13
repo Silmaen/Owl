@@ -14,6 +14,7 @@ function Spells.front_enemy()
     return best
 end
 
+---@param name any
 function Spells.cast(name)
     local spell = S.spells[name]
     if spell == nil or not spell.unlocked or spell.clock > 0.0 or S.ending ~= nil or S.paused then return end
@@ -43,6 +44,7 @@ function Spells.cast(name)
     gamestate.set("tower_" .. name .. "_casts", spell.casts)
 end
 
+---@param dt any
 function Spells.update_spells(dt)
     for name, spell in pairs(S.spells) do
         spell.clock = math.max(0.0, spell.clock - dt)

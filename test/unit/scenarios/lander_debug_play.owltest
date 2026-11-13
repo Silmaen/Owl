@@ -1,0 +1,13 @@
+# Lunar Lander, landing_1 started directly with the visual scripts built as Play in Owl Nest builds them (probes of
+# the wire values): thrust, tilt, side jets, the view turned, then a coast, no script error.
+scene: ../../../samples/lunar_lander/scenes/landing_1.owl
+debug_scripts: true
+steps:
+  - frames: 20
+  - input: {key: Space, frames: 30}
+  - input: {key: D, frames: 10}
+  - input: {key: Right, frames: 10}
+  - input: {key: E, frames: 20}
+  - frames: 400
+  - expect: {gamestate: lander_feet, greater: -1}
+  - expect: {gamestate: lander_view_yaw, greater: 0.3}

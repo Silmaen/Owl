@@ -1,0 +1,11 @@
+# The Sunken Shrine, the sinking floor: the hero walks to the left of the stone block, faces it and pushes it (E) one
+# cell to the right.
+scene: ../../../samples/sunken_shrine/scenes/room_5.owl
+steps:
+  - frames: 5
+  - input: {key: A, frames: 40}
+  - input: {key: W, frames: 27}
+  - input: {key: D, frames: 2}
+  - input: {key: E, frames: 1}
+  - frames: 3
+  - expect: {gamestate: shrine_pushes, equals: 1}

@@ -180,9 +180,16 @@ deterministic simulation and replay, Jolt, gravity fields.
 - ![Done][done] Luau in place of Lua 5.5: one VM, the bindings, the sandbox, the quotas and the debugger ported
 - ![Done][done] Luau types checked in the Owl Nest code editor, declarations generated from the binding registry
   ([Visual scripting](design/visual-scripting.md#visual-scripting-luau))
-- ![To evaluate][evaluate] Sample games from the pool, picked once the features of the release are done: e.g. a
-  Zelda-like, a marble or kart game, a lunar lander, an asteroid dogfight, an orbital golf, a bridge builder
-  ([Pool](design/sample-games.md#sample-games-pool))
+- ![Done][done] Sample games in visual scripts: the rules of the six earlier games moved to `.owlvs`
+  ([Visual scripts](design/sample-games.md#sample-games-visual-scripts))
+- ![Done][done] Wolfenstein combat: guards on behaviour trees, weapons, CC0 art
+  ([Wolfenstein combat](design/sample-games.md#sample-games-wolfenstein-combat))
+- ![Done][done] Lunar lander sample game ([Lunar lander](design/sample-games.md#sample-games-lunar-lander))
+- ![Done][done] Bridge builder sample game ([Bridge builder](design/sample-games.md#sample-games-bridge-builder))
+- ![Done][done] Asteroid field sample game ([Asteroid field](design/sample-games.md#sample-games-asteroid-field))
+- ![Done][done] One-room Zelda-like sample game ([Zelda-like](design/sample-games.md#sample-games-zelda-like))
+- ![Done][done] Tower defence, rail shooter and point-and-click on steering and NavMesh
+  ([Updates](design/sample-games.md#sample-games-updates-v070))
 
 ## v0.6.0 -- 2026-11-03
 

@@ -1,0 +1,39 @@
+# Bridge Builder, a deck without supports: three roads hinged end to end cannot hold, a joint snaps, the car falls in
+# the river and the level goes back to the plan, the parts still there.
+scene: ../../../samples/bridge_builder/scenes/level_1.owl
+steps:
+  - frames: 10
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: X, frames: 1}
+  - frames: 1
+  - input: {key: R, frames: 1}
+  - frames: 1
+  - frames: 60
+  - expect: {gamestate: bridge_breaks, greater: 0}
+  - frames: 600
+  - expect: {gamestate: bridge_fallen, greater: 0}
+  - expect: {gamestate: bridge_state, equals: build}
+  - expect: {gamestate: bridge_parts, equals: 3}

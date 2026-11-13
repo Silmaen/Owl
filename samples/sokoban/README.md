@@ -27,16 +27,16 @@ of the progress.
 
 ## Inside
 
-| Path                           | Content                                                                                    |
-|--------------------------------|--------------------------------------------------------------------------------------------|
-| `scenes/`                      | `title`, `level_select`, `level_01` to `level_10`, `settings`, `victory`                   |
-| `tilemaps/level_NN.owltilemap` | A level: layer `floor` (floor, walls), `goals`, `boxes` (crates, the hero where he starts) |
-| `tilesets/sokoban.owltileset`  | The tiles of `textures/sokoban_tiles.png`                                                  |
-| `tables/levels.owltable`       | The levels in play order: the scene and the name of each one                               |
-| `scripts/game/sokoban.lua`     | The rules: steps and pushes on the tilemap cells, the undo stack, the win, the pause       |
-| `scripts/game/levels.lua`      | Reads the level table and the progress settings for every screen                           |
-| `scripts/ui/`                  | The wooden menus; `level_select.lua` fills the list, `warehouse.lua` animates the corridor |
-| `huds/level.owlhud`            | Level, moves, best, Undo / Restart / Menu buttons, the pause window (with the controls)    |
+| Path                           | Content                                                                                        |
+|--------------------------------|------------------------------------------------------------------------------------------------|
+| `scenes/`                      | `title`, `level_select`, `level_01` to `level_10`, `settings`, `victory`                       |
+| `tilemaps/level_NN.owltilemap` | A level: layer `floor` (floor, walls), `goals`, `boxes` (crates, the hero where he starts)     |
+| `tilesets/sokoban.owltileset`  | The tiles of `textures/sokoban_tiles.png`                                                      |
+| `tables/levels.owltable`       | The levels in play order: the scene and the name of each one                                   |
+| `scripts/game/sokoban.owlvs`   | The rules: steps and pushes on the tilemap cells, the undo stack, the win, the pause           |
+| `scripts/game/levels.lua`      | Reads the level table and the progress settings for every screen                               |
+| `scripts/ui/`                  | The wooden menus; `level_select.owlvs` fills the list, `warehouse.owlvs` animates the corridor |
+| `huds/level.owlhud`            | Level, moves, best, Undo / Restart / Menu buttons, the pause window (with the controls)        |
 
 ## Editing a level
 
@@ -51,6 +51,6 @@ The art, the sounds, the first version of the levels and the menus come from `to
 (`generate_assets.py`, `generate_levels.py`, `generate_menus.py`): running a generator again overwrites the edits made
 in Owl Nest.
 
-The menus look like a warehouse: a crate per letter of the title, plank buttons, the progress in a warehouse log, a
-corridor at the bottom where the hero pushes a crate onto its goal, and wipes in the brown of the crates between the
-screens.
+The menus look like a warehouse: a crate per letter of the title, a row of crates with stencilled names for buttons,
+the progress, the settings and the level list typed on a clipboard, a corridor at the bottom where the hero pushes a
+crate onto its goal, and wipes in the brown of the crates between the screens.

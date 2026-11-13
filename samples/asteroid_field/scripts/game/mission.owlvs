@@ -1,0 +1,1650 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: waves, type: string, default: tables/waves.owltable}
+    - {name: this_scene, type: string, default: scenes/mission.owl}
+    - {name: freighter_bonus, type: int, default: 1000, min: 0}
+    - {name: state, type: string, default: fly, exposed: false}
+    - {name: clock, type: float, default: 0, exposed: false}
+    - {name: paused, type: bool, default: false, exposed: false}
+    - {name: leaving, type: bool, default: false, exposed: false}
+    - {name: message_time, type: float, default: 0, exposed: false}
+    - {name: brief_time, type: float, default: 8, exposed: false}
+    - {name: seen_wave, type: int, default: 0, exposed: false}
+  functions:
+    - name: fly_update
+      inputs: []
+      outputs: []
+    - name: order
+      inputs: [{name: kind, type: string}]
+      outputs: []
+    - name: finish
+      inputs: [{name: won, type: boolean}, {name: reason, type: string}]
+      outputs: []
+    - name: end_update
+      inputs: [{name: dt, type: number}]
+      outputs: []
+    - name: say
+      inputs: [{name: text, type: string}]
+      outputs: []
+    - name: set_paused
+      inputs: [{name: paused, type: boolean}]
+      outputs: []
+    - name: enemy_fire
+      inputs: [{name: ship, type: entity}, {name: dt, type: number}]
+      outputs: [{name: ok, type: boolean}]
+      exported: true
+      category: Behaviour tree leaves
+    - name: wingman_pick
+      inputs: [{name: ship, type: entity}, {name: dt, type: number}]
+      outputs: [{name: ok, type: boolean}]
+      exported: true
+      category: Behaviour tree leaves
+    - name: wingman_fire
+      inputs: [{name: ship, type: entity}, {name: dt, type: number}]
+      outputs: [{name: ok, type: boolean}]
+      exported: true
+      category: Behaviour tree leaves
+    - name: wingman_escort
+      inputs: [{name: ship, type: entity}, {name: dt, type: number}]
+      outputs: [{name: ok, type: boolean}]
+      exported: true
+      category: Behaviour tree leaves
+  nodes:
+    - id: 6600000000000000001
+      type: event.on_create
+      position: [0, 0]
+    - id: 6600000000000000002
+      type: call.ui.is_transition_active
+      position: [-60, 300]
+    - id: 6600000000000000003
+      type: logic.not
+      position: [100, 150]
+    - id: 6600000000000000004
+      type: flow.branch
+      position: [300, 0]
+    - id: 6600000000000000005
+      type: call.ui.transition_play
+      position: [600, 0]
+      values:
+        duration: 0.6
+        kind: wipe_left
+        rgba: '0.02, 0.02, 0.08, 1'
+    - id: 6600000000000000006
+      type: call.settings.get
+      position: [900, 0]
+      values:
+        default: false
+        key: field_easy
+    - id: 6600000000000000007
+      type: var.get
+      position: [1040, 150]
+      values:
+        variable: waves
+    - id: 6600000000000000008
+      type: lua.call
+      position: [1200, 0]
+      values:
+        function: setup
+        module: scripts.game.combat
+    - id: 6600000000000000009
+      type: call.settings.get
+      position: [1500, 0]
+      values:
+        default: false
+        key: field_no_assist
+    - id: 6600000000000000010
+      type: call.scene.find_entity
+      position: [1640, 150]
+      values:
+        name: Player
+    - id: 6600000000000000011
+      type: logic.not
+      position: [1640, 230]
+    - id: 6600000000000000012
+      type: call.entity.set_ship_assist
+      position: [1800, 0]
+    - id: 6600000000000000013
+      type: call.scene.find_entity
+      position: [2240, 150]
+      values:
+        name: Player
+    - id: 6600000000000000014
+      type: call.settings.get
+      position: [2100, 0]
+      values:
+        default: false
+        key: field_invert_y
+    - id: 6600000000000000015
+      type: call.entity.set_ship_invert_pitch
+      position: [2400, 0]
+    - id: 6600000000000000016
+      type: call.gamestate.set
+      position: [2700, 0]
+      values:
+        key: field_score
+        value: 0
+    - id: 6600000000000000017
+      type: call.gamestate.set
+      position: [3000, 0]
+      values:
+        key: field_base
+        value: 0
+    - id: 6600000000000000018
+      type: var.get
+      position: [3140, 150]
+      values:
+        variable: this_scene
+    - id: 6600000000000000019
+      type: call.gamestate.set
+      position: [3300, 0]
+      values:
+        key: field_retry
+    - id: 6600000000000000020
+      type: call.gamestate.set
+      position: [3600, 0]
+      values:
+        key: field_state
+        value: fly
+    - id: 6600000000000000021
+      type: call.gamestate.set
+      position: [3900, 0]
+      values:
+        key: field_paused
+        value: false
+    - id: 6600000000000000022
+      type: call.gamestate.set
+      position: [4200, 0]
+      values:
+        key: field_freighters
+    - id: 6600000000000000023
+      type: func.call
+      position: [4500, 0]
+      values:
+        function: say
+        text: ESCORT THE CONVOY TO THE JUMP GATE
+    - id: 6600000000000000024
+      type: event.on_tick
+      position: [0, 420]
+    - id: 6600000000000000025
+      type: var.get
+      position: [-300, 870]
+      values:
+        variable: state
+    - id: 6600000000000000026
+      type: compare.equal
+      position: [-140, 720]
+      values:
+        B: fly
+    - id: 6600000000000000027
+      type: var.get
+      position: [-300, 950]
+      values:
+        variable: paused
+    - id: 6600000000000000028
+      type: logic.not
+      position: [-140, 800]
+    - id: 6600000000000000029
+      type: logic.and
+      position: [60, 570]
+    - id: 6600000000000000030
+      type: flow.branch
+      position: [300, 420]
+    - id: 6600000000000000031
+      type: call.input.is_action_pressed
+      position: [440, 570]
+      values:
+        action: fire
+    - id: 6600000000000000032
+      type: lua.call
+      position: [600, 420]
+      values:
+        function: tick
+        module: scripts.game.combat
+    - id: 6600000000000000033
+      type: event.on_update
+      position: [0, 840]
+    - id: 6600000000000000034
+      type: var.get
+      position: [-60, 1140]
+      values:
+        variable: paused
+    - id: 6600000000000000035
+      type: logic.not
+      position: [100, 990]
+    - id: 6600000000000000036
+      type: func.call
+      position: [300, 840]
+      values:
+        function: set_paused
+    - id: 6600000000000000037
+      type: call.input.is_action_just_pressed
+      position: [240, 1140]
+      values:
+        action: pause
+    - id: 6600000000000000038
+      type: var.get
+      position: [40, 1370]
+      values:
+        variable: state
+    - id: 6600000000000000039
+      type: compare.equal
+      position: [200, 1220]
+      values:
+        B: fly
+    - id: 6600000000000000040
+      type: logic.and
+      position: [400, 990]
+    - id: 6600000000000000041
+      type: flow.branch
+      position: [600, 840]
+    - id: 6600000000000000042
+      type: var.get
+      position: [740, 990]
+      values:
+        variable: paused
+    - id: 6600000000000000043
+      type: flow.branch
+      position: [900, 840]
+    - id: 6600000000000000044
+      type: lua.pure
+      position: [3540, 1140]
+      values:
+        function: counters
+        module: scripts.game.combat
+    - id: 6600000000000000045
+      type: lua.pure
+      position: [2100, 1290]
+      values:
+        function: hull
+        module: scripts.game.combat
+    - id: 6600000000000000046
+      type: var.get
+      position: [840, 1140]
+      values:
+        variable: message_time
+    - id: 6600000000000000047
+      type: math.subtract
+      position: [1000, 990]
+    - id: 6600000000000000048
+      type: var.set
+      position: [1200, 840]
+      values:
+        variable: message_time
+    - id: 6600000000000000049
+      type: call.input.is_action_just_pressed
+      position: [1140, 1140]
+      values:
+        action: fire
+    - id: 6600000000000000050
+      type: var.get
+      position: [940, 1370]
+      values:
+        variable: brief_time
+    - id: 6600000000000000051
+      type: math.subtract
+      position: [1100, 1220]
+    - id: 6600000000000000052
+      type: logic.select
+      position: [1300, 990]
+      values:
+        True: 0
+    - id: 6600000000000000053
+      type: var.set
+      position: [1500, 840]
+      values:
+        variable: brief_time
+    - id: 6600000000000000054
+      type: call.ui.find
+      position: [1640, 990]
+      values:
+        name: Briefing
+    - id: 6600000000000000055
+      type: var.get
+      position: [1440, 1220]
+      values:
+        variable: brief_time
+    - id: 6600000000000000056
+      type: compare.greater
+      position: [1600, 1070]
+      values:
+        B: 0
+    - id: 6600000000000000057
+      type: call.ui.set_visible
+      position: [1800, 840]
+    - id: 6600000000000000058
+      type: call.ui.find
+      position: [1940, 990]
+      values:
+        name: ObjectiveText
+    - id: 6600000000000000059
+      type: lua.pure
+      position: [1740, 1220]
+      values:
+        function: gate_distance
+        module: scripts.game.combat
+    - id: 6600000000000000060
+      type: text.format
+      position: [1900, 1070]
+      values:
+        Format: 'ESCORT THE CONVOY TO THE GATE   %d M'
+    - id: 6600000000000000061
+      type: call.ui.set_text
+      position: [2100, 840]
+    - id: 6600000000000000062
+      type: var.get
+      position: [2040, 1140]
+      values:
+        variable: brief_time
+    - id: 6600000000000000063
+      type: compare.greater
+      position: [2200, 990]
+      values:
+        B: 0
+    - id: 6600000000000000064
+      type: call.gamestate.set
+      position: [2400, 840]
+      values:
+        key: field_briefing
+    - id: 6600000000000000065
+      type: call.ui.find
+      position: [2540, 1070]
+      values:
+        name: HullText
+    - id: 6600000000000000066
+      type: math.ceil
+      position: [2260, 1140]
+    - id: 6600000000000000067
+      type: text.format
+      position: [2460, 990]
+      values:
+        Format: 'HULL %d'
+    - id: 6600000000000000068
+      type: call.ui.set_text
+      position: [2700, 840]
+    - id: 6600000000000000069
+      type: call.ui.find
+      position: [2840, 990]
+      values:
+        name: HullBar
+    - id: 6600000000000000070
+      type: lua.pure
+      position: [2640, 1220]
+      values:
+        function: hull
+        module: scripts.game.combat
+    - id: 6600000000000000071
+      type: math.divide
+      position: [2800, 1070]
+      values:
+        B: 100
+    - id: 6600000000000000072
+      type: call.ui.set_progress
+      position: [3000, 840]
+    - id: 6600000000000000073
+      type: call.ui.find
+      position: [3440, 990]
+      values:
+        name: ScoreText
+    - id: 6600000000000000074
+      type: call.gamestate.get
+      position: [3300, 840]
+      values:
+        default: 0
+        key: field_score
+    - id: 6600000000000000075
+      type: text.format
+      position: [3440, 1070]
+      values:
+        Format: 'SCORE %d'
+    - id: 6600000000000000076
+      type: call.ui.set_text
+      position: [3600, 840]
+    - id: 6600000000000000077
+      type: call.ui.find
+      position: [3740, 1070]
+      values:
+        name: WaveText
+    - id: 6600000000000000078
+      type: text.format
+      position: [3700, 990]
+      values:
+        Format: 'WAVE %d   KILLS %d'
+    - id: 6600000000000000079
+      type: call.ui.set_text
+      position: [3900, 840]
+    - id: 6600000000000000080
+      type: call.ui.find
+      position: [4040, 990]
+      values:
+        name: ConvoyText
+    - id: 6600000000000000081
+      type: lua.pure
+      position: [3840, 1220]
+      values:
+        function: freighters_alive
+        module: scripts.game.combat
+    - id: 6600000000000000082
+      type: text.format
+      position: [4000, 1070]
+      values:
+        Format: 'CONVOY %d'
+    - id: 6600000000000000083
+      type: call.ui.set_text
+      position: [4200, 840]
+    - id: 6600000000000000084
+      type: call.ui.find
+      position: [4340, 990]
+      values:
+        name: RouteBar
+    - id: 6600000000000000085
+      type: lua.pure
+      position: [4340, 1070]
+      values:
+        function: progress
+        module: scripts.game.combat
+    - id: 6600000000000000086
+      type: call.ui.set_progress
+      position: [4500, 840]
+    - id: 6600000000000000087
+      type: lua.pure
+      position: [4640, 990]
+      values:
+        function: hull
+        module: scripts.game.combat
+    - id: 6600000000000000088
+      type: call.gamestate.set
+      position: [4800, 840]
+      values:
+        key: field_hull
+    - id: 6600000000000000089
+      type: call.gamestate.set
+      position: [5100, 840]
+      values:
+        key: field_kills
+    - id: 6600000000000000090
+      type: call.gamestate.set
+      position: [5400, 840]
+      values:
+        key: field_enemies
+    - id: 6600000000000000091
+      type: call.gamestate.set
+      position: [5700, 840]
+      values:
+        key: field_wave
+    - id: 6600000000000000092
+      type: call.gamestate.set
+      position: [6000, 840]
+      values:
+        key: field_shots
+    - id: 6600000000000000093
+      type: call.gamestate.set
+      position: [6300, 840]
+      values:
+        key: field_enemy_shots
+    - id: 6600000000000000094
+      type: call.gamestate.set
+      position: [6600, 840]
+      values:
+        key: field_convoy_hull
+    - id: 6600000000000000095
+      type: lua.pure
+      position: [6740, 990]
+      values:
+        function: freighters_alive
+        module: scripts.game.combat
+    - id: 6600000000000000096
+      type: call.gamestate.set
+      position: [6900, 840]
+      values:
+        key: field_convoy
+    - id: 6600000000000000097
+      type: lua.pure
+      position: [7040, 990]
+      values:
+        function: progress
+        module: scripts.game.combat
+    - id: 6600000000000000098
+      type: call.gamestate.set
+      position: [7200, 840]
+      values:
+        key: field_progress
+    - id: 6600000000000000099
+      type: call.scene.find_entity
+      position: [7140, 1140]
+      values:
+        name: Player
+    - id: 6600000000000000100
+      type: call.entity.get_ship_speed
+      position: [7300, 990]
+    - id: 6600000000000000101
+      type: call.gamestate.set
+      position: [7500, 840]
+      values:
+        key: field_speed
+    - id: 6600000000000000102
+      type: flow.for
+      position: [7800, 840]
+      values:
+        First: 1
+        Last: 3
+    - id: 6600000000000000103
+      type: text.concat
+      position: [7740, 1140]
+      values:
+        A: FreighterBar
+    - id: 6600000000000000104
+      type: call.ui.find
+      position: [7900, 990]
+    - id: 6600000000000000105
+      type: lua.pure
+      position: [7940, 1070]
+      values:
+        function: freighter_hull
+        module: scripts.game.combat
+    - id: 6600000000000000106
+      type: call.ui.set_progress
+      position: [8100, 840]
+    - id: 6600000000000000107
+      type: flow.sequence
+      position: [8400, 840]
+    - id: 6600000000000000108
+      type: var.get
+      position: [8340, 1140]
+      values:
+        variable: message_time
+    - id: 6600000000000000109
+      type: compare.less
+      position: [8500, 990]
+      values:
+        B: 0
+    - id: 6600000000000000110
+      type: flow.branch
+      position: [8700, 840]
+    - id: 6600000000000000111
+      type: call.ui.find
+      position: [8840, 990]
+      values:
+        name: Message
+    - id: 6600000000000000112
+      type: call.ui.set_visible
+      position: [9000, 840]
+      values:
+        visible: false
+    - id: 6600000000000000113
+      type: var.get
+      position: [8940, 1140]
+      values:
+        variable: state
+    - id: 6600000000000000114
+      type: compare.equal
+      position: [9100, 990]
+      values:
+        B: fly
+    - id: 6600000000000000115
+      type: flow.branch
+      position: [9300, 840]
+    - id: 6600000000000000116
+      type: func.call
+      position: [9600, 840]
+      values:
+        function: fly_update
+    - id: 6600000000000000117
+      type: var.get
+      position: [9300, 1290]
+      values:
+        variable: state
+    - id: 6600000000000000118
+      type: compare.not_equal
+      position: [9460, 1140]
+      values:
+        B: fly
+    - id: 6600000000000000119
+      type: var.get
+      position: [9300, 1370]
+      values:
+        variable: leaving
+    - id: 6600000000000000120
+      type: logic.not
+      position: [9460, 1220]
+    - id: 6600000000000000121
+      type: logic.and
+      position: [9660, 990]
+    - id: 6600000000000000122
+      type: flow.branch
+      position: [9900, 840]
+    - id: 6600000000000000123
+      type: func.call
+      position: [10200, 840]
+      values:
+        function: end_update
+    - id: 6600000000000000124
+      type: func.entry
+      position: [0, 1260]
+      values:
+        function: fly_update
+    - id: 6600000000000000125
+      type: call.input.is_action_just_pressed
+      position: [140, 1410]
+      values:
+        action: wings_attack
+    - id: 6600000000000000126
+      type: flow.branch
+      position: [300, 1260]
+    - id: 6600000000000000127
+      type: func.call
+      position: [600, 1260]
+      values:
+        function: order
+        kind: attack
+    - id: 6600000000000000128
+      type: call.input.is_action_just_pressed
+      position: [740, 1410]
+      values:
+        action: wings_escort
+    - id: 6600000000000000129
+      type: flow.branch
+      position: [900, 1260]
+    - id: 6600000000000000130
+      type: func.call
+      position: [1200, 1260]
+      values:
+        function: order
+        kind: escort
+    - id: 6600000000000000131
+      type: call.input.is_action_just_pressed
+      position: [1340, 1410]
+      values:
+        action: lock
+    - id: 6600000000000000132
+      type: flow.branch
+      position: [1500, 1260]
+    - id: 6600000000000000133
+      type: lua.call
+      position: [1800, 1260]
+      values:
+        function: lock
+        module: scripts.game.combat
+    - id: 6600000000000000134
+      type: flow.branch
+      position: [2100, 1260]
+    - id: 6600000000000000135
+      type: call.gamestate.set
+      position: [2400, 1260]
+      values:
+        key: field_locked
+    - id: 6600000000000000136
+      type: call.sound.play
+      position: [2700, 1260]
+      values:
+        asset_path: sounds/game/lock.wav
+    - id: 6600000000000000275
+      type: call.scene.get_viewport_mouse
+      position: [2900, 1410]
+      values:
+        split.xy: "true"
+    - id: 6600000000000000276
+      type: call.input.get_mouse_wheel
+      position: [2900, 1560]
+      values:
+        split.delta: "true"
+    - id: 6600000000000000277
+      type: call.input.is_action_just_pressed
+      position: [3060, 1490]
+      values:
+        action: lock_next
+    - id: 6600000000000000278
+      type: call.input.is_action_just_pressed
+      position: [3060, 1640]
+      values:
+        action: lock_previous
+    - id: 6600000000000000279
+      type: lua.call
+      position: [3300, 1260]
+      values:
+        function: aim
+        module: scripts.game.combat
+    - id: 6600000000000000280
+      type: call.gamestate.set
+      position: [3700, 1260]
+      values:
+        key: field_locked
+    - id: 6600000000000000137
+      type: lua.pure
+      position: [4040, 1560]
+      values:
+        function: counters
+        module: scripts.game.combat
+    - id: 6600000000000000138
+      type: var.get
+      position: [4040, 1640]
+      values:
+        variable: seen_wave
+    - id: 6600000000000000139
+      type: compare.greater
+      position: [4200, 1410]
+    - id: 6600000000000000140
+      type: flow.branch
+      position: [4400, 1260]
+    - id: 6600000000000000141
+      type: lua.pure
+      position: [4540, 1410]
+      values:
+        function: counters
+        module: scripts.game.combat
+    - id: 6600000000000000142
+      type: var.set
+      position: [4700, 1260]
+      values:
+        variable: seen_wave
+    - id: 6600000000000000143
+      type: func.call
+      position: [5000, 1260]
+      values:
+        function: say
+        text: ENEMY FIGHTERS INBOUND
+    - id: 6600000000000000144
+      type: lua.pure
+      position: [4940, 1560]
+      values:
+        function: hull
+        module: scripts.game.combat
+    - id: 6600000000000000145
+      type: compare.less_equal
+      position: [5100, 1410]
+      values:
+        B: 0
+    - id: 6600000000000000146
+      type: flow.branch
+      position: [5300, 1260]
+    - id: 6600000000000000147
+      type: func.call
+      position: [5600, 1260]
+      values:
+        function: finish
+        reason: YOUR FIGHTER IS LOST
+        won: false
+    - id: 6600000000000000148
+      type: lua.pure
+      position: [5540, 1560]
+      values:
+        function: freighters_alive
+        module: scripts.game.combat
+    - id: 6600000000000000149
+      type: compare.equal
+      position: [5700, 1410]
+      values:
+        B: 0
+    - id: 6600000000000000150
+      type: flow.branch
+      position: [5900, 1260]
+    - id: 6600000000000000151
+      type: func.call
+      position: [6200, 1260]
+      values:
+        function: finish
+        reason: THE CONVOY IS LOST
+        won: false
+    - id: 6600000000000000152
+      type: lua.pure
+      position: [6140, 1560]
+      values:
+        function: progress
+        module: scripts.game.combat
+    - id: 6600000000000000153
+      type: compare.greater_equal
+      position: [6300, 1410]
+      values:
+        B: 0.995
+    - id: 6600000000000000154
+      type: flow.branch
+      position: [6500, 1260]
+    - id: 6600000000000000155
+      type: func.call
+      position: [6800, 1260]
+      values:
+        function: finish
+        reason: THE CONVOY JUMPED
+        won: true
+    - id: 6600000000000000156
+      type: func.return
+      position: [7100, 1260]
+      values:
+        function: fly_update
+    - id: 6600000000000000157
+      type: func.entry
+      position: [0, 1680]
+      values:
+        function: order
+    - id: 6600000000000000158
+      type: lua.call
+      position: [300, 1680]
+      values:
+        function: order
+        module: scripts.game.combat
+    - id: 6600000000000000159
+      type: call.ui.find
+      position: [440, 1830]
+      values:
+        name: OrderText
+    - id: 6600000000000000160
+      type: text.upper
+      position: [240, 2060]
+    - id: 6600000000000000161
+      type: text.format
+      position: [400, 1910]
+      values:
+        Format: 'WINGS: %s'
+    - id: 6600000000000000162
+      type: call.ui.set_text
+      position: [600, 1680]
+    - id: 6600000000000000163
+      type: call.gamestate.set
+      position: [900, 1680]
+      values:
+        key: field_order
+    - id: 6600000000000000164
+      type: call.sound.play
+      position: [1200, 1680]
+      values:
+        asset_path: sounds/game/order.wav
+    - id: 6600000000000000165
+      type: func.return
+      position: [1500, 1680]
+      values:
+        function: order
+    - id: 6600000000000000166
+      type: func.entry
+      position: [0, 2100]
+      values:
+        function: finish
+    - id: 6600000000000000167
+      type: lua.pure
+      position: [1440, 2400]
+      values:
+        function: counters
+        module: scripts.game.combat
+    - id: 6600000000000000168
+      type: lua.pure
+      position: [2100, 2850]
+      values:
+        function: freighters_alive
+        module: scripts.game.combat
+    - id: 6600000000000000169
+      type: var.get
+      position: [2100, 2930]
+      values:
+        variable: freighter_bonus
+    - id: 6600000000000000170
+      type: math.multiply
+      position: [2260, 2700]
+    - id: 6600000000000000171
+      type: logic.select
+      position: [2460, 2550]
+      values:
+        False: 0
+    - id: 6600000000000000172
+      type: lua.pure
+      position: [1820, 3080]
+      values:
+        function: hull
+        module: scripts.game.combat
+    - id: 6600000000000000173
+      type: math.ceil
+      position: [1980, 2930]
+    - id: 6600000000000000174
+      type: math.multiply
+      position: [2180, 2780]
+      values:
+        B: 10
+    - id: 6600000000000000175
+      type: logic.select
+      position: [2420, 2630]
+      values:
+        False: 0
+    - id: 6600000000000000176
+      type: call.gamestate.get
+      position: [300, 2100]
+      values:
+        default: 0
+        key: field_score
+    - id: 6600000000000000177
+      type: math.add
+      position: [2700, 2400]
+    - id: 6600000000000000178
+      type: math.add
+      position: [2980, 2250]
+    - id: 6600000000000000179
+      type: lua.pure
+      position: [1200, 2850]
+      values:
+        function: counters
+        module: scripts.game.combat
+    - id: 6600000000000000180
+      type: math.multiply
+      position: [1360, 2700]
+      values:
+        B: 100
+    - id: 6600000000000000181
+      type: lua.pure
+      position: [1200, 2930]
+      values:
+        function: counters
+        module: scripts.game.combat
+    - id: 6600000000000000182
+      type: math.max
+      position: [1360, 2780]
+      values:
+        A: 1
+    - id: 6600000000000000183
+      type: math.divide
+      position: [1560, 2550]
+    - id: 6600000000000000184
+      type: math.floor
+      position: [1800, 2400]
+    - id: 6600000000000000185
+      type: logic.select
+      position: [440, 2250]
+      values:
+        False: lost
+        True: won
+    - id: 6600000000000000186
+      type: var.set
+      position: [600, 2100]
+      values:
+        variable: state
+    - id: 6600000000000000187
+      type: var.set
+      position: [900, 2100]
+      values:
+        Value: 0
+        variable: clock
+    - id: 6600000000000000188
+      type: var.get
+      position: [1040, 2250]
+      values:
+        variable: state
+    - id: 6600000000000000189
+      type: call.gamestate.set
+      position: [1200, 2100]
+      values:
+        key: field_state
+    - id: 6600000000000000190
+      type: call.gamestate.set
+      position: [1500, 2100]
+      values:
+        key: field_line_1
+    - id: 6600000000000000191
+      type: text.format
+      position: [1600, 2250]
+      values:
+        Format: 'ENEMIES DOWN     %d'
+    - id: 6600000000000000192
+      type: call.gamestate.set
+      position: [1800, 2100]
+      values:
+        key: field_line_2
+    - id: 6600000000000000193
+      type: logic.select
+      position: [1740, 2400]
+      values:
+        False: 0
+    - id: 6600000000000000194
+      type: text.format
+      position: [1900, 2250]
+      values:
+        Format: 'FREIGHTERS SAVED %d / 3'
+    - id: 6600000000000000195
+      type: call.gamestate.set
+      position: [2100, 2100]
+      values:
+        key: field_line_3
+    - id: 6600000000000000196
+      type: text.format
+      position: [2080, 2250]
+      values:
+        Format: 'HIT RATIO        %d%%'
+    - id: 6600000000000000197
+      type: call.gamestate.set
+      position: [2400, 2100]
+      values:
+        key: field_line_4
+    - id: 6600000000000000198
+      type: text.format
+      position: [2540, 2250]
+      values:
+        Format: 'CONVOY BONUS     %d'
+    - id: 6600000000000000199
+      type: call.gamestate.set
+      position: [2700, 2100]
+      values:
+        key: field_line_5
+    - id: 6600000000000000200
+      type: text.format
+      position: [2840, 2250]
+      values:
+        Format: 'HULL BONUS       %d'
+    - id: 6600000000000000201
+      type: call.gamestate.set
+      position: [3000, 2100]
+      values:
+        key: field_line_6
+    - id: 6600000000000000202
+      type: call.gamestate.set
+      position: [3300, 2100]
+      values:
+        key: field_score
+    - id: 6600000000000000203
+      type: logic.select
+      position: [3440, 2250]
+      values:
+        False: sounds/game/explosion.wav
+        True: sounds/game/jump.wav
+    - id: 6600000000000000204
+      type: call.sound.play
+      position: [3600, 2100]
+    - id: 6600000000000000205
+      type: func.call
+      position: [3900, 2100]
+      values:
+        function: say
+    - id: 6600000000000000206
+      type: func.return
+      position: [4200, 2100]
+      values:
+        function: finish
+    - id: 6600000000000000207
+      type: func.entry
+      position: [0, 2520]
+      values:
+        function: end_update
+    - id: 6600000000000000208
+      type: var.get
+      position: [-60, 2820]
+      values:
+        variable: clock
+    - id: 6600000000000000209
+      type: compare.greater
+      position: [100, 2670]
+      values:
+        B: 3.5
+    - id: 6600000000000000210
+      type: flow.branch
+      position: [300, 2520]
+    - id: 6600000000000000211
+      type: var.get
+      position: [240, 2820]
+      values:
+        variable: clock
+    - id: 6600000000000000212
+      type: math.add
+      position: [400, 2670]
+    - id: 6600000000000000213
+      type: var.set
+      position: [600, 2520]
+      values:
+        variable: clock
+    - id: 6600000000000000214
+      type: var.get
+      position: [600, 2970]
+      values:
+        variable: state
+    - id: 6600000000000000215
+      type: compare.equal
+      position: [760, 2820]
+      values:
+        B: won
+    - id: 6600000000000000216
+      type: logic.select
+      position: [960, 2670]
+      values:
+        False: scenes/game_over.owl
+        True: scenes/victory.owl
+    - id: 6600000000000000217
+      type: var.set
+      position: [900, 2520]
+      values:
+        Value: true
+        variable: leaving
+    - id: 6600000000000000218
+      type: call.scene.transition_to
+      position: [1200, 2520]
+      values:
+        duration: 0.8
+        kind: fade
+        rgba: '0.02, 0.02, 0.08, 1'
+    - id: 6600000000000000219
+      type: func.entry
+      position: [0, 2940]
+      values:
+        function: say
+    - id: 6600000000000000220
+      type: call.ui.find
+      position: [140, 3090]
+      values:
+        name: Message
+    - id: 6600000000000000221
+      type: call.ui.set_text
+      position: [300, 2940]
+    - id: 6600000000000000222
+      type: call.ui.find
+      position: [440, 3090]
+      values:
+        name: Message
+    - id: 6600000000000000223
+      type: call.ui.set_visible
+      position: [600, 2940]
+      values:
+        visible: true
+    - id: 6600000000000000224
+      type: var.set
+      position: [900, 2940]
+      values:
+        Value: 3
+        variable: message_time
+    - id: 6600000000000000225
+      type: call.gamestate.set
+      position: [1200, 2940]
+      values:
+        key: field_message
+    - id: 6600000000000000226
+      type: func.return
+      position: [1500, 2940]
+      values:
+        function: say
+    - id: 6600000000000000227
+      type: func.entry
+      position: [0, 3360]
+      values:
+        function: set_paused
+    - id: 6600000000000000228
+      type: flow.branch
+      position: [300, 3360]
+    - id: 6600000000000000229
+      type: var.set
+      position: [600, 3360]
+      values:
+        variable: paused
+    - id: 6600000000000000230
+      type: call.time.set_paused
+      position: [900, 3360]
+    - id: 6600000000000000231
+      type: call.ui.find
+      position: [1040, 3510]
+      values:
+        name: PauseWindow
+    - id: 6600000000000000232
+      type: call.ui.set_visible
+      position: [1200, 3360]
+    - id: 6600000000000000233
+      type: call.gamestate.set
+      position: [1500, 3360]
+      values:
+        key: field_paused
+    - id: 6600000000000000282
+      type: lua.call
+      position: [1800, 3660]
+      values:
+        function: pause_view
+        module: scripts.game.combat
+    - id: 6600000000000000234
+      type: call.ui.find
+      position: [1640, 3510]
+      values:
+        name: PauseWindow
+    - id: 6600000000000000235
+      type: call.ui.raise_window
+      position: [1800, 3360]
+    - id: 6600000000000000236
+      type: call.ui.find
+      position: [1940, 3510]
+      values:
+        name: ResumeButton
+    - id: 6600000000000000237
+      type: call.ui.set_focus
+      position: [2100, 3360]
+    - id: 6600000000000000238
+      type: func.entry
+      position: [0, 3780]
+      values:
+        function: enemy_fire
+    - id: 6600000000000000239
+      type: lua.call
+      position: [300, 3780]
+      values:
+        function: enemy_fire
+        module: scripts.game.combat
+    - id: 6600000000000000240
+      type: func.return
+      position: [600, 3780]
+      values:
+        function: enemy_fire
+    - id: 6600000000000000241
+      type: func.entry
+      position: [0, 4200]
+      values:
+        function: wingman_pick
+    - id: 6600000000000000242
+      type: lua.call
+      position: [300, 4200]
+      values:
+        function: wingman_pick
+        module: scripts.game.combat
+    - id: 6600000000000000243
+      type: func.return
+      position: [600, 4200]
+      values:
+        function: wingman_pick
+    - id: 6600000000000000244
+      type: func.entry
+      position: [0, 4620]
+      values:
+        function: wingman_fire
+    - id: 6600000000000000245
+      type: lua.call
+      position: [300, 4620]
+      values:
+        function: wingman_fire
+        module: scripts.game.combat
+    - id: 6600000000000000246
+      type: func.return
+      position: [600, 4620]
+      values:
+        function: wingman_fire
+    - id: 6600000000000000247
+      type: func.entry
+      position: [0, 5040]
+      values:
+        function: wingman_escort
+    - id: 6600000000000000248
+      type: lua.call
+      position: [300, 5040]
+      values:
+        function: wingman_escort
+        module: scripts.game.combat
+    - id: 6600000000000000249
+      type: func.return
+      position: [600, 5040]
+      values:
+        function: wingman_escort
+    - id: 6600000000000000250
+      type: event.custom
+      position: [0, 5460]
+      values:
+        function: on_resume_clicked
+    - id: 6600000000000000251
+      type: func.call
+      position: [300, 5460]
+      values:
+        function: set_paused
+        paused: false
+    - id: 6600000000000000252
+      type: event.custom
+      position: [0, 5880]
+      values:
+        function: on_restart_clicked
+    - id: 6600000000000000253
+      type: call.time.set_paused
+      position: [300, 5880]
+      values:
+        paused: false
+    - id: 6600000000000000254
+      type: var.get
+      position: [440, 6030]
+      values:
+        variable: this_scene
+    - id: 6600000000000000255
+      type: call.scene.transition_to
+      position: [600, 5880]
+      values:
+        duration: 0.4
+        kind: fade
+        rgba: '0.02, 0.02, 0.08, 1'
+    - id: 6600000000000000256
+      type: event.custom
+      position: [0, 6300]
+      values:
+        function: on_quit_clicked
+    - id: 6600000000000000257
+      type: call.time.set_paused
+      position: [300, 6300]
+      values:
+        paused: false
+    - id: 6600000000000000258
+      type: call.scene.transition_to
+      position: [600, 6300]
+      values:
+        duration: 0.4
+        kind: fade
+        rgba: '0.02, 0.02, 0.08, 1'
+        scene_path: scenes/title.owl
+  links:
+    - {from: 6600000000000000002, fromPin: active, to: 6600000000000000003, toPin: A}
+    - {from: 6600000000000000003, fromPin: Result, to: 6600000000000000004, toPin: Condition}
+    - {from: 6600000000000000001, fromPin: Then, to: 6600000000000000004, toPin: Exec}
+    - {from: 6600000000000000004, fromPin: True, to: 6600000000000000005, toPin: Exec}
+    - {from: 6600000000000000007, fromPin: Value, to: 6600000000000000008, toPin: waves}
+    - {from: 6600000000000000006, fromPin: value, to: 6600000000000000008, toPin: sturdy}
+    - {from: 6600000000000000004, fromPin: False, to: 6600000000000000006, toPin: Exec}
+    - {from: 6600000000000000005, fromPin: Then, to: 6600000000000000006, toPin: Exec}
+    - {from: 6600000000000000006, fromPin: Then, to: 6600000000000000008, toPin: Exec}
+    - {from: 6600000000000000009, fromPin: value, to: 6600000000000000011, toPin: A}
+    - {from: 6600000000000000010, fromPin: entity_id, to: 6600000000000000012, toPin: entity_id}
+    - {from: 6600000000000000011, fromPin: Result, to: 6600000000000000012, toPin: assist}
+    - {from: 6600000000000000013, fromPin: entity_id, to: 6600000000000000015, toPin: entity_id}
+    - {from: 6600000000000000014, fromPin: value, to: 6600000000000000015, toPin: invert}
+    - {from: 6600000000000000018, fromPin: Value, to: 6600000000000000019, toPin: value}
+    - {from: 6600000000000000008, fromPin: freighters, to: 6600000000000000022, toPin: value}
+    - {from: 6600000000000000008, fromPin: Then, to: 6600000000000000009, toPin: Exec}
+    - {from: 6600000000000000009, fromPin: Then, to: 6600000000000000012, toPin: Exec}
+    - {from: 6600000000000000012, fromPin: Then, to: 6600000000000000014, toPin: Exec}
+    - {from: 6600000000000000014, fromPin: Then, to: 6600000000000000015, toPin: Exec}
+    - {from: 6600000000000000015, fromPin: Then, to: 6600000000000000016, toPin: Exec}
+    - {from: 6600000000000000016, fromPin: Then, to: 6600000000000000017, toPin: Exec}
+    - {from: 6600000000000000017, fromPin: Then, to: 6600000000000000019, toPin: Exec}
+    - {from: 6600000000000000019, fromPin: Then, to: 6600000000000000020, toPin: Exec}
+    - {from: 6600000000000000020, fromPin: Then, to: 6600000000000000021, toPin: Exec}
+    - {from: 6600000000000000021, fromPin: Then, to: 6600000000000000022, toPin: Exec}
+    - {from: 6600000000000000022, fromPin: Then, to: 6600000000000000023, toPin: Exec}
+    - {from: 6600000000000000025, fromPin: Value, to: 6600000000000000026, toPin: A}
+    - {from: 6600000000000000027, fromPin: Value, to: 6600000000000000028, toPin: A}
+    - {from: 6600000000000000026, fromPin: Result, to: 6600000000000000029, toPin: A}
+    - {from: 6600000000000000028, fromPin: Result, to: 6600000000000000029, toPin: B}
+    - {from: 6600000000000000029, fromPin: Result, to: 6600000000000000030, toPin: Condition}
+    - {from: 6600000000000000031, fromPin: pressed, to: 6600000000000000032, toPin: fire}
+    - {from: 6600000000000000024, fromPin: dt, to: 6600000000000000032, toPin: dt}
+    - {from: 6600000000000000024, fromPin: Then, to: 6600000000000000030, toPin: Exec}
+    - {from: 6600000000000000030, fromPin: True, to: 6600000000000000032, toPin: Exec}
+    - {from: 6600000000000000034, fromPin: Value, to: 6600000000000000035, toPin: A}
+    - {from: 6600000000000000035, fromPin: Result, to: 6600000000000000036, toPin: paused}
+    - {from: 6600000000000000038, fromPin: Value, to: 6600000000000000039, toPin: A}
+    - {from: 6600000000000000037, fromPin: pressed, to: 6600000000000000040, toPin: A}
+    - {from: 6600000000000000039, fromPin: Result, to: 6600000000000000040, toPin: B}
+    - {from: 6600000000000000040, fromPin: Result, to: 6600000000000000041, toPin: Condition}
+    - {from: 6600000000000000033, fromPin: Then, to: 6600000000000000041, toPin: Exec}
+    - {from: 6600000000000000041, fromPin: True, to: 6600000000000000036, toPin: Exec}
+    - {from: 6600000000000000042, fromPin: Value, to: 6600000000000000043, toPin: Condition}
+    - {from: 6600000000000000041, fromPin: False, to: 6600000000000000043, toPin: Exec}
+    - {from: 6600000000000000036, fromPin: Then, to: 6600000000000000043, toPin: Exec}
+    - {from: 6600000000000000046, fromPin: Value, to: 6600000000000000047, toPin: A}
+    - {from: 6600000000000000033, fromPin: dt, to: 6600000000000000047, toPin: B}
+    - {from: 6600000000000000047, fromPin: Result, to: 6600000000000000048, toPin: Value}
+    - {from: 6600000000000000050, fromPin: Value, to: 6600000000000000051, toPin: A}
+    - {from: 6600000000000000033, fromPin: dt, to: 6600000000000000051, toPin: B}
+    - {from: 6600000000000000049, fromPin: pressed, to: 6600000000000000052, toPin: Condition}
+    - {from: 6600000000000000051, fromPin: Result, to: 6600000000000000052, toPin: False}
+    - {from: 6600000000000000052, fromPin: Result, to: 6600000000000000053, toPin: Value}
+    - {from: 6600000000000000055, fromPin: Value, to: 6600000000000000056, toPin: A}
+    - {from: 6600000000000000054, fromPin: entity_id, to: 6600000000000000057, toPin: entity_id}
+    - {from: 6600000000000000056, fromPin: Result, to: 6600000000000000057, toPin: visible}
+    - {from: 6600000000000000059, fromPin: metres, to: 6600000000000000060, toPin: A}
+    - {from: 6600000000000000058, fromPin: entity_id, to: 6600000000000000061, toPin: entity_id}
+    - {from: 6600000000000000060, fromPin: Result, to: 6600000000000000061, toPin: text}
+    - {from: 6600000000000000062, fromPin: Value, to: 6600000000000000063, toPin: A}
+    - {from: 6600000000000000063, fromPin: Result, to: 6600000000000000064, toPin: value}
+    - {from: 6600000000000000045, fromPin: hull, to: 6600000000000000066, toPin: A}
+    - {from: 6600000000000000066, fromPin: Result, to: 6600000000000000067, toPin: A}
+    - {from: 6600000000000000065, fromPin: entity_id, to: 6600000000000000068, toPin: entity_id}
+    - {from: 6600000000000000067, fromPin: Result, to: 6600000000000000068, toPin: text}
+    - {from: 6600000000000000070, fromPin: hull, to: 6600000000000000071, toPin: A}
+    - {from: 6600000000000000069, fromPin: entity_id, to: 6600000000000000072, toPin: entity_id}
+    - {from: 6600000000000000071, fromPin: Result, to: 6600000000000000072, toPin: value}
+    - {from: 6600000000000000074, fromPin: value, to: 6600000000000000075, toPin: A}
+    - {from: 6600000000000000073, fromPin: entity_id, to: 6600000000000000076, toPin: entity_id}
+    - {from: 6600000000000000075, fromPin: Result, to: 6600000000000000076, toPin: text}
+    - {from: 6600000000000000044, fromPin: wave, to: 6600000000000000078, toPin: A}
+    - {from: 6600000000000000044, fromPin: kills, to: 6600000000000000078, toPin: B}
+    - {from: 6600000000000000077, fromPin: entity_id, to: 6600000000000000079, toPin: entity_id}
+    - {from: 6600000000000000078, fromPin: Result, to: 6600000000000000079, toPin: text}
+    - {from: 6600000000000000081, fromPin: alive, to: 6600000000000000082, toPin: A}
+    - {from: 6600000000000000080, fromPin: entity_id, to: 6600000000000000083, toPin: entity_id}
+    - {from: 6600000000000000082, fromPin: Result, to: 6600000000000000083, toPin: text}
+    - {from: 6600000000000000084, fromPin: entity_id, to: 6600000000000000086, toPin: entity_id}
+    - {from: 6600000000000000085, fromPin: progress, to: 6600000000000000086, toPin: value}
+    - {from: 6600000000000000087, fromPin: hull, to: 6600000000000000088, toPin: value}
+    - {from: 6600000000000000044, fromPin: kills, to: 6600000000000000089, toPin: value}
+    - {from: 6600000000000000044, fromPin: enemies, to: 6600000000000000090, toPin: value}
+    - {from: 6600000000000000044, fromPin: wave, to: 6600000000000000091, toPin: value}
+    - {from: 6600000000000000044, fromPin: shots, to: 6600000000000000092, toPin: value}
+    - {from: 6600000000000000044, fromPin: enemy_shots, to: 6600000000000000093, toPin: value}
+    - {from: 6600000000000000044, fromPin: convoy_hull, to: 6600000000000000094, toPin: value}
+    - {from: 6600000000000000095, fromPin: alive, to: 6600000000000000096, toPin: value}
+    - {from: 6600000000000000097, fromPin: progress, to: 6600000000000000098, toPin: value}
+    - {from: 6600000000000000099, fromPin: entity_id, to: 6600000000000000100, toPin: entity_id}
+    - {from: 6600000000000000100, fromPin: speed, to: 6600000000000000101, toPin: value}
+    - {from: 6600000000000000043, fromPin: False, to: 6600000000000000048, toPin: Exec}
+    - {from: 6600000000000000048, fromPin: Then, to: 6600000000000000053, toPin: Exec}
+    - {from: 6600000000000000053, fromPin: Then, to: 6600000000000000057, toPin: Exec}
+    - {from: 6600000000000000057, fromPin: Then, to: 6600000000000000061, toPin: Exec}
+    - {from: 6600000000000000061, fromPin: Then, to: 6600000000000000064, toPin: Exec}
+    - {from: 6600000000000000064, fromPin: Then, to: 6600000000000000068, toPin: Exec}
+    - {from: 6600000000000000068, fromPin: Then, to: 6600000000000000072, toPin: Exec}
+    - {from: 6600000000000000072, fromPin: Then, to: 6600000000000000074, toPin: Exec}
+    - {from: 6600000000000000074, fromPin: Then, to: 6600000000000000076, toPin: Exec}
+    - {from: 6600000000000000076, fromPin: Then, to: 6600000000000000079, toPin: Exec}
+    - {from: 6600000000000000079, fromPin: Then, to: 6600000000000000083, toPin: Exec}
+    - {from: 6600000000000000083, fromPin: Then, to: 6600000000000000086, toPin: Exec}
+    - {from: 6600000000000000086, fromPin: Then, to: 6600000000000000088, toPin: Exec}
+    - {from: 6600000000000000088, fromPin: Then, to: 6600000000000000089, toPin: Exec}
+    - {from: 6600000000000000089, fromPin: Then, to: 6600000000000000090, toPin: Exec}
+    - {from: 6600000000000000090, fromPin: Then, to: 6600000000000000091, toPin: Exec}
+    - {from: 6600000000000000091, fromPin: Then, to: 6600000000000000092, toPin: Exec}
+    - {from: 6600000000000000092, fromPin: Then, to: 6600000000000000093, toPin: Exec}
+    - {from: 6600000000000000093, fromPin: Then, to: 6600000000000000094, toPin: Exec}
+    - {from: 6600000000000000094, fromPin: Then, to: 6600000000000000096, toPin: Exec}
+    - {from: 6600000000000000096, fromPin: Then, to: 6600000000000000098, toPin: Exec}
+    - {from: 6600000000000000098, fromPin: Then, to: 6600000000000000101, toPin: Exec}
+    - {from: 6600000000000000101, fromPin: Then, to: 6600000000000000102, toPin: Exec}
+    - {from: 6600000000000000102, fromPin: Index, to: 6600000000000000103, toPin: B}
+    - {from: 6600000000000000103, fromPin: Result, to: 6600000000000000104, toPin: name}
+    - {from: 6600000000000000102, fromPin: Index, to: 6600000000000000105, toPin: index}
+    - {from: 6600000000000000104, fromPin: entity_id, to: 6600000000000000106, toPin: entity_id}
+    - {from: 6600000000000000105, fromPin: hull, to: 6600000000000000106, toPin: value}
+    - {from: 6600000000000000102, fromPin: Body, to: 6600000000000000106, toPin: Exec}
+    - {from: 6600000000000000102, fromPin: Completed, to: 6600000000000000107, toPin: Exec}
+    - {from: 6600000000000000108, fromPin: Value, to: 6600000000000000109, toPin: A}
+    - {from: 6600000000000000109, fromPin: Result, to: 6600000000000000110, toPin: Condition}
+    - {from: 6600000000000000111, fromPin: entity_id, to: 6600000000000000112, toPin: entity_id}
+    - {from: 6600000000000000107, fromPin: Then 1, to: 6600000000000000110, toPin: Exec}
+    - {from: 6600000000000000110, fromPin: True, to: 6600000000000000112, toPin: Exec}
+    - {from: 6600000000000000113, fromPin: Value, to: 6600000000000000114, toPin: A}
+    - {from: 6600000000000000114, fromPin: Result, to: 6600000000000000115, toPin: Condition}
+    - {from: 6600000000000000107, fromPin: Then 2, to: 6600000000000000115, toPin: Exec}
+    - {from: 6600000000000000115, fromPin: True, to: 6600000000000000116, toPin: Exec}
+    - {from: 6600000000000000117, fromPin: Value, to: 6600000000000000118, toPin: A}
+    - {from: 6600000000000000119, fromPin: Value, to: 6600000000000000120, toPin: A}
+    - {from: 6600000000000000118, fromPin: Result, to: 6600000000000000121, toPin: A}
+    - {from: 6600000000000000120, fromPin: Result, to: 6600000000000000121, toPin: B}
+    - {from: 6600000000000000121, fromPin: Result, to: 6600000000000000122, toPin: Condition}
+    - {from: 6600000000000000033, fromPin: dt, to: 6600000000000000123, toPin: dt}
+    - {from: 6600000000000000107, fromPin: Then 3, to: 6600000000000000122, toPin: Exec}
+    - {from: 6600000000000000122, fromPin: True, to: 6600000000000000123, toPin: Exec}
+    - {from: 6600000000000000125, fromPin: pressed, to: 6600000000000000126, toPin: Condition}
+    - {from: 6600000000000000124, fromPin: Then, to: 6600000000000000126, toPin: Exec}
+    - {from: 6600000000000000126, fromPin: True, to: 6600000000000000127, toPin: Exec}
+    - {from: 6600000000000000128, fromPin: pressed, to: 6600000000000000129, toPin: Condition}
+    - {from: 6600000000000000126, fromPin: False, to: 6600000000000000129, toPin: Exec}
+    - {from: 6600000000000000127, fromPin: Then, to: 6600000000000000129, toPin: Exec}
+    - {from: 6600000000000000129, fromPin: True, to: 6600000000000000130, toPin: Exec}
+    - {from: 6600000000000000131, fromPin: pressed, to: 6600000000000000132, toPin: Condition}
+    - {from: 6600000000000000129, fromPin: False, to: 6600000000000000132, toPin: Exec}
+    - {from: 6600000000000000130, fromPin: Then, to: 6600000000000000132, toPin: Exec}
+    - {from: 6600000000000000132, fromPin: True, to: 6600000000000000133, toPin: Exec}
+    - {from: 6600000000000000133, fromPin: locked, to: 6600000000000000134, toPin: Condition}
+    - {from: 6600000000000000133, fromPin: locked, to: 6600000000000000135, toPin: value}
+    - {from: 6600000000000000133, fromPin: Then, to: 6600000000000000135, toPin: Exec}
+    - {from: 6600000000000000135, fromPin: Then, to: 6600000000000000134, toPin: Exec}
+    - {from: 6600000000000000134, fromPin: True, to: 6600000000000000136, toPin: Exec}
+    - {from: 6600000000000000275, fromPin: x, to: 6600000000000000279, toPin: mouse_x}
+    - {from: 6600000000000000275, fromPin: y, to: 6600000000000000279, toPin: mouse_y}
+    - {from: 6600000000000000276, fromPin: dy, to: 6600000000000000279, toPin: wheel}
+    - {from: 6600000000000000277, fromPin: pressed, to: 6600000000000000279, toPin: next_lock}
+    - {from: 6600000000000000278, fromPin: pressed, to: 6600000000000000279, toPin: previous_lock}
+    - {from: 6600000000000000279, fromPin: Then, to: 6600000000000000280, toPin: Exec}
+    - {from: 6600000000000000279, fromPin: locked, to: 6600000000000000280, toPin: value}
+    - {from: 6600000000000000280, fromPin: Then, to: 6600000000000000140, toPin: Exec}
+    - {from: 6600000000000000137, fromPin: wave, to: 6600000000000000139, toPin: A}
+    - {from: 6600000000000000138, fromPin: Value, to: 6600000000000000139, toPin: B}
+    - {from: 6600000000000000139, fromPin: Result, to: 6600000000000000140, toPin: Condition}
+    - {from: 6600000000000000132, fromPin: False, to: 6600000000000000279, toPin: Exec}
+    - {from: 6600000000000000134, fromPin: False, to: 6600000000000000279, toPin: Exec}
+    - {from: 6600000000000000136, fromPin: Then, to: 6600000000000000279, toPin: Exec}
+    - {from: 6600000000000000141, fromPin: wave, to: 6600000000000000142, toPin: Value}
+    - {from: 6600000000000000140, fromPin: True, to: 6600000000000000142, toPin: Exec}
+    - {from: 6600000000000000142, fromPin: Then, to: 6600000000000000143, toPin: Exec}
+    - {from: 6600000000000000144, fromPin: hull, to: 6600000000000000145, toPin: A}
+    - {from: 6600000000000000145, fromPin: Result, to: 6600000000000000146, toPin: Condition}
+    - {from: 6600000000000000140, fromPin: False, to: 6600000000000000146, toPin: Exec}
+    - {from: 6600000000000000143, fromPin: Then, to: 6600000000000000146, toPin: Exec}
+    - {from: 6600000000000000146, fromPin: True, to: 6600000000000000147, toPin: Exec}
+    - {from: 6600000000000000148, fromPin: alive, to: 6600000000000000149, toPin: A}
+    - {from: 6600000000000000149, fromPin: Result, to: 6600000000000000150, toPin: Condition}
+    - {from: 6600000000000000146, fromPin: False, to: 6600000000000000150, toPin: Exec}
+    - {from: 6600000000000000150, fromPin: True, to: 6600000000000000151, toPin: Exec}
+    - {from: 6600000000000000152, fromPin: progress, to: 6600000000000000153, toPin: A}
+    - {from: 6600000000000000153, fromPin: Result, to: 6600000000000000154, toPin: Condition}
+    - {from: 6600000000000000150, fromPin: False, to: 6600000000000000154, toPin: Exec}
+    - {from: 6600000000000000154, fromPin: True, to: 6600000000000000155, toPin: Exec}
+    - {from: 6600000000000000147, fromPin: Then, to: 6600000000000000156, toPin: Exec}
+    - {from: 6600000000000000151, fromPin: Then, to: 6600000000000000156, toPin: Exec}
+    - {from: 6600000000000000155, fromPin: Then, to: 6600000000000000156, toPin: Exec}
+    - {from: 6600000000000000154, fromPin: False, to: 6600000000000000156, toPin: Exec}
+    - {from: 6600000000000000157, fromPin: kind, to: 6600000000000000158, toPin: kind}
+    - {from: 6600000000000000158, fromPin: order, to: 6600000000000000160, toPin: Text}
+    - {from: 6600000000000000160, fromPin: Result, to: 6600000000000000161, toPin: A}
+    - {from: 6600000000000000159, fromPin: entity_id, to: 6600000000000000162, toPin: entity_id}
+    - {from: 6600000000000000161, fromPin: Result, to: 6600000000000000162, toPin: text}
+    - {from: 6600000000000000158, fromPin: order, to: 6600000000000000163, toPin: value}
+    - {from: 6600000000000000157, fromPin: Then, to: 6600000000000000158, toPin: Exec}
+    - {from: 6600000000000000158, fromPin: Then, to: 6600000000000000162, toPin: Exec}
+    - {from: 6600000000000000162, fromPin: Then, to: 6600000000000000163, toPin: Exec}
+    - {from: 6600000000000000163, fromPin: Then, to: 6600000000000000164, toPin: Exec}
+    - {from: 6600000000000000164, fromPin: Then, to: 6600000000000000165, toPin: Exec}
+    - {from: 6600000000000000168, fromPin: alive, to: 6600000000000000170, toPin: A}
+    - {from: 6600000000000000169, fromPin: Value, to: 6600000000000000170, toPin: B}
+    - {from: 6600000000000000166, fromPin: won, to: 6600000000000000171, toPin: Condition}
+    - {from: 6600000000000000170, fromPin: Result, to: 6600000000000000171, toPin: True}
+    - {from: 6600000000000000172, fromPin: hull, to: 6600000000000000173, toPin: A}
+    - {from: 6600000000000000173, fromPin: Result, to: 6600000000000000174, toPin: A}
+    - {from: 6600000000000000166, fromPin: won, to: 6600000000000000175, toPin: Condition}
+    - {from: 6600000000000000174, fromPin: Result, to: 6600000000000000175, toPin: True}
+    - {from: 6600000000000000171, fromPin: Result, to: 6600000000000000177, toPin: A}
+    - {from: 6600000000000000175, fromPin: Result, to: 6600000000000000177, toPin: B}
+    - {from: 6600000000000000176, fromPin: value, to: 6600000000000000178, toPin: A}
+    - {from: 6600000000000000177, fromPin: Result, to: 6600000000000000178, toPin: B}
+    - {from: 6600000000000000179, fromPin: hits, to: 6600000000000000180, toPin: A}
+    - {from: 6600000000000000181, fromPin: shots, to: 6600000000000000182, toPin: B}
+    - {from: 6600000000000000180, fromPin: Result, to: 6600000000000000183, toPin: A}
+    - {from: 6600000000000000182, fromPin: Result, to: 6600000000000000183, toPin: B}
+    - {from: 6600000000000000183, fromPin: Result, to: 6600000000000000184, toPin: A}
+    - {from: 6600000000000000166, fromPin: won, to: 6600000000000000185, toPin: Condition}
+    - {from: 6600000000000000185, fromPin: Result, to: 6600000000000000186, toPin: Value}
+    - {from: 6600000000000000188, fromPin: Value, to: 6600000000000000189, toPin: value}
+    - {from: 6600000000000000166, fromPin: reason, to: 6600000000000000190, toPin: value}
+    - {from: 6600000000000000167, fromPin: kills, to: 6600000000000000191, toPin: A}
+    - {from: 6600000000000000191, fromPin: Result, to: 6600000000000000192, toPin: value}
+    - {from: 6600000000000000166, fromPin: won, to: 6600000000000000193, toPin: Condition}
+    - {from: 6600000000000000168, fromPin: alive, to: 6600000000000000193, toPin: True}
+    - {from: 6600000000000000193, fromPin: Result, to: 6600000000000000194, toPin: A}
+    - {from: 6600000000000000194, fromPin: Result, to: 6600000000000000195, toPin: value}
+    - {from: 6600000000000000184, fromPin: Result, to: 6600000000000000196, toPin: A}
+    - {from: 6600000000000000196, fromPin: Result, to: 6600000000000000197, toPin: value}
+    - {from: 6600000000000000171, fromPin: Result, to: 6600000000000000198, toPin: A}
+    - {from: 6600000000000000198, fromPin: Result, to: 6600000000000000199, toPin: value}
+    - {from: 6600000000000000175, fromPin: Result, to: 6600000000000000200, toPin: A}
+    - {from: 6600000000000000200, fromPin: Result, to: 6600000000000000201, toPin: value}
+    - {from: 6600000000000000178, fromPin: Result, to: 6600000000000000202, toPin: value}
+    - {from: 6600000000000000166, fromPin: won, to: 6600000000000000203, toPin: Condition}
+    - {from: 6600000000000000203, fromPin: Result, to: 6600000000000000204, toPin: asset_path}
+    - {from: 6600000000000000166, fromPin: reason, to: 6600000000000000205, toPin: text}
+    - {from: 6600000000000000166, fromPin: Then, to: 6600000000000000186, toPin: Exec}
+    - {from: 6600000000000000186, fromPin: Then, to: 6600000000000000187, toPin: Exec}
+    - {from: 6600000000000000187, fromPin: Then, to: 6600000000000000189, toPin: Exec}
+    - {from: 6600000000000000189, fromPin: Then, to: 6600000000000000190, toPin: Exec}
+    - {from: 6600000000000000190, fromPin: Then, to: 6600000000000000192, toPin: Exec}
+    - {from: 6600000000000000192, fromPin: Then, to: 6600000000000000195, toPin: Exec}
+    - {from: 6600000000000000195, fromPin: Then, to: 6600000000000000197, toPin: Exec}
+    - {from: 6600000000000000197, fromPin: Then, to: 6600000000000000199, toPin: Exec}
+    - {from: 6600000000000000199, fromPin: Then, to: 6600000000000000201, toPin: Exec}
+    - {from: 6600000000000000201, fromPin: Then, to: 6600000000000000176, toPin: Exec}
+    - {from: 6600000000000000176, fromPin: Then, to: 6600000000000000202, toPin: Exec}
+    - {from: 6600000000000000202, fromPin: Then, to: 6600000000000000204, toPin: Exec}
+    - {from: 6600000000000000204, fromPin: Then, to: 6600000000000000205, toPin: Exec}
+    - {from: 6600000000000000205, fromPin: Then, to: 6600000000000000206, toPin: Exec}
+    - {from: 6600000000000000208, fromPin: Value, to: 6600000000000000209, toPin: A}
+    - {from: 6600000000000000209, fromPin: Result, to: 6600000000000000210, toPin: Condition}
+    - {from: 6600000000000000211, fromPin: Value, to: 6600000000000000212, toPin: A}
+    - {from: 6600000000000000207, fromPin: dt, to: 6600000000000000212, toPin: B}
+    - {from: 6600000000000000212, fromPin: Result, to: 6600000000000000213, toPin: Value}
+    - {from: 6600000000000000207, fromPin: Then, to: 6600000000000000213, toPin: Exec}
+    - {from: 6600000000000000213, fromPin: Then, to: 6600000000000000210, toPin: Exec}
+    - {from: 6600000000000000214, fromPin: Value, to: 6600000000000000215, toPin: A}
+    - {from: 6600000000000000215, fromPin: Result, to: 6600000000000000216, toPin: Condition}
+    - {from: 6600000000000000216, fromPin: Result, to: 6600000000000000218, toPin: scene_path}
+    - {from: 6600000000000000210, fromPin: True, to: 6600000000000000217, toPin: Exec}
+    - {from: 6600000000000000217, fromPin: Then, to: 6600000000000000218, toPin: Exec}
+    - {from: 6600000000000000220, fromPin: entity_id, to: 6600000000000000221, toPin: entity_id}
+    - {from: 6600000000000000219, fromPin: text, to: 6600000000000000221, toPin: text}
+    - {from: 6600000000000000222, fromPin: entity_id, to: 6600000000000000223, toPin: entity_id}
+    - {from: 6600000000000000219, fromPin: text, to: 6600000000000000225, toPin: value}
+    - {from: 6600000000000000219, fromPin: Then, to: 6600000000000000221, toPin: Exec}
+    - {from: 6600000000000000221, fromPin: Then, to: 6600000000000000223, toPin: Exec}
+    - {from: 6600000000000000223, fromPin: Then, to: 6600000000000000224, toPin: Exec}
+    - {from: 6600000000000000224, fromPin: Then, to: 6600000000000000225, toPin: Exec}
+    - {from: 6600000000000000225, fromPin: Then, to: 6600000000000000226, toPin: Exec}
+    - {from: 6600000000000000227, fromPin: paused, to: 6600000000000000228, toPin: Condition}
+    - {from: 6600000000000000227, fromPin: paused, to: 6600000000000000229, toPin: Value}
+    - {from: 6600000000000000227, fromPin: paused, to: 6600000000000000230, toPin: paused}
+    - {from: 6600000000000000231, fromPin: entity_id, to: 6600000000000000232, toPin: entity_id}
+    - {from: 6600000000000000227, fromPin: paused, to: 6600000000000000232, toPin: visible}
+    - {from: 6600000000000000227, fromPin: paused, to: 6600000000000000233, toPin: value}
+    - {from: 6600000000000000227, fromPin: Then, to: 6600000000000000229, toPin: Exec}
+    - {from: 6600000000000000229, fromPin: Then, to: 6600000000000000230, toPin: Exec}
+    - {from: 6600000000000000230, fromPin: Then, to: 6600000000000000232, toPin: Exec}
+    - {from: 6600000000000000232, fromPin: Then, to: 6600000000000000233, toPin: Exec}
+    - {from: 6600000000000000227, fromPin: paused, to: 6600000000000000282, toPin: paused}
+    - {from: 6600000000000000233, fromPin: Then, to: 6600000000000000282, toPin: Exec}
+    - {from: 6600000000000000282, fromPin: Then, to: 6600000000000000228, toPin: Exec}
+    - {from: 6600000000000000234, fromPin: entity_id, to: 6600000000000000235, toPin: entity_id}
+    - {from: 6600000000000000236, fromPin: entity_id, to: 6600000000000000237, toPin: entity_id}
+    - {from: 6600000000000000228, fromPin: True, to: 6600000000000000235, toPin: Exec}
+    - {from: 6600000000000000235, fromPin: Then, to: 6600000000000000237, toPin: Exec}
+    - {from: 6600000000000000238, fromPin: ship, to: 6600000000000000239, toPin: ship}
+    - {from: 6600000000000000239, fromPin: fired, to: 6600000000000000240, toPin: ok}
+    - {from: 6600000000000000238, fromPin: Then, to: 6600000000000000239, toPin: Exec}
+    - {from: 6600000000000000239, fromPin: Then, to: 6600000000000000240, toPin: Exec}
+    - {from: 6600000000000000241, fromPin: ship, to: 6600000000000000242, toPin: ship}
+    - {from: 6600000000000000242, fromPin: found, to: 6600000000000000243, toPin: ok}
+    - {from: 6600000000000000241, fromPin: Then, to: 6600000000000000242, toPin: Exec}
+    - {from: 6600000000000000242, fromPin: Then, to: 6600000000000000243, toPin: Exec}
+    - {from: 6600000000000000244, fromPin: ship, to: 6600000000000000245, toPin: ship}
+    - {from: 6600000000000000245, fromPin: fired, to: 6600000000000000246, toPin: ok}
+    - {from: 6600000000000000244, fromPin: Then, to: 6600000000000000245, toPin: Exec}
+    - {from: 6600000000000000245, fromPin: Then, to: 6600000000000000246, toPin: Exec}
+    - {from: 6600000000000000247, fromPin: ship, to: 6600000000000000248, toPin: ship}
+    - {from: 6600000000000000248, fromPin: done, to: 6600000000000000249, toPin: ok}
+    - {from: 6600000000000000247, fromPin: Then, to: 6600000000000000248, toPin: Exec}
+    - {from: 6600000000000000248, fromPin: Then, to: 6600000000000000249, toPin: Exec}
+    - {from: 6600000000000000250, fromPin: Then, to: 6600000000000000251, toPin: Exec}
+    - {from: 6600000000000000254, fromPin: Value, to: 6600000000000000255, toPin: scene_path}
+    - {from: 6600000000000000252, fromPin: Then, to: 6600000000000000253, toPin: Exec}
+    - {from: 6600000000000000253, fromPin: Then, to: 6600000000000000255, toPin: Exec}
+    - {from: 6600000000000000256, fromPin: Then, to: 6600000000000000257, toPin: Exec}
+    - {from: 6600000000000000257, fromPin: Then, to: 6600000000000000258, toPin: Exec}
+  groups:
+    - {id: 6600000000000000259, title: on_create, position: [-100, -60], size: [4900, 500], color: Red}
+    - {id: 6600000000000000260, title: on_tick, position: [-180, 360], size: [1080, 580], color: Red}
+    - {id: 6600000000000000261, title: on_update, position: [-340, 780], size: [10840, 580], color: Red}
+    - {id: 6600000000000000262, title: fly_update, position: [-40, 1200], size: [11040, 580], color: Red}
+    - {id: 6600000000000000263, title: order, position: [-40, 1620], size: [1840, 580], color: Red}
+    - {id: 6600000000000000264, title: finish, position: [-40, 2040], size: [4540, 500], color: Red}
+    - {id: 6600000000000000265, title: end_update, position: [-100, 2460], size: [2860, 530], color: Red}
+    - {id: 6600000000000000266, title: say, position: [-40, 2880], size: [2440, 350], color: Red}
+    - {id: 6600000000000000267, title: set_paused, position: [-40, 3300], size: [2440, 350], color: Red}
+    - {id: 6600000000000000268, title: enemy_fire, position: [-40, 3720], size: [940, 200], color: Red}
+    - {id: 6600000000000000269, title: wingman_pick, position: [-40, 4140], size: [940, 200], color: Red}
+    - {id: 6600000000000000270, title: wingman_fire, position: [-40, 4560], size: [940, 200], color: Red}
+    - {id: 6600000000000000271, title: wingman_escort, position: [-40, 4980], size: [940, 200], color: Red}
+    - {id: 6600000000000000272, title: on_resume_clicked, position: [-40, 5400], size: [640, 200], color: Red}
+    - {id: 6600000000000000273, title: on_restart_clicked, position: [-40, 5820], size: [940, 350], color: Red}
+    - {id: 6600000000000000274, title: on_quit_clicked, position: [-40, 6240], size: [940, 200], color: Red}

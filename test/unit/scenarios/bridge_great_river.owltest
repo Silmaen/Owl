@@ -1,0 +1,306 @@
+# Bridge Builder, the great river: a twenty metre deck of roads over a wooden truss resting on the island pillar,
+# steel at both ends; two trucks and a van cross under the budget, the loads shown on the parts stay below breaking.
+scene: ../../../samples/bridge_builder/scenes/level_6.owl
+steps:
+  - frames: 10
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: X, frames: 1}
+  - frames: 1
+  - input: {key: D2, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Up, frames: 1}
+  - frames: 1
+  - input: {key: Up, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: X, frames: 1}
+  - frames: 1
+  - input: {key: D3, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Up, frames: 1}
+  - frames: 1
+  - input: {key: Up, frames: 1}
+  - frames: 1
+  - input: {key: Up, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: X, frames: 1}
+  - frames: 1
+  - input: {key: D2, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Up, frames: 1}
+  - frames: 1
+  - input: {key: Up, frames: 1}
+  - frames: 1
+  - input: {key: Up, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: X, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Up, frames: 1}
+  - frames: 1
+  - input: {key: Up, frames: 1}
+  - frames: 1
+  - input: {key: Up, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Up, frames: 1}
+  - frames: 1
+  - input: {key: Up, frames: 1}
+  - frames: 1
+  - input: {key: Up, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: X, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Up, frames: 1}
+  - frames: 1
+  - input: {key: Up, frames: 1}
+  - frames: 1
+  - input: {key: Up, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Up, frames: 1}
+  - frames: 1
+  - input: {key: Up, frames: 1}
+  - frames: 1
+  - input: {key: Up, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: X, frames: 1}
+  - frames: 1
+  - input: {key: D3, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: X, frames: 1}
+  - frames: 1
+  - expect: {gamestate: bridge_parts, equals: 23}
+  - expect: {gamestate: bridge_cost, less: 7600}
+  - input: {key: R, frames: 1}
+  - frames: 400
+  - expect: {gamestate: bridge_load, greater: 0.05}
+  - expect: {gamestate: bridge_breaks, equals: 0}
+  - frames: 700
+  - expect: {gamestate: bridge_state, equals: won}
+  - expect: {gamestate: bridge_arrived, equals: 3}

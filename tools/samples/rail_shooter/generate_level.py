@@ -66,18 +66,28 @@ class Wave:
 
 WAVES = [
     Wave("w01", 260, "fighter", 3, "line", 0, 2),
-    Wave("w02", 460, "fighter", 4, "vee", 0, -1),
-    Wave("w03", 680, "fighter", 3, "swoop_left", 0, 1),
-    Wave("w04", 860, "fighter", 3, "swoop_right", 0, -1),
-    Wave("w05", 1120, "interceptor", 2, "hover", 0, 1),
-    Wave("w06", 1380, "fighter", 5, "vee", 0, 2),
-    Wave("w07", 1620, "fighter", 3, "swoop_left", 0, 2),
-    Wave("w08", 1700, "fighter", 3, "swoop_right", 0, -2),
-    Wave("w09", 1960, "interceptor", 3, "hover", 0, 0),
-    Wave("w10", 2240, "fighter", 4, "line", 0, -2),
-    Wave("w11", 2500, "interceptor", 2, "hover", 0, 2),
-    Wave("w12", 2760, "fighter", 6, "vee", 0, 0),
-    Wave("w13", BOSS_DISTANCE, "boss", 1, "boss", 0, 2),
+    Wave("w02", 400, "scout", 4, "swoop_left", 0, 3),
+    Wave("w03", 470, "fighter", 4, "vee", 0, -1),
+    Wave("w04", 620, "scout", 4, "swoop_right", 0, -2),
+    Wave("w05", 700, "fighter", 3, "swoop_left", 0, 1),
+    Wave("w06", 860, "raider", 3, "swoop_right", 0, -1),
+    Wave("w07", 960, "fighter", 5, "line", 0, 3),
+    Wave("w08", 1120, "interceptor", 2, "hover", 0, 1),
+    Wave("w09", 1200, "scout", 4, "vee", 0, -2),
+    Wave("w10", 1380, "fighter", 5, "vee", 0, 2),
+    Wave("w11", 1480, "raider", 3, "line", 0, -2),
+    Wave("w12", 1620, "fighter", 3, "swoop_left", 0, 2),
+    Wave("w13", 1700, "raider", 3, "swoop_right", 0, -2),
+    Wave("w14", 1820, "scout", 5, "line", 0, 0),
+    Wave("w15", 1960, "interceptor", 3, "hover", 0, 0),
+    Wave("w16", 2080, "fighter", 4, "swoop_left", 0, -1),
+    Wave("w17", 2240, "raider", 4, "line", 0, -2),
+    Wave("w18", 2380, "scout", 4, "swoop_right", 0, 2),
+    Wave("w19", 2500, "interceptor", 2, "hover", 0, 2),
+    Wave("w20", 2600, "fighter", 4, "swoop_left", 0, 0),
+    Wave("w21", 2760, "raider", 6, "vee", 0, 0),
+    Wave("w22", 2900, "fighter", 4, "line", 0, 2),
+    Wave("w23", BOSS_DISTANCE, "boss", 1, "boss", 0, 2),
 ]
 """The waves of the level, in the order of their distance."""
 
@@ -163,6 +173,31 @@ class Rail:
 # ------------------------------------------------------------------------------------------------------ components
 
 
+def steering(
+    flock: str,
+    speed: float,
+    acceleration: float,
+    radius: float,
+    slow: float,
+    enabled: bool,
+    leader: int = 0,
+    slot: tuple[float, float, float] = (0, 0, 0),
+) -> str:
+    """A ``SteeringAgent`` in open space holding a formation slot (no other behaviour but avoidance)."""
+    avoid = 1 if not enabled else 0.5
+    return (
+        f"SteeringAgent:\n  enabled: {'true' if enabled else 'false'}\n  plane: Space\n  maxSpeed: {y.num(speed)}\n"
+        f"  maxAcceleration: {y.num(acceleration)}\n  radius: {y.num(radius)}\n  turn: false\n  target: 0\n"
+        "  targetPoint: [0, 0, 0]\n"
+        "  weights: {seek: 0, flee: 0, arrive: 0, pursue: 0, evade: 0, wander: 0, separation: 0, alignment: 0, "
+        f"cohesion: 0, avoidance: {y.num(avoid)}, formation: 1}}\n"
+        f"  slowRadius: {y.num(slow)}\n  panicDistance: 0\n  prediction: 0.5\n"
+        "  wander: {radius: 0.6, distance: 1, jitter: 3}\n"
+        f"  flock: {flock}\n  neighbourRadius: 6\n  separationDistance: 2\n  lookAhead: 0.5\n  leader: {leader}\n"
+        f"  slot: {y.vec(*slot)}\n"
+    )
+
+
 def mesh(path: str, colour: y.Colour = (1, 1, 1, 1), glow: float = 0.0) -> str:
     """A ``MeshRenderer`` of a model of the project, its first material glowing at ``glow`` nits when above 0."""
     out = f"MeshRenderer:\n  mesh: {path}\n  color: {y.vec(*colour)}\n  transparent: false\n"
@@ -176,6 +211,24 @@ def trail(colour: y.Colour, width: float, lifetime: float, emissive: float) -> s
     return (
         f"Trail:\n  enabled: true\n  lifetime: {y.num(lifetime)}\n  minDistance: 0.15\n  maxPoints: 48\n"
         f"  width: {y.num(width)}\n  color: {y.vec(*colour)}\n  emissive: {y.num(emissive)}\n  blend: Additive\n"
+    )
+
+
+def flame(colour: tuple[float, float, float], size: float, length: float) -> str:
+    """
+    A ``ParticleEmitter`` of engine flame: soft glowing discs blown backwards (+Z of the ship) and carried along with
+    it, so it shows from every side, also from the front where a trail hides behind the hull.
+    """
+    r, g, b = colour
+    return (
+        "ParticleEmitter:\n  playOnStart: true\n  maxParticles: 48\n  rate: 110\n  burst: 0\n  duration: 0\n"
+        "  loop: true\n  lifetimeMin: 0.08\n  lifetimeMax: 0.16\n  shape: Point\n  shapeSize: [0, 0, 0]\n"
+        f"  speedMin: 0\n  speedMax: {y.num(size)}\n  velocity: [0, 0, {y.num(length / 0.12)}]\n  gravity: [0, 0, 0]\n"
+        f"  drag: 0\n  sizeMin: {y.num(size * 0.7)}\n  sizeMax: {y.num(size)}\n"
+        "  sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.25]]}\n  color: [1, 1, 1, 1]\n"
+        f"  colorOverLife: [[0, 1, 0.97, 0.85, 1], [0.35, {y.num(r)}, {y.num(g)}, {y.num(b)}, 0.9], "
+        f"[1, {y.num(r * 0.5)}, {y.num(g * 0.5)}, {y.num(b * 0.5)}, 0]]\n"
+        "  emissive: 6000\n  blend: Additive\n  space: Local\n"
     )
 
 
@@ -447,6 +500,26 @@ def level(rail: Rail) -> tuple[str, int]:
     cut = entities.add("CutCamera", [perspective(0.9, False, True)], position=(0, 1.3, 10), parent=carrier)
     ship = entities.add("Ship", [], parent=carrier)
     entities.add("ShipModel", [mesh("models/player.glb")], parent=ship)
+    # Two wingmen holding their slots beside the ship on their steering agents, facing the way of the carrier.
+    for side in (-1, 1):
+        slot = (side * 3.6, 0.4, -1.0)
+        wingman = entities.add(
+            "Wingman",
+            [
+                mesh("models/player.glb", (0.62, 0.8, 1, 1)),
+                steering("wing", 60, 90, 1, 2, True, ship, slot),
+                y.script("scripts/game/wingman.owlvs"),
+            ],
+            position=slot,
+        )
+        # The engine trails of the ship.
+        for engine in (-1, 1):
+            entities.add(
+                "WingmanTrail",
+                [trail((0.4, 0.8, 1, 0.9), 0.16, 0.14, 5000)],
+                position=(engine * 0.42, 0.05, 0.95),
+                parent=wingman,
+            )
     for side in (-1, 1):
         entities.add(
             f"EngineTrail{'L' if side < 0 else 'R'}",
@@ -498,7 +571,7 @@ def level(rail: Rail) -> tuple[str, int]:
         )
     rocks = asteroid_field(entities, rail)
     explosion_pools(entities)
-    header = y.script("scripts/game/rail.lua", properties).replace("LuaScript:", "SceneScript:") + (
+    header = y.script("scripts/game/rail.owlvs", properties).replace("LuaScript:", "SceneScript:") + (
         "EnabledRenderers:\n  - {Name: world, Enabled: false}\n  - {Name: mesh_world, Enabled: true}\n"
         "  - {Name: planet_world, Enabled: true}\n  - {Name: particles, Enabled: true}\n"
         "  - {Name: ui, Enabled: false}\nFloatingOrigin:\n  enabled: true\n  shiftRadius: 1000\n  origin: [0, 0, 0]\n"
@@ -523,27 +596,44 @@ def prefabs() -> dict[str, str]:
     enemy_bolt = y.Entities(7711000000000000000)
     enemy_bolt.add("EnemyBolt", [mesh("models/enemy_bolt.glb", glow=30000), trail((1, 0.5, 0.15, 1), 0.3, 0.15, 12000)])
     out["enemy_bolt"] = prefab("EnemyBolt", enemy_bolt)
-    ships = [
-        ("fighter", "Fighter", "textures/hud/target.png", 30, "", False),
-        ("interceptor", "Interceptor", "textures/hud/target.png", 38, "", True),
-        ("boss", "Boss", "textures/hud/boss_target.png", 120, "WARDEN", True),
-    ]
-    for index, (key, tag, icon, size, label, offscreen) in enumerate(ships):
-        ship = y.Entities(7712000000000000000 + index * 1000000000000)
+    # The wingmen's bolts, green: their shots are told from the player's.
+    wing_bolt = y.Entities(7713000000000000000)
+    wing_bolt.add(
+        "WingBolt",
+        [mesh("models/bolt.glb", (0.55, 1, 0.5, 1), glow=30000), trail((0.45, 1, 0.4, 1), 0.2, 0.12, 12000)],
+    )
+    out["wing_bolt"] = prefab("WingBolt", wing_bolt)
+    icons = {
+        "boss": ("textures/hud/boss_target.png", "WARDEN", True),
+        "interceptor": ("textures/hud/target.png", "", True),
+    }
+    # The entity numbers of each prefab, kept from one run to the next.
+    blocks = {"fighter": 0, "interceptor": 1, "boss": 2, "raider": 3, "scout": 4}
+    for kind in ENEMIES:
+        icon, label, offscreen = icons.get(kind.key, ("textures/hud/target.png", "", False))
+        ship = y.Entities(7712000000000000000 + blocks[kind.key] * 1000000000000)
         # The model on the root itself: the script flashes it on a hit (`entity.set_tint` of the spawned id).
-        model = mesh(f"models/{key}.glb").replace(MESH, "")
-        root = ship.add(tag, [hud_marker(icon, size, (1, 0.45, 0.35, 0.9), label, offscreen), model])
-        width = 0.3 if key != "boss" else 1.2
+        model = mesh(f"models/{kind.model}.glb", kind.tint).replace(MESH, "")
+        parts = [hud_marker(icon, kind.marker_size, kind.marker, label, offscreen), model]
+        if kind.model == "fighter":
+            # Off until `foes.lua` puts the fighter in the formation of its squadron.
+            parts.append(steering("squadron", 40, 70, 1.2, 3, False))
+        root = ship.add(kind.tag, parts)
+        big = kind.key == "boss"
+        width = 1.2 if big else 0.3
         for side in (-1, 1):
-            back = 1.0 if key != "boss" else 8.0
-            spread = 0.35 if key != "boss" else 4.2
+            back = 8.0 if big else 1.0
+            spread = 4.2 if big else 0.35
             ship.add(
-                f"{tag}Trail",
-                [trail((1, 0.45, 0.2, 0.8), width, 0.3, 5000)],
+                f"{kind.tag}Engine",
+                [
+                    trail((*kind.flame, 0.8), width, 0.3, 5000),
+                    flame(kind.flame, 2.2 if big else 0.45, 4.0 if big else 0.9),
+                ],
                 position=(side * spread, 0.1, back),
                 parent=root,
             )
-        out[key] = prefab(tag, ship)
+        out[kind.key] = prefab(kind.tag, ship)
     return out
 
 
@@ -746,24 +836,109 @@ def wave_table() -> str:
     )
 
 
+@dataclass
+class Kind:
+    """A row of the enemy table: its ship, its hull, its temper and how it shows it."""
+
+    key: str
+    tag: str
+    model: str
+    hp: int
+    radius: float
+    points: int
+    reload: float
+    accuracy: float
+    pursuit: float
+    tint: y.Colour
+    flame: tuple[float, float, float]
+    marker: y.Colour
+    marker_size: int
+
+
 ENEMIES = [
-    ("fighter", 2, 1.3, 200, 3.4),
-    ("interceptor", 5, 1.5, 400, 2.0),
-    ("boss", 140, 7.5, 5000, 1.7),
+    Kind(
+        "scout",
+        "Scout",
+        "fighter",
+        1,
+        1.2,
+        100,
+        5.0,
+        0.0,
+        0.0,
+        (0.62, 1, 0.72, 1),
+        (0.4, 1, 0.6),
+        (1, 0.85, 0.4, 0.8),
+        26,
+    ),
+    Kind(
+        "fighter",
+        "Fighter",
+        "fighter",
+        2,
+        1.3,
+        200,
+        3.4,
+        0.25,
+        0.15,
+        (1, 1, 1, 1),
+        (1, 0.55, 0.2),
+        (1, 0.45, 0.35, 0.9),
+        30,
+    ),
+    Kind(
+        "raider",
+        "Raider",
+        "fighter",
+        3,
+        1.3,
+        300,
+        1.8,
+        0.8,
+        0.6,
+        (1, 0.42, 0.38, 1),
+        (1, 0.18, 0.1),
+        (1, 0.15, 0.15, 1),
+        36,
+    ),
+    Kind(
+        "interceptor",
+        "Interceptor",
+        "interceptor",
+        5,
+        1.5,
+        400,
+        2.0,
+        0.5,
+        0.3,
+        (1, 1, 1, 1),
+        (1, 0.55, 0.2),
+        (1, 0.45, 0.35, 0.9),
+        38,
+    ),
+    Kind(
+        "boss", "Boss", "boss", 140, 7.5, 5000, 1.7, 0.0, 0.0, (1, 1, 1, 1), (1, 0.45, 0.2), (1, 0.45, 0.35, 0.9), 120
+    ),
 ]
-"""The kinds of enemies: key (its prefab is ``prefabs/<key>.owlprefab``), hull in hits, radius, points, reload."""
+"""
+The kinds of enemies: key (its prefab is ``prefabs/<key>.owlprefab``), hull in hits, radius, points, reload, then its
+temper (``accuracy`` and ``pursuit``, 0 to 1) and its looks: the tint of its model, the colour of its engine flames,
+its HUD marker. The more aggressive, the redder.
+"""
 
 
 def enemy_table() -> str:
     """The kinds of enemies, one row each, referenced by the waves."""
     rows = "".join(
-        f"  - key: {key}\n    prefab: prefabs/{key}.owlprefab\n    hp: {hp}\n    radius: {y.num(radius)}\n"
-        f"    points: {points}\n    reload: {y.num(reload)}\n"
-        for key, hp, radius, points, reload in ENEMIES
+        f"  - key: {k.key}\n    prefab: prefabs/{k.key}.owlprefab\n    hp: {k.hp}\n    radius: {y.num(k.radius)}\n"
+        f"    points: {k.points}\n    reload: {y.num(k.reload)}\n    accuracy: {y.num(k.accuracy)}\n"
+        f"    pursuit: {y.num(k.pursuit)}\n"
+        for k in ENEMIES
     )
     return (
         "DataTable: ''\nFormatVersion: 1\ncolumns:\n  - {name: prefab, type: Asset}\n  - {name: hp, type: Integer}\n"
         "  - {name: radius, type: Float}\n  - {name: points, type: Integer}\n  - {name: reload, type: Float}\n"
+        "  - {name: accuracy, type: Float}\n  - {name: pursuit, type: Float}\n"
         f"rows:\n{rows}"
     )
 
@@ -841,7 +1016,7 @@ SETTINGS = """GameSettings:
 
 ACTIONS = """FormatVersion: 1
 # Actions of Ring Runner, on top of the built-in ones (the `ui_*` actions drive the menus). Read by
-# scripts/game/rail.lua.
+# scripts/game/rail.owlvs.
 actions:
   - name: steer
     type: vector

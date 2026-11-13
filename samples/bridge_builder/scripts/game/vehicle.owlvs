@@ -1,0 +1,376 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: speed, type: float, default: 3.2, min: 0}
+    - {name: finish_x, type: float, default: 13}
+    - {name: fall_y, type: float, default: -7}
+    - {name: pull, type: float, default: 5, min: 0}
+    - {name: start, type: vec3, default: '0, 0, 0', exposed: false}
+    - {name: state, type: string, default: wait, exposed: false}
+  nodes:
+    - id: 6510000000000000001
+      type: event.on_create
+      position: [0, 0]
+    - id: 6510000000000000002
+      type: call.transform.get_position
+      position: [140, 150]
+    - id: 6510000000000000003
+      type: var.set
+      position: [300, 0]
+      values:
+        variable: start
+    - id: 6510000000000000004
+      type: event.on_tick
+      position: [0, 420]
+    - id: 6510000000000000005
+      type: call.gamestate.get
+      position: [300, 420]
+      values:
+        default: build
+        key: bridge_state
+    - id: 6510000000000000006
+      type: compare.equal
+      position: [240, 720]
+      values:
+        B: run
+    - id: 6510000000000000007
+      type: var.get
+      position: [40, 950]
+      values:
+        variable: state
+    - id: 6510000000000000008
+      type: compare.equal
+      position: [200, 800]
+      values:
+        B: drive
+    - id: 6510000000000000009
+      type: logic.and
+      position: [400, 570]
+    - id: 6510000000000000010
+      type: flow.branch
+      position: [600, 420]
+    - id: 6510000000000000011
+      type: call.gamestate.get
+      position: [900, 420]
+      values:
+        default: build
+        key: bridge_state
+    - id: 6510000000000000012
+      type: compare.equal
+      position: [840, 720]
+      values:
+        B: run
+    - id: 6510000000000000013
+      type: var.get
+      position: [640, 950]
+      values:
+        variable: state
+    - id: 6510000000000000014
+      type: compare.equal
+      position: [800, 800]
+      values:
+        B: wait
+    - id: 6510000000000000015
+      type: logic.and
+      position: [1000, 570]
+    - id: 6510000000000000016
+      type: flow.branch
+      position: [1200, 420]
+    - id: 6510000000000000017
+      type: var.set
+      position: [1500, 420]
+      values:
+        Value: drive
+        variable: state
+    - id: 6510000000000000018
+      type: call.physics.get_velocity
+      position: [-160, 1470]
+    - id: 6510000000000000019
+      type: math.break_vector2
+      position: [0, 1320]
+    - id: 6510000000000000020
+      type: call.transform.get_position
+      position: [1740, 720]
+    - id: 6510000000000000021
+      type: math.break_vector3
+      position: [1900, 570]
+    - id: 6510000000000000022
+      type: call.physics.get_mass
+      position: [280, 1250]
+    - id: 6510000000000000023
+      type: var.get
+      position: [40, 1400]
+      values:
+        variable: speed
+    - id: 6510000000000000024
+      type: math.subtract
+      position: [200, 1170]
+    - id: 6510000000000000025
+      type: math.multiply
+      position: [440, 1020]
+    - id: 6510000000000000026
+      type: math.multiply
+      position: [720, 870]
+      values:
+        B: 4
+    - id: 6510000000000000027
+      type: math.multiply
+      position: [880, 950]
+      values:
+        B: -3
+    - id: 6510000000000000028
+      type: var.get
+      position: [680, 1180]
+      values:
+        variable: pull
+    - id: 6510000000000000029
+      type: math.multiply
+      position: [840, 1030]
+    - id: 6510000000000000030
+      type: math.clamp
+      position: [1040, 720]
+    - id: 6510000000000000031
+      type: math.make_vector2
+      position: [1400, 570]
+      values:
+        Y: 0
+    - id: 6510000000000000032
+      type: call.physics.add_force
+      position: [1800, 420]
+    - id: 6510000000000000033
+      type: call.entity.get_name
+      position: [1740, 800]
+    - id: 6510000000000000034
+      type: text.concat
+      position: [1900, 650]
+      values:
+        A: bridge_x_
+    - id: 6510000000000000035
+      type: call.gamestate.set
+      position: [2100, 420]
+    - id: 6510000000000000036
+      type: var.get
+      position: [2040, 720]
+      values:
+        variable: finish_x
+    - id: 6510000000000000037
+      type: compare.greater
+      position: [2200, 570]
+    - id: 6510000000000000038
+      type: flow.branch
+      position: [2400, 420]
+    - id: 6510000000000000039
+      type: call.gamestate.get
+      position: [2700, 420]
+      values:
+        default: 0
+        key: bridge_arrived
+    - id: 6510000000000000040
+      type: var.set
+      position: [3000, 420]
+      values:
+        Value: arrived
+        variable: state
+    - id: 6510000000000000041
+      type: math.add
+      position: [3140, 570]
+      values:
+        B: 1
+    - id: 6510000000000000042
+      type: call.gamestate.set
+      position: [3300, 420]
+      values:
+        key: bridge_arrived
+    - id: 6510000000000000043
+      type: call.sound.play
+      position: [3600, 420]
+      values:
+        asset_path: sounds/game/across.wav
+    - id: 6510000000000000044
+      type: call.transform.get_position
+      position: [3300, 870]
+    - id: 6510000000000000045
+      type: math.break_vector3
+      position: [3460, 720]
+    - id: 6510000000000000046
+      type: var.get
+      position: [3500, 800]
+      values:
+        variable: fall_y
+    - id: 6510000000000000047
+      type: compare.less
+      position: [3660, 570]
+    - id: 6510000000000000048
+      type: flow.branch
+      position: [3900, 420]
+    - id: 6510000000000000049
+      type: call.gamestate.get
+      position: [4200, 420]
+      values:
+        default: 0
+        key: bridge_fallen
+    - id: 6510000000000000050
+      type: var.set
+      position: [4500, 420]
+      values:
+        Value: fallen
+        variable: state
+    - id: 6510000000000000051
+      type: math.add
+      position: [4640, 570]
+      values:
+        B: 1
+    - id: 6510000000000000052
+      type: call.gamestate.set
+      position: [4800, 420]
+      values:
+        key: bridge_fallen
+    - id: 6510000000000000053
+      type: call.sound.play
+      position: [5100, 420]
+      values:
+        asset_path: sounds/game/splash.wav
+    - id: 6510000000000000054
+      type: call.ui.show_subtitle
+      position: [5400, 420]
+      values:
+        seconds: 2
+        text: '[splash]'
+    - id: 6510000000000000055
+      type: call.gamestate.get
+      position: [5700, 420]
+      values:
+        default: build
+        key: bridge_state
+    - id: 6510000000000000056
+      type: compare.equal
+      position: [5640, 720]
+      values:
+        B: build
+    - id: 6510000000000000057
+      type: var.get
+      position: [5440, 950]
+      values:
+        variable: state
+    - id: 6510000000000000058
+      type: compare.not_equal
+      position: [5600, 800]
+      values:
+        B: wait
+    - id: 6510000000000000059
+      type: logic.and
+      position: [5800, 570]
+    - id: 6510000000000000060
+      type: flow.branch
+      position: [6000, 420]
+    - id: 6510000000000000061
+      type: var.get
+      position: [6000, 870]
+      values:
+        variable: start
+    - id: 6510000000000000062
+      type: math.break_vector3
+      position: [6160, 720]
+    - id: 6510000000000000063
+      type: var.set
+      position: [6300, 420]
+      values:
+        Value: wait
+        variable: state
+    - id: 6510000000000000064
+      type: math.make_vector2
+      position: [6360, 570]
+    - id: 6510000000000000065
+      type: call.physics.set_transform
+      position: [6600, 420]
+      values:
+        rotation_or_z: 0
+    - id: 6510000000000000066
+      type: call.physics.set_velocity
+      position: [6900, 420]
+      values:
+        velocity: '0, 0'
+    - id: 6510000000000000067
+      type: call.physics.set_angular_velocity
+      position: [7200, 420]
+      values:
+        angular_velocity: '0, 0, 0'
+  links:
+    - {from: 6510000000000000002, fromPin: xyz, to: 6510000000000000003, toPin: Value}
+    - {from: 6510000000000000001, fromPin: Then, to: 6510000000000000003, toPin: Exec}
+    - {from: 6510000000000000005, fromPin: value, to: 6510000000000000006, toPin: A}
+    - {from: 6510000000000000007, fromPin: Value, to: 6510000000000000008, toPin: A}
+    - {from: 6510000000000000006, fromPin: Result, to: 6510000000000000009, toPin: A}
+    - {from: 6510000000000000008, fromPin: Result, to: 6510000000000000009, toPin: B}
+    - {from: 6510000000000000009, fromPin: Result, to: 6510000000000000010, toPin: Condition}
+    - {from: 6510000000000000011, fromPin: value, to: 6510000000000000012, toPin: A}
+    - {from: 6510000000000000013, fromPin: Value, to: 6510000000000000014, toPin: A}
+    - {from: 6510000000000000012, fromPin: Result, to: 6510000000000000015, toPin: A}
+    - {from: 6510000000000000014, fromPin: Result, to: 6510000000000000015, toPin: B}
+    - {from: 6510000000000000015, fromPin: Result, to: 6510000000000000016, toPin: Condition}
+    - {from: 6510000000000000004, fromPin: Then, to: 6510000000000000011, toPin: Exec}
+    - {from: 6510000000000000011, fromPin: Then, to: 6510000000000000016, toPin: Exec}
+    - {from: 6510000000000000016, fromPin: True, to: 6510000000000000017, toPin: Exec}
+    - {from: 6510000000000000016, fromPin: False, to: 6510000000000000005, toPin: Exec}
+    - {from: 6510000000000000017, fromPin: Then, to: 6510000000000000005, toPin: Exec}
+    - {from: 6510000000000000005, fromPin: Then, to: 6510000000000000010, toPin: Exec}
+    - {from: 6510000000000000018, fromPin: velocity, to: 6510000000000000019, toPin: Value}
+    - {from: 6510000000000000020, fromPin: xyz, to: 6510000000000000021, toPin: Value}
+    - {from: 6510000000000000023, fromPin: Value, to: 6510000000000000024, toPin: A}
+    - {from: 6510000000000000019, fromPin: X, to: 6510000000000000024, toPin: B}
+    - {from: 6510000000000000024, fromPin: Result, to: 6510000000000000025, toPin: A}
+    - {from: 6510000000000000022, fromPin: mass, to: 6510000000000000025, toPin: B}
+    - {from: 6510000000000000025, fromPin: Result, to: 6510000000000000026, toPin: A}
+    - {from: 6510000000000000022, fromPin: mass, to: 6510000000000000027, toPin: A}
+    - {from: 6510000000000000022, fromPin: mass, to: 6510000000000000029, toPin: A}
+    - {from: 6510000000000000028, fromPin: Value, to: 6510000000000000029, toPin: B}
+    - {from: 6510000000000000026, fromPin: Result, to: 6510000000000000030, toPin: Value}
+    - {from: 6510000000000000027, fromPin: Result, to: 6510000000000000030, toPin: Min}
+    - {from: 6510000000000000029, fromPin: Result, to: 6510000000000000030, toPin: Max}
+    - {from: 6510000000000000030, fromPin: Result, to: 6510000000000000031, toPin: X}
+    - {from: 6510000000000000031, fromPin: Result, to: 6510000000000000032, toPin: force}
+    - {from: 6510000000000000033, fromPin: name, to: 6510000000000000034, toPin: B}
+    - {from: 6510000000000000034, fromPin: Result, to: 6510000000000000035, toPin: key}
+    - {from: 6510000000000000021, fromPin: X, to: 6510000000000000035, toPin: value}
+    - {from: 6510000000000000010, fromPin: True, to: 6510000000000000032, toPin: Exec}
+    - {from: 6510000000000000032, fromPin: Then, to: 6510000000000000035, toPin: Exec}
+    - {from: 6510000000000000021, fromPin: X, to: 6510000000000000037, toPin: A}
+    - {from: 6510000000000000036, fromPin: Value, to: 6510000000000000037, toPin: B}
+    - {from: 6510000000000000037, fromPin: Result, to: 6510000000000000038, toPin: Condition}
+    - {from: 6510000000000000035, fromPin: Then, to: 6510000000000000038, toPin: Exec}
+    - {from: 6510000000000000039, fromPin: value, to: 6510000000000000041, toPin: A}
+    - {from: 6510000000000000041, fromPin: Result, to: 6510000000000000042, toPin: value}
+    - {from: 6510000000000000038, fromPin: True, to: 6510000000000000040, toPin: Exec}
+    - {from: 6510000000000000040, fromPin: Then, to: 6510000000000000039, toPin: Exec}
+    - {from: 6510000000000000039, fromPin: Then, to: 6510000000000000042, toPin: Exec}
+    - {from: 6510000000000000042, fromPin: Then, to: 6510000000000000043, toPin: Exec}
+    - {from: 6510000000000000044, fromPin: xyz, to: 6510000000000000045, toPin: Value}
+    - {from: 6510000000000000045, fromPin: Y, to: 6510000000000000047, toPin: A}
+    - {from: 6510000000000000046, fromPin: Value, to: 6510000000000000047, toPin: B}
+    - {from: 6510000000000000047, fromPin: Result, to: 6510000000000000048, toPin: Condition}
+    - {from: 6510000000000000038, fromPin: False, to: 6510000000000000048, toPin: Exec}
+    - {from: 6510000000000000049, fromPin: value, to: 6510000000000000051, toPin: A}
+    - {from: 6510000000000000051, fromPin: Result, to: 6510000000000000052, toPin: value}
+    - {from: 6510000000000000048, fromPin: True, to: 6510000000000000050, toPin: Exec}
+    - {from: 6510000000000000050, fromPin: Then, to: 6510000000000000049, toPin: Exec}
+    - {from: 6510000000000000049, fromPin: Then, to: 6510000000000000052, toPin: Exec}
+    - {from: 6510000000000000052, fromPin: Then, to: 6510000000000000053, toPin: Exec}
+    - {from: 6510000000000000053, fromPin: Then, to: 6510000000000000054, toPin: Exec}
+    - {from: 6510000000000000055, fromPin: value, to: 6510000000000000056, toPin: A}
+    - {from: 6510000000000000057, fromPin: Value, to: 6510000000000000058, toPin: A}
+    - {from: 6510000000000000056, fromPin: Result, to: 6510000000000000059, toPin: A}
+    - {from: 6510000000000000058, fromPin: Result, to: 6510000000000000059, toPin: B}
+    - {from: 6510000000000000059, fromPin: Result, to: 6510000000000000060, toPin: Condition}
+    - {from: 6510000000000000010, fromPin: False, to: 6510000000000000055, toPin: Exec}
+    - {from: 6510000000000000055, fromPin: Then, to: 6510000000000000060, toPin: Exec}
+    - {from: 6510000000000000061, fromPin: Value, to: 6510000000000000062, toPin: Value}
+    - {from: 6510000000000000062, fromPin: X, to: 6510000000000000064, toPin: X}
+    - {from: 6510000000000000062, fromPin: Y, to: 6510000000000000064, toPin: Y}
+    - {from: 6510000000000000064, fromPin: Result, to: 6510000000000000065, toPin: xy}
+    - {from: 6510000000000000060, fromPin: True, to: 6510000000000000063, toPin: Exec}
+    - {from: 6510000000000000063, fromPin: Then, to: 6510000000000000065, toPin: Exec}
+    - {from: 6510000000000000065, fromPin: Then, to: 6510000000000000066, toPin: Exec}
+    - {from: 6510000000000000066, fromPin: Then, to: 6510000000000000067, toPin: Exec}
+  groups:
+    - {id: 6510000000000000068, title: on_create, position: [-40, -60], size: [640, 350], color: Red}
+    - {id: 6510000000000000069, title: on_tick, position: [-40, 360], size: [7540, 580], color: Red}

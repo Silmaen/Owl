@@ -48,7 +48,7 @@ Entities:
       gameVisible: true
     Hierarchy: {}
     LuaScript:
-      scriptPath: gid:539d0a97cc5de522:scripts/ui/warehouse.lua
+      scriptPath: gid:539d0a97cc5de522:scripts/ui/warehouse.owlvs
   - Entity: 7300000000000000004
     Tag:
       tag: CorridorWall
@@ -1225,7 +1225,7 @@ Entities:
       referenceResolution: [1280, 720]
       scaleMode: ScaleWithHeight
     LuaScript:
-      scriptPath: gid:6668ac8f68820a7c:scripts/ui/title.lua
+      scriptPath: gid:6668ac8f68820a7c:scripts/ui/title.owlvs
   - Entity: 7300000000000000063
     Tag:
       tag: TitleArt
@@ -1243,7 +1243,7 @@ Entities:
       pivot: [0.5, 0]
       size: [1.2, 0.189]
       sizeUnit: [ScreenHeight, ScreenHeight]
-      offset: [0, 0.04]
+      offset: [0, 0.03]
       offsetUnit: [ScreenHeight, ScreenHeight]
     UiImage:
       tint: [1, 1, 1, 1]
@@ -1263,14 +1263,14 @@ Entities:
       anchorMin: [0.5, 0]
       anchorMax: [0.5, 0]
       pivot: [0.5, 0]
-      size: [0.56, 0.5]
+      size: [1.06, 0.2]
       sizeUnit: [ScreenHeight, ScreenHeight]
-      offset: [-0.31, 0.27]
+      offset: [0, 0.26]
       offsetUnit: [ScreenHeight, ScreenHeight]
     UiLayout:
-      arrangement: Column
+      arrangement: Row
       crossAlign: Center
-      spacing: 8
+      spacing: 10
       padding: 0
       columns: 1
       cellSize: [0, 0]
@@ -1289,57 +1289,42 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.92, 0.16]
+      size: [0.17, 0.95]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.35, 0.22, 0.1, 1]
-      hoverColor: [0.85, 0.58, 0.22, 1]
-      pressedColor: [0.22, 0.13, 0.05, 1]
-      disabledColor: [0.04, 0.03, 0.02, 1]
+      normalColor: [0.7, 0.56, 0.42, 1]
+      hoverColor: [1, 0.93, 0.72, 1]
+      pressedColor: [0.5, 0.38, 0.27, 1]
+      disabledColor: [0.3, 0.27, 0.24, 1]
       onClickCallback: on_quit_clicked
+      Box:
+        shadowColor: [0, 0, 0, 0.55]
+        shadowOffset: [4, 6]
+        shadowBlur: 6
+        texture: gid:0a5dae67673cadfd:textures/ui/crate_face.png
+        sliceInsets: [22, 22, 22, 22]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.24, 0.13, 0.05, 1]
-      text: 'Quit'
-      color: [1, 0.93, 0.78, 1]
-      fontSize: 30
+      outlineWidth: 0
+      text: 'QUIT'
+      color: [0.13, 0.07, 0.03, 1]
+      fontSize: 28
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
       lineSpacing: 0
-      wrap: false
+      wrap: true
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-Bold
+      font: BlackOpsOne-Regular
     UiFocus:
       focusable: true
       initial: false
+      up: 7300000000000000066
       onFocusCallback: ''
       highlightColor: [1, 0.72, 0.2, 1]
       highlightThickness: 3
   - Entity: 7300000000000000066
-    Tag:
-      tag: QuitButtonPlank
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7300000000000000065
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:2a9b340c4719670c:textures/ui/plank.png
-  - Entity: 7300000000000000067
     Tag:
       tag: SettingsButton
     Transform:
@@ -1354,57 +1339,43 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.92, 0.16]
+      size: [0.17, 0.95]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.35, 0.22, 0.1, 1]
-      hoverColor: [0.85, 0.58, 0.22, 1]
-      pressedColor: [0.22, 0.13, 0.05, 1]
-      disabledColor: [0.04, 0.03, 0.02, 1]
+      normalColor: [0.7, 0.56, 0.42, 1]
+      hoverColor: [1, 0.93, 0.72, 1]
+      pressedColor: [0.5, 0.38, 0.27, 1]
+      disabledColor: [0.3, 0.27, 0.24, 1]
       onClickCallback: on_settings_clicked
+      Box:
+        shadowColor: [0, 0, 0, 0.55]
+        shadowOffset: [4, 6]
+        shadowBlur: 6
+        texture: gid:0a5dae67673cadfd:textures/ui/crate_face.png
+        sliceInsets: [22, 22, 22, 22]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.24, 0.13, 0.05, 1]
-      text: 'Settings'
-      color: [1, 0.93, 0.78, 1]
-      fontSize: 30
+      outlineWidth: 0
+      text: 'SETTINGS'
+      color: [0.13, 0.07, 0.03, 1]
+      fontSize: 28
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
       lineSpacing: 0
-      wrap: false
+      wrap: true
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-Bold
+      font: BlackOpsOne-Regular
     UiFocus:
       focusable: true
       initial: false
+      up: 7300000000000000067
+      down: 7300000000000000065
       onFocusCallback: ''
       highlightColor: [1, 0.72, 0.2, 1]
       highlightThickness: 3
-  - Entity: 7300000000000000068
-    Tag:
-      tag: SettingsButtonPlank
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7300000000000000067
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:2a9b340c4719670c:textures/ui/plank.png
-  - Entity: 7300000000000000069
+  - Entity: 7300000000000000067
     Tag:
       tag: HowToButton
     Transform:
@@ -1419,57 +1390,43 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.92, 0.16]
+      size: [0.17, 0.95]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.35, 0.22, 0.1, 1]
-      hoverColor: [0.85, 0.58, 0.22, 1]
-      pressedColor: [0.22, 0.13, 0.05, 1]
-      disabledColor: [0.04, 0.03, 0.02, 1]
+      normalColor: [0.7, 0.56, 0.42, 1]
+      hoverColor: [1, 0.93, 0.72, 1]
+      pressedColor: [0.5, 0.38, 0.27, 1]
+      disabledColor: [0.3, 0.27, 0.24, 1]
       onClickCallback: on_how_to_clicked
+      Box:
+        shadowColor: [0, 0, 0, 0.55]
+        shadowOffset: [4, 6]
+        shadowBlur: 6
+        texture: gid:0a5dae67673cadfd:textures/ui/crate_face.png
+        sliceInsets: [22, 22, 22, 22]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.24, 0.13, 0.05, 1]
-      text: 'How to play'
-      color: [1, 0.93, 0.78, 1]
-      fontSize: 30
+      outlineWidth: 0
+      text: 'HOW TO PLAY'
+      color: [0.13, 0.07, 0.03, 1]
+      fontSize: 28
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
       lineSpacing: 0
-      wrap: false
+      wrap: true
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-Bold
+      font: BlackOpsOne-Regular
     UiFocus:
       focusable: true
       initial: false
+      up: 7300000000000000068
+      down: 7300000000000000066
       onFocusCallback: ''
       highlightColor: [1, 0.72, 0.2, 1]
       highlightThickness: 3
-  - Entity: 7300000000000000070
-    Tag:
-      tag: HowToButtonPlank
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7300000000000000069
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:2a9b340c4719670c:textures/ui/plank.png
-  - Entity: 7300000000000000071
+  - Entity: 7300000000000000068
     Tag:
       tag: ContinueButton
     Transform:
@@ -1484,57 +1441,43 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.92, 0.16]
+      size: [0.17, 0.95]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.35, 0.22, 0.1, 1]
-      hoverColor: [0.85, 0.58, 0.22, 1]
-      pressedColor: [0.22, 0.13, 0.05, 1]
-      disabledColor: [0.04, 0.03, 0.02, 1]
+      normalColor: [0.7, 0.56, 0.42, 1]
+      hoverColor: [1, 0.93, 0.72, 1]
+      pressedColor: [0.5, 0.38, 0.27, 1]
+      disabledColor: [0.3, 0.27, 0.24, 1]
       onClickCallback: on_continue_clicked
+      Box:
+        shadowColor: [0, 0, 0, 0.55]
+        shadowOffset: [4, 6]
+        shadowBlur: 6
+        texture: gid:0a5dae67673cadfd:textures/ui/crate_face.png
+        sliceInsets: [22, 22, 22, 22]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.24, 0.13, 0.05, 1]
-      text: 'Continue'
-      color: [1, 0.93, 0.78, 1]
-      fontSize: 30
+      outlineWidth: 0
+      text: 'CONTINUE'
+      color: [0.13, 0.07, 0.03, 1]
+      fontSize: 28
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
       lineSpacing: 0
-      wrap: false
+      wrap: true
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-Bold
+      font: BlackOpsOne-Regular
     UiFocus:
       focusable: true
       initial: false
+      up: 7300000000000000069
+      down: 7300000000000000067
       onFocusCallback: ''
       highlightColor: [1, 0.72, 0.2, 1]
       highlightThickness: 3
-  - Entity: 7300000000000000072
-    Tag:
-      tag: ContinueButtonPlank
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7300000000000000071
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:2a9b340c4719670c:textures/ui/plank.png
-  - Entity: 7300000000000000073
+  - Entity: 7300000000000000069
     Tag:
       tag: PlayButton
     Transform:
@@ -1549,57 +1492,42 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.92, 0.16]
+      size: [0.17, 0.95]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.35, 0.22, 0.1, 1]
-      hoverColor: [0.85, 0.58, 0.22, 1]
-      pressedColor: [0.22, 0.13, 0.05, 1]
-      disabledColor: [0.04, 0.03, 0.02, 1]
+      normalColor: [0.7, 0.56, 0.42, 1]
+      hoverColor: [1, 0.93, 0.72, 1]
+      pressedColor: [0.5, 0.38, 0.27, 1]
+      disabledColor: [0.3, 0.27, 0.24, 1]
       onClickCallback: on_play_clicked
+      Box:
+        shadowColor: [0, 0, 0, 0.55]
+        shadowOffset: [4, 6]
+        shadowBlur: 6
+        texture: gid:0a5dae67673cadfd:textures/ui/crate_face.png
+        sliceInsets: [22, 22, 22, 22]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.24, 0.13, 0.05, 1]
-      text: 'Play'
-      color: [1, 0.93, 0.78, 1]
-      fontSize: 30
+      outlineWidth: 0
+      text: 'PLAY'
+      color: [0.13, 0.07, 0.03, 1]
+      fontSize: 28
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
       lineSpacing: 0
-      wrap: false
+      wrap: true
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-Bold
+      font: BlackOpsOne-Regular
     UiFocus:
       focusable: true
       initial: true
+      down: 7300000000000000068
       onFocusCallback: ''
       highlightColor: [1, 0.72, 0.2, 1]
       highlightThickness: 3
-  - Entity: 7300000000000000074
-    Tag:
-      tag: PlayButtonPlank
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7300000000000000073
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:2a9b340c4719670c:textures/ui/plank.png
-  - Entity: 7300000000000000075
+  - Entity: 7300000000000000070
     Tag:
       tag: LogBoard
     Transform:
@@ -1614,23 +1542,29 @@ Entities:
       anchorMin: [0.5, 0]
       anchorMax: [0.5, 0]
       pivot: [0.5, 0]
-      size: [0.56, 0.5]
+      size: [0.78, 0.3]
       sizeUnit: [ScreenHeight, ScreenHeight]
-      offset: [0.31, 0.27]
+      offset: [0, 0.485]
       offsetUnit: [ScreenHeight, ScreenHeight]
     UiPanel:
-      backgroundColor: [0.16, 0.1, 0.05, 0.92]
-      borderColor: [0.62, 0.42, 0.22, 1]
-      borderWidth: 3
+      backgroundColor: [1, 1, 1, 1]
+      borderColor: [0.55, 0.45, 0.3, 0.6]
+      borderWidth: 1
       clipChildren: false
+      Box:
+        shadowColor: [0, 0, 0, 0.5]
+        shadowOffset: [6, 8]
+        shadowBlur: 10
+        texture: gid:5c0b9e883a268c52:textures/ui/clipboard.png
+        sliceInsets: [40, 70, 40, 30]
     UiLayout:
       arrangement: Column
       crossAlign: Center
-      spacing: 8
-      padding: 12
+      spacing: 2
+      padding: 0
       columns: 1
       cellSize: [0, 0]
-  - Entity: 7300000000000000076
+  - Entity: 7300000000000000071
     Tag:
       tag: BestLabel
     Transform:
@@ -1640,20 +1574,19 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7300000000000000075
+      parentId: 7300000000000000070
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.92, 0.14]
+      size: [0.84, 0.1]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.24, 0.13, 0.05, 1]
+      outlineWidth: 0
       text: ''
-      color: [0.9, 0.82, 0.68, 0.95]
-      fontSize: 24
+      color: [0.17, 0.15, 0.2, 1]
+      fontSize: 20
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -1661,7 +1594,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-  - Entity: 7300000000000000077
+      font: JetBrainsMono-Regular
+  - Entity: 7300000000000000072
     Tag:
       tag: NextLabel
     Transform:
@@ -1671,20 +1605,19 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7300000000000000075
+      parentId: 7300000000000000070
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.92, 0.14]
+      size: [0.84, 0.12]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.24, 0.13, 0.05, 1]
+      outlineWidth: 0
       text: 'Next: level 1'
-      color: [0.9, 0.82, 0.68, 0.95]
-      fontSize: 26
+      color: [0.17, 0.15, 0.2, 1]
+      fontSize: 22
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -1692,7 +1625,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-  - Entity: 7300000000000000078
+      font: JetBrainsMono-Regular
+  - Entity: 7300000000000000073
     Tag:
       tag: ProgressBar
     Transform:
@@ -1702,19 +1636,19 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7300000000000000075
+      parentId: 7300000000000000070
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.92, 0.07]
+      size: [0.8, 0.07]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiProgressBar:
       value: 0
-      backgroundColor: [0.1, 0.06, 0.03, 1]
-      fillColor: [0.95, 0.7, 0.25, 1]
-  - Entity: 7300000000000000079
+      backgroundColor: [0.82, 0.78, 0.68, 1]
+      fillColor: [0.66, 0.13, 0.08, 1]
+  - Entity: 7300000000000000074
     Tag:
       tag: ProgressLabel
     Transform:
@@ -1724,20 +1658,19 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7300000000000000075
+      parentId: 7300000000000000070
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.92, 0.16]
+      size: [0.84, 0.14]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.24, 0.13, 0.05, 1]
+      outlineWidth: 0
       text: 'Levels done: 0 / 10'
-      color: [1, 0.93, 0.78, 1]
-      fontSize: 30
+      color: [0.17, 0.15, 0.2, 1]
+      fontSize: 26
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -1745,8 +1678,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-Bold
-  - Entity: 7300000000000000080
+      font: JetBrainsMono-Regular
+  - Entity: 7300000000000000075
     Tag:
       tag: LogTitle
     Transform:
@@ -1756,20 +1689,19 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7300000000000000075
+      parentId: 7300000000000000070
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.92, 0.18]
+      size: [0.84, 0.17]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.24, 0.13, 0.05, 1]
+      outlineWidth: 0
       text: 'WAREHOUSE LOG'
-      color: [1, 0.72, 0.2, 1]
-      fontSize: 34
+      color: [0.66, 0.13, 0.08, 1]
+      fontSize: 30
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -1777,8 +1709,26 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBold
-  - Entity: 7300000000000000081
+      font: BlackOpsOne-Regular
+  - Entity: 7300000000000000076
+    Tag:
+      tag: LogClip
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7300000000000000070
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.84, 0.25]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+  - Entity: 7300000000000000077
     Tag:
       tag: HowToWindow
     Transform:
@@ -1813,7 +1763,7 @@ Entities:
       padding: 10
       columns: 1
       cellSize: [0, 0]
-  - Entity: 7300000000000000082
+  - Entity: 7300000000000000078
     Tag:
       tag: HowToBackButton
     Transform:
@@ -1823,7 +1773,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7300000000000000081
+      parentId: 7300000000000000077
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1832,53 +1782,37 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.35, 0.22, 0.1, 1]
-      hoverColor: [0.85, 0.58, 0.22, 1]
-      pressedColor: [0.22, 0.13, 0.05, 1]
-      disabledColor: [0.04, 0.03, 0.02, 1]
+      normalColor: [0.7, 0.56, 0.42, 1]
+      hoverColor: [1, 0.93, 0.72, 1]
+      pressedColor: [0.5, 0.38, 0.27, 1]
+      disabledColor: [0.3, 0.27, 0.24, 1]
       onClickCallback: on_how_to_closed
+      Box:
+        shadowColor: [0, 0, 0, 0.55]
+        shadowOffset: [4, 6]
+        shadowBlur: 6
+        texture: gid:0a5dae67673cadfd:textures/ui/crate_face.png
+        sliceInsets: [22, 22, 22, 22]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.24, 0.13, 0.05, 1]
-      text: 'Back'
-      color: [1, 0.93, 0.78, 1]
-      fontSize: 30
+      outlineWidth: 0
+      text: 'BACK'
+      color: [0.13, 0.07, 0.03, 1]
+      fontSize: 28
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
       lineSpacing: 0
-      wrap: false
+      wrap: true
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-Bold
+      font: BlackOpsOne-Regular
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: ''
       highlightColor: [1, 0.72, 0.2, 1]
       highlightThickness: 3
-  - Entity: 7300000000000000083
-    Tag:
-      tag: HowToBackButtonPlank
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7300000000000000082
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:2a9b340c4719670c:textures/ui/plank.png
-  - Entity: 7300000000000000084
+  - Entity: 7300000000000000079
     Tag:
       tag: HowToControls
     Transform:
@@ -1888,7 +1822,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7300000000000000081
+      parentId: 7300000000000000077
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1909,7 +1843,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: JetBrainsMono-Regular
-  - Entity: 7300000000000000085
+  - Entity: 7300000000000000080
     Tag:
       tag: HowToRules
     Transform:
@@ -1919,7 +1853,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7300000000000000081
+      parentId: 7300000000000000077
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]

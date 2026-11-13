@@ -1,0 +1,8 @@
+# The Sunken Shrine, the guardian's den started with the visual scripts built as Play in Owl Nest builds them: the
+# guardian touches the hero, who loses hearts, is pushed back and shakes the camera, then blinks through its grace.
+scene: ../../../samples/sunken_shrine/scenes/room_6.owl
+debug_scripts: true
+steps:
+  - frames: 100
+  - expect: {gamestate: shrine_hearts, less: 5}
+  - expect: {gamestate: shrine_jolts, greater: 0}

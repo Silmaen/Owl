@@ -467,7 +467,7 @@ def scene(level: Level) -> None:
             visible(),
             "SoundListener:\n  primary: true",
             script(
-                "scripts/game/player.lua",
+                "scripts/game/player.owlvs",
                 [("speed", "float", "3"), ("turn_speed", "float", "1.8"), ("mouse_turn", "float", "0.006")],
             ),
         ],
@@ -484,7 +484,7 @@ def scene(level: Level) -> None:
         "LevelLogic",
         [
             visible(),
-            script("scripts/game/level.lua", [("level", "int", str(level.number)), ("title", "string", level.name)]),
+            script("scripts/game/level.owlvs", [("level", "int", str(level.number)), ("title", "string", level.name)]),
         ],
     )
     out.entity(
@@ -513,18 +513,18 @@ def scene(level: Level) -> None:
         [
             f"Tilemap:\n  tilemapPath: tilemaps/level_{level.number}_minimap.owltilemap",
             visible(),
-            script("scripts/game/explore.lua"),
+            script("scripts/game/explore.owlvs"),
             tag_for("overlay"),
         ],
         x=96,
-        y=96,
+        y=211,  # above the status bar of the HUD
         scale=(5, 5),
     )
     out.entity(
         "MinimapPlayer",
         ["CircleRenderer:\n  color: [1, 0.85, 0.1, 1]\n  thickness: 1\n  fade: 0.05", visible(), tag_for("overlay")],
         x=96,
-        y=96,
+        y=211,  # above the status bar of the HUD
         z=0.1,
         scale=(6, 6),
     )
@@ -532,7 +532,7 @@ def scene(level: Level) -> None:
         "MinimapFacing",
         ["CircleRenderer:\n  color: [1, 0.45, 0.1, 1]\n  thickness: 1\n  fade: 0.05", visible(), tag_for("overlay")],
         x=102,
-        y=96,
+        y=211,  # above the status bar of the HUD
         z=0.2,
         scale=(3, 3),
     )
@@ -546,7 +546,7 @@ def scene(level: Level) -> None:
             wx, wy = world(x, y)
             components = [visible(), child_of(doors)]
             if key:
-                components.append(script("scripts/game/locked_door.lua", [("key", "string", key)]))
+                components.append(script("scripts/game/locked_door.owlvs", [("key", "string", key)]))
             components.append(
                 f"RaycastDoor:\n  tilesetPath: {TILESET}\n  faceTileIndex: {face}\n"
                 f"  lateralTileIndex: {DOOR_SIDE}\n  openingDirection: {door_axis(level, x, y)}\n"
@@ -569,7 +569,7 @@ def scene(level: Level) -> None:
                 [
                     visible(),
                     child_of(secrets),
-                    script("scripts/game/secret.lua"),
+                    script("scripts/game/secret.owlvs"),
                     f"RaycastPushWall:\n  tilesetPath: {TILESET}\n  tileIndex: {pushwall_tile(level, x, y)}\n"
                     f"  slideDirection: {vec(dx, -dy)}\n  slideDistance: {PUSH_DISTANCE}\n  slideSpeed: 1\n"
                     "  interactionAction: interact\n  interactionRange: 1.5",
@@ -594,7 +594,7 @@ def scene(level: Level) -> None:
                     visible(),
                     *marker,
                     child_of(items),
-                    script("scripts/game/pickup.lua", [("item", "string", tag)]),
+                    script("scripts/game/pickup.owlvs", [("item", "string", tag)]),
                     tag_for("raycast_world"),
                 ],
                 x=wx,
@@ -619,7 +619,7 @@ def scene(level: Level) -> None:
             "Trigger:\n  Type: Interaction\n  InteractionRange: 1.5\n  CallbackName: on_elevator_use",
             visible(),
             hud_marker(*EXIT_MARKER),
-            script("scripts/game/exit.lua", [("next_scene", "string", next_scene)]),
+            script("scripts/game/exit.owlvs", [("next_scene", "string", next_scene)]),
             tag_for("raycast_world"),
         ],
         x=wx,
@@ -644,7 +644,7 @@ def scene(level: Level) -> None:
         uuid=extra.getrandbits(63),
         components=[
             visible(),
-            script("scripts/game/elevator.lua"),
+            script("scripts/game/elevator.owlvs"),
             f"SequencePlayer:\n  sequence: sequences/elevator.owlseq\n  camera: {camera}\n  playOnStart: false\n"
             "  loop: false\n  speed: 1\n  onFinished: on_ride_finished",
         ],

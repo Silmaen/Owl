@@ -122,6 +122,7 @@ labels the scenario `slow`: it runs in the nightly suite only.
 # test/unit/scenarios/platformer_walk.owltest
 scene: ../../engine_demo/scenes/platformer_house.owl   # relative to the file; project found above it
 timestep_ms: 16.667                                       # optional
+# debug_scripts: true                                     # optional: visual scripts built with probes, as Play in Owl Nest
 # project: ../../engine_demo                              # optional: the project, when the scene is a test fixture
 # assets: assets                                          # optional: extra asset folder(s) of the fixture
 # replay: ../../engine_demo/replays/tour.owlreplay        # optional: a recording played in place of the devices

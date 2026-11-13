@@ -1,0 +1,12 @@
+# Asteroid Field paused: Escape opens the pause window and the convoy stops on its route; Escape closes it.
+scene: ../../../samples/asteroid_field/scenes/mission.owl
+steps:
+  - frames: 20
+  - input: {key: Escape, frames: 1}
+  - frames: 2
+  - expect: {gamestate: field_paused, equals: true}
+  - frames: 120
+  - expect: {gamestate: field_progress, less: 0.02}
+  - input: {key: Escape, frames: 1}
+  - frames: 2
+  - expect: {gamestate: field_paused, equals: false}

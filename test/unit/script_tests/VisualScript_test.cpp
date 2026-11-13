@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 #include <filesystem>
 #include <fstream>
 #include <iterator>
@@ -546,6 +547,42 @@ TEST(VisualScript, InvalidGraphFailsToLoad) {
 	core::Log::invalidate();
 }
 
+TEST(VisualScript, InternalVectorVariablesStartKeyedByComponent) {
+	VisualScript script;
+	script.variables.push_back({.name = "facing",
+								.type = ScriptPropertyType::Vec2,
+								.defaultValue = "0, -1",
+								.min = {},
+								.max = {},
+								.step = {},
+								.exposed = false});
+	script.variables.push_back({.name = "offset",
+								.type = ScriptPropertyType::Vec2,
+								.defaultValue = "1, 2",
+								.min = {},
+								.max = {},
+								.step = {},
+								.exposed = true});
+	const auto lua = compile(script);
+	ASSERT_TRUE(lua.has_value()) << lua.error().front().message;
+	// A graph reads a vector by its components: an internal variable starts as one, a property default stays a list.
+	EXPECT_TRUE(lua->contains("\nfacing = { x = 0, y = (-1) }\n")) << *lua;
+	EXPECT_TRUE(lua->contains("default = { 1, 2 }")) << *lua;
+}
+
+TEST(VisualScript, LinkToAMissingPinIsAnError) {
+	VisualScript script;
+	const auto update = addNode(script, "event.on_update");
+	const auto tint = addNode(script, "call.entity.set_tint");
+	const auto colour = addNode(script, "math.make_color");
+	link(script, update, "Then", tint, "Exec");
+	link(script, colour, "Result", tint, "rgba");
+	const auto errors = errorsOf(script);
+	ASSERT_EQ(errors.size(), 1u);
+	EXPECT_EQ(errors.front().node, tint);
+	EXPECT_TRUE(errors.front().message.contains("rgba")) << errors.front().message;
+}
+
 TEST(VisualScript, EngineDemoGraphsCompileAndLoad) {
 	core::Log::init(core::Log::Level::Off);
 	size_t graphs = 0;
@@ -562,6 +599,58 @@ TEST(VisualScript, EngineDemoGraphsCompileAndLoad) {
 		const ScriptInstance instance;
 		EXPECT_TRUE(instance.createFromBuffer(toBytes(text), entry.path().filename().string(), 0)) << entry.path();
 	}
+	EXPECT_GT(graphs, 0u);
+	core::Log::invalidate();
+}
+
+TEST(VisualScript, SampleGameGraphsCompileAndLoad) {
+	core::Log::init(core::Log::Level::Off);
+	size_t graphs = 0;
+	for (const auto& project: std::filesystem::directory_iterator(test::getRootPath() / "samples")) {
+		if (!project.is_directory())
+			continue;
+		const auto root = project.path();
+		setLibraryReader([root](const std::string_view iPath) -> std::optional<std::string> {
+			std::ifstream file(root / std::filesystem::path{iPath});
+			if (!file)
+				return std::nullopt;
+			return std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+		});
+		clearLibraryCache();
+		for (const auto& entry: std::filesystem::recursive_directory_iterator(root)) {
+			if (!entry.is_regular_file() || entry.path().extension() != g_VisualScriptExtension)
+				continue;
+			++graphs;
+			std::ifstream file(entry.path());
+			const std::string text((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+			const auto script = deserialize(text, entry.path().string());
+			ASSERT_TRUE(script.has_value()) << entry.path();
+			const auto lua = compile(*script);
+			EXPECT_TRUE(lua.has_value())
+					<< entry.path() << ": "
+					<< (lua ? ""
+							: lua.error().front().message + " (node " +
+										std::to_string(static_cast<uint64_t>(lua.error().front().node)) + ")");
+			const ScriptInstance instance;
+			EXPECT_TRUE(instance.createFromBuffer({text.begin(), text.end()}, entry.path().filename().string(), 0))
+					<< entry.path();
+			// OWL_DUMP_GRAPH_LUA names a folder that receives the generated Lua of each graph.
+			if (const char* dumpFolder = std::getenv("OWL_DUMP_GRAPH_LUA"); lua.has_value() && dumpFolder != nullptr) {
+				// Named after the path in the samples folder: two graphs of the same name do not overwrite each other.
+				auto name = std::filesystem::relative(entry.path(), test::getRootPath() / "samples").generic_string();
+				std::ranges::replace(name, '/', '_');
+				std::ofstream dump(std::filesystem::path{dumpFolder} / (name + ".lua"));
+				dump << *lua;
+				// The build of Play in Owl Nest, with the probes of the wire values.
+				if (const auto debug = compileForDebug(*script); debug.has_value()) {
+					std::ofstream debugDump(std::filesystem::path{dumpFolder} / (name + ".debug.lua"));
+					debugDump << debug->lua;
+				}
+			}
+		}
+	}
+	setLibraryReader({});
+	clearLibraryCache();
 	EXPECT_GT(graphs, 0u);
 	core::Log::invalidate();
 }

@@ -95,7 +95,9 @@ function X.shake(amount)
     trauma = math.min(1, trauma + amount)
 end
 
--- The offset of the camera this frame (zero with reduced motion).
+--- The offset of the camera this frame (zero with reduced motion).
+---@return any result
+---@return any result_2
 function X.camera_offset()
     if still or trauma <= 0 then return 0, 0 end
     local k = trauma * trauma * 0.7
@@ -103,7 +105,8 @@ function X.camera_offset()
     return k * (math.sin(t * 47) + 0.5 * math.sin(t * 89 + 1.3)), k * (math.sin(t * 53 + 2.1) + 0.5 * math.sin(t * 97))
 end
 
--- Whether the camera may shake (the `reduced_motion` accessibility setting is off).
+--- Whether the camera may shake (the `reduced_motion` accessibility setting is off).
+---@return any result
 function X.may_shake()
     return not still
 end
@@ -155,7 +158,15 @@ local function pop(s, x, y, size)
     rs.play("sounds/game/pop.wav")
 end
 
--- An explosion of a ship (`r`, `g`, `b`: the tint of its shards) or of a rock (`rock` true) at rail coordinates.
+--- An explosion of a ship (`r`, `g`, `b`: the tint of its shards) or of a rock (`rock` true) at rail coordinates.
+---@param s any
+---@param x any
+---@param y any
+---@param size any
+---@param r any
+---@param g any
+---@param b any
+---@param rock any
 function X.explode(s, x, y, size, r, g, b, rock)
     local cap = math.min(size, 3)
     rs.burst("flares", s, x, y, math.floor(4 + 3 * cap))

@@ -1,0 +1,21 @@
+# Asteroid Field aim assist, with the visual scripts built as Play in Owl Nest builds them: a lock on the first wave
+# shows the X where the aim circle must go, the lock buttons cycle it along the enemies, the lasers fire on.
+scene: ../../../samples/asteroid_field/scenes/mission.owl
+debug_scripts: true
+timestep_ms: 33.333
+steps:
+  - frames: 150
+  - expect: {gamestate: field_enemies, greater: 1}
+  - input: {key: F, frames: 1}
+  - frames: 2
+  - expect: {gamestate: field_locked, equals: true}
+  - expect: {gamestate: field_lead, equals: true}
+  - input: {key: T, frames: 1}
+  - frames: 2
+  - expect: {gamestate: field_lock_cycles, equals: 1}
+  - expect: {gamestate: field_locked, equals: true}
+  - input: {gamepad: {button: DpadLeft}, frames: 1}
+  - frames: 2
+  - expect: {gamestate: field_lock_cycles, equals: 2}
+  - input: {key: Space, frames: 30}
+  - expect: {gamestate: field_shots, greater: 3}

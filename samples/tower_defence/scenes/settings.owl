@@ -175,7 +175,7 @@ Entities:
       gameVisible: true
     Hierarchy: {}
     LuaScript:
-      scriptPath: gid:83b62d131ad337a8:scripts/ui/parade.lua
+      scriptPath: gid:83b62d131ad337a8:scripts/ui/parade.owlvs
       properties:
         - name: fireworks
           type: bool
@@ -407,7 +407,7 @@ Entities:
       referenceResolution: [1280, 720]
       scaleMode: ScaleWithHeight
     LuaScript:
-      scriptPath: gid:d6bd9aea2e086b9a:scripts/ui/settings.lua
+      scriptPath: gid:d6bd9aea2e086b9a:scripts/ui/settings.owlvs
   - Entity: 7410000000000000024
     Tag:
       tag: SettingsList
@@ -488,6 +488,10 @@ Entities:
       pressedColor: [0.16, 0.09, 0.04, 1]
       disabledColor: [0.12, 0.1, 0.12, 1]
       onClickCallback: on_reset_clicked
+      Box:
+        shadowColor: [0, 0, 0, 0.6]
+        shadowOffset: [0, 5]
+        shadowBlur: 8
     UiText:
       outlineWidth: 2
       outlineColor: [0.16, 0.09, 0.04, 1]
@@ -553,6 +557,10 @@ Entities:
       pressedColor: [0.16, 0.09, 0.04, 1]
       disabledColor: [0.12, 0.1, 0.12, 1]
       onClickCallback: go_back
+      Box:
+        shadowColor: [0, 0, 0, 0.6]
+        shadowOffset: [0, 5]
+        shadowBlur: 8
     UiText:
       outlineWidth: 2
       outlineColor: [0.16, 0.09, 0.04, 1]
@@ -732,6 +740,10 @@ Entities:
       pressedColor: [0.16, 0.09, 0.04, 1]
       disabledColor: [0.12, 0.1, 0.12, 1]
       onClickCallback: on_reset_progress_clicked
+      Box:
+        shadowColor: [0, 0, 0, 0.6]
+        shadowOffset: [0, 5]
+        shadowBlur: 8
     UiText:
       outlineWidth: 2
       outlineColor: [0.16, 0.09, 0.04, 1]
@@ -797,6 +809,10 @@ Entities:
       pressedColor: [0.16, 0.09, 0.04, 1]
       disabledColor: [0.12, 0.1, 0.12, 1]
       onClickCallback: on_reset_tutorial_clicked
+      Box:
+        shadowColor: [0, 0, 0, 0.6]
+        shadowOffset: [0, 5]
+        shadowBlur: 8
     UiText:
       outlineWidth: 2
       outlineColor: [0.16, 0.09, 0.04, 1]
@@ -862,6 +878,10 @@ Entities:
       pressedColor: [0.16, 0.09, 0.04, 1]
       disabledColor: [0.12, 0.1, 0.12, 1]
       onClickCallback: on_subtitles_clicked
+      Box:
+        shadowColor: [0, 0, 0, 0.6]
+        shadowOffset: [0, 5]
+        shadowBlur: 8
     UiText:
       outlineWidth: 2
       outlineColor: [0.16, 0.09, 0.04, 1]
@@ -927,6 +947,10 @@ Entities:
       pressedColor: [0.16, 0.09, 0.04, 1]
       disabledColor: [0.12, 0.1, 0.12, 1]
       onClickCallback: on_reduced_motion_clicked
+      Box:
+        shadowColor: [0, 0, 0, 0.6]
+        shadowOffset: [0, 5]
+        shadowBlur: 8
     UiText:
       outlineWidth: 2
       outlineColor: [0.16, 0.09, 0.04, 1]
@@ -992,6 +1016,10 @@ Entities:
       pressedColor: [0.16, 0.09, 0.04, 1]
       disabledColor: [0.12, 0.1, 0.12, 1]
       onClickCallback: on_colour_vision_clicked
+      Box:
+        shadowColor: [0, 0, 0, 0.6]
+        shadowOffset: [0, 5]
+        shadowBlur: 8
     UiText:
       outlineWidth: 2
       outlineColor: [0.16, 0.09, 0.04, 1]

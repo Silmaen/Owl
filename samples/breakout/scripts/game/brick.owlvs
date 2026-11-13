@@ -1,0 +1,723 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: hits, type: int, default: "1"}
+    - {name: points, type: int, default: "10"}
+    - {name: drop, type: string, default: ""}
+    - {name: r, type: float, default: "0.9"}
+    - {name: g, type: float, default: "0.3"}
+    - {name: b, type: float, default: "0.3"}
+    - {name: flash_time, type: float, default: "0.12", min: 0.01}
+    - {name: remaining, type: float, default: "1", exposed: false}
+    - {name: broken, type: bool, default: "false", exposed: false}
+    - {name: flash, type: float, default: "0", exposed: false}
+    - {name: cr, type: float, default: "0", exposed: false}
+    - {name: cg, type: float, default: "0", exposed: false}
+    - {name: cb, type: float, default: "0", exposed: false}
+    - {name: k, type: float, default: "0", exposed: false}
+    - {name: x, type: float, default: "0", exposed: false}
+    - {name: y, type: float, default: "0", exposed: false}
+    - {name: shatter_cr, type: float, default: "0", exposed: false}
+    - {name: shatter_cg, type: float, default: "0", exposed: false}
+    - {name: shatter_cb, type: float, default: "0", exposed: false}
+    - {name: event, type: string, default: "", exposed: false}
+  functions:
+    - name: colour
+      inputs: []
+      outputs: [{name: result, type: any}, {name: result_2, type: any}, {name: result_3, type: any}]
+    - name: apply_tint
+      inputs: []
+      outputs: []
+    - name: shatter
+      inputs: []
+      outputs: []
+  nodes:
+    - id: 5116800001
+      type: func.entry
+      position: [340, 0]
+      values:
+        function: colour
+    - id: 5116800002
+      type: var.get
+      position: [170, 160]
+      values:
+        variable: remaining
+    - id: 5116800003
+      type: compare.greater_equal
+      position: [170, 280]
+      values:
+        B: "3"
+    - id: 5116800004
+      type: flow.branch
+      position: [680, 0]
+    - id: 5116800005
+      type: func.return
+      position: [1020, 0]
+      values:
+        function: colour
+        result: "0.55"
+        result_2: "0.6"
+        result_3: "0.72"
+    - id: 5116800006
+      type: var.get
+      position: [850, 160]
+      values:
+        variable: remaining
+    - id: 5116800007
+      type: compare.equal
+      position: [850, 280]
+      values:
+        B: "2"
+    - id: 5116800008
+      type: flow.branch
+      position: [1360, 0]
+    - id: 5116800009
+      type: func.return
+      position: [1700, 0]
+      values:
+        function: colour
+        result: "0.82"
+        result_2: "0.85"
+        result_3: "0.92"
+    - id: 5116800010
+      type: var.get
+      position: [1530, 160]
+      values:
+        variable: r
+    - id: 5116800011
+      type: var.get
+      position: [1530, 280]
+      values:
+        variable: g
+    - id: 5116800012
+      type: var.get
+      position: [1530, 400]
+      values:
+        variable: b
+    - id: 5116800013
+      type: func.return
+      position: [2040, 0]
+      values:
+        function: colour
+    - id: 5116800014
+      type: func.entry
+      position: [340, 660]
+      values:
+        function: apply_tint
+    - id: 5116800015
+      type: func.call
+      position: [680, 660]
+      values:
+        function: colour
+    - id: 5116800016
+      type: var.set
+      position: [1020, 660]
+      values:
+        variable: cr
+    - id: 5116800017
+      type: var.set
+      position: [1360, 660]
+      values:
+        variable: cg
+    - id: 5116800018
+      type: var.set
+      position: [1700, 660]
+      values:
+        variable: cb
+    - id: 5116800019
+      type: var.get
+      position: [1530, 820]
+      values:
+        variable: flash
+    - id: 5116800020
+      type: var.get
+      position: [1530, 940]
+      values:
+        variable: flash_time
+    - id: 5116800021
+      type: math.divide
+      position: [1530, 1060]
+    - id: 5116800022
+      type: var.set
+      position: [2040, 660]
+      values:
+        variable: k
+    - id: 5116800023
+      type: call.entity.set_tint
+      position: [2380, 660]
+      values:
+        split.rgb: "true"
+        a: "1"
+    - id: 5116800024
+      type: value.self
+      position: [2210, 820]
+    - id: 5116800025
+      type: var.get
+      position: [2210, 940]
+      values:
+        variable: cr
+    - id: 5116800026
+      type: var.get
+      position: [2210, 1060]
+      values:
+        variable: cr
+    - id: 5116800027
+      type: math.subtract
+      position: [2210, 1180]
+      values:
+        A: "1"
+    - id: 5116800028
+      type: var.get
+      position: [2210, 1300]
+      values:
+        variable: k
+    - id: 5116800029
+      type: math.multiply
+      position: [2210, 1420]
+    - id: 5116800030
+      type: math.add
+      position: [2210, 1540]
+    - id: 5116800031
+      type: var.get
+      position: [2210, 1660]
+      values:
+        variable: cg
+    - id: 5116800032
+      type: var.get
+      position: [2210, 1780]
+      values:
+        variable: cg
+    - id: 5116800033
+      type: math.subtract
+      position: [2210, 1900]
+      values:
+        A: "1"
+    - id: 5116800034
+      type: var.get
+      position: [2210, 2020]
+      values:
+        variable: k
+    - id: 5116800035
+      type: math.multiply
+      position: [2210, 2140]
+    - id: 5116800036
+      type: math.add
+      position: [2210, 2260]
+    - id: 5116800037
+      type: var.get
+      position: [2210, 2380]
+      values:
+        variable: cb
+    - id: 5116800038
+      type: var.get
+      position: [2210, 2500]
+      values:
+        variable: cb
+    - id: 5116800039
+      type: math.subtract
+      position: [2210, 2620]
+      values:
+        A: "1"
+    - id: 5116800040
+      type: var.get
+      position: [2210, 2740]
+      values:
+        variable: k
+    - id: 5116800041
+      type: math.multiply
+      position: [2210, 2860]
+    - id: 5116800042
+      type: math.add
+      position: [2210, 2980]
+    - id: 5116800043
+      type: event.on_create
+      position: [340, 3240]
+    - id: 5116800044
+      type: var.get
+      position: [170, 3400]
+      values:
+        variable: hits
+    - id: 5116800045
+      type: math.max
+      position: [170, 3520]
+      values:
+        A: "1"
+    - id: 5116800046
+      type: var.set
+      position: [680, 3240]
+      values:
+        variable: remaining
+    - id: 5116800047
+      type: func.call
+      position: [1020, 3240]
+      values:
+        function: apply_tint
+    - id: 5116800048
+      type: func.entry
+      position: [340, 3780]
+      values:
+        function: shatter
+    - id: 5116800049
+      type: var.set
+      position: [680, 3780]
+      values:
+        variable: broken
+        Value: "true"
+    - id: 5116800050
+      type: call.gamestate.set
+      position: [1020, 3780]
+      values:
+        key: breakout_score
+    - id: 5116800051
+      type: call.gamestate.get
+      position: [1360, 3780]
+      values:
+        key: breakout_score
+        default: "0"
+    - id: 5116800052
+      type: var.get
+      position: [1190, 3940]
+      values:
+        variable: points
+    - id: 5116800053
+      type: math.add
+      position: [1190, 4060]
+    - id: 5116800054
+      type: call.gamestate.set
+      position: [1700, 3780]
+      values:
+        key: breakout_bricks
+    - id: 5116800055
+      type: call.gamestate.get
+      position: [2040, 3780]
+      values:
+        key: breakout_bricks
+        default: "1"
+    - id: 5116800056
+      type: math.subtract
+      position: [1870, 3940]
+      values:
+        B: "1"
+    - id: 5116800057
+      type: call.transform.get_position
+      position: [1870, 4060]
+      values:
+        split.xyz: "true"
+    - id: 5116800058
+      type: value.self
+      position: [1870, 4180]
+    - id: 5116800059
+      type: var.set
+      position: [2380, 3780]
+      values:
+        variable: x
+    - id: 5116800060
+      type: var.set
+      position: [2720, 3780]
+      values:
+        variable: y
+    - id: 5116800061
+      type: func.call
+      position: [3060, 3780]
+      values:
+        function: colour
+    - id: 5116800062
+      type: var.set
+      position: [3400, 3780]
+      values:
+        variable: shatter_cr
+    - id: 5116800063
+      type: var.set
+      position: [3740, 3780]
+      values:
+        variable: shatter_cg
+    - id: 5116800064
+      type: var.set
+      position: [4080, 3780]
+      values:
+        variable: shatter_cb
+    - id: 5116800065
+      type: var.get
+      position: [3910, 3940]
+      values:
+        variable: x
+    - id: 5116800066
+      type: var.get
+      position: [3910, 4060]
+      values:
+        variable: y
+    - id: 5116800067
+      type: var.get
+      position: [3910, 4180]
+      values:
+        variable: shatter_cr
+    - id: 5116800068
+      type: var.get
+      position: [3910, 4300]
+      values:
+        variable: shatter_cg
+    - id: 5116800069
+      type: text.format
+      position: [3910, 4420]
+      values:
+        Format: "break %.3f %.3f %.3f %.3f "
+    - id: 5116800070
+      type: var.get
+      position: [3910, 4540]
+      values:
+        variable: shatter_cb
+    - id: 5116800071
+      type: text.format
+      position: [3910, 4660]
+      values:
+        Format: "%.3f;"
+    - id: 5116800072
+      type: text.join
+      position: [3910, 4780]
+    - id: 5116800073
+      type: var.set
+      position: [4420, 3780]
+      values:
+        variable: event
+    - id: 5116800074
+      type: var.get
+      position: [4250, 3940]
+      values:
+        variable: drop
+    - id: 5116800075
+      type: compare.equal
+      position: [4250, 4060]
+      values:
+        B: wide
+    - id: 5116800076
+      type: var.get
+      position: [4250, 4180]
+      values:
+        variable: drop
+    - id: 5116800077
+      type: compare.equal
+      position: [4250, 4300]
+      values:
+        B: slow
+    - id: 5116800078
+      type: logic.or
+      position: [4250, 4420]
+    - id: 5116800079
+      type: flow.branch
+      position: [4760, 3780]
+    - id: 5116800080
+      type: var.get
+      position: [4590, 3940]
+      values:
+        variable: event
+    - id: 5116800081
+      type: var.get
+      position: [4590, 4060]
+      values:
+        variable: drop
+    - id: 5116800082
+      type: var.get
+      position: [4590, 4180]
+      values:
+        variable: x
+    - id: 5116800083
+      type: var.get
+      position: [4590, 4300]
+      values:
+        variable: y
+    - id: 5116800084
+      type: text.format
+      position: [4590, 4420]
+      values:
+        Format: "%s %.3f %.3f 0 0 0;"
+    - id: 5116800085
+      type: text.join
+      position: [4590, 4540]
+    - id: 5116800086
+      type: var.set
+      position: [5100, 3780]
+      values:
+        variable: event
+    - id: 5116800087
+      type: call.gamestate.set
+      position: [5440, 3780]
+      values:
+        key: breakout_events
+    - id: 5116800088
+      type: call.gamestate.get
+      position: [5780, 3780]
+      values:
+        key: breakout_events
+    - id: 5116800089
+      type: value.string
+      position: [5610, 3940]
+      values:
+        Value: ""
+    - id: 5116800090
+      type: var.get
+      position: [5610, 4060]
+      values:
+        variable: event
+    - id: 5116800091
+      type: text.concat
+      position: [5610, 4180]
+    - id: 5116800092
+      type: call.sound.play
+      position: [6120, 3780]
+      values:
+        asset_path: sounds/game/brick_break.wav
+    - id: 5116800093
+      type: call.scene.destroy_entity
+      position: [6460, 3780]
+    - id: 5116800094
+      type: value.self
+      position: [6290, 3940]
+    - id: 5116800095
+      type: event.on_collision
+      position: [340, 5040]
+    - id: 5116800096
+      type: var.get
+      position: [170, 5200]
+      values:
+        variable: broken
+    - id: 5116800097
+      type: call.entity.get_name
+      position: [170, 5320]
+    - id: 5116800098
+      type: compare.not_equal
+      position: [170, 5440]
+      values:
+        B: Ball
+    - id: 5116800099
+      type: logic.or
+      position: [170, 5560]
+    - id: 5116800100
+      type: flow.branch
+      position: [680, 5040]
+    - id: 5116800101
+      type: var.get
+      position: [510, 5200]
+      values:
+        variable: remaining
+    - id: 5116800102
+      type: math.subtract
+      position: [510, 5320]
+      values:
+        B: "1"
+    - id: 5116800103
+      type: var.set
+      position: [1020, 5040]
+      values:
+        variable: remaining
+    - id: 5116800104
+      type: var.get
+      position: [850, 5200]
+      values:
+        variable: remaining
+    - id: 5116800105
+      type: compare.less_equal
+      position: [850, 5320]
+      values:
+        B: "0"
+    - id: 5116800106
+      type: flow.branch
+      position: [1360, 5040]
+    - id: 5116800107
+      type: func.call
+      position: [1700, 5040]
+      values:
+        function: shatter
+    - id: 5116800108
+      type: var.get
+      position: [1530, 5200]
+      values:
+        variable: flash_time
+    - id: 5116800109
+      type: var.set
+      position: [2040, 5040]
+      values:
+        variable: flash
+    - id: 5116800110
+      type: func.call
+      position: [2380, 5040]
+      values:
+        function: apply_tint
+    - id: 5116800111
+      type: call.sound.play
+      position: [2720, 5040]
+      values:
+        asset_path: sounds/game/metal.wav
+    - id: 5116800112
+      type: event.on_update
+      position: [340, 5820]
+    - id: 5116800113
+      type: var.get
+      position: [170, 5980]
+      values:
+        variable: flash
+    - id: 5116800114
+      type: compare.less_equal
+      position: [170, 6100]
+      values:
+        B: "0"
+    - id: 5116800115
+      type: flow.branch
+      position: [680, 5820]
+    - id: 5116800116
+      type: var.get
+      position: [510, 5980]
+      values:
+        variable: flash
+    - id: 5116800117
+      type: math.subtract
+      position: [510, 6100]
+    - id: 5116800118
+      type: math.max
+      position: [510, 6220]
+      values:
+        A: "0"
+    - id: 5116800119
+      type: var.set
+      position: [1020, 5820]
+      values:
+        variable: flash
+    - id: 5116800120
+      type: func.call
+      position: [1360, 5820]
+      values:
+        function: apply_tint
+  links:
+    - {from: 5116800002, fromPin: Value, to: 5116800003, toPin: A}
+    - {from: 5116800003, fromPin: Result, to: 5116800004, toPin: Condition}
+    - {from: 5116800001, fromPin: Then, to: 5116800004, toPin: Exec}
+    - {from: 5116800004, fromPin: "True", to: 5116800005, toPin: Exec}
+    - {from: 5116800006, fromPin: Value, to: 5116800007, toPin: A}
+    - {from: 5116800007, fromPin: Result, to: 5116800008, toPin: Condition}
+    - {from: 5116800004, fromPin: "False", to: 5116800008, toPin: Exec}
+    - {from: 5116800008, fromPin: "True", to: 5116800009, toPin: Exec}
+    - {from: 5116800010, fromPin: Value, to: 5116800013, toPin: result}
+    - {from: 5116800011, fromPin: Value, to: 5116800013, toPin: result_2}
+    - {from: 5116800012, fromPin: Value, to: 5116800013, toPin: result_3}
+    - {from: 5116800008, fromPin: "False", to: 5116800013, toPin: Exec}
+    - {from: 5116800014, fromPin: Then, to: 5116800015, toPin: Exec}
+    - {from: 5116800015, fromPin: result, to: 5116800016, toPin: Value}
+    - {from: 5116800015, fromPin: Then, to: 5116800016, toPin: Exec}
+    - {from: 5116800015, fromPin: result_2, to: 5116800017, toPin: Value}
+    - {from: 5116800016, fromPin: Then, to: 5116800017, toPin: Exec}
+    - {from: 5116800015, fromPin: result_3, to: 5116800018, toPin: Value}
+    - {from: 5116800017, fromPin: Then, to: 5116800018, toPin: Exec}
+    - {from: 5116800019, fromPin: Value, to: 5116800021, toPin: A}
+    - {from: 5116800020, fromPin: Value, to: 5116800021, toPin: B}
+    - {from: 5116800021, fromPin: Result, to: 5116800022, toPin: Value}
+    - {from: 5116800018, fromPin: Then, to: 5116800022, toPin: Exec}
+    - {from: 5116800024, fromPin: Result, to: 5116800023, toPin: entity_id}
+    - {from: 5116800026, fromPin: Value, to: 5116800027, toPin: B}
+    - {from: 5116800027, fromPin: Result, to: 5116800029, toPin: A}
+    - {from: 5116800028, fromPin: Value, to: 5116800029, toPin: B}
+    - {from: 5116800025, fromPin: Value, to: 5116800030, toPin: A}
+    - {from: 5116800029, fromPin: Result, to: 5116800030, toPin: B}
+    - {from: 5116800030, fromPin: Result, to: 5116800023, toPin: r}
+    - {from: 5116800032, fromPin: Value, to: 5116800033, toPin: B}
+    - {from: 5116800033, fromPin: Result, to: 5116800035, toPin: A}
+    - {from: 5116800034, fromPin: Value, to: 5116800035, toPin: B}
+    - {from: 5116800031, fromPin: Value, to: 5116800036, toPin: A}
+    - {from: 5116800035, fromPin: Result, to: 5116800036, toPin: B}
+    - {from: 5116800036, fromPin: Result, to: 5116800023, toPin: g}
+    - {from: 5116800038, fromPin: Value, to: 5116800039, toPin: B}
+    - {from: 5116800039, fromPin: Result, to: 5116800041, toPin: A}
+    - {from: 5116800040, fromPin: Value, to: 5116800041, toPin: B}
+    - {from: 5116800037, fromPin: Value, to: 5116800042, toPin: A}
+    - {from: 5116800041, fromPin: Result, to: 5116800042, toPin: B}
+    - {from: 5116800042, fromPin: Result, to: 5116800023, toPin: b}
+    - {from: 5116800022, fromPin: Then, to: 5116800023, toPin: Exec}
+    - {from: 5116800044, fromPin: Value, to: 5116800045, toPin: B}
+    - {from: 5116800045, fromPin: Result, to: 5116800046, toPin: Value}
+    - {from: 5116800043, fromPin: Then, to: 5116800046, toPin: Exec}
+    - {from: 5116800046, fromPin: Then, to: 5116800047, toPin: Exec}
+    - {from: 5116800048, fromPin: Then, to: 5116800049, toPin: Exec}
+    - {from: 5116800049, fromPin: Then, to: 5116800051, toPin: Exec}
+    - {from: 5116800051, fromPin: value, to: 5116800053, toPin: A}
+    - {from: 5116800052, fromPin: Value, to: 5116800053, toPin: B}
+    - {from: 5116800053, fromPin: Result, to: 5116800050, toPin: value}
+    - {from: 5116800051, fromPin: Then, to: 5116800050, toPin: Exec}
+    - {from: 5116800050, fromPin: Then, to: 5116800055, toPin: Exec}
+    - {from: 5116800055, fromPin: value, to: 5116800056, toPin: A}
+    - {from: 5116800056, fromPin: Result, to: 5116800054, toPin: value}
+    - {from: 5116800055, fromPin: Then, to: 5116800054, toPin: Exec}
+    - {from: 5116800058, fromPin: Result, to: 5116800057, toPin: entity_id}
+    - {from: 5116800057, fromPin: x, to: 5116800059, toPin: Value}
+    - {from: 5116800054, fromPin: Then, to: 5116800059, toPin: Exec}
+    - {from: 5116800057, fromPin: y, to: 5116800060, toPin: Value}
+    - {from: 5116800059, fromPin: Then, to: 5116800060, toPin: Exec}
+    - {from: 5116800060, fromPin: Then, to: 5116800061, toPin: Exec}
+    - {from: 5116800061, fromPin: result, to: 5116800062, toPin: Value}
+    - {from: 5116800061, fromPin: Then, to: 5116800062, toPin: Exec}
+    - {from: 5116800061, fromPin: result_2, to: 5116800063, toPin: Value}
+    - {from: 5116800062, fromPin: Then, to: 5116800063, toPin: Exec}
+    - {from: 5116800061, fromPin: result_3, to: 5116800064, toPin: Value}
+    - {from: 5116800063, fromPin: Then, to: 5116800064, toPin: Exec}
+    - {from: 5116800065, fromPin: Value, to: 5116800069, toPin: A}
+    - {from: 5116800066, fromPin: Value, to: 5116800069, toPin: B}
+    - {from: 5116800067, fromPin: Value, to: 5116800069, toPin: C}
+    - {from: 5116800068, fromPin: Value, to: 5116800069, toPin: D}
+    - {from: 5116800070, fromPin: Value, to: 5116800071, toPin: A}
+    - {from: 5116800069, fromPin: Result, to: 5116800072, toPin: A}
+    - {from: 5116800071, fromPin: Result, to: 5116800072, toPin: B}
+    - {from: 5116800072, fromPin: Result, to: 5116800073, toPin: Value}
+    - {from: 5116800064, fromPin: Then, to: 5116800073, toPin: Exec}
+    - {from: 5116800074, fromPin: Value, to: 5116800075, toPin: A}
+    - {from: 5116800076, fromPin: Value, to: 5116800077, toPin: A}
+    - {from: 5116800075, fromPin: Result, to: 5116800078, toPin: A}
+    - {from: 5116800077, fromPin: Result, to: 5116800078, toPin: B}
+    - {from: 5116800078, fromPin: Result, to: 5116800079, toPin: Condition}
+    - {from: 5116800073, fromPin: Then, to: 5116800079, toPin: Exec}
+    - {from: 5116800081, fromPin: Value, to: 5116800084, toPin: A}
+    - {from: 5116800082, fromPin: Value, to: 5116800084, toPin: B}
+    - {from: 5116800083, fromPin: Value, to: 5116800084, toPin: C}
+    - {from: 5116800080, fromPin: Value, to: 5116800085, toPin: A}
+    - {from: 5116800084, fromPin: Result, to: 5116800085, toPin: B}
+    - {from: 5116800085, fromPin: Result, to: 5116800086, toPin: Value}
+    - {from: 5116800079, fromPin: "True", to: 5116800086, toPin: Exec}
+    - {from: 5116800089, fromPin: Result, to: 5116800088, toPin: default}
+    - {from: 5116800086, fromPin: Then, to: 5116800088, toPin: Exec}
+    - {from: 5116800079, fromPin: "False", to: 5116800088, toPin: Exec}
+    - {from: 5116800088, fromPin: value, to: 5116800091, toPin: A}
+    - {from: 5116800090, fromPin: Value, to: 5116800091, toPin: B}
+    - {from: 5116800091, fromPin: Result, to: 5116800087, toPin: value}
+    - {from: 5116800088, fromPin: Then, to: 5116800087, toPin: Exec}
+    - {from: 5116800087, fromPin: Then, to: 5116800092, toPin: Exec}
+    - {from: 5116800094, fromPin: Result, to: 5116800093, toPin: entity_id}
+    - {from: 5116800092, fromPin: Then, to: 5116800093, toPin: Exec}
+    - {from: 5116800095, fromPin: other_id, to: 5116800097, toPin: entity_id}
+    - {from: 5116800097, fromPin: name, to: 5116800098, toPin: A}
+    - {from: 5116800096, fromPin: Value, to: 5116800099, toPin: A}
+    - {from: 5116800098, fromPin: Result, to: 5116800099, toPin: B}
+    - {from: 5116800099, fromPin: Result, to: 5116800100, toPin: Condition}
+    - {from: 5116800095, fromPin: Then, to: 5116800100, toPin: Exec}
+    - {from: 5116800101, fromPin: Value, to: 5116800102, toPin: A}
+    - {from: 5116800102, fromPin: Result, to: 5116800103, toPin: Value}
+    - {from: 5116800100, fromPin: "False", to: 5116800103, toPin: Exec}
+    - {from: 5116800104, fromPin: Value, to: 5116800105, toPin: A}
+    - {from: 5116800105, fromPin: Result, to: 5116800106, toPin: Condition}
+    - {from: 5116800103, fromPin: Then, to: 5116800106, toPin: Exec}
+    - {from: 5116800106, fromPin: "True", to: 5116800107, toPin: Exec}
+    - {from: 5116800108, fromPin: Value, to: 5116800109, toPin: Value}
+    - {from: 5116800106, fromPin: "False", to: 5116800109, toPin: Exec}
+    - {from: 5116800109, fromPin: Then, to: 5116800110, toPin: Exec}
+    - {from: 5116800110, fromPin: Then, to: 5116800111, toPin: Exec}
+    - {from: 5116800113, fromPin: Value, to: 5116800114, toPin: A}
+    - {from: 5116800114, fromPin: Result, to: 5116800115, toPin: Condition}
+    - {from: 5116800112, fromPin: Then, to: 5116800115, toPin: Exec}
+    - {from: 5116800116, fromPin: Value, to: 5116800117, toPin: A}
+    - {from: 5116800112, fromPin: dt, to: 5116800117, toPin: B}
+    - {from: 5116800117, fromPin: Result, to: 5116800118, toPin: B}
+    - {from: 5116800118, fromPin: Result, to: 5116800119, toPin: Value}
+    - {from: 5116800115, fromPin: "False", to: 5116800119, toPin: Exec}
+    - {from: 5116800119, fromPin: Then, to: 5116800120, toPin: Exec}
+  groups:
+    - {id: 5116890000, title: colour, position: [146, -52], size: [2190, 600], color: Teal}
+    - {id: 5116890001, title: apply_tint, position: [316, 608], size: [2360, 2520], color: Teal}
+    - {id: 5116890002, title: on_create, position: [146, 3188], size: [1170, 480], color: Red}
+    - {id: 5116890003, title: shatter, position: [316, 3728], size: [6440, 1200], color: Teal}
+    - {id: 5116890004, title: on_collision, position: [146, 4988], size: [2870, 720], color: Red}
+    - {id: 5116890005, title: on_update, position: [146, 5768], size: [1510, 600], color: Red}

@@ -1,0 +1,21 @@
+# The Sunken Shrine title: the How to play window opens from its button (Down, Enter) and closes with Escape, then
+# Play (Up, Enter) plays the jingle and starts the quest in the hall.
+scene: ../../../samples/sunken_shrine/scenes/title.owl
+steps:
+  - frames: 10
+  - expect: {entity: TitleArt, exists: true}
+  - expect: {gamestate: shrine_how_to, equals: false}
+  - input: {key: Down, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 2
+  - expect: {gamestate: shrine_how_to, equals: true}
+  - input: {key: Escape, frames: 2}
+  - frames: 2
+  - expect: {gamestate: shrine_how_to, equals: false}
+  - input: {key: Up, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 60
+  - expect: {gamestate: shrine_room, equals: 1}
+  - expect: {gamestate: shrine_state, equals: play}

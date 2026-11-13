@@ -1,0 +1,3020 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: level, type: int, default: 1}
+    - {name: level_name, type: string, default: FIRST CROSSING}
+    - {name: this_scene, type: string, default: scenes/level_1.owl}
+    - {name: next_scene, type: string, default: scenes/level_2.owl}
+    - {name: budget, type: int, default: 2600, min: 0}
+    - {name: star_budget, type: int, default: 1900, min: 0}
+    - {name: vehicles, type: int, default: 1, min: 1}
+    - {name: grid_min_x, type: int, default: -2}
+    - {name: grid_min_y, type: int, default: -8}
+    - {name: grid_max_x, type: int, default: 10}
+    - {name: grid_max_y, type: int, default: 6}
+    - {name: run_time, type: float, default: 30, min: 1}
+    - {name: fov, type: float, default: 0.85, min: 0.1}
+    - {name: levels, type: int, default: 6, min: 1}
+    - {name: names, type: strings, default: 'FIRST CROSSING, MILL CREEK, LONG REACH, DEEP GORGE, THE STEP, GREAT RIVER'}
+    - {name: state, type: string, default: build, exposed: false}
+    - {name: clock, type: float, default: 0, exposed: false}
+    - {name: paused, type: bool, default: false, exposed: false}
+    - {name: leaving, type: bool, default: false, exposed: false}
+    - {name: message_time, type: float, default: 0, exposed: false}
+    - {name: warned, type: bool, default: false, exposed: false}
+    - {name: total, type: float, default: 0, exposed: false}
+    - {name: replay_wait, type: float, default: 0, exposed: false}
+    - {name: stars, type: int, default: 0, exposed: false}
+    - {name: grid, type: bool, default: false, exposed: false}
+  functions:
+    - name: build_update
+      inputs: [{name: dt, type: number}]
+      outputs: []
+    - name: place
+      inputs: []
+      outputs: []
+    - name: erase
+      inputs: []
+      outputs: []
+    - name: undo
+      inputs: []
+      outputs: []
+    - name: show_kind
+      inputs: [{name: label, type: string}]
+      outputs: []
+    - name: refresh
+      inputs: []
+      outputs: []
+    - name: begin_run
+      inputs: []
+      outputs: []
+    - name: end_run
+      inputs: []
+      outputs: []
+    - name: run_update
+      inputs: [{name: dt, type: number}]
+      outputs: []
+    - name: fail
+      inputs: [{name: reason, type: string}]
+      outputs: []
+    - name: win
+      inputs: []
+      outputs: []
+    - name: tally
+      inputs: []
+      outputs: []
+    - name: say
+      inputs: [{name: text, type: string}]
+      outputs: []
+    - name: set_paused
+      inputs: [{name: paused, type: boolean}]
+      outputs: []
+    - name: toggle_grid
+      inputs: []
+      outputs: []
+  nodes:
+    - id: 6500000000000000001
+      type: event.on_create
+      position: [0, 0]
+    - id: 6500000000000000002
+      type: call.ui.is_transition_active
+      position: [-60, 300]
+    - id: 6500000000000000003
+      type: logic.not
+      position: [100, 150]
+    - id: 6500000000000000004
+      type: flow.branch
+      position: [300, 0]
+    - id: 6500000000000000005
+      type: call.ui.transition_play
+      position: [600, 0]
+      values:
+        duration: 0.5
+        kind: wipe_left
+        rgba: '0.32, 0.18, 0.08, 1'
+    - id: 6500000000000000006
+      type: var.get
+      position: [540, 300]
+      values:
+        variable: level
+    - id: 6500000000000000007
+      type: text.concat
+      position: [700, 150]
+      values:
+        A: bridge_design_
+    - id: 6500000000000000008
+      type: call.settings.get
+      position: [900, 0]
+      values:
+        default: none
+    - id: 6500000000000000009
+      type: var.get
+      position: [1040, 150]
+      values:
+        variable: grid_min_x
+    - id: 6500000000000000010
+      type: var.get
+      position: [1040, 230]
+      values:
+        variable: grid_min_y
+    - id: 6500000000000000011
+      type: var.get
+      position: [1040, 310]
+      values:
+        variable: grid_max_x
+    - id: 6500000000000000012
+      type: var.get
+      position: [1040, 390]
+      values:
+        variable: grid_max_y
+    - id: 6500000000000000013
+      type: lua.call
+      position: [1200, 0]
+      values:
+        function: setup
+        module: scripts.game.bridge
+    - id: 6500000000000000014
+      type: var.get
+      position: [1340, 150]
+      values:
+        variable: level
+    - id: 6500000000000000015
+      type: call.gamestate.set
+      position: [1500, 0]
+      values:
+        key: bridge_level
+    - id: 6500000000000000016
+      type: call.gamestate.set
+      position: [1800, 0]
+      values:
+        key: bridge_state
+        value: build
+    - id: 6500000000000000017
+      type: call.gamestate.set
+      position: [2100, 0]
+      values:
+        key: bridge_arrived
+        value: 0
+    - id: 6500000000000000018
+      type: call.gamestate.set
+      position: [2400, 0]
+      values:
+        key: bridge_fallen
+        value: 0
+    - id: 6500000000000000019
+      type: call.gamestate.set
+      position: [2700, 0]
+      values:
+        key: bridge_breaks
+        value: 0
+    - id: 6500000000000000020
+      type: call.gamestate.set
+      position: [3000, 0]
+      values:
+        key: bridge_paused
+        value: false
+    - id: 6500000000000000021
+      type: var.get
+      position: [3140, 150]
+      values:
+        variable: budget
+    - id: 6500000000000000022
+      type: call.gamestate.set
+      position: [3300, 0]
+      values:
+        key: bridge_budget
+    - id: 6500000000000000023
+      type: call.gamestate.set
+      position: [3600, 0]
+      values:
+        key: bridge_anchors
+    - id: 6500000000000000024
+      type: call.ui.find
+      position: [3740, 150]
+      values:
+        name: LevelText
+    - id: 6500000000000000025
+      type: var.get
+      position: [3540, 380]
+      values:
+        variable: level
+    - id: 6500000000000000026
+      type: var.get
+      position: [3540, 460]
+      values:
+        variable: level_name
+    - id: 6500000000000000027
+      type: text.format
+      position: [3700, 230]
+      values:
+        Format: '%d. %s'
+    - id: 6500000000000000028
+      type: call.ui.set_text
+      position: [3900, 0]
+    - id: 6500000000000000029
+      type: call.ui.find
+      position: [4040, 150]
+      values:
+        name: StarText
+    - id: 6500000000000000030
+      type: var.get
+      position: [3840, 380]
+      values:
+        variable: star_budget
+    - id: 6500000000000000031
+      type: text.format
+      position: [4000, 230]
+      values:
+        Format: '3 STARS UNDER %d'
+    - id: 6500000000000000032
+      type: call.ui.set_text
+      position: [4200, 0]
+    - id: 6500000000000000033
+      type: lua.call
+      position: [4500, 0]
+      values:
+        function: set_kind
+        kind: road
+        module: scripts.game.bridge
+    - id: 6500000000000000034
+      type: func.call
+      position: [4800, 0]
+      values:
+        function: show_kind
+    - id: 6500000000000000035
+      type: func.call
+      position: [5100, 0]
+      values:
+        function: refresh
+    - id: 6500000000000000036
+      type: func.call
+      position: [5400, 0]
+      values:
+        function: say
+        text: BUILD A BRIDGE ACROSS
+    - id: 6500000000000000037
+      type: event.on_update
+      position: [0, 420]
+    - id: 6500000000000000038
+      type: var.get
+      position: [-60, 720]
+      values:
+        variable: paused
+    - id: 6500000000000000039
+      type: logic.not
+      position: [100, 570]
+    - id: 6500000000000000040
+      type: func.call
+      position: [300, 420]
+      values:
+        function: set_paused
+    - id: 6500000000000000041
+      type: call.input.is_action_just_pressed
+      position: [240, 720]
+      values:
+        action: pause
+    - id: 6500000000000000042
+      type: var.get
+      position: [-200, 1100]
+      values:
+        variable: state
+    - id: 6500000000000000043
+      type: compare.equal
+      position: [-40, 950]
+      values:
+        B: won
+    - id: 6500000000000000044
+      type: logic.not
+      position: [160, 800]
+    - id: 6500000000000000045
+      type: logic.and
+      position: [400, 570]
+    - id: 6500000000000000046
+      type: flow.branch
+      position: [600, 420]
+    - id: 6500000000000000047
+      type: var.get
+      position: [740, 570]
+      values:
+        variable: paused
+    - id: 6500000000000000048
+      type: flow.branch
+      position: [900, 420]
+    - id: 6500000000000000049
+      type: var.get
+      position: [840, 720]
+      values:
+        variable: message_time
+    - id: 6500000000000000050
+      type: math.subtract
+      position: [1000, 570]
+    - id: 6500000000000000051
+      type: var.set
+      position: [1200, 420]
+      values:
+        variable: message_time
+    - id: 6500000000000000052
+      type: var.get
+      position: [1140, 720]
+      values:
+        variable: message_time
+    - id: 6500000000000000053
+      type: compare.less
+      position: [1300, 570]
+      values:
+        B: 0
+    - id: 6500000000000000054
+      type: flow.branch
+      position: [1500, 420]
+    - id: 6500000000000000055
+      type: call.ui.find
+      position: [1640, 570]
+      values:
+        name: Message
+    - id: 6500000000000000056
+      type: call.ui.set_visible
+      position: [1800, 420]
+      values:
+        visible: false
+    - id: 6500000000000000057
+      type: flow.sequence
+      position: [2100, 420]
+    - id: 6500000000000000058
+      type: var.get
+      position: [2040, 720]
+      values:
+        variable: state
+    - id: 6500000000000000059
+      type: compare.equal
+      position: [2200, 570]
+      values:
+        B: build
+    - id: 6500000000000000060
+      type: flow.branch
+      position: [2400, 420]
+    - id: 6500000000000000061
+      type: func.call
+      position: [2700, 420]
+      values:
+        function: build_update
+    - id: 6500000000000000062
+      type: var.get
+      position: [2640, 720]
+      values:
+        variable: state
+    - id: 6500000000000000063
+      type: compare.equal
+      position: [2800, 570]
+      values:
+        B: run
+    - id: 6500000000000000064
+      type: flow.branch
+      position: [3000, 420]
+    - id: 6500000000000000065
+      type: func.call
+      position: [3300, 420]
+      values:
+        function: run_update
+    - id: 6500000000000000066
+      type: lua.pure
+      position: [3440, 570]
+      values:
+        function: cost
+        module: scripts.game.bridge
+    - id: 6500000000000000067
+      type: call.gamestate.set
+      position: [3600, 420]
+      values:
+        key: bridge_cost
+    - id: 6500000000000000068
+      type: var.get
+      position: [3540, 720]
+      values:
+        variable: replay_wait
+    - id: 6500000000000000069
+      type: compare.greater
+      position: [3700, 570]
+      values:
+        B: 0
+    - id: 6500000000000000070
+      type: flow.branch
+      position: [3900, 420]
+    - id: 6500000000000000071
+      type: var.get
+      position: [3840, 720]
+      values:
+        variable: replay_wait
+    - id: 6500000000000000072
+      type: math.subtract
+      position: [4000, 570]
+    - id: 6500000000000000073
+      type: var.set
+      position: [4200, 420]
+      values:
+        variable: replay_wait
+    - id: 6500000000000000074
+      type: var.get
+      position: [4140, 720]
+      values:
+        variable: replay_wait
+    - id: 6500000000000000075
+      type: compare.less_equal
+      position: [4300, 570]
+      values:
+        B: 0
+    - id: 6500000000000000076
+      type: flow.branch
+      position: [4500, 420]
+    - id: 6500000000000000077
+      type: func.call
+      position: [4800, 420]
+      values:
+        function: begin_run
+    - id: 6500000000000000078
+      type: func.entry
+      position: [0, 840]
+      values:
+        function: build_update
+    - id: 6500000000000000079
+      type: call.ui.is_mouse_over_ui
+      position: [3420, 1440]
+    - id: 6500000000000000080
+      type: call.scene.find_entity
+      position: [1140, 990]
+      values:
+        name: LevelCamera
+    - id: 6500000000000000081
+      type: var.get
+      position: [1140, 1070]
+      values:
+        variable: fov
+    - id: 6500000000000000082
+      type: lua.call
+      position: [1300, 840]
+      values:
+        function: mouse_cursor
+        module: scripts.game.bridge
+    - id: 6500000000000000083
+      type: call.input.get_action_vector
+      position: [1440, 990]
+      values:
+        action: cursor_stick
+    - id: 6500000000000000084
+      type: lua.call
+      position: [1600, 840]
+      values:
+        function: stick
+        module: scripts.game.bridge
+        repeat_time: 0.16
+    - id: 6500000000000000085
+      type: call.input.is_action_just_pressed
+      position: [1740, 990]
+      values:
+        action: cursor_left
+    - id: 6500000000000000086
+      type: flow.branch
+      position: [1900, 840]
+    - id: 6500000000000000087
+      type: lua.call
+      position: [2200, 840]
+      values:
+        dx: -1
+        dy: 0
+        function: move_cursor
+        module: scripts.game.bridge
+    - id: 6500000000000000088
+      type: call.input.is_action_just_pressed
+      position: [2340, 990]
+      values:
+        action: cursor_right
+    - id: 6500000000000000089
+      type: flow.branch
+      position: [2500, 840]
+    - id: 6500000000000000090
+      type: lua.call
+      position: [2800, 840]
+      values:
+        dx: 1
+        dy: 0
+        function: move_cursor
+        module: scripts.game.bridge
+    - id: 6500000000000000091
+      type: call.input.is_action_just_pressed
+      position: [2940, 990]
+      values:
+        action: cursor_up
+    - id: 6500000000000000092
+      type: flow.branch
+      position: [3100, 840]
+    - id: 6500000000000000093
+      type: lua.call
+      position: [3400, 840]
+      values:
+        dx: 0
+        dy: 1
+        function: move_cursor
+        module: scripts.game.bridge
+    - id: 6500000000000000094
+      type: call.input.is_action_just_pressed
+      position: [3540, 990]
+      values:
+        action: cursor_down
+    - id: 6500000000000000095
+      type: flow.branch
+      position: [3700, 840]
+    - id: 6500000000000000096
+      type: lua.call
+      position: [4000, 840]
+      values:
+        dx: 0
+        dy: -1
+        function: move_cursor
+        module: scripts.game.bridge
+    - id: 6500000000000000097
+      type: call.input.is_action_just_pressed
+      position: [3620, 1370]
+      values:
+        action: click
+    - id: 6500000000000000098
+      type: logic.not
+      position: [3580, 1290]
+    - id: 6500000000000000099
+      type: logic.and
+      position: [3780, 1140]
+    - id: 6500000000000000100
+      type: call.input.is_action_just_pressed
+      position: [3860, 1220]
+      values:
+        action: place
+    - id: 6500000000000000101
+      type: logic.or
+      position: [4020, 990]
+    - id: 6500000000000000102
+      type: flow.branch
+      position: [4300, 840]
+    - id: 6500000000000000103
+      type: func.call
+      position: [4600, 840]
+      values:
+        function: place
+    - id: 6500000000000000104
+      type: call.input.is_action_just_pressed
+      position: [4300, 1290]
+      values:
+        action: click_erase
+    - id: 6500000000000000105
+      type: call.ui.is_mouse_over_ui
+      position: [4100, 1520]
+    - id: 6500000000000000106
+      type: logic.not
+      position: [4260, 1370]
+    - id: 6500000000000000107
+      type: logic.and
+      position: [4460, 1140]
+    - id: 6500000000000000108
+      type: call.input.is_action_just_pressed
+      position: [4500, 1220]
+      values:
+        action: erase
+    - id: 6500000000000000109
+      type: logic.or
+      position: [4660, 990]
+    - id: 6500000000000000110
+      type: flow.branch
+      position: [4900, 840]
+    - id: 6500000000000000111
+      type: func.call
+      position: [5200, 840]
+      values:
+        function: erase
+    - id: 6500000000000000112
+      type: call.input.is_action_just_pressed
+      position: [5340, 990]
+      values:
+        action: undo
+    - id: 6500000000000000113
+      type: flow.branch
+      position: [5500, 840]
+    - id: 6500000000000000114
+      type: func.call
+      position: [5800, 840]
+      values:
+        function: undo
+    - id: 6500000000000000115
+      type: call.input.is_action_just_pressed
+      position: [5940, 990]
+      values:
+        action: kind_road
+    - id: 6500000000000000116
+      type: flow.branch
+      position: [6100, 840]
+    - id: 6500000000000000117
+      type: lua.call
+      position: [6400, 840]
+      values:
+        function: set_kind
+        kind: road
+        module: scripts.game.bridge
+    - id: 6500000000000000118
+      type: func.call
+      position: [6700, 840]
+      values:
+        function: show_kind
+    - id: 6500000000000000119
+      type: call.input.is_action_just_pressed
+      position: [6840, 990]
+      values:
+        action: kind_wood
+    - id: 6500000000000000120
+      type: flow.branch
+      position: [7000, 840]
+    - id: 6500000000000000121
+      type: lua.call
+      position: [7300, 840]
+      values:
+        function: set_kind
+        kind: wood
+        module: scripts.game.bridge
+    - id: 6500000000000000122
+      type: func.call
+      position: [7600, 840]
+      values:
+        function: show_kind
+    - id: 6500000000000000123
+      type: call.input.is_action_just_pressed
+      position: [7740, 990]
+      values:
+        action: kind_steel
+    - id: 6500000000000000124
+      type: flow.branch
+      position: [7900, 840]
+    - id: 6500000000000000125
+      type: lua.call
+      position: [8200, 840]
+      values:
+        function: set_kind
+        kind: steel
+        module: scripts.game.bridge
+    - id: 6500000000000000126
+      type: func.call
+      position: [8500, 840]
+      values:
+        function: show_kind
+    - id: 6500000000000000127
+      type: call.input.is_action_just_pressed
+      position: [8640, 990]
+      values:
+        action: kind_next
+    - id: 6500000000000000128
+      type: flow.branch
+      position: [8800, 840]
+    - id: 6500000000000000129
+      type: lua.call
+      position: [9100, 840]
+      values:
+        function: next_kind
+        module: scripts.game.bridge
+    - id: 6500000000000000130
+      type: func.call
+      position: [9400, 840]
+      values:
+        function: show_kind
+    - id: 6500000000000000131
+      type: call.input.is_action_just_pressed
+      position: [9540, 990]
+      values:
+        action: run
+    - id: 6500000000000000132
+      type: flow.branch
+      position: [9700, 840]
+    - id: 6500000000000000133
+      type: func.call
+      position: [10000, 840]
+      values:
+        function: begin_run
+    - id: 6500000000000000134
+      type: call.scene.find_entity
+      position: [10140, 990]
+      values:
+        name: Cursor
+    - id: 6500000000000000135
+      type: call.scene.find_entity
+      position: [10140, 1070]
+      values:
+        name: Preview
+    - id: 6500000000000000136
+      type: lua.call
+      position: [10300, 840]
+      values:
+        function: draw
+        module: scripts.game.bridge
+    - id: 6500000000000000137
+      type: lua.pure
+      position: [10240, 1140]
+      values:
+        function: cursor
+        module: scripts.game.bridge
+    - id: 6500000000000000138
+      type: math.break_vector2
+      position: [10400, 990]
+    - id: 6500000000000000139
+      type: call.gamestate.set
+      position: [10600, 840]
+      values:
+        key: bridge_cursor_x
+    - id: 6500000000000000140
+      type: call.gamestate.set
+      position: [10900, 840]
+      values:
+        key: bridge_cursor_y
+    - id: 6500000000000000141
+      type: func.return
+      position: [11200, 840]
+      values:
+        function: build_update
+    - id: 6500000000000000142
+      type: func.entry
+      position: [0, 1260]
+      values:
+        function: place
+    - id: 6500000000000000143
+      type: var.get
+      position: [140, 1410]
+      values:
+        variable: budget
+    - id: 6500000000000000144
+      type: lua.call
+      position: [300, 1260]
+      values:
+        function: press
+        module: scripts.game.bridge
+    - id: 6500000000000000145
+      type: compare.equal
+      position: [440, 1410]
+      values:
+        B: added
+    - id: 6500000000000000146
+      type: flow.branch
+      position: [600, 1260]
+    - id: 6500000000000000147
+      type: lua.pure
+      position: [300, 1710]
+      values:
+        function: kind
+        module: scripts.game.bridge
+    - id: 6500000000000000148
+      type: text.concat
+      position: [460, 1560]
+      values:
+        A: sounds/game/place_
+    - id: 6500000000000000149
+      type: text.concat
+      position: [660, 1410]
+      values:
+        B: .wav
+    - id: 6500000000000000150
+      type: call.sound.play
+      position: [900, 1260]
+    - id: 6500000000000000151
+      type: func.call
+      position: [1200, 1260]
+      values:
+        function: refresh
+    - id: 6500000000000000152
+      type: compare.equal
+      position: [1140, 1560]
+      values:
+        B: long
+    - id: 6500000000000000153
+      type: compare.equal
+      position: [940, 1790]
+      values:
+        B: budget
+    - id: 6500000000000000154
+      type: compare.equal
+      position: [940, 1870]
+      values:
+        B: empty
+    - id: 6500000000000000155
+      type: logic.or
+      position: [1100, 1640]
+    - id: 6500000000000000156
+      type: logic.or
+      position: [1300, 1410]
+    - id: 6500000000000000157
+      type: flow.branch
+      position: [1500, 1260]
+    - id: 6500000000000000158
+      type: compare.equal
+      position: [1740, 1560]
+      values:
+        B: long
+    - id: 6500000000000000159
+      type: compare.equal
+      position: [1540, 1790]
+      values:
+        B: budget
+    - id: 6500000000000000160
+      type: logic.select
+      position: [1700, 1640]
+      values:
+        False: START FROM A NODE
+        True: OVER BUDGET
+    - id: 6500000000000000161
+      type: logic.select
+      position: [1900, 1410]
+      values:
+        True: TOO LONG FOR THIS KIND
+    - id: 6500000000000000162
+      type: call.sound.play
+      position: [1800, 1260]
+      values:
+        asset_path: sounds/game/refuse.wav
+    - id: 6500000000000000163
+      type: func.call
+      position: [2100, 1260]
+      values:
+        function: say
+    - id: 6500000000000000164
+      type: compare.equal
+      position: [2240, 1410]
+      values:
+        B: start
+    - id: 6500000000000000165
+      type: flow.branch
+      position: [2400, 1260]
+    - id: 6500000000000000166
+      type: call.sound.play
+      position: [2700, 1260]
+      values:
+        asset_path: sounds/ui/select.wav
+    - id: 6500000000000000167
+      type: func.return
+      position: [3000, 1260]
+      values:
+        function: place
+    - id: 6500000000000000168
+      type: func.entry
+      position: [0, 1680]
+      values:
+        function: erase
+    - id: 6500000000000000169
+      type: lua.pure
+      position: [140, 1830]
+      values:
+        function: drawing
+        module: scripts.game.bridge
+    - id: 6500000000000000170
+      type: flow.branch
+      position: [300, 1680]
+    - id: 6500000000000000171
+      type: lua.call
+      position: [600, 1680]
+      values:
+        function: cancel
+        module: scripts.game.bridge
+    - id: 6500000000000000172
+      type: lua.call
+      position: [900, 1680]
+      values:
+        function: remove_at_cursor
+        module: scripts.game.bridge
+    - id: 6500000000000000173
+      type: flow.branch
+      position: [1200, 1680]
+    - id: 6500000000000000174
+      type: call.sound.play
+      position: [1500, 1680]
+      values:
+        asset_path: sounds/game/remove.wav
+    - id: 6500000000000000175
+      type: func.call
+      position: [1800, 1680]
+      values:
+        function: refresh
+    - id: 6500000000000000176
+      type: func.return
+      position: [2100, 1680]
+      values:
+        function: erase
+    - id: 6500000000000000177
+      type: func.entry
+      position: [0, 2100]
+      values:
+        function: undo
+    - id: 6500000000000000178
+      type: lua.call
+      position: [300, 2100]
+      values:
+        function: undo
+        module: scripts.game.bridge
+    - id: 6500000000000000179
+      type: flow.branch
+      position: [600, 2100]
+    - id: 6500000000000000180
+      type: call.sound.play
+      position: [900, 2100]
+      values:
+        asset_path: sounds/game/remove.wav
+    - id: 6500000000000000181
+      type: func.call
+      position: [1200, 2100]
+      values:
+        function: refresh
+    - id: 6500000000000000182
+      type: func.return
+      position: [1500, 2100]
+      values:
+        function: undo
+    - id: 6500000000000000183
+      type: func.entry
+      position: [0, 2520]
+      values:
+        function: show_kind
+    - id: 6500000000000000184
+      type: call.ui.find
+      position: [140, 2670]
+      values:
+        name: KindText
+    - id: 6500000000000000185
+      type: text.format
+      position: [140, 2750]
+      values:
+        Format: 'LAYING %s'
+    - id: 6500000000000000186
+      type: call.ui.set_text
+      position: [300, 2520]
+    - id: 6500000000000000187
+      type: lua.pure
+      position: [440, 2670]
+      values:
+        function: kind
+        module: scripts.game.bridge
+    - id: 6500000000000000188
+      type: call.gamestate.set
+      position: [600, 2520]
+      values:
+        key: bridge_kind
+    - id: 6500000000000000189
+      type: func.return
+      position: [900, 2520]
+      values:
+        function: show_kind
+    - id: 6500000000000000190
+      type: func.entry
+      position: [0, 2940]
+      values:
+        function: refresh
+    - id: 6500000000000000191
+      type: lua.pure
+      position: [-60, 3240]
+      values:
+        function: cost
+        module: scripts.game.bridge
+    - id: 6500000000000000192
+      type: call.ui.find
+      position: [140, 3170]
+      values:
+        name: CostText
+    - id: 6500000000000000193
+      type: var.get
+      position: [-60, 3320]
+      values:
+        variable: budget
+    - id: 6500000000000000194
+      type: text.format
+      position: [100, 3090]
+      values:
+        Format: 'COST %d / %d'
+    - id: 6500000000000000195
+      type: call.ui.set_text
+      position: [300, 2940]
+    - id: 6500000000000000196
+      type: lua.pure
+      position: [440, 3090]
+      values:
+        function: count
+        module: scripts.game.bridge
+    - id: 6500000000000000197
+      type: call.gamestate.set
+      position: [600, 2940]
+      values:
+        key: bridge_parts
+    - id: 6500000000000000198
+      type: func.return
+      position: [1200, 2940]
+      values:
+        function: refresh
+    - id: 6500000000000000199
+      type: func.entry
+      position: [0, 3360]
+      values:
+        function: begin_run
+    - id: 6500000000000000200
+      type: lua.pure
+      position: [-60, 3660]
+      values:
+        function: count
+        module: scripts.game.bridge
+    - id: 6500000000000000201
+      type: compare.equal
+      position: [100, 3510]
+      values:
+        B: 0
+    - id: 6500000000000000202
+      type: flow.branch
+      position: [300, 3360]
+    - id: 6500000000000000203
+      type: call.sound.play
+      position: [600, 3360]
+      values:
+        asset_path: sounds/game/refuse.wav
+    - id: 6500000000000000204
+      type: func.call
+      position: [900, 3360]
+      values:
+        function: say
+        text: LAY SOME PARTS FIRST
+    - id: 6500000000000000205
+      type: call.settings.get
+      position: [1200, 3360]
+      values:
+        default: false
+        key: bridge_slow_run
+    - id: 6500000000000000206
+      type: logic.select
+      position: [4340, 3510]
+      values:
+        False: 1
+        True: 0.5
+    - id: 6500000000000000207
+      type: var.get
+      position: [1140, 3660]
+      values:
+        variable: level
+    - id: 6500000000000000208
+      type: text.concat
+      position: [1300, 3510]
+      values:
+        A: bridge_design_
+    - id: 6500000000000000209
+      type: lua.pure
+      position: [1340, 3590]
+      values:
+        function: save
+        module: scripts.game.bridge
+    - id: 6500000000000000210
+      type: call.settings.set
+      position: [1500, 3360]
+    - id: 6500000000000000211
+      type: call.settings.save
+      position: [1800, 3360]
+    - id: 6500000000000000212
+      type: lua.call
+      position: [2100, 3360]
+      values:
+        function: start_run
+        module: scripts.game.bridge
+    - id: 6500000000000000213
+      type: var.set
+      position: [2400, 3360]
+      values:
+        Value: run
+        variable: state
+    - id: 6500000000000000214
+      type: var.set
+      position: [2700, 3360]
+      values:
+        Value: 0
+        variable: clock
+    - id: 6500000000000000215
+      type: var.set
+      position: [3000, 3360]
+      values:
+        Value: false
+        variable: warned
+    - id: 6500000000000000216
+      type: call.gamestate.set
+      position: [3300, 3360]
+      values:
+        key: bridge_state
+        value: run
+    - id: 6500000000000000217
+      type: call.gamestate.set
+      position: [3600, 3360]
+      values:
+        key: bridge_arrived
+        value: 0
+    - id: 6500000000000000218
+      type: call.gamestate.set
+      position: [3900, 3360]
+      values:
+        key: bridge_fallen
+        value: 0
+    - id: 6500000000000000219
+      type: call.gamestate.set
+      position: [4200, 3360]
+      values:
+        key: bridge_breaks
+        value: 0
+    - id: 6500000000000000220
+      type: call.time.set_scale
+      position: [4500, 3360]
+    - id: 6500000000000000221
+      type: call.scene.find_entity
+      position: [4640, 3510]
+      values:
+        name: Cursor
+    - id: 6500000000000000222
+      type: call.ui.set_visible
+      position: [4800, 3360]
+      values:
+        visible: false
+    - id: 6500000000000000223
+      type: call.scene.find_entity
+      position: [4940, 3510]
+      values:
+        name: Preview
+    - id: 6500000000000000224
+      type: call.ui.set_visible
+      position: [5100, 3360]
+      values:
+        visible: false
+    - id: 6500000000000000225
+      type: call.ui.find
+      position: [5240, 3510]
+      values:
+        name: LoadGroup
+    - id: 6500000000000000226
+      type: call.ui.set_visible
+      position: [5400, 3360]
+      values:
+        visible: true
+    - id: 6500000000000000227
+      type: call.ui.find
+      position: [5540, 3510]
+      values:
+        name: RunButton
+    - id: 6500000000000000228
+      type: call.ui.set_text
+      position: [5700, 3360]
+      values:
+        text: EDIT
+    - id: 6500000000000000229
+      type: call.sound.play
+      position: [6000, 3360]
+      values:
+        asset_path: sounds/game/run.wav
+    - id: 6500000000000000230
+      type: func.call
+      position: [6300, 3360]
+      values:
+        function: say
+        text: TEST RUN
+    - id: 6500000000000000231
+      type: func.return
+      position: [6600, 3360]
+      values:
+        function: begin_run
+    - id: 6500000000000000232
+      type: func.entry
+      position: [0, 3780]
+      values:
+        function: end_run
+    - id: 6500000000000000233
+      type: lua.call
+      position: [300, 3780]
+      values:
+        function: stop_run
+        module: scripts.game.bridge
+    - id: 6500000000000000234
+      type: var.set
+      position: [600, 3780]
+      values:
+        Value: build
+        variable: state
+    - id: 6500000000000000235
+      type: call.gamestate.set
+      position: [900, 3780]
+      values:
+        key: bridge_state
+        value: build
+    - id: 6500000000000000236
+      type: call.time.set_scale
+      position: [1200, 3780]
+      values:
+        scale: 1
+    - id: 6500000000000000237
+      type: call.scene.find_entity
+      position: [1340, 3930]
+      values:
+        name: Cursor
+    - id: 6500000000000000238
+      type: call.ui.set_visible
+      position: [1500, 3780]
+      values:
+        visible: true
+    - id: 6500000000000000239
+      type: call.ui.find
+      position: [1640, 3930]
+      values:
+        name: LoadGroup
+    - id: 6500000000000000240
+      type: call.ui.set_visible
+      position: [1800, 3780]
+      values:
+        visible: false
+    - id: 6500000000000000241
+      type: call.ui.find
+      position: [1940, 3930]
+      values:
+        name: ResultWindow
+    - id: 6500000000000000242
+      type: call.ui.set_visible
+      position: [2100, 3780]
+      values:
+        visible: false
+    - id: 6500000000000000243
+      type: call.ui.find
+      position: [2240, 3930]
+      values:
+        name: RunButton
+    - id: 6500000000000000244
+      type: call.ui.set_text
+      position: [2400, 3780]
+      values:
+        text: TEST RUN
+    - id: 6500000000000000245
+      type: func.call
+      position: [2700, 3780]
+      values:
+        function: refresh
+    - id: 6500000000000000246
+      type: func.return
+      position: [3000, 3780]
+      values:
+        function: end_run
+    - id: 6500000000000000247
+      type: func.entry
+      position: [0, 4200]
+      values:
+        function: run_update
+    - id: 6500000000000000248
+      type: call.settings.get
+      position: [1000, 4200]
+      values:
+        default: false
+        key: bridge_hide_stress
+    - id: 6500000000000000249
+      type: logic.not
+      position: [1140, 4350]
+    - id: 6500000000000000250
+      type: lua.call
+      position: [1300, 4200]
+      values:
+        function: stress
+        module: scripts.game.bridge
+    - id: 6500000000000000251
+      type: var.get
+      position: [1240, 4500]
+      values:
+        variable: clock
+    - id: 6500000000000000252
+      type: math.add
+      position: [1400, 4350]
+    - id: 6500000000000000253
+      type: var.set
+      position: [1600, 4200]
+      values:
+        variable: clock
+    - id: 6500000000000000254
+      type: call.ui.find
+      position: [1740, 4350]
+      values:
+        name: LoadBar
+    - id: 6500000000000000255
+      type: call.ui.set_progress
+      position: [1900, 4200]
+    - id: 6500000000000000256
+      type: call.ui.find
+      position: [2040, 4350]
+      values:
+        name: LoadText
+    - id: 6500000000000000257
+      type: math.multiply
+      position: [1600, 4730]
+      values:
+        B: 100
+    - id: 6500000000000000258
+      type: math.floor
+      position: [1760, 4580]
+    - id: 6500000000000000259
+      type: text.format
+      position: [1960, 4430]
+      values:
+        Format: 'LOAD %d%%'
+    - id: 6500000000000000260
+      type: call.ui.set_text
+      position: [2200, 4200]
+    - id: 6500000000000000261
+      type: call.gamestate.set
+      position: [2500, 4200]
+      values:
+        key: bridge_load
+    - id: 6500000000000000262
+      type: var.get
+      position: [2500, 4650]
+      values:
+        variable: warned
+    - id: 6500000000000000263
+      type: logic.not
+      position: [2660, 4500]
+    - id: 6500000000000000264
+      type: call.gamestate.get
+      position: [2800, 4200]
+      values:
+        default: 0
+        key: bridge_breaks
+    - id: 6500000000000000265
+      type: compare.greater
+      position: [2700, 4580]
+      values:
+        B: 0
+    - id: 6500000000000000266
+      type: logic.and
+      position: [2860, 4350]
+    - id: 6500000000000000267
+      type: flow.branch
+      position: [3100, 4200]
+    - id: 6500000000000000268
+      type: var.set
+      position: [3400, 4200]
+      values:
+        Value: true
+        variable: warned
+    - id: 6500000000000000269
+      type: call.ui.show_subtitle
+      position: [3700, 4200]
+      values:
+        seconds: 2
+        text: '[a joint snaps]'
+    - id: 6500000000000000270
+      type: func.call
+      position: [4000, 4200]
+      values:
+        function: say
+        text: A JOINT SNAPPED
+    - id: 6500000000000000271
+      type: var.get
+      position: [3700, 4650]
+      values:
+        variable: clock
+    - id: 6500000000000000272
+      type: compare.greater
+      position: [3860, 4500]
+      values:
+        B: 0.2
+    - id: 6500000000000000273
+      type: call.input.is_action_just_pressed
+      position: [3700, 4730]
+      values:
+        action: run
+    - id: 6500000000000000274
+      type: call.input.is_action_just_pressed
+      position: [3700, 4810]
+      values:
+        action: erase
+    - id: 6500000000000000275
+      type: logic.or
+      position: [3860, 4580]
+    - id: 6500000000000000276
+      type: logic.and
+      position: [4060, 4350]
+    - id: 6500000000000000277
+      type: flow.branch
+      position: [4300, 4200]
+    - id: 6500000000000000278
+      type: func.call
+      position: [4600, 4200]
+      values:
+        function: end_run
+    - id: 6500000000000000279
+      type: func.call
+      position: [4900, 4200]
+      values:
+        function: say
+        text: BACK TO THE PLAN
+    - id: 6500000000000000280
+      type: call.gamestate.get
+      position: [5200, 4200]
+      values:
+        default: 0
+        key: bridge_arrived
+    - id: 6500000000000000281
+      type: var.get
+      position: [5140, 4500]
+      values:
+        variable: vehicles
+    - id: 6500000000000000282
+      type: compare.greater_equal
+      position: [5300, 4350]
+    - id: 6500000000000000283
+      type: flow.branch
+      position: [5500, 4200]
+    - id: 6500000000000000284
+      type: func.call
+      position: [5800, 4200]
+      values:
+        function: win
+    - id: 6500000000000000285
+      type: call.gamestate.get
+      position: [6100, 4200]
+      values:
+        default: 0
+        key: bridge_fallen
+    - id: 6500000000000000286
+      type: compare.greater
+      position: [6240, 4350]
+      values:
+        B: 0
+    - id: 6500000000000000287
+      type: flow.branch
+      position: [6400, 4200]
+    - id: 6500000000000000288
+      type: func.call
+      position: [6700, 4200]
+      values:
+        function: fail
+        reason: A VEHICLE FELL
+    - id: 6500000000000000289
+      type: var.get
+      position: [6640, 4500]
+      values:
+        variable: clock
+    - id: 6500000000000000290
+      type: var.get
+      position: [6640, 4580]
+      values:
+        variable: run_time
+    - id: 6500000000000000291
+      type: compare.greater
+      position: [6800, 4350]
+    - id: 6500000000000000292
+      type: flow.branch
+      position: [7000, 4200]
+    - id: 6500000000000000293
+      type: func.call
+      position: [7300, 4200]
+      values:
+        function: fail
+        reason: THE VEHICLES DID NOT MAKE IT
+    - id: 6500000000000000294
+      type: func.return
+      position: [7600, 4200]
+      values:
+        function: run_update
+    - id: 6500000000000000295
+      type: func.entry
+      position: [0, 4620]
+      values:
+        function: fail
+    - id: 6500000000000000296
+      type: call.sound.play
+      position: [300, 4620]
+      values:
+        asset_path: sounds/ui/game_over.wav
+    - id: 6500000000000000297
+      type: call.gamestate.set
+      position: [600, 4620]
+      values:
+        key: bridge_result
+    - id: 6500000000000000298
+      type: func.call
+      position: [900, 4620]
+      values:
+        function: end_run
+    - id: 6500000000000000299
+      type: func.call
+      position: [1200, 4620]
+      values:
+        function: say
+    - id: 6500000000000000300
+      type: func.return
+      position: [1500, 4620]
+      values:
+        function: fail
+    - id: 6500000000000000301
+      type: func.entry
+      position: [0, 5040]
+      values:
+        function: win
+    - id: 6500000000000000302
+      type: lua.pure
+      position: [900, 5490]
+      values:
+        function: cost
+        module: scripts.game.bridge
+    - id: 6500000000000000303
+      type: var.get
+      position: [60, 6020]
+      values:
+        variable: budget
+    - id: 6500000000000000304
+      type: var.get
+      position: [60, 6100]
+      values:
+        variable: star_budget
+    - id: 6500000000000000305
+      type: math.add
+      position: [220, 5870]
+    - id: 6500000000000000306
+      type: math.divide
+      position: [420, 5720]
+      values:
+        B: 2
+    - id: 6500000000000000307
+      type: var.get
+      position: [900, 5570]
+      values:
+        variable: star_budget
+    - id: 6500000000000000308
+      type: compare.less_equal
+      position: [1060, 5340]
+    - id: 6500000000000000309
+      type: lua.pure
+      position: [500, 5800]
+      values:
+        function: cost
+        module: scripts.game.bridge
+    - id: 6500000000000000310
+      type: compare.less_equal
+      position: [660, 5570]
+    - id: 6500000000000000311
+      type: logic.select
+      position: [940, 5420]
+      values:
+        False: 1
+        True: 2
+    - id: 6500000000000000312
+      type: logic.select
+      position: [1260, 5190]
+      values:
+        True: 3
+    - id: 6500000000000000313
+      type: var.get
+      position: [1820, 5640]
+      values:
+        variable: stars
+    - id: 6500000000000000314
+      type: math.multiply
+      position: [1980, 5490]
+      values:
+        B: 1000
+    - id: 6500000000000000315
+      type: var.get
+      position: [1820, 5720]
+      values:
+        variable: budget
+    - id: 6500000000000000316
+      type: lua.pure
+      position: [1820, 5800]
+      values:
+        function: cost
+        module: scripts.game.bridge
+    - id: 6500000000000000317
+      type: math.subtract
+      position: [1980, 5570]
+    - id: 6500000000000000318
+      type: math.add
+      position: [2180, 5340]
+    - id: 6500000000000000319
+      type: var.get
+      position: [-60, 5340]
+      values:
+        variable: level
+    - id: 6500000000000000320
+      type: text.concat
+      position: [100, 5190]
+      values:
+        A: bridge_score_
+    - id: 6500000000000000321
+      type: call.settings.get
+      position: [300, 5040]
+      values:
+        default: 0
+    - id: 6500000000000000322
+      type: math.max
+      position: [2420, 5190]
+    - id: 6500000000000000323
+      type: var.get
+      position: [2640, 5340]
+      values:
+        variable: stars
+    - id: 6500000000000000324
+      type: var.get
+      position: [240, 5340]
+      values:
+        variable: level
+    - id: 6500000000000000325
+      type: text.concat
+      position: [400, 5190]
+      values:
+        A: bridge_stars_
+    - id: 6500000000000000326
+      type: call.settings.get
+      position: [600, 5040]
+      values:
+        default: 0
+    - id: 6500000000000000327
+      type: math.max
+      position: [2800, 5190]
+    - id: 6500000000000000328
+      type: var.get
+      position: [540, 5340]
+      values:
+        variable: level
+    - id: 6500000000000000329
+      type: text.concat
+      position: [700, 5190]
+      values:
+        A: bridge_best_
+    - id: 6500000000000000330
+      type: call.settings.get
+      position: [900, 5040]
+      values:
+        default: 999999
+    - id: 6500000000000000331
+      type: var.set
+      position: [1200, 5040]
+      values:
+        Value: won
+        variable: state
+    - id: 6500000000000000332
+      type: var.set
+      position: [1500, 5040]
+      values:
+        variable: stars
+    - id: 6500000000000000333
+      type: call.gamestate.set
+      position: [1800, 5040]
+      values:
+        key: bridge_state
+        value: won
+    - id: 6500000000000000334
+      type: var.get
+      position: [1940, 5190]
+      values:
+        variable: stars
+    - id: 6500000000000000335
+      type: call.gamestate.set
+      position: [2100, 5040]
+      values:
+        key: bridge_stars
+    - id: 6500000000000000336
+      type: var.get
+      position: [2040, 5340]
+      values:
+        variable: level
+    - id: 6500000000000000337
+      type: text.concat
+      position: [2200, 5190]
+      values:
+        A: bridge_done_
+    - id: 6500000000000000338
+      type: call.settings.set
+      position: [2400, 5040]
+      values:
+        value: true
+    - id: 6500000000000000339
+      type: var.get
+      position: [2340, 5420]
+      values:
+        variable: level
+    - id: 6500000000000000340
+      type: text.concat
+      position: [2500, 5270]
+      values:
+        A: bridge_score_
+    - id: 6500000000000000341
+      type: call.settings.set
+      position: [2700, 5040]
+    - id: 6500000000000000342
+      type: var.get
+      position: [2640, 5420]
+      values:
+        variable: level
+    - id: 6500000000000000343
+      type: text.concat
+      position: [2800, 5270]
+      values:
+        A: bridge_stars_
+    - id: 6500000000000000344
+      type: call.settings.set
+      position: [3000, 5040]
+    - id: 6500000000000000345
+      type: var.get
+      position: [2940, 5340]
+      values:
+        variable: level
+    - id: 6500000000000000346
+      type: text.concat
+      position: [3100, 5190]
+      values:
+        A: bridge_best_
+    - id: 6500000000000000347
+      type: lua.pure
+      position: [2940, 5420]
+      values:
+        function: cost
+        module: scripts.game.bridge
+    - id: 6500000000000000348
+      type: math.min
+      position: [3100, 5270]
+    - id: 6500000000000000349
+      type: call.settings.set
+      position: [3300, 5040]
+    - id: 6500000000000000350
+      type: call.settings.save
+      position: [3600, 5040]
+    - id: 6500000000000000351
+      type: func.call
+      position: [3900, 5040]
+      values:
+        function: tally
+    - id: 6500000000000000352
+      type: call.time.set_scale
+      position: [4200, 5040]
+      values:
+        scale: 1
+    - id: 6500000000000000353
+      type: call.sound.play
+      position: [4500, 5040]
+      values:
+        asset_path: sounds/game/level_done.wav
+    - id: 6500000000000000354
+      type: call.ui.show_subtitle
+      position: [4800, 5040]
+      values:
+        seconds: 2
+        text: '[fanfare]'
+    - id: 6500000000000000355
+      type: call.ui.find
+      position: [4940, 5190]
+      values:
+        name: ResultStars
+    - id: 6500000000000000356
+      type: var.get
+      position: [4740, 5420]
+      values:
+        variable: stars
+    - id: 6500000000000000357
+      type: text.format
+      position: [4900, 5270]
+      values:
+        Format: 'STARS %d / 3'
+    - id: 6500000000000000358
+      type: call.ui.set_text
+      position: [5100, 5040]
+    - id: 6500000000000000359
+      type: call.ui.find
+      position: [5240, 5190]
+      values:
+        name: ResultCost
+    - id: 6500000000000000360
+      type: lua.pure
+      position: [5040, 5420]
+      values:
+        function: cost
+        module: scripts.game.bridge
+    - id: 6500000000000000361
+      type: var.get
+      position: [5040, 5500]
+      values:
+        variable: budget
+    - id: 6500000000000000362
+      type: text.format
+      position: [5200, 5270]
+      values:
+        Format: 'COST %d / %d'
+    - id: 6500000000000000363
+      type: call.ui.set_text
+      position: [5400, 5040]
+    - id: 6500000000000000364
+      type: call.ui.find
+      position: [5540, 5190]
+      values:
+        name: ResultWindow
+    - id: 6500000000000000365
+      type: call.ui.set_visible
+      position: [5700, 5040]
+      values:
+        visible: true
+    - id: 6500000000000000366
+      type: call.ui.find
+      position: [5840, 5190]
+      values:
+        name: ResultWindow
+    - id: 6500000000000000367
+      type: call.ui.raise_window
+      position: [6000, 5040]
+    - id: 6500000000000000368
+      type: call.ui.find
+      position: [6140, 5190]
+      values:
+        name: NextButton
+    - id: 6500000000000000369
+      type: call.ui.set_focus
+      position: [6300, 5040]
+    - id: 6500000000000000370
+      type: func.return
+      position: [6600, 5040]
+      values:
+        function: win
+    - id: 6500000000000000371
+      type: func.entry
+      position: [0, 5460]
+      values:
+        function: tally
+    - id: 6500000000000000372
+      type: var.get
+      position: [140, 5610]
+      values:
+        variable: levels
+    - id: 6500000000000000373
+      type: flow.for
+      position: [300, 5460]
+      values:
+        First: 1
+    - id: 6500000000000000374
+      type: var.set
+      position: [600, 5460]
+      values:
+        Value: 0
+        variable: total
+    - id: 6500000000000000375
+      type: text.concat
+      position: [740, 5610]
+      values:
+        A: bridge_score_
+    - id: 6500000000000000376
+      type: call.settings.get
+      position: [900, 5460]
+      values:
+        default: 0
+    - id: 6500000000000000377
+      type: var.get
+      position: [1200, 5910]
+      values:
+        variable: names
+    - id: 6500000000000000378
+      type: table.get_item
+      position: [1360, 5760]
+    - id: 6500000000000000379
+      type: text.concat
+      position: [1040, 5610]
+      values:
+        A: bridge_stars_
+    - id: 6500000000000000380
+      type: call.settings.get
+      position: [1200, 5460]
+      values:
+        default: 0
+    - id: 6500000000000000381
+      type: text.format
+      position: [1560, 5610]
+      values:
+        Format: '%d  %-16s %d STARS'
+    - id: 6500000000000000382
+      type: var.get
+      position: [1140, 5760]
+      values:
+        variable: total
+    - id: 6500000000000000383
+      type: math.add
+      position: [1300, 5610]
+    - id: 6500000000000000384
+      type: var.set
+      position: [1500, 5460]
+      values:
+        variable: total
+    - id: 6500000000000000385
+      type: text.concat
+      position: [1640, 5690]
+      values:
+        A: bridge_line_
+    - id: 6500000000000000386
+      type: call.gamestate.set
+      position: [1800, 5460]
+    - id: 6500000000000000387
+      type: var.get
+      position: [1940, 5610]
+      values:
+        variable: total
+    - id: 6500000000000000388
+      type: call.gamestate.set
+      position: [2100, 5460]
+      values:
+        key: bridge_score
+    - id: 6500000000000000389
+      type: var.get
+      position: [2240, 5610]
+      values:
+        variable: total
+    - id: 6500000000000000390
+      type: call.gamestate.set
+      position: [2400, 5460]
+      values:
+        key: bridge_base
+    - id: 6500000000000000391
+      type: func.return
+      position: [2700, 5460]
+      values:
+        function: tally
+    - id: 6500000000000000392
+      type: func.entry
+      position: [0, 5880]
+      values:
+        function: say
+    - id: 6500000000000000393
+      type: call.ui.find
+      position: [140, 6030]
+      values:
+        name: Message
+    - id: 6500000000000000394
+      type: call.ui.set_text
+      position: [300, 5880]
+    - id: 6500000000000000395
+      type: call.ui.find
+      position: [440, 6030]
+      values:
+        name: Message
+    - id: 6500000000000000396
+      type: call.ui.set_visible
+      position: [600, 5880]
+      values:
+        visible: true
+    - id: 6500000000000000397
+      type: var.set
+      position: [900, 5880]
+      values:
+        Value: 3
+        variable: message_time
+    - id: 6500000000000000398
+      type: call.gamestate.set
+      position: [1200, 5880]
+      values:
+        key: bridge_message
+    - id: 6500000000000000399
+      type: func.return
+      position: [1500, 5880]
+      values:
+        function: say
+    - id: 6500000000000000400
+      type: func.entry
+      position: [0, 6300]
+      values:
+        function: set_paused
+    - id: 6500000000000000401
+      type: flow.branch
+      position: [300, 6300]
+    - id: 6500000000000000402
+      type: var.set
+      position: [600, 6300]
+      values:
+        variable: paused
+    - id: 6500000000000000403
+      type: call.time.set_paused
+      position: [900, 6300]
+    - id: 6500000000000000404
+      type: call.ui.find
+      position: [1040, 6450]
+      values:
+        name: PauseWindow
+    - id: 6500000000000000405
+      type: call.ui.set_visible
+      position: [1200, 6300]
+    - id: 6500000000000000406
+      type: call.gamestate.set
+      position: [1500, 6300]
+      values:
+        key: bridge_paused
+    - id: 6500000000000000407
+      type: call.ui.find
+      position: [1640, 6450]
+      values:
+        name: PauseWindow
+    - id: 6500000000000000408
+      type: call.ui.raise_window
+      position: [1800, 6300]
+    - id: 6500000000000000409
+      type: call.ui.find
+      position: [1940, 6450]
+      values:
+        name: ResumeButton
+    - id: 6500000000000000410
+      type: call.ui.set_focus
+      position: [2100, 6300]
+    - id: 6500000000000000411
+      type: event.custom
+      position: [0, 6720]
+      values:
+        function: on_road_clicked
+    - id: 6500000000000000412
+      type: lua.call
+      position: [300, 6720]
+      values:
+        function: set_kind
+        kind: road
+        module: scripts.game.bridge
+    - id: 6500000000000000413
+      type: func.call
+      position: [600, 6720]
+      values:
+        function: show_kind
+    - id: 6500000000000000414
+      type: event.custom
+      position: [0, 7140]
+      values:
+        function: on_wood_clicked
+    - id: 6500000000000000415
+      type: lua.call
+      position: [300, 7140]
+      values:
+        function: set_kind
+        kind: wood
+        module: scripts.game.bridge
+    - id: 6500000000000000416
+      type: func.call
+      position: [600, 7140]
+      values:
+        function: show_kind
+    - id: 6500000000000000417
+      type: event.custom
+      position: [0, 7560]
+      values:
+        function: on_steel_clicked
+    - id: 6500000000000000418
+      type: lua.call
+      position: [300, 7560]
+      values:
+        function: set_kind
+        kind: steel
+        module: scripts.game.bridge
+    - id: 6500000000000000419
+      type: func.call
+      position: [600, 7560]
+      values:
+        function: show_kind
+    - id: 6500000000000000420
+      type: event.custom
+      position: [0, 7980]
+      values:
+        function: on_undo_clicked
+    - id: 6500000000000000421
+      type: var.get
+      position: [-60, 8280]
+      values:
+        variable: state
+    - id: 6500000000000000422
+      type: compare.equal
+      position: [100, 8130]
+      values:
+        B: build
+    - id: 6500000000000000423
+      type: flow.branch
+      position: [300, 7980]
+    - id: 6500000000000000424
+      type: func.call
+      position: [600, 7980]
+      values:
+        function: undo
+    - id: 6500000000000000425
+      type: event.custom
+      position: [0, 8400]
+      values:
+        function: on_run_clicked
+    - id: 6500000000000000426
+      type: var.get
+      position: [-60, 8700]
+      values:
+        variable: state
+    - id: 6500000000000000427
+      type: compare.equal
+      position: [100, 8550]
+      values:
+        B: build
+    - id: 6500000000000000428
+      type: flow.branch
+      position: [300, 8400]
+    - id: 6500000000000000429
+      type: func.call
+      position: [600, 8400]
+      values:
+        function: begin_run
+    - id: 6500000000000000430
+      type: var.get
+      position: [540, 8700]
+      values:
+        variable: state
+    - id: 6500000000000000431
+      type: compare.equal
+      position: [700, 8550]
+      values:
+        B: run
+    - id: 6500000000000000432
+      type: flow.branch
+      position: [900, 8400]
+    - id: 6500000000000000433
+      type: func.call
+      position: [1200, 8400]
+      values:
+        function: end_run
+    - id: 6500000000000000434
+      type: event.custom
+      position: [0, 8820]
+      values:
+        function: on_resume_clicked
+    - id: 6500000000000000435
+      type: func.call
+      position: [300, 8820]
+      values:
+        function: set_paused
+        paused: false
+    - id: 6500000000000000436
+      type: event.custom
+      position: [0, 9240]
+      values:
+        function: on_clear_clicked
+    - id: 6500000000000000437
+      type: var.get
+      position: [-60, 9540]
+      values:
+        variable: state
+    - id: 6500000000000000438
+      type: compare.equal
+      position: [100, 9390]
+      values:
+        B: run
+    - id: 6500000000000000439
+      type: flow.branch
+      position: [300, 9240]
+    - id: 6500000000000000440
+      type: func.call
+      position: [600, 9240]
+      values:
+        function: set_paused
+        paused: false
+    - id: 6500000000000000441
+      type: func.call
+      position: [900, 9240]
+      values:
+        function: end_run
+    - id: 6500000000000000442
+      type: lua.call
+      position: [1200, 9240]
+      values:
+        function: clear
+        module: scripts.game.bridge
+    - id: 6500000000000000443
+      type: func.call
+      position: [1500, 9240]
+      values:
+        function: refresh
+    - id: 6500000000000000444
+      type: event.custom
+      position: [0, 9660]
+      values:
+        function: on_edit_clicked
+    - id: 6500000000000000445
+      type: func.call
+      position: [300, 9660]
+      values:
+        function: end_run
+    - id: 6500000000000000446
+      type: event.custom
+      position: [0, 10080]
+      values:
+        function: on_replay_clicked
+    - id: 6500000000000000447
+      type: func.call
+      position: [300, 10080]
+      values:
+        function: end_run
+    - id: 6500000000000000448
+      type: var.set
+      position: [600, 10080]
+      values:
+        Value: 0.2
+        variable: replay_wait
+    - id: 6500000000000000449
+      type: event.custom
+      position: [0, 10500]
+      values:
+        function: on_next_clicked
+    - id: 6500000000000000450
+      type: var.get
+      position: [140, 10650]
+      values:
+        variable: leaving
+    - id: 6500000000000000451
+      type: flow.branch
+      position: [300, 10500]
+    - id: 6500000000000000452
+      type: var.set
+      position: [600, 10500]
+      values:
+        Value: true
+        variable: leaving
+    - id: 6500000000000000453
+      type: call.time.set_scale
+      position: [900, 10500]
+      values:
+        scale: 1
+    - id: 6500000000000000454
+      type: var.get
+      position: [1040, 10650]
+      values:
+        variable: next_scene
+    - id: 6500000000000000455
+      type: call.scene.transition_to
+      position: [1200, 10500]
+      values:
+        duration: 0.45
+        kind: wipe_left
+        rgba: '0.32, 0.18, 0.08, 1'
+    - id: 6500000000000000456
+      type: event.custom
+      position: [0, 10920]
+      values:
+        function: on_levels_clicked
+    - id: 6500000000000000457
+      type: var.get
+      position: [140, 11070]
+      values:
+        variable: leaving
+    - id: 6500000000000000458
+      type: flow.branch
+      position: [300, 10920]
+    - id: 6500000000000000459
+      type: var.set
+      position: [600, 10920]
+      values:
+        Value: true
+        variable: leaving
+    - id: 6500000000000000460
+      type: call.time.set_paused
+      position: [900, 10920]
+      values:
+        paused: false
+    - id: 6500000000000000461
+      type: call.time.set_scale
+      position: [1200, 10920]
+      values:
+        scale: 1
+    - id: 6500000000000000462
+      type: call.scene.transition_to
+      position: [1500, 10920]
+      values:
+        duration: 0.45
+        kind: wipe_left
+        rgba: '0.32, 0.18, 0.08, 1'
+        scene_path: scenes/level_select.owl
+    - id: 6500000000000000500
+      type: lua.call
+      position: [300, 840]
+      values:
+        function: view
+        module: scripts.game.bridge
+    - id: 6500000000000000501
+      type: call.input.get_action_vector
+      position: [140, 1150]
+      values:
+        action: view_pan
+    - id: 6500000000000000502
+      type: call.input.get_action_value
+      position: [140, 1230]
+      values:
+        action: view_zoom
+    - id: 6500000000000000503
+      type: call.input.is_action_pressed
+      position: [140, 1310]
+      values:
+        action: view_drag
+    - id: 6500000000000000504
+      type: call.input.get_mouse_wheel
+      position: [140, 1390]
+    - id: 6500000000000000505
+      type: call.gamestate.set
+      position: [600, 840]
+      values:
+        key: bridge_zoom
+    - id: 6500000000000000506
+      type: call.input.is_action_just_pressed
+      position: [740, 990]
+      values:
+        action: grid
+    - id: 6500000000000000507
+      type: flow.branch
+      position: [900, 840]
+    - id: 6500000000000000508
+      type: func.call
+      position: [1150, 840]
+      values:
+        function: toggle_grid
+    - id: 6500000000000000510
+      type: lua.call
+      position: [300, 4200]
+      values:
+        function: view
+        module: scripts.game.bridge
+    - id: 6500000000000000511
+      type: call.scene.find_entity
+      position: [100, 4350]
+      values:
+        name: LevelCamera
+    - id: 6500000000000000512
+      type: var.get
+      position: [100, 4430]
+      values:
+        variable: fov
+    - id: 6500000000000000513
+      type: call.input.get_action_vector
+      position: [100, 4510]
+      values:
+        action: view_pan
+    - id: 6500000000000000514
+      type: call.input.get_action_value
+      position: [100, 4590]
+      values:
+        action: view_zoom
+    - id: 6500000000000000515
+      type: call.input.is_action_pressed
+      position: [100, 4670]
+      values:
+        action: view_drag
+    - id: 6500000000000000516
+      type: call.input.get_mouse_wheel
+      position: [300, 4670]
+    - id: 6500000000000000550
+      type: lua.pure
+      position: [740, 3090]
+      values:
+        function: node_count
+        module: scripts.game.bridge
+    - id: 6500000000000000551
+      type: call.gamestate.set
+      position: [900, 2940]
+      values:
+        key: bridge_nodes
+    - id: 6500000000000000540
+      type: call.gamestate.get
+      position: [5700, 0]
+      values:
+        default: false
+        key: bridge_grid
+    - id: 6500000000000000541
+      type: var.set
+      position: [6000, 0]
+      values:
+        variable: grid
+    - id: 6500000000000000542
+      type: lua.call
+      position: [6300, 0]
+      values:
+        function: show_grid
+        module: scripts.game.bridge
+    - id: 6500000000000000520
+      type: func.entry
+      position: [0, 11340]
+      values:
+        function: toggle_grid
+    - id: 6500000000000000521
+      type: var.get
+      position: [-60, 11640]
+      values:
+        variable: grid
+    - id: 6500000000000000522
+      type: logic.not
+      position: [100, 11490]
+    - id: 6500000000000000523
+      type: var.set
+      position: [300, 11340]
+      values:
+        variable: grid
+    - id: 6500000000000000524
+      type: var.get
+      position: [440, 11490]
+      values:
+        variable: grid
+    - id: 6500000000000000525
+      type: lua.call
+      position: [600, 11340]
+      values:
+        function: show_grid
+        module: scripts.game.bridge
+    - id: 6500000000000000526
+      type: call.gamestate.set
+      position: [900, 11340]
+      values:
+        key: bridge_grid
+    - id: 6500000000000000527
+      type: func.return
+      position: [1200, 11340]
+      values:
+        function: toggle_grid
+    - id: 6500000000000000530
+      type: event.custom
+      position: [0, 11760]
+      values:
+        function: on_grid_clicked
+    - id: 6500000000000000531
+      type: func.call
+      position: [300, 11760]
+      values:
+        function: toggle_grid
+  links:
+    - {from: 6500000000000000002, fromPin: active, to: 6500000000000000003, toPin: A}
+    - {from: 6500000000000000003, fromPin: Result, to: 6500000000000000004, toPin: Condition}
+    - {from: 6500000000000000001, fromPin: Then, to: 6500000000000000004, toPin: Exec}
+    - {from: 6500000000000000004, fromPin: True, to: 6500000000000000005, toPin: Exec}
+    - {from: 6500000000000000006, fromPin: Value, to: 6500000000000000007, toPin: B}
+    - {from: 6500000000000000007, fromPin: Result, to: 6500000000000000008, toPin: key}
+    - {from: 6500000000000000009, fromPin: Value, to: 6500000000000000013, toPin: min_x}
+    - {from: 6500000000000000010, fromPin: Value, to: 6500000000000000013, toPin: min_y}
+    - {from: 6500000000000000011, fromPin: Value, to: 6500000000000000013, toPin: max_x}
+    - {from: 6500000000000000012, fromPin: Value, to: 6500000000000000013, toPin: max_y}
+    - {from: 6500000000000000008, fromPin: value, to: 6500000000000000013, toPin: design}
+    - {from: 6500000000000000004, fromPin: False, to: 6500000000000000008, toPin: Exec}
+    - {from: 6500000000000000005, fromPin: Then, to: 6500000000000000008, toPin: Exec}
+    - {from: 6500000000000000008, fromPin: Then, to: 6500000000000000013, toPin: Exec}
+    - {from: 6500000000000000014, fromPin: Value, to: 6500000000000000015, toPin: value}
+    - {from: 6500000000000000021, fromPin: Value, to: 6500000000000000022, toPin: value}
+    - {from: 6500000000000000013, fromPin: anchors, to: 6500000000000000023, toPin: value}
+    - {from: 6500000000000000025, fromPin: Value, to: 6500000000000000027, toPin: A}
+    - {from: 6500000000000000026, fromPin: Value, to: 6500000000000000027, toPin: B}
+    - {from: 6500000000000000024, fromPin: entity_id, to: 6500000000000000028, toPin: entity_id}
+    - {from: 6500000000000000027, fromPin: Result, to: 6500000000000000028, toPin: text}
+    - {from: 6500000000000000030, fromPin: Value, to: 6500000000000000031, toPin: A}
+    - {from: 6500000000000000029, fromPin: entity_id, to: 6500000000000000032, toPin: entity_id}
+    - {from: 6500000000000000031, fromPin: Result, to: 6500000000000000032, toPin: text}
+    - {from: 6500000000000000033, fromPin: label, to: 6500000000000000034, toPin: label}
+    - {from: 6500000000000000013, fromPin: Then, to: 6500000000000000015, toPin: Exec}
+    - {from: 6500000000000000015, fromPin: Then, to: 6500000000000000016, toPin: Exec}
+    - {from: 6500000000000000016, fromPin: Then, to: 6500000000000000017, toPin: Exec}
+    - {from: 6500000000000000017, fromPin: Then, to: 6500000000000000018, toPin: Exec}
+    - {from: 6500000000000000018, fromPin: Then, to: 6500000000000000019, toPin: Exec}
+    - {from: 6500000000000000019, fromPin: Then, to: 6500000000000000020, toPin: Exec}
+    - {from: 6500000000000000020, fromPin: Then, to: 6500000000000000022, toPin: Exec}
+    - {from: 6500000000000000022, fromPin: Then, to: 6500000000000000023, toPin: Exec}
+    - {from: 6500000000000000023, fromPin: Then, to: 6500000000000000028, toPin: Exec}
+    - {from: 6500000000000000028, fromPin: Then, to: 6500000000000000032, toPin: Exec}
+    - {from: 6500000000000000032, fromPin: Then, to: 6500000000000000033, toPin: Exec}
+    - {from: 6500000000000000033, fromPin: Then, to: 6500000000000000034, toPin: Exec}
+    - {from: 6500000000000000034, fromPin: Then, to: 6500000000000000035, toPin: Exec}
+    - {from: 6500000000000000035, fromPin: Then, to: 6500000000000000036, toPin: Exec}
+    - {from: 6500000000000000038, fromPin: Value, to: 6500000000000000039, toPin: A}
+    - {from: 6500000000000000039, fromPin: Result, to: 6500000000000000040, toPin: paused}
+    - {from: 6500000000000000042, fromPin: Value, to: 6500000000000000043, toPin: A}
+    - {from: 6500000000000000043, fromPin: Result, to: 6500000000000000044, toPin: A}
+    - {from: 6500000000000000041, fromPin: pressed, to: 6500000000000000045, toPin: A}
+    - {from: 6500000000000000044, fromPin: Result, to: 6500000000000000045, toPin: B}
+    - {from: 6500000000000000045, fromPin: Result, to: 6500000000000000046, toPin: Condition}
+    - {from: 6500000000000000037, fromPin: Then, to: 6500000000000000046, toPin: Exec}
+    - {from: 6500000000000000046, fromPin: True, to: 6500000000000000040, toPin: Exec}
+    - {from: 6500000000000000047, fromPin: Value, to: 6500000000000000048, toPin: Condition}
+    - {from: 6500000000000000046, fromPin: False, to: 6500000000000000048, toPin: Exec}
+    - {from: 6500000000000000040, fromPin: Then, to: 6500000000000000048, toPin: Exec}
+    - {from: 6500000000000000049, fromPin: Value, to: 6500000000000000050, toPin: A}
+    - {from: 6500000000000000037, fromPin: dt, to: 6500000000000000050, toPin: B}
+    - {from: 6500000000000000050, fromPin: Result, to: 6500000000000000051, toPin: Value}
+    - {from: 6500000000000000052, fromPin: Value, to: 6500000000000000053, toPin: A}
+    - {from: 6500000000000000053, fromPin: Result, to: 6500000000000000054, toPin: Condition}
+    - {from: 6500000000000000048, fromPin: False, to: 6500000000000000051, toPin: Exec}
+    - {from: 6500000000000000051, fromPin: Then, to: 6500000000000000054, toPin: Exec}
+    - {from: 6500000000000000055, fromPin: entity_id, to: 6500000000000000056, toPin: entity_id}
+    - {from: 6500000000000000054, fromPin: True, to: 6500000000000000056, toPin: Exec}
+    - {from: 6500000000000000054, fromPin: False, to: 6500000000000000057, toPin: Exec}
+    - {from: 6500000000000000056, fromPin: Then, to: 6500000000000000057, toPin: Exec}
+    - {from: 6500000000000000058, fromPin: Value, to: 6500000000000000059, toPin: A}
+    - {from: 6500000000000000059, fromPin: Result, to: 6500000000000000060, toPin: Condition}
+    - {from: 6500000000000000037, fromPin: dt, to: 6500000000000000061, toPin: dt}
+    - {from: 6500000000000000057, fromPin: Then 1, to: 6500000000000000060, toPin: Exec}
+    - {from: 6500000000000000060, fromPin: True, to: 6500000000000000061, toPin: Exec}
+    - {from: 6500000000000000062, fromPin: Value, to: 6500000000000000063, toPin: A}
+    - {from: 6500000000000000063, fromPin: Result, to: 6500000000000000064, toPin: Condition}
+    - {from: 6500000000000000037, fromPin: dt, to: 6500000000000000065, toPin: dt}
+    - {from: 6500000000000000057, fromPin: Then 2, to: 6500000000000000064, toPin: Exec}
+    - {from: 6500000000000000064, fromPin: True, to: 6500000000000000065, toPin: Exec}
+    - {from: 6500000000000000066, fromPin: cost, to: 6500000000000000067, toPin: value}
+    - {from: 6500000000000000057, fromPin: Then 3, to: 6500000000000000067, toPin: Exec}
+    - {from: 6500000000000000068, fromPin: Value, to: 6500000000000000069, toPin: A}
+    - {from: 6500000000000000069, fromPin: Result, to: 6500000000000000070, toPin: Condition}
+    - {from: 6500000000000000071, fromPin: Value, to: 6500000000000000072, toPin: A}
+    - {from: 6500000000000000037, fromPin: dt, to: 6500000000000000072, toPin: B}
+    - {from: 6500000000000000072, fromPin: Result, to: 6500000000000000073, toPin: Value}
+    - {from: 6500000000000000067, fromPin: Then, to: 6500000000000000070, toPin: Exec}
+    - {from: 6500000000000000070, fromPin: True, to: 6500000000000000073, toPin: Exec}
+    - {from: 6500000000000000074, fromPin: Value, to: 6500000000000000075, toPin: A}
+    - {from: 6500000000000000075, fromPin: Result, to: 6500000000000000076, toPin: Condition}
+    - {from: 6500000000000000073, fromPin: Then, to: 6500000000000000076, toPin: Exec}
+    - {from: 6500000000000000076, fromPin: True, to: 6500000000000000077, toPin: Exec}
+    - {from: 6500000000000000080, fromPin: entity_id, to: 6500000000000000082, toPin: camera}
+    - {from: 6500000000000000081, fromPin: Value, to: 6500000000000000082, toPin: fov}
+    - {from: 6500000000000000083, fromPin: xy, to: 6500000000000000084, toPin: stick}
+    - {from: 6500000000000000078, fromPin: dt, to: 6500000000000000084, toPin: dt}
+    - {from: 6500000000000000082, fromPin: Then, to: 6500000000000000084, toPin: Exec}
+    - {from: 6500000000000000085, fromPin: pressed, to: 6500000000000000086, toPin: Condition}
+    - {from: 6500000000000000084, fromPin: Then, to: 6500000000000000086, toPin: Exec}
+    - {from: 6500000000000000086, fromPin: True, to: 6500000000000000087, toPin: Exec}
+    - {from: 6500000000000000088, fromPin: pressed, to: 6500000000000000089, toPin: Condition}
+    - {from: 6500000000000000086, fromPin: False, to: 6500000000000000089, toPin: Exec}
+    - {from: 6500000000000000087, fromPin: Then, to: 6500000000000000089, toPin: Exec}
+    - {from: 6500000000000000089, fromPin: True, to: 6500000000000000090, toPin: Exec}
+    - {from: 6500000000000000091, fromPin: pressed, to: 6500000000000000092, toPin: Condition}
+    - {from: 6500000000000000089, fromPin: False, to: 6500000000000000092, toPin: Exec}
+    - {from: 6500000000000000090, fromPin: Then, to: 6500000000000000092, toPin: Exec}
+    - {from: 6500000000000000092, fromPin: True, to: 6500000000000000093, toPin: Exec}
+    - {from: 6500000000000000094, fromPin: pressed, to: 6500000000000000095, toPin: Condition}
+    - {from: 6500000000000000092, fromPin: False, to: 6500000000000000095, toPin: Exec}
+    - {from: 6500000000000000093, fromPin: Then, to: 6500000000000000095, toPin: Exec}
+    - {from: 6500000000000000095, fromPin: True, to: 6500000000000000096, toPin: Exec}
+    - {from: 6500000000000000079, fromPin: over, to: 6500000000000000098, toPin: A}
+    - {from: 6500000000000000097, fromPin: pressed, to: 6500000000000000099, toPin: A}
+    - {from: 6500000000000000098, fromPin: Result, to: 6500000000000000099, toPin: B}
+    - {from: 6500000000000000100, fromPin: pressed, to: 6500000000000000101, toPin: A}
+    - {from: 6500000000000000099, fromPin: Result, to: 6500000000000000101, toPin: B}
+    - {from: 6500000000000000101, fromPin: Result, to: 6500000000000000102, toPin: Condition}
+    - {from: 6500000000000000095, fromPin: False, to: 6500000000000000102, toPin: Exec}
+    - {from: 6500000000000000096, fromPin: Then, to: 6500000000000000102, toPin: Exec}
+    - {from: 6500000000000000102, fromPin: True, to: 6500000000000000103, toPin: Exec}
+    - {from: 6500000000000000105, fromPin: over, to: 6500000000000000106, toPin: A}
+    - {from: 6500000000000000104, fromPin: pressed, to: 6500000000000000107, toPin: A}
+    - {from: 6500000000000000106, fromPin: Result, to: 6500000000000000107, toPin: B}
+    - {from: 6500000000000000108, fromPin: pressed, to: 6500000000000000109, toPin: A}
+    - {from: 6500000000000000107, fromPin: Result, to: 6500000000000000109, toPin: B}
+    - {from: 6500000000000000109, fromPin: Result, to: 6500000000000000110, toPin: Condition}
+    - {from: 6500000000000000102, fromPin: False, to: 6500000000000000110, toPin: Exec}
+    - {from: 6500000000000000103, fromPin: Then, to: 6500000000000000110, toPin: Exec}
+    - {from: 6500000000000000110, fromPin: True, to: 6500000000000000111, toPin: Exec}
+    - {from: 6500000000000000112, fromPin: pressed, to: 6500000000000000113, toPin: Condition}
+    - {from: 6500000000000000110, fromPin: False, to: 6500000000000000113, toPin: Exec}
+    - {from: 6500000000000000111, fromPin: Then, to: 6500000000000000113, toPin: Exec}
+    - {from: 6500000000000000113, fromPin: True, to: 6500000000000000114, toPin: Exec}
+    - {from: 6500000000000000115, fromPin: pressed, to: 6500000000000000116, toPin: Condition}
+    - {from: 6500000000000000113, fromPin: False, to: 6500000000000000116, toPin: Exec}
+    - {from: 6500000000000000114, fromPin: Then, to: 6500000000000000116, toPin: Exec}
+    - {from: 6500000000000000117, fromPin: label, to: 6500000000000000118, toPin: label}
+    - {from: 6500000000000000116, fromPin: True, to: 6500000000000000117, toPin: Exec}
+    - {from: 6500000000000000117, fromPin: Then, to: 6500000000000000118, toPin: Exec}
+    - {from: 6500000000000000119, fromPin: pressed, to: 6500000000000000120, toPin: Condition}
+    - {from: 6500000000000000116, fromPin: False, to: 6500000000000000120, toPin: Exec}
+    - {from: 6500000000000000118, fromPin: Then, to: 6500000000000000120, toPin: Exec}
+    - {from: 6500000000000000121, fromPin: label, to: 6500000000000000122, toPin: label}
+    - {from: 6500000000000000120, fromPin: True, to: 6500000000000000121, toPin: Exec}
+    - {from: 6500000000000000121, fromPin: Then, to: 6500000000000000122, toPin: Exec}
+    - {from: 6500000000000000123, fromPin: pressed, to: 6500000000000000124, toPin: Condition}
+    - {from: 6500000000000000120, fromPin: False, to: 6500000000000000124, toPin: Exec}
+    - {from: 6500000000000000122, fromPin: Then, to: 6500000000000000124, toPin: Exec}
+    - {from: 6500000000000000125, fromPin: label, to: 6500000000000000126, toPin: label}
+    - {from: 6500000000000000124, fromPin: True, to: 6500000000000000125, toPin: Exec}
+    - {from: 6500000000000000125, fromPin: Then, to: 6500000000000000126, toPin: Exec}
+    - {from: 6500000000000000127, fromPin: pressed, to: 6500000000000000128, toPin: Condition}
+    - {from: 6500000000000000124, fromPin: False, to: 6500000000000000128, toPin: Exec}
+    - {from: 6500000000000000126, fromPin: Then, to: 6500000000000000128, toPin: Exec}
+    - {from: 6500000000000000129, fromPin: label, to: 6500000000000000130, toPin: label}
+    - {from: 6500000000000000128, fromPin: True, to: 6500000000000000129, toPin: Exec}
+    - {from: 6500000000000000129, fromPin: Then, to: 6500000000000000130, toPin: Exec}
+    - {from: 6500000000000000131, fromPin: pressed, to: 6500000000000000132, toPin: Condition}
+    - {from: 6500000000000000128, fromPin: False, to: 6500000000000000132, toPin: Exec}
+    - {from: 6500000000000000130, fromPin: Then, to: 6500000000000000132, toPin: Exec}
+    - {from: 6500000000000000132, fromPin: True, to: 6500000000000000133, toPin: Exec}
+    - {from: 6500000000000000134, fromPin: entity_id, to: 6500000000000000136, toPin: cursor}
+    - {from: 6500000000000000135, fromPin: entity_id, to: 6500000000000000136, toPin: preview}
+    - {from: 6500000000000000132, fromPin: False, to: 6500000000000000136, toPin: Exec}
+    - {from: 6500000000000000133, fromPin: Then, to: 6500000000000000136, toPin: Exec}
+    - {from: 6500000000000000137, fromPin: cell, to: 6500000000000000138, toPin: Value}
+    - {from: 6500000000000000138, fromPin: X, to: 6500000000000000139, toPin: value}
+    - {from: 6500000000000000138, fromPin: Y, to: 6500000000000000140, toPin: value}
+    - {from: 6500000000000000136, fromPin: Then, to: 6500000000000000139, toPin: Exec}
+    - {from: 6500000000000000139, fromPin: Then, to: 6500000000000000140, toPin: Exec}
+    - {from: 6500000000000000140, fromPin: Then, to: 6500000000000000141, toPin: Exec}
+    - {from: 6500000000000000143, fromPin: Value, to: 6500000000000000144, toPin: budget}
+    - {from: 6500000000000000142, fromPin: Then, to: 6500000000000000144, toPin: Exec}
+    - {from: 6500000000000000144, fromPin: result, to: 6500000000000000145, toPin: A}
+    - {from: 6500000000000000145, fromPin: Result, to: 6500000000000000146, toPin: Condition}
+    - {from: 6500000000000000144, fromPin: Then, to: 6500000000000000146, toPin: Exec}
+    - {from: 6500000000000000147, fromPin: kind, to: 6500000000000000148, toPin: B}
+    - {from: 6500000000000000148, fromPin: Result, to: 6500000000000000149, toPin: A}
+    - {from: 6500000000000000149, fromPin: Result, to: 6500000000000000150, toPin: asset_path}
+    - {from: 6500000000000000146, fromPin: True, to: 6500000000000000150, toPin: Exec}
+    - {from: 6500000000000000150, fromPin: Then, to: 6500000000000000151, toPin: Exec}
+    - {from: 6500000000000000144, fromPin: result, to: 6500000000000000152, toPin: A}
+    - {from: 6500000000000000144, fromPin: result, to: 6500000000000000153, toPin: A}
+    - {from: 6500000000000000144, fromPin: result, to: 6500000000000000154, toPin: A}
+    - {from: 6500000000000000153, fromPin: Result, to: 6500000000000000155, toPin: A}
+    - {from: 6500000000000000154, fromPin: Result, to: 6500000000000000155, toPin: B}
+    - {from: 6500000000000000152, fromPin: Result, to: 6500000000000000156, toPin: A}
+    - {from: 6500000000000000155, fromPin: Result, to: 6500000000000000156, toPin: B}
+    - {from: 6500000000000000156, fromPin: Result, to: 6500000000000000157, toPin: Condition}
+    - {from: 6500000000000000146, fromPin: False, to: 6500000000000000157, toPin: Exec}
+    - {from: 6500000000000000144, fromPin: result, to: 6500000000000000158, toPin: A}
+    - {from: 6500000000000000144, fromPin: result, to: 6500000000000000159, toPin: A}
+    - {from: 6500000000000000159, fromPin: Result, to: 6500000000000000160, toPin: Condition}
+    - {from: 6500000000000000158, fromPin: Result, to: 6500000000000000161, toPin: Condition}
+    - {from: 6500000000000000160, fromPin: Result, to: 6500000000000000161, toPin: False}
+    - {from: 6500000000000000161, fromPin: Result, to: 6500000000000000163, toPin: text}
+    - {from: 6500000000000000157, fromPin: True, to: 6500000000000000162, toPin: Exec}
+    - {from: 6500000000000000162, fromPin: Then, to: 6500000000000000163, toPin: Exec}
+    - {from: 6500000000000000144, fromPin: result, to: 6500000000000000164, toPin: A}
+    - {from: 6500000000000000164, fromPin: Result, to: 6500000000000000165, toPin: Condition}
+    - {from: 6500000000000000157, fromPin: False, to: 6500000000000000165, toPin: Exec}
+    - {from: 6500000000000000165, fromPin: True, to: 6500000000000000166, toPin: Exec}
+    - {from: 6500000000000000151, fromPin: Then, to: 6500000000000000167, toPin: Exec}
+    - {from: 6500000000000000163, fromPin: Then, to: 6500000000000000167, toPin: Exec}
+    - {from: 6500000000000000166, fromPin: Then, to: 6500000000000000167, toPin: Exec}
+    - {from: 6500000000000000165, fromPin: False, to: 6500000000000000167, toPin: Exec}
+    - {from: 6500000000000000169, fromPin: drawing, to: 6500000000000000170, toPin: Condition}
+    - {from: 6500000000000000168, fromPin: Then, to: 6500000000000000170, toPin: Exec}
+    - {from: 6500000000000000170, fromPin: True, to: 6500000000000000171, toPin: Exec}
+    - {from: 6500000000000000170, fromPin: False, to: 6500000000000000172, toPin: Exec}
+    - {from: 6500000000000000172, fromPin: removed, to: 6500000000000000173, toPin: Condition}
+    - {from: 6500000000000000172, fromPin: Then, to: 6500000000000000173, toPin: Exec}
+    - {from: 6500000000000000173, fromPin: True, to: 6500000000000000174, toPin: Exec}
+    - {from: 6500000000000000174, fromPin: Then, to: 6500000000000000175, toPin: Exec}
+    - {from: 6500000000000000171, fromPin: Then, to: 6500000000000000176, toPin: Exec}
+    - {from: 6500000000000000175, fromPin: Then, to: 6500000000000000176, toPin: Exec}
+    - {from: 6500000000000000173, fromPin: False, to: 6500000000000000176, toPin: Exec}
+    - {from: 6500000000000000177, fromPin: Then, to: 6500000000000000178, toPin: Exec}
+    - {from: 6500000000000000178, fromPin: undone, to: 6500000000000000179, toPin: Condition}
+    - {from: 6500000000000000178, fromPin: Then, to: 6500000000000000179, toPin: Exec}
+    - {from: 6500000000000000179, fromPin: True, to: 6500000000000000180, toPin: Exec}
+    - {from: 6500000000000000180, fromPin: Then, to: 6500000000000000181, toPin: Exec}
+    - {from: 6500000000000000181, fromPin: Then, to: 6500000000000000182, toPin: Exec}
+    - {from: 6500000000000000179, fromPin: False, to: 6500000000000000182, toPin: Exec}
+    - {from: 6500000000000000183, fromPin: label, to: 6500000000000000185, toPin: A}
+    - {from: 6500000000000000184, fromPin: entity_id, to: 6500000000000000186, toPin: entity_id}
+    - {from: 6500000000000000185, fromPin: Result, to: 6500000000000000186, toPin: text}
+    - {from: 6500000000000000187, fromPin: kind, to: 6500000000000000188, toPin: value}
+    - {from: 6500000000000000183, fromPin: Then, to: 6500000000000000186, toPin: Exec}
+    - {from: 6500000000000000186, fromPin: Then, to: 6500000000000000188, toPin: Exec}
+    - {from: 6500000000000000188, fromPin: Then, to: 6500000000000000189, toPin: Exec}
+    - {from: 6500000000000000191, fromPin: cost, to: 6500000000000000194, toPin: A}
+    - {from: 6500000000000000193, fromPin: Value, to: 6500000000000000194, toPin: B}
+    - {from: 6500000000000000192, fromPin: entity_id, to: 6500000000000000195, toPin: entity_id}
+    - {from: 6500000000000000194, fromPin: Result, to: 6500000000000000195, toPin: text}
+    - {from: 6500000000000000196, fromPin: count, to: 6500000000000000197, toPin: value}
+    - {from: 6500000000000000190, fromPin: Then, to: 6500000000000000195, toPin: Exec}
+    - {from: 6500000000000000195, fromPin: Then, to: 6500000000000000197, toPin: Exec}
+    - {from: 6500000000000000200, fromPin: count, to: 6500000000000000201, toPin: A}
+    - {from: 6500000000000000201, fromPin: Result, to: 6500000000000000202, toPin: Condition}
+    - {from: 6500000000000000199, fromPin: Then, to: 6500000000000000202, toPin: Exec}
+    - {from: 6500000000000000202, fromPin: True, to: 6500000000000000203, toPin: Exec}
+    - {from: 6500000000000000203, fromPin: Then, to: 6500000000000000204, toPin: Exec}
+    - {from: 6500000000000000205, fromPin: value, to: 6500000000000000206, toPin: Condition}
+    - {from: 6500000000000000207, fromPin: Value, to: 6500000000000000208, toPin: B}
+    - {from: 6500000000000000208, fromPin: Result, to: 6500000000000000210, toPin: key}
+    - {from: 6500000000000000209, fromPin: design, to: 6500000000000000210, toPin: value}
+    - {from: 6500000000000000206, fromPin: Result, to: 6500000000000000220, toPin: scale}
+    - {from: 6500000000000000221, fromPin: entity_id, to: 6500000000000000222, toPin: entity_id}
+    - {from: 6500000000000000223, fromPin: entity_id, to: 6500000000000000224, toPin: entity_id}
+    - {from: 6500000000000000225, fromPin: entity_id, to: 6500000000000000226, toPin: entity_id}
+    - {from: 6500000000000000227, fromPin: entity_id, to: 6500000000000000228, toPin: entity_id}
+    - {from: 6500000000000000202, fromPin: False, to: 6500000000000000210, toPin: Exec}
+    - {from: 6500000000000000210, fromPin: Then, to: 6500000000000000211, toPin: Exec}
+    - {from: 6500000000000000211, fromPin: Then, to: 6500000000000000212, toPin: Exec}
+    - {from: 6500000000000000212, fromPin: Then, to: 6500000000000000213, toPin: Exec}
+    - {from: 6500000000000000213, fromPin: Then, to: 6500000000000000214, toPin: Exec}
+    - {from: 6500000000000000214, fromPin: Then, to: 6500000000000000215, toPin: Exec}
+    - {from: 6500000000000000215, fromPin: Then, to: 6500000000000000216, toPin: Exec}
+    - {from: 6500000000000000216, fromPin: Then, to: 6500000000000000217, toPin: Exec}
+    - {from: 6500000000000000217, fromPin: Then, to: 6500000000000000218, toPin: Exec}
+    - {from: 6500000000000000218, fromPin: Then, to: 6500000000000000219, toPin: Exec}
+    - {from: 6500000000000000219, fromPin: Then, to: 6500000000000000205, toPin: Exec}
+    - {from: 6500000000000000205, fromPin: Then, to: 6500000000000000220, toPin: Exec}
+    - {from: 6500000000000000220, fromPin: Then, to: 6500000000000000222, toPin: Exec}
+    - {from: 6500000000000000222, fromPin: Then, to: 6500000000000000224, toPin: Exec}
+    - {from: 6500000000000000224, fromPin: Then, to: 6500000000000000226, toPin: Exec}
+    - {from: 6500000000000000226, fromPin: Then, to: 6500000000000000228, toPin: Exec}
+    - {from: 6500000000000000228, fromPin: Then, to: 6500000000000000229, toPin: Exec}
+    - {from: 6500000000000000229, fromPin: Then, to: 6500000000000000230, toPin: Exec}
+    - {from: 6500000000000000204, fromPin: Then, to: 6500000000000000231, toPin: Exec}
+    - {from: 6500000000000000230, fromPin: Then, to: 6500000000000000231, toPin: Exec}
+    - {from: 6500000000000000237, fromPin: entity_id, to: 6500000000000000238, toPin: entity_id}
+    - {from: 6500000000000000239, fromPin: entity_id, to: 6500000000000000240, toPin: entity_id}
+    - {from: 6500000000000000241, fromPin: entity_id, to: 6500000000000000242, toPin: entity_id}
+    - {from: 6500000000000000243, fromPin: entity_id, to: 6500000000000000244, toPin: entity_id}
+    - {from: 6500000000000000232, fromPin: Then, to: 6500000000000000233, toPin: Exec}
+    - {from: 6500000000000000233, fromPin: Then, to: 6500000000000000234, toPin: Exec}
+    - {from: 6500000000000000234, fromPin: Then, to: 6500000000000000235, toPin: Exec}
+    - {from: 6500000000000000235, fromPin: Then, to: 6500000000000000236, toPin: Exec}
+    - {from: 6500000000000000236, fromPin: Then, to: 6500000000000000238, toPin: Exec}
+    - {from: 6500000000000000238, fromPin: Then, to: 6500000000000000240, toPin: Exec}
+    - {from: 6500000000000000240, fromPin: Then, to: 6500000000000000242, toPin: Exec}
+    - {from: 6500000000000000242, fromPin: Then, to: 6500000000000000244, toPin: Exec}
+    - {from: 6500000000000000244, fromPin: Then, to: 6500000000000000245, toPin: Exec}
+    - {from: 6500000000000000245, fromPin: Then, to: 6500000000000000246, toPin: Exec}
+    - {from: 6500000000000000248, fromPin: value, to: 6500000000000000249, toPin: A}
+    - {from: 6500000000000000249, fromPin: Result, to: 6500000000000000250, toPin: show}
+    - {from: 6500000000000000251, fromPin: Value, to: 6500000000000000252, toPin: A}
+    - {from: 6500000000000000247, fromPin: dt, to: 6500000000000000252, toPin: B}
+    - {from: 6500000000000000252, fromPin: Result, to: 6500000000000000253, toPin: Value}
+    - {from: 6500000000000000254, fromPin: entity_id, to: 6500000000000000255, toPin: entity_id}
+    - {from: 6500000000000000250, fromPin: stress, to: 6500000000000000255, toPin: value}
+    - {from: 6500000000000000250, fromPin: stress, to: 6500000000000000257, toPin: A}
+    - {from: 6500000000000000257, fromPin: Result, to: 6500000000000000258, toPin: A}
+    - {from: 6500000000000000258, fromPin: Result, to: 6500000000000000259, toPin: A}
+    - {from: 6500000000000000256, fromPin: entity_id, to: 6500000000000000260, toPin: entity_id}
+    - {from: 6500000000000000259, fromPin: Result, to: 6500000000000000260, toPin: text}
+    - {from: 6500000000000000250, fromPin: stress, to: 6500000000000000261, toPin: value}
+    - {from: 6500000000000000253, fromPin: Then, to: 6500000000000000248, toPin: Exec}
+    - {from: 6500000000000000248, fromPin: Then, to: 6500000000000000250, toPin: Exec}
+    - {from: 6500000000000000250, fromPin: Then, to: 6500000000000000255, toPin: Exec}
+    - {from: 6500000000000000255, fromPin: Then, to: 6500000000000000260, toPin: Exec}
+    - {from: 6500000000000000260, fromPin: Then, to: 6500000000000000261, toPin: Exec}
+    - {from: 6500000000000000262, fromPin: Value, to: 6500000000000000263, toPin: A}
+    - {from: 6500000000000000264, fromPin: value, to: 6500000000000000265, toPin: A}
+    - {from: 6500000000000000263, fromPin: Result, to: 6500000000000000266, toPin: A}
+    - {from: 6500000000000000265, fromPin: Result, to: 6500000000000000266, toPin: B}
+    - {from: 6500000000000000266, fromPin: Result, to: 6500000000000000267, toPin: Condition}
+    - {from: 6500000000000000261, fromPin: Then, to: 6500000000000000264, toPin: Exec}
+    - {from: 6500000000000000264, fromPin: Then, to: 6500000000000000267, toPin: Exec}
+    - {from: 6500000000000000267, fromPin: True, to: 6500000000000000268, toPin: Exec}
+    - {from: 6500000000000000268, fromPin: Then, to: 6500000000000000269, toPin: Exec}
+    - {from: 6500000000000000269, fromPin: Then, to: 6500000000000000270, toPin: Exec}
+    - {from: 6500000000000000271, fromPin: Value, to: 6500000000000000272, toPin: A}
+    - {from: 6500000000000000273, fromPin: pressed, to: 6500000000000000275, toPin: A}
+    - {from: 6500000000000000274, fromPin: pressed, to: 6500000000000000275, toPin: B}
+    - {from: 6500000000000000272, fromPin: Result, to: 6500000000000000276, toPin: A}
+    - {from: 6500000000000000275, fromPin: Result, to: 6500000000000000276, toPin: B}
+    - {from: 6500000000000000276, fromPin: Result, to: 6500000000000000277, toPin: Condition}
+    - {from: 6500000000000000267, fromPin: False, to: 6500000000000000277, toPin: Exec}
+    - {from: 6500000000000000270, fromPin: Then, to: 6500000000000000277, toPin: Exec}
+    - {from: 6500000000000000277, fromPin: True, to: 6500000000000000278, toPin: Exec}
+    - {from: 6500000000000000278, fromPin: Then, to: 6500000000000000279, toPin: Exec}
+    - {from: 6500000000000000280, fromPin: value, to: 6500000000000000282, toPin: A}
+    - {from: 6500000000000000281, fromPin: Value, to: 6500000000000000282, toPin: B}
+    - {from: 6500000000000000282, fromPin: Result, to: 6500000000000000283, toPin: Condition}
+    - {from: 6500000000000000277, fromPin: False, to: 6500000000000000280, toPin: Exec}
+    - {from: 6500000000000000280, fromPin: Then, to: 6500000000000000283, toPin: Exec}
+    - {from: 6500000000000000283, fromPin: True, to: 6500000000000000284, toPin: Exec}
+    - {from: 6500000000000000285, fromPin: value, to: 6500000000000000286, toPin: A}
+    - {from: 6500000000000000286, fromPin: Result, to: 6500000000000000287, toPin: Condition}
+    - {from: 6500000000000000283, fromPin: False, to: 6500000000000000285, toPin: Exec}
+    - {from: 6500000000000000285, fromPin: Then, to: 6500000000000000287, toPin: Exec}
+    - {from: 6500000000000000287, fromPin: True, to: 6500000000000000288, toPin: Exec}
+    - {from: 6500000000000000289, fromPin: Value, to: 6500000000000000291, toPin: A}
+    - {from: 6500000000000000290, fromPin: Value, to: 6500000000000000291, toPin: B}
+    - {from: 6500000000000000291, fromPin: Result, to: 6500000000000000292, toPin: Condition}
+    - {from: 6500000000000000287, fromPin: False, to: 6500000000000000292, toPin: Exec}
+    - {from: 6500000000000000292, fromPin: True, to: 6500000000000000293, toPin: Exec}
+    - {from: 6500000000000000279, fromPin: Then, to: 6500000000000000294, toPin: Exec}
+    - {from: 6500000000000000284, fromPin: Then, to: 6500000000000000294, toPin: Exec}
+    - {from: 6500000000000000288, fromPin: Then, to: 6500000000000000294, toPin: Exec}
+    - {from: 6500000000000000293, fromPin: Then, to: 6500000000000000294, toPin: Exec}
+    - {from: 6500000000000000292, fromPin: False, to: 6500000000000000294, toPin: Exec}
+    - {from: 6500000000000000295, fromPin: reason, to: 6500000000000000297, toPin: value}
+    - {from: 6500000000000000295, fromPin: reason, to: 6500000000000000299, toPin: text}
+    - {from: 6500000000000000295, fromPin: Then, to: 6500000000000000296, toPin: Exec}
+    - {from: 6500000000000000296, fromPin: Then, to: 6500000000000000297, toPin: Exec}
+    - {from: 6500000000000000297, fromPin: Then, to: 6500000000000000298, toPin: Exec}
+    - {from: 6500000000000000298, fromPin: Then, to: 6500000000000000299, toPin: Exec}
+    - {from: 6500000000000000299, fromPin: Then, to: 6500000000000000300, toPin: Exec}
+    - {from: 6500000000000000303, fromPin: Value, to: 6500000000000000305, toPin: A}
+    - {from: 6500000000000000304, fromPin: Value, to: 6500000000000000305, toPin: B}
+    - {from: 6500000000000000305, fromPin: Result, to: 6500000000000000306, toPin: A}
+    - {from: 6500000000000000302, fromPin: cost, to: 6500000000000000308, toPin: A}
+    - {from: 6500000000000000307, fromPin: Value, to: 6500000000000000308, toPin: B}
+    - {from: 6500000000000000309, fromPin: cost, to: 6500000000000000310, toPin: A}
+    - {from: 6500000000000000306, fromPin: Result, to: 6500000000000000310, toPin: B}
+    - {from: 6500000000000000310, fromPin: Result, to: 6500000000000000311, toPin: Condition}
+    - {from: 6500000000000000308, fromPin: Result, to: 6500000000000000312, toPin: Condition}
+    - {from: 6500000000000000311, fromPin: Result, to: 6500000000000000312, toPin: False}
+    - {from: 6500000000000000313, fromPin: Value, to: 6500000000000000314, toPin: A}
+    - {from: 6500000000000000315, fromPin: Value, to: 6500000000000000317, toPin: A}
+    - {from: 6500000000000000316, fromPin: cost, to: 6500000000000000317, toPin: B}
+    - {from: 6500000000000000314, fromPin: Result, to: 6500000000000000318, toPin: A}
+    - {from: 6500000000000000317, fromPin: Result, to: 6500000000000000318, toPin: B}
+    - {from: 6500000000000000319, fromPin: Value, to: 6500000000000000320, toPin: B}
+    - {from: 6500000000000000320, fromPin: Result, to: 6500000000000000321, toPin: key}
+    - {from: 6500000000000000318, fromPin: Result, to: 6500000000000000322, toPin: A}
+    - {from: 6500000000000000321, fromPin: value, to: 6500000000000000322, toPin: B}
+    - {from: 6500000000000000324, fromPin: Value, to: 6500000000000000325, toPin: B}
+    - {from: 6500000000000000325, fromPin: Result, to: 6500000000000000326, toPin: key}
+    - {from: 6500000000000000323, fromPin: Value, to: 6500000000000000327, toPin: A}
+    - {from: 6500000000000000326, fromPin: value, to: 6500000000000000327, toPin: B}
+    - {from: 6500000000000000328, fromPin: Value, to: 6500000000000000329, toPin: B}
+    - {from: 6500000000000000329, fromPin: Result, to: 6500000000000000330, toPin: key}
+    - {from: 6500000000000000312, fromPin: Result, to: 6500000000000000332, toPin: Value}
+    - {from: 6500000000000000334, fromPin: Value, to: 6500000000000000335, toPin: value}
+    - {from: 6500000000000000336, fromPin: Value, to: 6500000000000000337, toPin: B}
+    - {from: 6500000000000000337, fromPin: Result, to: 6500000000000000338, toPin: key}
+    - {from: 6500000000000000339, fromPin: Value, to: 6500000000000000340, toPin: B}
+    - {from: 6500000000000000340, fromPin: Result, to: 6500000000000000341, toPin: key}
+    - {from: 6500000000000000322, fromPin: Result, to: 6500000000000000341, toPin: value}
+    - {from: 6500000000000000342, fromPin: Value, to: 6500000000000000343, toPin: B}
+    - {from: 6500000000000000343, fromPin: Result, to: 6500000000000000344, toPin: key}
+    - {from: 6500000000000000327, fromPin: Result, to: 6500000000000000344, toPin: value}
+    - {from: 6500000000000000345, fromPin: Value, to: 6500000000000000346, toPin: B}
+    - {from: 6500000000000000330, fromPin: value, to: 6500000000000000348, toPin: A}
+    - {from: 6500000000000000347, fromPin: cost, to: 6500000000000000348, toPin: B}
+    - {from: 6500000000000000346, fromPin: Result, to: 6500000000000000349, toPin: key}
+    - {from: 6500000000000000348, fromPin: Result, to: 6500000000000000349, toPin: value}
+    - {from: 6500000000000000356, fromPin: Value, to: 6500000000000000357, toPin: A}
+    - {from: 6500000000000000355, fromPin: entity_id, to: 6500000000000000358, toPin: entity_id}
+    - {from: 6500000000000000357, fromPin: Result, to: 6500000000000000358, toPin: text}
+    - {from: 6500000000000000360, fromPin: cost, to: 6500000000000000362, toPin: A}
+    - {from: 6500000000000000361, fromPin: Value, to: 6500000000000000362, toPin: B}
+    - {from: 6500000000000000359, fromPin: entity_id, to: 6500000000000000363, toPin: entity_id}
+    - {from: 6500000000000000362, fromPin: Result, to: 6500000000000000363, toPin: text}
+    - {from: 6500000000000000364, fromPin: entity_id, to: 6500000000000000365, toPin: entity_id}
+    - {from: 6500000000000000366, fromPin: entity_id, to: 6500000000000000367, toPin: entity_id}
+    - {from: 6500000000000000368, fromPin: entity_id, to: 6500000000000000369, toPin: entity_id}
+    - {from: 6500000000000000301, fromPin: Then, to: 6500000000000000331, toPin: Exec}
+    - {from: 6500000000000000331, fromPin: Then, to: 6500000000000000332, toPin: Exec}
+    - {from: 6500000000000000332, fromPin: Then, to: 6500000000000000333, toPin: Exec}
+    - {from: 6500000000000000333, fromPin: Then, to: 6500000000000000335, toPin: Exec}
+    - {from: 6500000000000000335, fromPin: Then, to: 6500000000000000338, toPin: Exec}
+    - {from: 6500000000000000338, fromPin: Then, to: 6500000000000000321, toPin: Exec}
+    - {from: 6500000000000000321, fromPin: Then, to: 6500000000000000341, toPin: Exec}
+    - {from: 6500000000000000341, fromPin: Then, to: 6500000000000000326, toPin: Exec}
+    - {from: 6500000000000000326, fromPin: Then, to: 6500000000000000344, toPin: Exec}
+    - {from: 6500000000000000344, fromPin: Then, to: 6500000000000000330, toPin: Exec}
+    - {from: 6500000000000000330, fromPin: Then, to: 6500000000000000349, toPin: Exec}
+    - {from: 6500000000000000349, fromPin: Then, to: 6500000000000000350, toPin: Exec}
+    - {from: 6500000000000000350, fromPin: Then, to: 6500000000000000351, toPin: Exec}
+    - {from: 6500000000000000351, fromPin: Then, to: 6500000000000000352, toPin: Exec}
+    - {from: 6500000000000000352, fromPin: Then, to: 6500000000000000353, toPin: Exec}
+    - {from: 6500000000000000353, fromPin: Then, to: 6500000000000000354, toPin: Exec}
+    - {from: 6500000000000000354, fromPin: Then, to: 6500000000000000358, toPin: Exec}
+    - {from: 6500000000000000358, fromPin: Then, to: 6500000000000000363, toPin: Exec}
+    - {from: 6500000000000000363, fromPin: Then, to: 6500000000000000365, toPin: Exec}
+    - {from: 6500000000000000365, fromPin: Then, to: 6500000000000000367, toPin: Exec}
+    - {from: 6500000000000000367, fromPin: Then, to: 6500000000000000369, toPin: Exec}
+    - {from: 6500000000000000369, fromPin: Then, to: 6500000000000000370, toPin: Exec}
+    - {from: 6500000000000000372, fromPin: Value, to: 6500000000000000373, toPin: Last}
+    - {from: 6500000000000000371, fromPin: Then, to: 6500000000000000374, toPin: Exec}
+    - {from: 6500000000000000374, fromPin: Then, to: 6500000000000000373, toPin: Exec}
+    - {from: 6500000000000000373, fromPin: Index, to: 6500000000000000375, toPin: B}
+    - {from: 6500000000000000375, fromPin: Result, to: 6500000000000000376, toPin: key}
+    - {from: 6500000000000000377, fromPin: Value, to: 6500000000000000378, toPin: List}
+    - {from: 6500000000000000373, fromPin: Index, to: 6500000000000000378, toPin: Index}
+    - {from: 6500000000000000373, fromPin: Index, to: 6500000000000000379, toPin: B}
+    - {from: 6500000000000000379, fromPin: Result, to: 6500000000000000380, toPin: key}
+    - {from: 6500000000000000373, fromPin: Index, to: 6500000000000000381, toPin: A}
+    - {from: 6500000000000000378, fromPin: Result, to: 6500000000000000381, toPin: B}
+    - {from: 6500000000000000380, fromPin: value, to: 6500000000000000381, toPin: C}
+    - {from: 6500000000000000382, fromPin: Value, to: 6500000000000000383, toPin: A}
+    - {from: 6500000000000000376, fromPin: value, to: 6500000000000000383, toPin: B}
+    - {from: 6500000000000000383, fromPin: Result, to: 6500000000000000384, toPin: Value}
+    - {from: 6500000000000000373, fromPin: Index, to: 6500000000000000385, toPin: B}
+    - {from: 6500000000000000385, fromPin: Result, to: 6500000000000000386, toPin: key}
+    - {from: 6500000000000000381, fromPin: Result, to: 6500000000000000386, toPin: value}
+    - {from: 6500000000000000373, fromPin: Body, to: 6500000000000000376, toPin: Exec}
+    - {from: 6500000000000000376, fromPin: Then, to: 6500000000000000384, toPin: Exec}
+    - {from: 6500000000000000384, fromPin: Then, to: 6500000000000000380, toPin: Exec}
+    - {from: 6500000000000000380, fromPin: Then, to: 6500000000000000386, toPin: Exec}
+    - {from: 6500000000000000387, fromPin: Value, to: 6500000000000000388, toPin: value}
+    - {from: 6500000000000000389, fromPin: Value, to: 6500000000000000390, toPin: value}
+    - {from: 6500000000000000373, fromPin: Completed, to: 6500000000000000388, toPin: Exec}
+    - {from: 6500000000000000388, fromPin: Then, to: 6500000000000000390, toPin: Exec}
+    - {from: 6500000000000000390, fromPin: Then, to: 6500000000000000391, toPin: Exec}
+    - {from: 6500000000000000393, fromPin: entity_id, to: 6500000000000000394, toPin: entity_id}
+    - {from: 6500000000000000392, fromPin: text, to: 6500000000000000394, toPin: text}
+    - {from: 6500000000000000395, fromPin: entity_id, to: 6500000000000000396, toPin: entity_id}
+    - {from: 6500000000000000392, fromPin: text, to: 6500000000000000398, toPin: value}
+    - {from: 6500000000000000392, fromPin: Then, to: 6500000000000000394, toPin: Exec}
+    - {from: 6500000000000000394, fromPin: Then, to: 6500000000000000396, toPin: Exec}
+    - {from: 6500000000000000396, fromPin: Then, to: 6500000000000000397, toPin: Exec}
+    - {from: 6500000000000000397, fromPin: Then, to: 6500000000000000398, toPin: Exec}
+    - {from: 6500000000000000398, fromPin: Then, to: 6500000000000000399, toPin: Exec}
+    - {from: 6500000000000000400, fromPin: paused, to: 6500000000000000401, toPin: Condition}
+    - {from: 6500000000000000400, fromPin: paused, to: 6500000000000000402, toPin: Value}
+    - {from: 6500000000000000400, fromPin: paused, to: 6500000000000000403, toPin: paused}
+    - {from: 6500000000000000404, fromPin: entity_id, to: 6500000000000000405, toPin: entity_id}
+    - {from: 6500000000000000400, fromPin: paused, to: 6500000000000000405, toPin: visible}
+    - {from: 6500000000000000400, fromPin: paused, to: 6500000000000000406, toPin: value}
+    - {from: 6500000000000000400, fromPin: Then, to: 6500000000000000402, toPin: Exec}
+    - {from: 6500000000000000402, fromPin: Then, to: 6500000000000000403, toPin: Exec}
+    - {from: 6500000000000000403, fromPin: Then, to: 6500000000000000405, toPin: Exec}
+    - {from: 6500000000000000405, fromPin: Then, to: 6500000000000000406, toPin: Exec}
+    - {from: 6500000000000000406, fromPin: Then, to: 6500000000000000401, toPin: Exec}
+    - {from: 6500000000000000407, fromPin: entity_id, to: 6500000000000000408, toPin: entity_id}
+    - {from: 6500000000000000409, fromPin: entity_id, to: 6500000000000000410, toPin: entity_id}
+    - {from: 6500000000000000401, fromPin: True, to: 6500000000000000408, toPin: Exec}
+    - {from: 6500000000000000408, fromPin: Then, to: 6500000000000000410, toPin: Exec}
+    - {from: 6500000000000000412, fromPin: label, to: 6500000000000000413, toPin: label}
+    - {from: 6500000000000000411, fromPin: Then, to: 6500000000000000412, toPin: Exec}
+    - {from: 6500000000000000412, fromPin: Then, to: 6500000000000000413, toPin: Exec}
+    - {from: 6500000000000000415, fromPin: label, to: 6500000000000000416, toPin: label}
+    - {from: 6500000000000000414, fromPin: Then, to: 6500000000000000415, toPin: Exec}
+    - {from: 6500000000000000415, fromPin: Then, to: 6500000000000000416, toPin: Exec}
+    - {from: 6500000000000000418, fromPin: label, to: 6500000000000000419, toPin: label}
+    - {from: 6500000000000000417, fromPin: Then, to: 6500000000000000418, toPin: Exec}
+    - {from: 6500000000000000418, fromPin: Then, to: 6500000000000000419, toPin: Exec}
+    - {from: 6500000000000000421, fromPin: Value, to: 6500000000000000422, toPin: A}
+    - {from: 6500000000000000422, fromPin: Result, to: 6500000000000000423, toPin: Condition}
+    - {from: 6500000000000000420, fromPin: Then, to: 6500000000000000423, toPin: Exec}
+    - {from: 6500000000000000423, fromPin: True, to: 6500000000000000424, toPin: Exec}
+    - {from: 6500000000000000426, fromPin: Value, to: 6500000000000000427, toPin: A}
+    - {from: 6500000000000000427, fromPin: Result, to: 6500000000000000428, toPin: Condition}
+    - {from: 6500000000000000425, fromPin: Then, to: 6500000000000000428, toPin: Exec}
+    - {from: 6500000000000000428, fromPin: True, to: 6500000000000000429, toPin: Exec}
+    - {from: 6500000000000000430, fromPin: Value, to: 6500000000000000431, toPin: A}
+    - {from: 6500000000000000431, fromPin: Result, to: 6500000000000000432, toPin: Condition}
+    - {from: 6500000000000000428, fromPin: False, to: 6500000000000000432, toPin: Exec}
+    - {from: 6500000000000000432, fromPin: True, to: 6500000000000000433, toPin: Exec}
+    - {from: 6500000000000000434, fromPin: Then, to: 6500000000000000435, toPin: Exec}
+    - {from: 6500000000000000437, fromPin: Value, to: 6500000000000000438, toPin: A}
+    - {from: 6500000000000000438, fromPin: Result, to: 6500000000000000439, toPin: Condition}
+    - {from: 6500000000000000436, fromPin: Then, to: 6500000000000000440, toPin: Exec}
+    - {from: 6500000000000000440, fromPin: Then, to: 6500000000000000439, toPin: Exec}
+    - {from: 6500000000000000439, fromPin: True, to: 6500000000000000441, toPin: Exec}
+    - {from: 6500000000000000439, fromPin: False, to: 6500000000000000442, toPin: Exec}
+    - {from: 6500000000000000441, fromPin: Then, to: 6500000000000000442, toPin: Exec}
+    - {from: 6500000000000000442, fromPin: Then, to: 6500000000000000443, toPin: Exec}
+    - {from: 6500000000000000444, fromPin: Then, to: 6500000000000000445, toPin: Exec}
+    - {from: 6500000000000000446, fromPin: Then, to: 6500000000000000447, toPin: Exec}
+    - {from: 6500000000000000447, fromPin: Then, to: 6500000000000000448, toPin: Exec}
+    - {from: 6500000000000000450, fromPin: Value, to: 6500000000000000451, toPin: Condition}
+    - {from: 6500000000000000449, fromPin: Then, to: 6500000000000000451, toPin: Exec}
+    - {from: 6500000000000000454, fromPin: Value, to: 6500000000000000455, toPin: scene_path}
+    - {from: 6500000000000000451, fromPin: False, to: 6500000000000000452, toPin: Exec}
+    - {from: 6500000000000000452, fromPin: Then, to: 6500000000000000453, toPin: Exec}
+    - {from: 6500000000000000453, fromPin: Then, to: 6500000000000000455, toPin: Exec}
+    - {from: 6500000000000000457, fromPin: Value, to: 6500000000000000458, toPin: Condition}
+    - {from: 6500000000000000456, fromPin: Then, to: 6500000000000000458, toPin: Exec}
+    - {from: 6500000000000000458, fromPin: False, to: 6500000000000000459, toPin: Exec}
+    - {from: 6500000000000000459, fromPin: Then, to: 6500000000000000460, toPin: Exec}
+    - {from: 6500000000000000460, fromPin: Then, to: 6500000000000000461, toPin: Exec}
+    - {from: 6500000000000000461, fromPin: Then, to: 6500000000000000462, toPin: Exec}
+    - {from: 6500000000000000078, fromPin: Then, to: 6500000000000000500, toPin: Exec}
+    - {from: 6500000000000000500, fromPin: Then, to: 6500000000000000505, toPin: Exec}
+    - {from: 6500000000000000500, fromPin: distance, to: 6500000000000000505, toPin: value}
+    - {from: 6500000000000000505, fromPin: Then, to: 6500000000000000507, toPin: Exec}
+    - {from: 6500000000000000506, fromPin: pressed, to: 6500000000000000507, toPin: Condition}
+    - {from: 6500000000000000507, fromPin: True, to: 6500000000000000508, toPin: Exec}
+    - {from: 6500000000000000507, fromPin: False, to: 6500000000000000082, toPin: Exec}
+    - {from: 6500000000000000508, fromPin: Then, to: 6500000000000000082, toPin: Exec}
+    - {from: 6500000000000000080, fromPin: entity_id, to: 6500000000000000500, toPin: camera}
+    - {from: 6500000000000000081, fromPin: Value, to: 6500000000000000500, toPin: fov}
+    - {from: 6500000000000000501, fromPin: xy, to: 6500000000000000500, toPin: pan}
+    - {from: 6500000000000000502, fromPin: value, to: 6500000000000000500, toPin: zoom}
+    - {from: 6500000000000000503, fromPin: pressed, to: 6500000000000000500, toPin: drag}
+    - {from: 6500000000000000504, fromPin: delta, to: 6500000000000000500, toPin: wheel}
+    - {from: 6500000000000000078, fromPin: dt, to: 6500000000000000500, toPin: dt}
+    - {from: 6500000000000000247, fromPin: Then, to: 6500000000000000510, toPin: Exec}
+    - {from: 6500000000000000510, fromPin: Then, to: 6500000000000000253, toPin: Exec}
+    - {from: 6500000000000000511, fromPin: entity_id, to: 6500000000000000510, toPin: camera}
+    - {from: 6500000000000000512, fromPin: Value, to: 6500000000000000510, toPin: fov}
+    - {from: 6500000000000000513, fromPin: xy, to: 6500000000000000510, toPin: pan}
+    - {from: 6500000000000000514, fromPin: value, to: 6500000000000000510, toPin: zoom}
+    - {from: 6500000000000000515, fromPin: pressed, to: 6500000000000000510, toPin: drag}
+    - {from: 6500000000000000516, fromPin: delta, to: 6500000000000000510, toPin: wheel}
+    - {from: 6500000000000000247, fromPin: dt, to: 6500000000000000510, toPin: dt}
+    - {from: 6500000000000000197, fromPin: Then, to: 6500000000000000551, toPin: Exec}
+    - {from: 6500000000000000551, fromPin: Then, to: 6500000000000000198, toPin: Exec}
+    - {from: 6500000000000000550, fromPin: nodes, to: 6500000000000000551, toPin: value}
+    - {from: 6500000000000000036, fromPin: Then, to: 6500000000000000540, toPin: Exec}
+    - {from: 6500000000000000540, fromPin: Then, to: 6500000000000000541, toPin: Exec}
+    - {from: 6500000000000000540, fromPin: value, to: 6500000000000000541, toPin: Value}
+    - {from: 6500000000000000541, fromPin: Then, to: 6500000000000000542, toPin: Exec}
+    - {from: 6500000000000000540, fromPin: value, to: 6500000000000000542, toPin: visible}
+    - {from: 6500000000000000520, fromPin: Then, to: 6500000000000000523, toPin: Exec}
+    - {from: 6500000000000000521, fromPin: Value, to: 6500000000000000522, toPin: A}
+    - {from: 6500000000000000522, fromPin: Result, to: 6500000000000000523, toPin: Value}
+    - {from: 6500000000000000523, fromPin: Then, to: 6500000000000000525, toPin: Exec}
+    - {from: 6500000000000000524, fromPin: Value, to: 6500000000000000525, toPin: visible}
+    - {from: 6500000000000000525, fromPin: Then, to: 6500000000000000526, toPin: Exec}
+    - {from: 6500000000000000525, fromPin: visible, to: 6500000000000000526, toPin: value}
+    - {from: 6500000000000000526, fromPin: Then, to: 6500000000000000527, toPin: Exec}
+    - {from: 6500000000000000530, fromPin: Then, to: 6500000000000000531, toPin: Exec}
+  groups:
+    - {id: 6500000000000000463, title: on_create, position: [-100, -60], size: [6700, 590], color: Red}
+    - {id: 6500000000000000464, title: on_update, position: [-100, 360], size: [5200, 580], color: Red}
+    - {id: 6500000000000000465, title: build_update, position: [-240, 780], size: [11740, 760], color: Red}
+    - {id: 6500000000000000466, title: place, position: [-40, 1200], size: [3640, 580], color: Red}
+    - {id: 6500000000000000467, title: erase, position: [-40, 1620], size: [2440, 390], color: Red}
+    - {id: 6500000000000000468, title: undo, position: [-40, 2040], size: [1840, 200], color: Red}
+    - {id: 6500000000000000469, title: show_kind, position: [-40, 2460], size: [1240, 430], color: Red}
+    - {id: 6500000000000000470, title: refresh, position: [-100, 2880], size: [1600, 580], color: Red}
+    - {id: 6500000000000000471, title: begin_run, position: [-100, 3300], size: [7000, 500], color: Red}
+    - {id: 6500000000000000472, title: end_run, position: [-40, 3720], size: [3340, 350], color: Red}
+    - {id: 6500000000000000473, title: run_update, position: [-40, 4140], size: [7940, 580], color: Red}
+    - {id: 6500000000000000474, title: fail, position: [-40, 4560], size: [3340, 390], color: Red}
+    - {id: 6500000000000000475, title: win, position: [-100, 4980], size: [7000, 580], color: Red}
+    - {id: 6500000000000000476, title: tally, position: [-40, 5400], size: [5380, 540], color: Red}
+    - {id: 6500000000000000477, title: say, position: [-40, 5820], size: [1840, 420], color: Red}
+    - {id: 6500000000000000478, title: set_paused, position: [-40, 6240], size: [2440, 350], color: Red}
+    - {id: 6500000000000000479, title: on_road_clicked, position: [-40, 6660], size: [940, 200], color: Red}
+    - {id: 6500000000000000480, title: on_wood_clicked, position: [-40, 7080], size: [940, 200], color: Red}
+    - {id: 6500000000000000481, title: on_steel_clicked, position: [-40, 7500], size: [940, 200], color: Red}
+    - {id: 6500000000000000482, title: on_undo_clicked, position: [-100, 7920], size: [1000, 500], color: Red}
+    - {id: 6500000000000000483, title: on_run_clicked, position: [-100, 8340], size: [1600, 500], color: Red}
+    - {id: 6500000000000000484, title: on_resume_clicked, position: [-40, 8760], size: [640, 200], color: Red}
+    - {id: 6500000000000000485, title: on_clear_clicked, position: [-100, 9180], size: [1900, 500], color: Red}
+    - {id: 6500000000000000486, title: on_edit_clicked, position: [-40, 9600], size: [640, 200], color: Red}
+    - {id: 6500000000000000487, title: on_replay_clicked, position: [-40, 10020], size: [940, 200], color: Red}
+    - {id: 6500000000000000488, title: on_next_clicked, position: [-40, 10440], size: [1540, 350], color: Red}
+    - {id: 6500000000000000489, title: on_levels_clicked, position: [-40, 10860], size: [1840, 350], color: Red}
+    - {id: 6500000000000000532, title: toggle_grid, position: [-100, 11280], size: [1500, 500], color: Red}
+    - {id: 6500000000000000533, title: on_grid_clicked, position: [-40, 11700], size: [640, 200], color: Red}

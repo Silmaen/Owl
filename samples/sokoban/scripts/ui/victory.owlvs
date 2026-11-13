@@ -1,0 +1,339 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: levels, type: numbers, default: "", exposed: false}
+    - {name: count, type: float, default: "0", exposed: false}
+    - {name: done, type: float, default: "0", exposed: false}
+    - {name: total, type: float, default: "0", exposed: false}
+    - {name: text, type: string, default: "", exposed: false}
+    - {name: label, type: entity, default: "0", exposed: false}
+  customNodes:
+    - name: require_levels
+      title: Require levels
+      inputs: []
+      outputs: [{name: module, type: any}]
+      code: |
+        return require("scripts.game.levels")
+  nodes:
+    - id: 2284400001
+      type: event.on_create
+      position: [340, 0]
+    - id: 2284400002
+      type: custom.call
+      position: [680, 0]
+      values:
+        custom: require_levels
+    - id: 2284400003
+      type: var.set
+      position: [1020, 0]
+      values:
+        variable: levels
+    - id: 2284400004
+      type: lua.call
+      position: [1360, 0]
+      values:
+        module: scripts.game.levels
+        function: count
+    - id: 2284400005
+      type: var.set
+      position: [1700, 0]
+      values:
+        variable: count
+    - id: 2284400006
+      type: call.ui.is_transition_active
+      position: [1530, 160]
+    - id: 2284400007
+      type: logic.not
+      position: [1530, 280]
+    - id: 2284400008
+      type: flow.branch
+      position: [2040, 0]
+    - id: 2284400009
+      type: call.ui.transition_play
+      position: [2380, 0]
+      values:
+        split.rgba: "true"
+        kind: wipe_left
+        duration: "0.4"
+        r: "0.2"
+        g: "0.12"
+        b: "0.05"
+    - id: 2284400010
+      type: call.sound.play
+      position: [2720, 0]
+      values:
+        asset_path: sounds/ui/victory.wav
+    - id: 2284400011
+      type: var.set
+      position: [3060, 0]
+      values:
+        variable: done
+        Value: "0"
+    - id: 2284400012
+      type: var.set
+      position: [3400, 0]
+      values:
+        variable: total
+        Value: "0"
+    - id: 2284400013
+      type: var.get
+      position: [3230, 160]
+      values:
+        variable: count
+    - id: 2284400014
+      type: flow.for
+      position: [3740, 0]
+      values:
+        First: "1"
+    - id: 2284400015
+      type: lua.call
+      position: [4080, 0]
+      values:
+        module: scripts.game.levels
+        function: done
+    - id: 2284400016
+      type: flow.branch
+      position: [4420, 0]
+    - id: 2284400017
+      type: var.get
+      position: [4250, 160]
+      values:
+        variable: done
+    - id: 2284400018
+      type: math.add
+      position: [4250, 280]
+      values:
+        B: "1"
+    - id: 2284400019
+      type: var.set
+      position: [4760, 0]
+      values:
+        variable: done
+    - id: 2284400020
+      type: var.get
+      position: [4590, 160]
+      values:
+        variable: total
+    - id: 2284400021
+      type: lua.call
+      position: [5100, 0]
+      values:
+        module: scripts.game.levels
+        function: best
+    - id: 2284400022
+      type: math.add
+      position: [4930, 160]
+    - id: 2284400023
+      type: var.set
+      position: [5440, 0]
+      values:
+        variable: total
+    - id: 2284400024
+      type: var.get
+      position: [5270, 160]
+      values:
+        variable: done
+    - id: 2284400025
+      type: var.get
+      position: [5270, 280]
+      values:
+        variable: count
+    - id: 2284400026
+      type: var.get
+      position: [5270, 400]
+      values:
+        variable: total
+    - id: 2284400027
+      type: text.concat
+      position: [5270, 520]
+    - id: 2284400028
+      type: value.string
+      position: [5270, 640]
+      values:
+        Value: "\nBest moves, all levels: "
+    - id: 2284400029
+      type: text.concat
+      position: [5270, 760]
+    - id: 2284400030
+      type: text.join
+      position: [5270, 880]
+      values:
+        A: " / "
+    - id: 2284400031
+      type: text.concat
+      position: [5270, 1000]
+    - id: 2284400032
+      type: text.join
+      position: [5270, 1120]
+      values:
+        A: "Levels done: "
+    - id: 2284400033
+      type: var.set
+      position: [5780, 0]
+      values:
+        variable: text
+    - id: 2284400034
+      type: var.get
+      position: [5610, 160]
+      values:
+        variable: done
+    - id: 2284400035
+      type: var.get
+      position: [5610, 280]
+      values:
+        variable: count
+    - id: 2284400036
+      type: compare.less
+      position: [5610, 400]
+    - id: 2284400037
+      type: flow.branch
+      position: [6120, 0]
+    - id: 2284400038
+      type: var.get
+      position: [5950, 160]
+      values:
+        variable: text
+    - id: 2284400039
+      type: text.join
+      position: [5950, 280]
+      values:
+        B: "\nThe level select shows the ones left."
+    - id: 2284400040
+      type: var.set
+      position: [6460, 0]
+      values:
+        variable: text
+    - id: 2284400041
+      type: call.scene.find_entity
+      position: [6290, 160]
+      values:
+        name: ScoreLabel
+    - id: 2284400042
+      type: var.set
+      position: [6800, 0]
+      values:
+        variable: label
+    - id: 2284400043
+      type: var.get
+      position: [6630, 160]
+      values:
+        variable: label
+    - id: 2284400044
+      type: compare.not_equal
+      position: [6630, 280]
+      values:
+        B: "0"
+    - id: 2284400045
+      type: flow.branch
+      position: [7140, 0]
+    - id: 2284400046
+      type: call.ui.set_text
+      position: [7480, 0]
+    - id: 2284400047
+      type: var.get
+      position: [7310, 160]
+      values:
+        variable: label
+    - id: 2284400048
+      type: var.get
+      position: [7310, 280]
+      values:
+        variable: text
+    - id: 2284400049
+      type: event.custom
+      position: [340, 1380]
+      values:
+        function: on_levels_clicked
+    - id: 2284400050
+      type: call.scene.transition_to
+      position: [680, 1380]
+      values:
+        split.rgba: "true"
+        scene_path: scenes/level_select.owl
+        kind: wipe_left
+        duration: "0.3"
+        r: "0.2"
+        g: "0.12"
+        b: "0.05"
+    - id: 2284400051
+      type: event.custom
+      position: [340, 1680]
+      values:
+        function: on_title_clicked
+    - id: 2284400052
+      type: call.scene.transition_to
+      position: [680, 1680]
+      values:
+        split.rgba: "true"
+        scene_path: scenes/title.owl
+        kind: wipe_left
+        duration: "0.3"
+        r: "0.2"
+        g: "0.12"
+        b: "0.05"
+    - id: 2284400053
+      type: math.floor
+      position: [3570, 160]
+  links:
+    - {from: 2284400001, fromPin: Then, to: 2284400002, toPin: Exec}
+    - {from: 2284400002, fromPin: module, to: 2284400003, toPin: Value}
+    - {from: 2284400002, fromPin: Then, to: 2284400003, toPin: Exec}
+    - {from: 2284400003, fromPin: Then, to: 2284400004, toPin: Exec}
+    - {from: 2284400004, fromPin: result, to: 2284400005, toPin: Value}
+    - {from: 2284400004, fromPin: Then, to: 2284400005, toPin: Exec}
+    - {from: 2284400006, fromPin: active, to: 2284400007, toPin: A}
+    - {from: 2284400007, fromPin: Result, to: 2284400008, toPin: Condition}
+    - {from: 2284400005, fromPin: Then, to: 2284400008, toPin: Exec}
+    - {from: 2284400008, fromPin: "True", to: 2284400009, toPin: Exec}
+    - {from: 2284400009, fromPin: Then, to: 2284400010, toPin: Exec}
+    - {from: 2284400008, fromPin: "False", to: 2284400010, toPin: Exec}
+    - {from: 2284400010, fromPin: Then, to: 2284400011, toPin: Exec}
+    - {from: 2284400011, fromPin: Then, to: 2284400012, toPin: Exec}
+    - {from: 2284400013, fromPin: Value, to: 2284400053, toPin: A}
+    - {from: 2284400053, fromPin: Result, to: 2284400014, toPin: Last}
+    - {from: 2284400012, fromPin: Then, to: 2284400014, toPin: Exec}
+    - {from: 2284400014, fromPin: Index, to: 2284400015, toPin: i}
+    - {from: 2284400014, fromPin: Body, to: 2284400015, toPin: Exec}
+    - {from: 2284400015, fromPin: result, to: 2284400016, toPin: Condition}
+    - {from: 2284400015, fromPin: Then, to: 2284400016, toPin: Exec}
+    - {from: 2284400017, fromPin: Value, to: 2284400018, toPin: A}
+    - {from: 2284400018, fromPin: Result, to: 2284400019, toPin: Value}
+    - {from: 2284400016, fromPin: "True", to: 2284400019, toPin: Exec}
+    - {from: 2284400014, fromPin: Index, to: 2284400021, toPin: i}
+    - {from: 2284400019, fromPin: Then, to: 2284400021, toPin: Exec}
+    - {from: 2284400020, fromPin: Value, to: 2284400022, toPin: A}
+    - {from: 2284400021, fromPin: result, to: 2284400022, toPin: B}
+    - {from: 2284400022, fromPin: Result, to: 2284400023, toPin: Value}
+    - {from: 2284400021, fromPin: Then, to: 2284400023, toPin: Exec}
+    - {from: 2284400028, fromPin: Result, to: 2284400027, toPin: A}
+    - {from: 2284400026, fromPin: Value, to: 2284400027, toPin: B}
+    - {from: 2284400025, fromPin: Value, to: 2284400029, toPin: A}
+    - {from: 2284400027, fromPin: Result, to: 2284400029, toPin: B}
+    - {from: 2284400029, fromPin: Result, to: 2284400030, toPin: B}
+    - {from: 2284400024, fromPin: Value, to: 2284400031, toPin: A}
+    - {from: 2284400030, fromPin: Result, to: 2284400031, toPin: B}
+    - {from: 2284400031, fromPin: Result, to: 2284400032, toPin: B}
+    - {from: 2284400032, fromPin: Result, to: 2284400033, toPin: Value}
+    - {from: 2284400014, fromPin: Completed, to: 2284400033, toPin: Exec}
+    - {from: 2284400034, fromPin: Value, to: 2284400036, toPin: A}
+    - {from: 2284400035, fromPin: Value, to: 2284400036, toPin: B}
+    - {from: 2284400036, fromPin: Result, to: 2284400037, toPin: Condition}
+    - {from: 2284400033, fromPin: Then, to: 2284400037, toPin: Exec}
+    - {from: 2284400038, fromPin: Value, to: 2284400039, toPin: A}
+    - {from: 2284400039, fromPin: Result, to: 2284400040, toPin: Value}
+    - {from: 2284400037, fromPin: "True", to: 2284400040, toPin: Exec}
+    - {from: 2284400041, fromPin: entity_id, to: 2284400042, toPin: Value}
+    - {from: 2284400040, fromPin: Then, to: 2284400042, toPin: Exec}
+    - {from: 2284400037, fromPin: "False", to: 2284400042, toPin: Exec}
+    - {from: 2284400043, fromPin: Value, to: 2284400044, toPin: A}
+    - {from: 2284400044, fromPin: Result, to: 2284400045, toPin: Condition}
+    - {from: 2284400042, fromPin: Then, to: 2284400045, toPin: Exec}
+    - {from: 2284400047, fromPin: Value, to: 2284400046, toPin: entity_id}
+    - {from: 2284400048, fromPin: Value, to: 2284400046, toPin: text}
+    - {from: 2284400045, fromPin: "True", to: 2284400046, toPin: Exec}
+    - {from: 2284400049, fromPin: Then, to: 2284400050, toPin: Exec}
+    - {from: 2284400051, fromPin: Then, to: 2284400052, toPin: Exec}
+  groups:
+    - {id: 2284490000, title: on_create, position: [316, -52], size: [7460, 1320], color: Red}
+    - {id: 2284490001, title: on_levels_clicked, position: [316, 1328], size: [660, 200], color: Red}
+    - {id: 2284490002, title: on_title_clicked, position: [316, 1628], size: [660, 200], color: Red}

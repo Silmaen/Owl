@@ -35,7 +35,7 @@ Entities:
     BackgroundTexture:
       mode: 0
       type: 0
-      color: [0.035, 0.035, 0.04, 1]
+      color: [0.4, 0, 0, 1]
       topColor: [0.8, 0.9, 1, 1]
   - Entity: 3320000000000000003
     Tag:
@@ -53,7 +53,7 @@ Entities:
       referenceResolution: [1280, 720]
       scaleMode: ScaleWithHeight
     LuaScript:
-      scriptPath: gid:0b91b3229a08323b:scripts/ui/tally.lua
+      scriptPath: gid:0b91b3229a08323b:scripts/ui/tally.owlvs
   - Entity: 3320000000000000004
     Tag:
       tag: TallyGroup
@@ -73,10 +73,16 @@ Entities:
       sizeUnit: [ScreenHeight, ScreenHeight]
       offset: [0, 0]
     UiPanel:
-      backgroundColor: [0.05, 0.05, 0.06, 0.88]
-      borderColor: [0.45, 0.46, 0.46, 0.9]
-      borderWidth: 2
+      backgroundColor: [0.24, 0, 0, 0.97]
+      borderColor: [0.55, 0.45, 0.3, 0.6]
+      borderWidth: 1
       clipChildren: false
+      Box:
+        borderColor: [0.68, 0.06, 0.04, 1]
+        borderWidth: 3
+        shadowColor: [0, 0, 0, 0.9]
+        shadowOffset: [8, 8]
+        shadowBlur: 0
     UiLayout:
       arrangement: Column
       crossAlign: Center
@@ -99,21 +105,24 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.48, 0.1]
+      size: [0.48, 0.0741]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.2, 0.21, 0.22, 1]
-      hoverColor: [0.62, 0.1, 0.07, 1]
-      pressedColor: [0.35, 0.05, 0.04, 1]
-      disabledColor: [0.06, 0.06, 0.07, 1]
+      normalColor: [1, 1, 1, 0]
+      hoverColor: [1, 1, 1, 1]
+      pressedColor: [0.7, 0.7, 0.7, 1]
+      disabledColor: [1, 1, 1, 0]
       onClickCallback: on_next_clicked
+      Box:
+        texture: gid:8149caad6d299ada:textures/ui/dos_select.png
+        sliceInsets: [48, 0, 8, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.04, 0.04, 0.05, 1]
-      text: 'NEXT FLOOR'
-      color: [0.86, 0.87, 0.84, 1]
-      fontSize: 28
+      outlineWidth: 1
+      outlineColor: [0, 0, 0, 1]
+      text: 'Next floor'
+      color: [0.72, 0.72, 0.72, 1]
+      fontSize: 40
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -121,35 +130,14 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBold
+      font: Jersey10-Regular
     UiFocus:
       focusable: true
       initial: true
       onFocusCallback: ''
-      highlightColor: [0.82, 0.16, 0.12, 1]
-      highlightThickness: 3
+      highlightColor: [0, 0, 0, 0]
+      highlightThickness: 1
   - Entity: 3320000000000000006
-    Tag:
-      tag: NextButtonPlate
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 3320000000000000005
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:0bcddcb325526f99:textures/ui/plate.png
-  - Entity: 3320000000000000007
     Tag:
       tag: SkipHint
     Transform:
@@ -168,11 +156,11 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.04, 0.04, 0.05, 1]
+      outlineWidth: 1
+      outlineColor: [0, 0, 0, 1]
       text: 'Enter, Space or pad A skips the count'
-      color: [0.68, 0.7, 0.68, 0.95]
-      fontSize: 20
+      color: [0.72, 0.72, 0.72, 1]
+      fontSize: 24
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -180,7 +168,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-  - Entity: 3320000000000000008
+      font: Jersey10-Regular
+  - Entity: 3320000000000000007
     Tag:
       tag: BestLabel
     Transform:
@@ -199,11 +188,11 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.04, 0.04, 0.05, 1]
+      outlineWidth: 1
+      outlineColor: [0, 0, 0, 1]
       text: ''
-      color: [0.68, 0.7, 0.68, 0.95]
-      fontSize: 22
+      color: [0.72, 0.72, 0.72, 1]
+      fontSize: 26
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -211,7 +200,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-  - Entity: 3320000000000000009
+      font: Jersey10-Regular
+  - Entity: 3320000000000000008
     Tag:
       tag: ScoreLabel
     Transform:
@@ -230,11 +220,11 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.04, 0.04, 0.05, 1]
+      outlineWidth: 1
+      outlineColor: [0, 0, 0, 1]
       text: ''
-      color: [0.86, 0.87, 0.84, 1]
-      fontSize: 30
+      color: [1, 0.86, 0.2, 1]
+      fontSize: 36
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -242,8 +232,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: JetBrainsMono-Regular
-  - Entity: 3320000000000000010
+      font: Jersey10-Regular
+  - Entity: 3320000000000000009
     Tag:
       tag: BonusLabel
     Transform:
@@ -262,11 +252,11 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.04, 0.04, 0.05, 1]
+      outlineWidth: 1
+      outlineColor: [0, 0, 0, 1]
       text: ''
-      color: [0.86, 0.87, 0.84, 1]
-      fontSize: 34
+      color: [0.95, 0.95, 0.9, 1]
+      fontSize: 40
       horizontalAlignment: Left
       verticalAlignment: Middle
       kerning: 0
@@ -274,8 +264,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: JetBrainsMono-Regular
-  - Entity: 3320000000000000011
+      font: Jersey10-Regular
+  - Entity: 3320000000000000010
     Tag:
       tag: MapLabel
     Transform:
@@ -294,11 +284,11 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.04, 0.04, 0.05, 1]
+      outlineWidth: 1
+      outlineColor: [0, 0, 0, 1]
       text: ''
-      color: [0.86, 0.87, 0.84, 1]
-      fontSize: 34
+      color: [0.95, 0.95, 0.9, 1]
+      fontSize: 40
       horizontalAlignment: Left
       verticalAlignment: Middle
       kerning: 0
@@ -306,8 +296,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: JetBrainsMono-Regular
-  - Entity: 3320000000000000012
+      font: Jersey10-Regular
+  - Entity: 3320000000000000011
     Tag:
       tag: SecretsLabel
     Transform:
@@ -326,11 +316,11 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.04, 0.04, 0.05, 1]
+      outlineWidth: 1
+      outlineColor: [0, 0, 0, 1]
       text: ''
-      color: [0.86, 0.87, 0.84, 1]
-      fontSize: 34
+      color: [0.95, 0.95, 0.9, 1]
+      fontSize: 40
       horizontalAlignment: Left
       verticalAlignment: Middle
       kerning: 0
@@ -338,8 +328,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: JetBrainsMono-Regular
-  - Entity: 3320000000000000013
+      font: Jersey10-Regular
+  - Entity: 3320000000000000012
     Tag:
       tag: ItemsLabel
     Transform:
@@ -358,11 +348,11 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.04, 0.04, 0.05, 1]
+      outlineWidth: 1
+      outlineColor: [0, 0, 0, 1]
       text: ''
-      color: [0.86, 0.87, 0.84, 1]
-      fontSize: 34
+      color: [0.95, 0.95, 0.9, 1]
+      fontSize: 40
       horizontalAlignment: Left
       verticalAlignment: Middle
       kerning: 0
@@ -370,8 +360,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: JetBrainsMono-Regular
-  - Entity: 3320000000000000014
+      font: Jersey10-Regular
+  - Entity: 3320000000000000013
     Tag:
       tag: TallyTitle
     Transform:
@@ -390,11 +380,11 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.04, 0.04, 0.05, 1]
+      outlineWidth: 1
+      outlineColor: [0, 0, 0, 1]
       text: 'FLOOR 1 COMPLETED'
-      color: [0.82, 0.16, 0.12, 1]
-      fontSize: 52
+      color: [0.95, 0.95, 0.9, 1]
+      fontSize: 60
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -402,4 +392,4 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBold
+      font: Jersey10-Regular

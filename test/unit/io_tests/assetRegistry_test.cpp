@@ -13,6 +13,7 @@
 #include <data/assets/AssetRegistry.h>
 
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <format>
@@ -303,4 +304,28 @@ TEST_F(AssetRegistryTest, RewriteReferencesFollowsAdaptiveMusicLayersAndStingers
 	ASSERT_TRUE(registry.moveFile(m_root / "sounds" / "danger.wav", m_root / "music" / "alert.wav"));
 	EXPECT_EQ(registry.toAssetPath(pads), "music/calm.wav");
 	EXPECT_EQ(registry.toAssetPath(danger), "music/alert.wav");
+}
+
+TEST(AssetMeta, EveryShippedAssetHasItsSidecar) {
+	// An asset committed without its `.owlmeta` gets a new GUID at the first open in Owl Nest: the references to it break.
+	std::vector<std::string> missing;
+	size_t assets = 0;
+	for (const auto* folder: {"samples", "engine_demo"}) {
+		const auto root = owl::test::getRootPath() / folder;
+		for (auto entry = std::filesystem::recursive_directory_iterator(root);
+			 entry != std::filesystem::recursive_directory_iterator(); ++entry) {
+			if (entry->is_directory() && entry->path().filename().string().starts_with(".")) {
+				entry.disable_recursion_pending();
+				continue;
+			}
+			if (!entry->is_regular_file() || !importerOf(entry->path()).has_value())
+				continue;
+			++assets;
+			if (!std::filesystem::exists(metaPathOf(entry->path())))
+				missing.push_back(std::filesystem::relative(entry->path(), owl::test::getRootPath()).string());
+		}
+	}
+	EXPECT_GT(assets, 100u);
+	EXPECT_TRUE(missing.empty()) << std::format("{} asset(s) without a sidecar, the first: {}", missing.size(),
+												missing.empty() ? std::string{} : missing.front());
 }

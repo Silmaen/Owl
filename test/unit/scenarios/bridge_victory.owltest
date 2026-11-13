@@ -1,0 +1,10 @@
+# Bridge Builder victory: the tally of the six gaps comes line by line and the best total is kept; Play again opens
+# the level select.
+scene: ../../../samples/bridge_builder/scenes/victory.owl
+steps:
+  - frames: 10
+  - expect: {entity: ScoreLabel, exists: true}
+  - expect: {gamestate: bridge_tally, equals: true}
+  - input: {key: Enter, frames: 2}
+  - frames: 60
+  - expect: {gamestate: bridge_select, equals: true}

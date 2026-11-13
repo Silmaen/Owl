@@ -1,0 +1,52 @@
+Material:
+  FormatVersion: 1
+  metallic: 0
+  roughness: 0.92
+  baseColorMap: gid:f910c7bd02f03894:models/td/Textures/colormap.png
+  graph:
+    nodes:
+      - id: 7651000000000000001
+        type: surface.parameters
+        position: [0, 0]
+      - id: 7651000000000000002
+        type: output.surface
+        position: [1400, 0]
+      - id: 7651000000000000003
+        type: noise.fbm
+        position: [300, -200]
+        values:
+          Scale: "0.45"
+          octaves: "4"
+      - id: 7651000000000000004
+        type: math.smoothstep
+        position: [450, -200]
+        values:
+          Min: "0.35"
+          Max: "0.65"
+      - id: 7651000000000000005
+        type: math.lerp
+        position: [600, -200]
+        values:
+          A: "0.8"
+          B: "1.15"
+      - id: 7651000000000000006
+        type: math.multiply
+        position: [900, -100]
+    links:
+      - {from: 7651000000000000003, fromPin: Value, to: 7651000000000000004, toPin: Value}
+      - {from: 7651000000000000004, fromPin: Result, to: 7651000000000000005, toPin: T}
+      - {from: 7651000000000000001, fromPin: Base Color, to: 7651000000000000006, toPin: A}
+      - {from: 7651000000000000005, fromPin: Result, to: 7651000000000000006, toPin: B}
+      - {from: 7651000000000000006, fromPin: Result, to: 7651000000000000002, toPin: Base Color}
+      - {from: 7651000000000000001, fromPin: Alpha, to: 7651000000000000002, toPin: Alpha}
+      - {from: 7651000000000000001, fromPin: Normal, to: 7651000000000000002, toPin: Normal}
+      - {from: 7651000000000000001, fromPin: Metallic, to: 7651000000000000002, toPin: Metallic}
+      - {from: 7651000000000000001, fromPin: Roughness, to: 7651000000000000002, toPin: Roughness}
+      - {from: 7651000000000000001, fromPin: Occlusion, to: 7651000000000000002, toPin: Occlusion}
+      - {from: 7651000000000000001, fromPin: Emissive, to: 7651000000000000002, toPin: Emissive}
+      - {from: 7651000000000000001, fromPin: Clearcoat, to: 7651000000000000002, toPin: Clearcoat}
+      - {from: 7651000000000000001, fromPin: Clearcoat Roughness, to: 7651000000000000002, toPin: Clearcoat Roughness}
+      - {from: 7651000000000000001, fromPin: Sheen Color, to: 7651000000000000002, toPin: Sheen Color}
+      - {from: 7651000000000000001, fromPin: Sheen Roughness, to: 7651000000000000002, toPin: Sheen Roughness}
+      - {from: 7651000000000000001, fromPin: Anisotropy, to: 7651000000000000002, toPin: Anisotropy}
+      - {from: 7651000000000000001, fromPin: Anisotropy Rotation, to: 7651000000000000002, toPin: Anisotropy Rotation}

@@ -6,22 +6,46 @@ columns:
   - {name: radius, type: Float}
   - {name: points, type: Integer}
   - {name: reload, type: Float}
+  - {name: accuracy, type: Float}
+  - {name: pursuit, type: Float}
 rows:
+  - key: scout
+    prefab: prefabs/scout.owlprefab
+    hp: 1
+    radius: 1.2
+    points: 100
+    reload: 5
+    accuracy: 0
+    pursuit: 0
   - key: fighter
     prefab: prefabs/fighter.owlprefab
     hp: 2
     radius: 1.3
     points: 200
     reload: 3.4
+    accuracy: 0.25
+    pursuit: 0.15
+  - key: raider
+    prefab: prefabs/raider.owlprefab
+    hp: 3
+    radius: 1.3
+    points: 300
+    reload: 1.8
+    accuracy: 0.8
+    pursuit: 0.6
   - key: interceptor
     prefab: prefabs/interceptor.owlprefab
     hp: 5
     radius: 1.5
     points: 400
     reload: 2
+    accuracy: 0.5
+    pursuit: 0.3
   - key: boss
     prefab: prefabs/boss.owlprefab
     hp: 140
     radius: 7.5
     points: 5000
     reload: 1.7
+    accuracy: 0
+    pursuit: 0

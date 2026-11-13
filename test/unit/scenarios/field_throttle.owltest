@@ -1,0 +1,16 @@
+# Asteroid Field persistent throttle: W raises it, the fighter keeps it and its speed once the key is released,
+# Backspace cuts it to zero and S goes on into reverse.
+scene: ../../../samples/asteroid_field/scenes/mission.owl
+steps:
+  - frames: 10
+  - input: {key: W, frames: 40}
+  - expect: {gamestate: field_throttle, greater: 0.3}
+  - frames: 120
+  - expect: {gamestate: field_throttle, greater: 0.3}
+  - expect: {gamestate: field_speed, greater: 15}
+  - input: {key: Backspace, frames: 1}
+  - frames: 60
+  - expect: {gamestate: field_throttle, equals: 0, tolerance: 0.01}
+  - expect: {gamestate: field_speed, less: 6}
+  - input: {key: S, frames: 90}
+  - expect: {gamestate: field_throttle, less: -0.3}

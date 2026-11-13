@@ -1,0 +1,10 @@
+# Asteroid Field flight without rotational inertia: the fighter yaws at its full turn rate as soon as the key is down
+# and stops when it is released.
+scene: ../../../samples/asteroid_field/scenes/mission.owl
+timestep_ms: 33.333
+steps:
+  - frames: 5
+  - input: {key: Left, frames: 15}
+  - expect: {entity: Player, rotation.y: {greater: 0.6}}
+  - frames: 30
+  - expect: {entity: Player, rotation.y: {less: 0.75}}

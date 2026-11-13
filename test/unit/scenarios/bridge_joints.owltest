@@ -1,0 +1,65 @@
+# Bridge Builder nodes go with their parts: a road and a wooden part laid from the anchor of the left cliff, the
+# road erased first (its end node is not the last one laid), then the wooden part; no bolt is left on the grid.
+scene: ../../../samples/bridge_builder/scenes/level_1.owl
+steps:
+  - frames: 10
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: X, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: D2, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Up, frames: 1}
+  - frames: 1
+  - input: {key: Up, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: X, frames: 1}
+  - frames: 1
+  - expect: {gamestate: bridge_parts, equals: 2}
+  - expect: {gamestate: bridge_nodes, equals: 2}
+  - expect: {entity: Node, exists: true}
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: X, frames: 1}
+  - frames: 1
+  - expect: {gamestate: bridge_parts, equals: 1}
+  - expect: {gamestate: bridge_nodes, equals: 1}
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Up, frames: 1}
+  - frames: 1
+  - input: {key: X, frames: 1}
+  - frames: 1
+  - expect: {gamestate: bridge_parts, equals: 0}
+  - expect: {gamestate: bridge_nodes, equals: 0}
+  - expect: {entity: Node, exists: false}
+  - input: {key: Z, frames: 1}
+  - frames: 1
+  - expect: {gamestate: bridge_parts, equals: 1}
+  - expect: {gamestate: bridge_nodes, equals: 1}

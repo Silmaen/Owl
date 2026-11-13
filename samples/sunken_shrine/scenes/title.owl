@@ -1,0 +1,763 @@
+Scene: title
+FormatVersion: 7
+EnabledRenderers:
+  - {Name: world, Enabled: true}
+  - {Name: ui, Enabled: false}
+Entities:
+  - Entity: 7300000681149000001
+    Tag:
+      tag: MenuCamera
+    Transform:
+      translation: [0, -0.6, 5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Camera:
+      camera:
+        projectionType: Orthographic
+        perspectiveFOV: 0.7853982
+        perspectiveNear: 0.01
+        perspectiveFar: 1000
+        orthographicSize: 11
+        orthographicNear: -1
+        orthographicFar: 10
+      primary: true
+      fixedAspectRatio: false
+  - Entity: 7300000681149000002
+    Tag:
+      tag: Background
+    Transform:
+      translation: [0, 0, -1]
+      rotation: [0, 0, 0]
+      scale: [40, 26, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    BackgroundTexture:
+      mode: 0
+      type: 0
+      color: [0.08, 0.05, 0.07, 1]
+      topColor: [0.8, 0.9, 1, 1]
+  - Entity: 7300000681149000003
+    Tag:
+      tag: Room
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Tilemap:
+      tilemapPath: gid:0bd7a6eb6fd134f9:tilemaps/room_1.owltilemap
+  - Entity: 7300000681149000004
+    Tag:
+      tag: Ambient
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Light2D: {type: Ambient, enabled: true, color: [0.8, 0.75, 1], intensity: 0.35, radius: 5, falloff: 2, height: 1, castShadows: false}
+  - Entity: 7300000681149000005
+    Tag:
+      tag: Torch
+    Transform:
+      translation: [-6, 3, 0.05]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Light2D: {type: Point, enabled: true, color: [1, 0.65, 0.3], intensity: 1.6, radius: 5, falloff: 2, height: 1, castShadows: false}
+  - Entity: 7300000681149000006
+    Tag:
+      tag: Torch
+    Transform:
+      translation: [6, 3, 0.05]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Light2D: {type: Point, enabled: true, color: [1, 0.65, 0.3], intensity: 1.6, radius: 5, falloff: 2, height: 1, castShadows: false}
+  - Entity: 7300000681149000007
+    Tag:
+      tag: OldMan
+    Transform:
+      translation: [0, 0, 0.05]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: gid:007111dca97df923:textures/tiles/dungeon.png
+      columns: 12
+      rows: 11
+      firstFrame: 84
+      lastFrame: 84
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7300000681149000008
+    Tag:
+      tag: Torch
+    Transform:
+      translation: [-6, -3, 0.05]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Light2D: {type: Point, enabled: true, color: [1, 0.65, 0.3], intensity: 1.6, radius: 5, falloff: 2, height: 1, castShadows: false}
+  - Entity: 7300000681149000009
+    Tag:
+      tag: Torch
+    Transform:
+      translation: [6, -3, 0.05]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Light2D: {type: Point, enabled: true, color: [1, 0.65, 0.3], intensity: 1.6, radius: 5, falloff: 2, height: 1, castShadows: false}
+  - Entity: 7300000681149000010
+    Tag:
+      tag: Hero
+    Transform:
+      translation: [0, -2, 0.05]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: gid:007111dca97df923:textures/tiles/dungeon.png
+      columns: 12
+      rows: 11
+      firstFrame: 85
+      lastFrame: 85
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7300000681149000011
+    Tag:
+      tag: MenuMusic
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SoundSource:
+      soundAsset: gid:e3fbf9f22ae6b9f7:sounds/music/menu.wav
+      category: Music
+      volume: 0.55
+      pitch: 1
+      loop: true
+      spatial: false
+      playOnStart: true
+      maxDistance: 50
+      rolloff: 1
+  - Entity: 7300000681149000012
+    Tag:
+      tag: MenuCanvas
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Canvas:
+      space: ScreenOverlay
+      sortOrder: 0
+      referenceResolution: [1280, 720]
+      scaleMode: ScaleWithHeight
+    LuaScript:
+      scriptPath: gid:e19343af8f150e86:scripts/ui/title.owlvs
+      properties:
+        - name: first_scene
+          type: string
+          value: scenes/room_1.owl
+        - name: best_key
+          type: string
+          value: shrine_best
+  - Entity: 7300000681149000013
+    Tag:
+      tag: TitleArt
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7300000681149000012
+    UiRect:
+      anchorMin: [0.5, 0]
+      anchorMax: [0.5, 0]
+      pivot: [0.5, 0]
+      size: [1.28, 0.32]
+      sizeUnit: [ScreenHeight, ScreenHeight]
+      offset: [0, 0.04]
+      offsetUnit: [ScreenHeight, ScreenHeight]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: gid:bbac0182eb0d9eff:textures/ui/title.png
+  - Entity: 7300000681149000014
+    Tag:
+      tag: BestText
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7300000681149000012
+    UiRect:
+      anchorMin: [0.5, 0]
+      anchorMax: [0.5, 0]
+      pivot: [0.5, 0]
+      size: [0.9, 0.05]
+      sizeUnit: [ScreenHeight, ScreenHeight]
+      offset: [0, 0.39]
+      offsetUnit: [ScreenHeight, ScreenHeight]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.14, 0.07, 0.1, 1]
+      text: ''
+      color: [1, 0.78, 0.25, 1]
+      fontSize: 26
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 7300000681149000015
+    Tag:
+      tag: ButtonPanel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7300000681149000012
+    UiRect:
+      anchorMin: [0.5, 1]
+      anchorMax: [0.5, 1]
+      pivot: [0.5, 1]
+      size: [0.62, 0.46]
+      sizeUnit: [ScreenHeight, ScreenHeight]
+      offset: [0, -0.05]
+      offsetUnit: [ScreenHeight, ScreenHeight]
+    UiPanel:
+      backgroundColor: [0.12, 0.08, 0.06, 0.92]
+      borderColor: [1, 0.78, 0.25, 0.9]
+      borderWidth: 2
+      clipChildren: false
+    UiLayout:
+      arrangement: Column
+      crossAlign: Center
+      spacing: 4
+      padding: 8
+      columns: 1
+      cellSize: [0, 0]
+  - Entity: 7300000681149000016
+    Tag:
+      tag: QuitButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7300000681149000015
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.86, 0.14]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.18, 0.12, 0.16, 1]
+      hoverColor: [0.3, 0.2, 0.26, 1]
+      pressedColor: [0.38, 0.26, 0.32, 1]
+      disabledColor: [0.1, 0.1, 0.1, 0.5]
+      onClickCallback: on_quit_clicked
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.14, 0.07, 0.1, 1]
+      text: 'QUIT'
+      color: [1, 0.93, 0.7, 1]
+      fontSize: 30
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [1, 0.78, 0.25, 1]
+      highlightThickness: 3
+  - Entity: 7300000681149000017
+    Tag:
+      tag: QuitButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7300000681149000016
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: gid:fc3c6ea58b296e5f:textures/ui/frame.png
+  - Entity: 7300000681149000018
+    Tag:
+      tag: SettingsButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7300000681149000015
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.86, 0.14]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.18, 0.12, 0.16, 1]
+      hoverColor: [0.3, 0.2, 0.26, 1]
+      pressedColor: [0.38, 0.26, 0.32, 1]
+      disabledColor: [0.1, 0.1, 0.1, 0.5]
+      onClickCallback: on_settings_clicked
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.14, 0.07, 0.1, 1]
+      text: 'SETTINGS'
+      color: [1, 0.93, 0.7, 1]
+      fontSize: 30
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [1, 0.78, 0.25, 1]
+      highlightThickness: 3
+  - Entity: 7300000681149000019
+    Tag:
+      tag: SettingsButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7300000681149000018
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: gid:fc3c6ea58b296e5f:textures/ui/frame.png
+  - Entity: 7300000681149000020
+    Tag:
+      tag: ContinueButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7300000681149000015
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.86, 0.14]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.18, 0.12, 0.16, 1]
+      hoverColor: [0.3, 0.2, 0.26, 1]
+      pressedColor: [0.38, 0.26, 0.32, 1]
+      disabledColor: [0.1, 0.1, 0.1, 0.5]
+      onClickCallback: on_continue_clicked
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.14, 0.07, 0.1, 1]
+      text: 'CONTINUE'
+      color: [1, 0.93, 0.7, 1]
+      fontSize: 30
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [1, 0.78, 0.25, 1]
+      highlightThickness: 3
+  - Entity: 7300000681149000021
+    Tag:
+      tag: ContinueButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7300000681149000020
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: gid:fc3c6ea58b296e5f:textures/ui/frame.png
+  - Entity: 7300000681149000022
+    Tag:
+      tag: HowToButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7300000681149000015
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.86, 0.14]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.18, 0.12, 0.16, 1]
+      hoverColor: [0.3, 0.2, 0.26, 1]
+      pressedColor: [0.38, 0.26, 0.32, 1]
+      disabledColor: [0.1, 0.1, 0.1, 0.5]
+      onClickCallback: on_how_to_clicked
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.14, 0.07, 0.1, 1]
+      text: 'HOW TO PLAY'
+      color: [1, 0.93, 0.7, 1]
+      fontSize: 30
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [1, 0.78, 0.25, 1]
+      highlightThickness: 3
+  - Entity: 7300000681149000023
+    Tag:
+      tag: HowToButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7300000681149000022
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: gid:fc3c6ea58b296e5f:textures/ui/frame.png
+  - Entity: 7300000681149000024
+    Tag:
+      tag: PlayButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7300000681149000015
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.86, 0.14]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.18, 0.12, 0.16, 1]
+      hoverColor: [0.3, 0.2, 0.26, 1]
+      pressedColor: [0.38, 0.26, 0.32, 1]
+      disabledColor: [0.1, 0.1, 0.1, 0.5]
+      onClickCallback: on_play_clicked
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.14, 0.07, 0.1, 1]
+      text: 'PLAY'
+      color: [1, 0.93, 0.7, 1]
+      fontSize: 30
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+    UiFocus:
+      focusable: true
+      initial: true
+      onFocusCallback: ''
+      highlightColor: [1, 0.78, 0.25, 1]
+      highlightThickness: 3
+  - Entity: 7300000681149000025
+    Tag:
+      tag: PlayButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7300000681149000024
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: gid:fc3c6ea58b296e5f:textures/ui/frame.png
+  - Entity: 7300000681149000026
+    Tag:
+      tag: HowToWindow
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7300000681149000012
+    UiRect:
+      anchorMin: [0.5, 0.5]
+      anchorMax: [0.5, 0.5]
+      pivot: [0.5, 0.5]
+      size: [1.3, 0.88]
+      sizeUnit: [ScreenHeight, ScreenHeight]
+      offset: [0, 0]
+    UiWindow:
+      title: 'HOW TO PLAY'
+      titleBarHeight: 40
+      titleFontSize: 28
+      bodyColor: [0.1, 0.07, 0.09, 0.96]
+      titleColor: [0.3, 0.18, 0.22, 1]
+      titleTextColor: [1, 0.93, 0.7, 1]
+      draggable: false
+      closable: false
+      onCloseCallback: ''
+    UiLayout:
+      arrangement: Column
+      crossAlign: Center
+      spacing: 8
+      padding: 12
+      columns: 1
+      cellSize: [0, 0]
+  - Entity: 7300000681149000027
+    Tag:
+      tag: HowToBackButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7300000681149000026
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.4, 0.11]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.18, 0.12, 0.16, 1]
+      hoverColor: [0.3, 0.2, 0.26, 1]
+      pressedColor: [0.38, 0.26, 0.32, 1]
+      disabledColor: [0.1, 0.1, 0.1, 0.5]
+      onClickCallback: on_how_to_closed
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.14, 0.07, 0.1, 1]
+      text: 'BACK'
+      color: [1, 0.93, 0.7, 1]
+      fontSize: 30
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [1, 0.78, 0.25, 1]
+      highlightThickness: 3
+  - Entity: 7300000681149000028
+    Tag:
+      tag: HowToBackButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7300000681149000027
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: gid:fc3c6ea58b296e5f:textures/ui/frame.png
+  - Entity: 7300000681149000029
+    Tag:
+      tag: HowToControls
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7300000681149000026
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.94, 0.4]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      text: "WALK          W A S D, arrows, left stick\nSWORD         Space, left click, A\nUSE / TALK    E, Enter, right click, X\nPAUSE         Escape, P, Start"
+      color: [1, 0.78, 0.25, 1]
+      fontSize: 21
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0.25
+      wrap: true
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 7300000681149000030
+    Tag:
+      tag: HowToRules
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7300000681149000026
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.94, 0.36]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      text: 'Beneath the hall of the shrine sleeps its guardian, behind three doors: a key opens the first, fire the second, stone the third. Talk to the old man, find the key in the pit, take the sword in the armoury, light the four braziers of the dark crypt, push the block onto its plate, and defeat the guardian to take the heart of the shrine. Creatures cost you a heart when they touch you; with none left you fall, and Retry takes you back to the door of the room. Each room you enter is saved: Continue on the title goes on from there.'
+      color: [0.85, 0.8, 0.72, 1]
+      fontSize: 22
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0.2
+      wrap: true
+      fit: Shrink
+      minFontSize: 12

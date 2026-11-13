@@ -111,7 +111,7 @@ Entities:
       gameVisible: true
     Hierarchy: {}
     LuaScript:
-      scriptPath: gid:7fdcda9b19926b16:scripts/ui/backdrop.lua
+      scriptPath: gid:7fdcda9b19926b16:scripts/ui/backdrop.owlvs
       properties:
         - name: speed
           type: float
@@ -955,7 +955,7 @@ Entities:
       referenceResolution: [1280, 720]
       scaleMode: ScaleWithHeight
     LuaScript:
-      scriptPath: gid:ddd9217be04cddbe:scripts/ui/title.lua
+      scriptPath: gid:ddd9217be04cddbe:scripts/ui/title.owlvs
   - Entity: 7800000000000000059
     Tag:
       tag: TitleArt
@@ -968,19 +968,19 @@ Entities:
     Hierarchy:
       parentId: 7800000000000000058
     UiRect:
-      anchorMin: [0.5, 0]
-      anchorMax: [0.5, 0]
-      pivot: [0.5, 0]
-      size: [1.2, 0.29]
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.92, 0.222]
       sizeUnit: [ScreenHeight, ScreenHeight]
-      offset: [0, 0.04]
+      offset: [0.05, 0.04]
       offsetUnit: [ScreenHeight, ScreenHeight]
     UiImage:
       tint: [1, 1, 1, 1]
       texture: gid:e1c6fb0286d0016b:textures/ui/title.png
   - Entity: 7800000000000000060
     Tag:
-      tag: BestRow
+      tag: NavDisplay
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -990,23 +990,24 @@ Entities:
     Hierarchy:
       parentId: 7800000000000000058
     UiRect:
-      anchorMin: [0.5, 0]
-      anchorMax: [0.5, 0]
-      pivot: [0.5, 0]
-      size: [0.9, 0.07]
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.56, 0.58]
       sizeUnit: [ScreenHeight, ScreenHeight]
-      offset: [0, 0.34]
+      offset: [0.06, 0.33]
       offsetUnit: [ScreenHeight, ScreenHeight]
-    UiLayout:
-      arrangement: Row
-      crossAlign: Center
-      spacing: 10
-      padding: 0
-      columns: 1
-      cellSize: [0, 0]
+    UiPanel:
+      backgroundColor: [1, 1, 1, 1]
+      borderColor: [0.55, 0.45, 0.3, 0.6]
+      borderWidth: 1
+      clipChildren: false
+      Box:
+        texture: gid:b540cb2ab4049676:textures/ui/mfd_frame.png
+        sliceInsets: [24, 24, 24, 24]
   - Entity: 7800000000000000061
     Tag:
-      tag: BestText
+      tag: NavDisplayScanlines
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -1019,48 +1020,13 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.82, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiText:
-      outlineWidth: 2
-      outlineColor: [0.02, 0.06, 0.15, 1]
-      text: 'BEST 000000'
-      color: [1, 0.78, 0.3, 1]
-      fontSize: 28
-      horizontalAlignment: Center
-      verticalAlignment: Middle
-      kerning: 0
-      lineSpacing: 0
-      wrap: false
-      fit: Shrink
-      minFontSize: 12
-      font: JetBrainsMono-Regular
-  - Entity: 7800000000000000062
-    Tag:
-      tag: BestMedal
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7800000000000000060
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [0.11, 1]
+      size: [1, 1]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: gid:8144327fac235543:textures/hud/medals.png
-      columns: 4
-      rows: 1
-      frame: 0
-  - Entity: 7800000000000000063
+      texture: gid:ce9cc0744777ec10:textures/ui/scanlines.png
+  - Entity: 7800000000000000062
     Tag:
       tag: ButtonPanel
     Transform:
@@ -1070,23 +1036,22 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7800000000000000058
+      parentId: 7800000000000000060
     UiRect:
-      anchorMin: [0.5, 0]
-      anchorMax: [0.5, 0]
-      pivot: [0.5, 0]
-      size: [0.52, 0.46]
-      sizeUnit: [ScreenHeight, ScreenHeight]
-      offset: [0, 0.45]
-      offsetUnit: [ScreenHeight, ScreenHeight]
+      anchorMin: [0.5, 0.5]
+      anchorMax: [0.5, 0.5]
+      pivot: [0.5, 0.5]
+      size: [0.86, 0.86]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
     UiLayout:
       arrangement: Column
-      crossAlign: Center
+      crossAlign: Start
       spacing: 8
       padding: 0
       columns: 1
       cellSize: [0, 0]
-  - Entity: 7800000000000000064
+  - Entity: 7800000000000000063
     Tag:
       tag: QuitButton
     Transform:
@@ -1096,25 +1061,28 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7800000000000000063
+      parentId: 7800000000000000062
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.9, 0.2]
+      size: [1, 0.17]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.03, 0.08, 0.16, 1]
-      hoverColor: [0.08, 0.22, 0.38, 1]
-      pressedColor: [0.12, 0.32, 0.5, 1]
-      disabledColor: [0.05, 0.06, 0.08, 0.6]
+      normalColor: [0.45, 0.85, 1, 0.55]
+      hoverColor: [1, 0.74, 0.25, 1]
+      pressedColor: [1, 1, 1, 1]
+      disabledColor: [0.3, 0.4, 0.5, 0.3]
       onClickCallback: on_quit_clicked
+      Box:
+        texture: gid:c20f529d9e4681db:textures/ui/mfd_button.png
+        sliceInsets: [36, 12, 16, 12]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.02, 0.06, 0.15, 1]
+      outlineWidth: 1
+      outlineColor: [0.01, 0.03, 0.08, 1]
       text: 'QUIT'
-      color: [0.55, 0.92, 1, 1]
+      color: [0.9, 0.97, 1, 1]
       fontSize: 28
       horizontalAlignment: Center
       verticalAlignment: Middle
@@ -1123,35 +1091,14 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBoldItalic
+      font: ShareTechMono-Regular
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: ''
-      highlightColor: [1, 0.78, 0.3, 1]
-      highlightThickness: 3
-  - Entity: 7800000000000000065
-    Tag:
-      tag: QuitButtonFrame
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7800000000000000064
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:4677dd46ed5ab744:textures/ui/button_frame.png
-  - Entity: 7800000000000000066
+      highlightColor: [0, 0, 0, 0]
+      highlightThickness: 1
+  - Entity: 7800000000000000064
     Tag:
       tag: SettingsButton
     Transform:
@@ -1161,25 +1108,28 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7800000000000000063
+      parentId: 7800000000000000062
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.9, 0.2]
+      size: [1, 0.17]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.03, 0.08, 0.16, 1]
-      hoverColor: [0.08, 0.22, 0.38, 1]
-      pressedColor: [0.12, 0.32, 0.5, 1]
-      disabledColor: [0.05, 0.06, 0.08, 0.6]
+      normalColor: [0.45, 0.85, 1, 0.55]
+      hoverColor: [1, 0.74, 0.25, 1]
+      pressedColor: [1, 1, 1, 1]
+      disabledColor: [0.3, 0.4, 0.5, 0.3]
       onClickCallback: on_settings_clicked
+      Box:
+        texture: gid:c20f529d9e4681db:textures/ui/mfd_button.png
+        sliceInsets: [36, 12, 16, 12]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.02, 0.06, 0.15, 1]
+      outlineWidth: 1
+      outlineColor: [0.01, 0.03, 0.08, 1]
       text: 'SETTINGS'
-      color: [0.55, 0.92, 1, 1]
+      color: [0.9, 0.97, 1, 1]
       fontSize: 28
       horizontalAlignment: Center
       verticalAlignment: Middle
@@ -1188,35 +1138,14 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBoldItalic
+      font: ShareTechMono-Regular
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: ''
-      highlightColor: [1, 0.78, 0.3, 1]
-      highlightThickness: 3
-  - Entity: 7800000000000000067
-    Tag:
-      tag: SettingsButtonFrame
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7800000000000000066
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:4677dd46ed5ab744:textures/ui/button_frame.png
-  - Entity: 7800000000000000068
+      highlightColor: [0, 0, 0, 0]
+      highlightThickness: 1
+  - Entity: 7800000000000000065
     Tag:
       tag: HowToButton
     Transform:
@@ -1226,25 +1155,28 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7800000000000000063
+      parentId: 7800000000000000062
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.9, 0.2]
+      size: [1, 0.17]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.03, 0.08, 0.16, 1]
-      hoverColor: [0.08, 0.22, 0.38, 1]
-      pressedColor: [0.12, 0.32, 0.5, 1]
-      disabledColor: [0.05, 0.06, 0.08, 0.6]
+      normalColor: [0.45, 0.85, 1, 0.55]
+      hoverColor: [1, 0.74, 0.25, 1]
+      pressedColor: [1, 1, 1, 1]
+      disabledColor: [0.3, 0.4, 0.5, 0.3]
       onClickCallback: on_how_to_clicked
+      Box:
+        texture: gid:c20f529d9e4681db:textures/ui/mfd_button.png
+        sliceInsets: [36, 12, 16, 12]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.02, 0.06, 0.15, 1]
+      outlineWidth: 1
+      outlineColor: [0.01, 0.03, 0.08, 1]
       text: 'HOW TO PLAY'
-      color: [0.55, 0.92, 1, 1]
+      color: [0.9, 0.97, 1, 1]
       fontSize: 28
       horizontalAlignment: Center
       verticalAlignment: Middle
@@ -1253,16 +1185,122 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBoldItalic
+      font: ShareTechMono-Regular
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: ''
-      highlightColor: [1, 0.78, 0.3, 1]
-      highlightThickness: 3
+      highlightColor: [0, 0, 0, 0]
+      highlightThickness: 1
+  - Entity: 7800000000000000066
+    Tag:
+      tag: PlayButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7800000000000000062
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 0.17]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.45, 0.85, 1, 0.55]
+      hoverColor: [1, 0.74, 0.25, 1]
+      pressedColor: [1, 1, 1, 1]
+      disabledColor: [0.3, 0.4, 0.5, 0.3]
+      onClickCallback: on_play_clicked
+      Box:
+        texture: gid:c20f529d9e4681db:textures/ui/mfd_button.png
+        sliceInsets: [36, 12, 16, 12]
+    UiText:
+      outlineWidth: 1
+      outlineColor: [0.01, 0.03, 0.08, 1]
+      text: 'LAUNCH'
+      color: [0.9, 0.97, 1, 1]
+      fontSize: 28
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: ShareTechMono-Regular
+    UiFocus:
+      focusable: true
+      initial: true
+      onFocusCallback: ''
+      highlightColor: [0, 0, 0, 0]
+      highlightThickness: 1
+  - Entity: 7800000000000000067
+    Tag:
+      tag: NavHeader
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7800000000000000062
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 0.12]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 1
+      outlineColor: [0.01, 0.03, 0.08, 1]
+      text: 'NAV // FLIGHT MENU'
+      color: [1, 0.78, 0.3, 1]
+      fontSize: 22
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: ShareTechMono-Regular
+  - Entity: 7800000000000000068
+    Tag:
+      tag: TelemetryDisplay
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7800000000000000058
+    UiRect:
+      anchorMin: [1, 0]
+      anchorMax: [1, 0]
+      pivot: [1, 0]
+      size: [0.46, 0.24]
+      sizeUnit: [ScreenHeight, ScreenHeight]
+      offset: [-0.06, 0.33]
+      offsetUnit: [ScreenHeight, ScreenHeight]
+    UiPanel:
+      backgroundColor: [1, 1, 1, 1]
+      borderColor: [0.55, 0.45, 0.3, 0.6]
+      borderWidth: 1
+      clipChildren: false
+      Box:
+        texture: gid:b540cb2ab4049676:textures/ui/mfd_frame.png
+        sliceInsets: [24, 24, 24, 24]
   - Entity: 7800000000000000069
     Tag:
-      tag: HowToButtonFrame
+      tag: TelemetryDisplayScanlines
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -1280,10 +1318,10 @@ Entities:
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: gid:4677dd46ed5ab744:textures/ui/button_frame.png
+      texture: gid:ce9cc0744777ec10:textures/ui/scanlines.png
   - Entity: 7800000000000000070
     Tag:
-      tag: PlayButton
+      tag: BestRow
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -1291,43 +1329,24 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7800000000000000063
+      parentId: 7800000000000000068
     UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [0.9, 0.2]
+      anchorMin: [0.5, 0.72]
+      anchorMax: [0.5, 0.72]
+      pivot: [0.5, 0.72]
+      size: [0.86, 0.5]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
-    UiButton:
-      normalColor: [0.03, 0.08, 0.16, 1]
-      hoverColor: [0.08, 0.22, 0.38, 1]
-      pressedColor: [0.12, 0.32, 0.5, 1]
-      disabledColor: [0.05, 0.06, 0.08, 0.6]
-      onClickCallback: on_play_clicked
-    UiText:
-      outlineWidth: 2
-      outlineColor: [0.02, 0.06, 0.15, 1]
-      text: 'LAUNCH'
-      color: [0.55, 0.92, 1, 1]
-      fontSize: 28
-      horizontalAlignment: Center
-      verticalAlignment: Middle
-      kerning: 0
-      lineSpacing: 0
-      wrap: false
-      fit: Shrink
-      minFontSize: 12
-      font: OpenSans-ExtraBoldItalic
-    UiFocus:
-      focusable: true
-      initial: true
-      onFocusCallback: ''
-      highlightColor: [1, 0.78, 0.3, 1]
-      highlightThickness: 3
+    UiLayout:
+      arrangement: Row
+      crossAlign: Center
+      spacing: 10
+      padding: 0
+      columns: 1
+      cellSize: [0, 0]
   - Entity: 7800000000000000071
     Tag:
-      tag: PlayButtonFrame
+      tag: BestText
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -1340,13 +1359,80 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [1, 1]
+      size: [0.7, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 1
+      outlineColor: [0.01, 0.03, 0.08, 1]
+      text: 'BEST 000000'
+      color: [1, 0.78, 0.3, 1]
+      fontSize: 28
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: ShareTechMono-Regular
+  - Entity: 7800000000000000072
+    Tag:
+      tag: BestMedal
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7800000000000000070
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.2, 1]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiImage:
       tint: [1, 1, 1, 1]
-      texture: gid:4677dd46ed5ab744:textures/ui/button_frame.png
-  - Entity: 7800000000000000072
+      texture: gid:8144327fac235543:textures/hud/medals.png
+      columns: 4
+      rows: 1
+      frame: 0
+  - Entity: 7800000000000000073
+    Tag:
+      tag: TelemetryHeader
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7800000000000000068
+    UiRect:
+      anchorMin: [0.5, 0.2]
+      anchorMax: [0.5, 0.2]
+      pivot: [0.5, 0.2]
+      size: [0.86, 0.22]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 1
+      outlineColor: [0.01, 0.03, 0.08, 1]
+      text: 'TELEMETRY'
+      color: [0.55, 0.92, 1, 1]
+      fontSize: 22
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: ShareTechMono-Regular
+  - Entity: 7800000000000000074
     Tag:
       tag: HowToWindow
     Transform:
@@ -1367,7 +1453,7 @@ Entities:
     UiWindow:
       title: 'HOW TO PLAY'
       titleBarHeight: 40
-      titleFontSize: 28
+      titleFontSize: 26
       bodyColor: [0.02, 0.05, 0.1, 0.97]
       titleColor: [0.05, 0.2, 0.35, 1]
       titleTextColor: [0.55, 0.92, 1, 1]
@@ -1381,7 +1467,7 @@ Entities:
       padding: 12
       columns: 1
       cellSize: [0, 0]
-  - Entity: 7800000000000000073
+  - Entity: 7800000000000000075
     Tag:
       tag: HowToBackButton
     Transform:
@@ -1391,7 +1477,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7800000000000000072
+      parentId: 7800000000000000074
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1400,16 +1486,19 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.03, 0.08, 0.16, 1]
-      hoverColor: [0.08, 0.22, 0.38, 1]
-      pressedColor: [0.12, 0.32, 0.5, 1]
-      disabledColor: [0.05, 0.06, 0.08, 0.6]
+      normalColor: [0.45, 0.85, 1, 0.55]
+      hoverColor: [1, 0.74, 0.25, 1]
+      pressedColor: [1, 1, 1, 1]
+      disabledColor: [0.3, 0.4, 0.5, 0.3]
       onClickCallback: on_how_to_closed
+      Box:
+        texture: gid:c20f529d9e4681db:textures/ui/mfd_button.png
+        sliceInsets: [36, 12, 16, 12]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.02, 0.06, 0.15, 1]
+      outlineWidth: 1
+      outlineColor: [0.01, 0.03, 0.08, 1]
       text: 'BACK'
-      color: [0.55, 0.92, 1, 1]
+      color: [0.9, 0.97, 1, 1]
       fontSize: 28
       horizontalAlignment: Center
       verticalAlignment: Middle
@@ -1418,35 +1507,14 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBoldItalic
+      font: ShareTechMono-Regular
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: ''
-      highlightColor: [1, 0.78, 0.3, 1]
-      highlightThickness: 3
-  - Entity: 7800000000000000074
-    Tag:
-      tag: HowToBackButtonFrame
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7800000000000000073
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:4677dd46ed5ab744:textures/ui/button_frame.png
-  - Entity: 7800000000000000075
+      highlightColor: [0, 0, 0, 0]
+      highlightThickness: 1
+  - Entity: 7800000000000000076
     Tag:
       tag: HowToControls
     Transform:
@@ -1456,7 +1524,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7800000000000000072
+      parentId: 7800000000000000074
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1477,7 +1545,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: JetBrainsMono-Regular
-  - Entity: 7800000000000000076
+  - Entity: 7800000000000000077
     Tag:
       tag: HowToRules
     Transform:
@@ -1487,7 +1555,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7800000000000000072
+      parentId: 7800000000000000074
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1499,7 +1567,7 @@ Entities:
       outlineWidth: 2
       text: 'Fly the lane through the ring of Kael: your ship rides the rail, you steer it inside the frame and aim with the reticles. Shoot the rocks in your way and the squadrons that come at you; a barrel roll turns their shots away. The hull recharges when nothing hits it for a while. Destroy the Warden at the end of the lane. Score, hit ratio and the hull left give a bronze, silver or gold medal.'
       color: [0.78, 0.86, 0.95, 0.95]
-      fontSize: 22
+      fontSize: 24
       horizontalAlignment: Left
       verticalAlignment: Middle
       kerning: 0
@@ -1507,3 +1575,4 @@ Entities:
       wrap: true
       fit: Shrink
       minFontSize: 12
+      font: ShareTechMono-Regular

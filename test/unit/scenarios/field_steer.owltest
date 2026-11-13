@@ -1,0 +1,19 @@
+# Asteroid Field: the right button held turns the fighter toward the aim circle, here off to the right of the centre
+# cross; released, the fighter keeps its heading while the circle stays where it is.
+scene: ../../../samples/asteroid_field/scenes/mission.owl
+timestep_ms: 33.333
+steps:
+  - frames: 5
+  - input: {mouse_pos: [640, 360], frames: 2}
+  - input: {mouse_pos: [800, 360], frames: 1}
+  - input: {mouse_pos: [960, 360], frames: 1}
+  - input: {mouse_pos: [1120, 360], frames: 1}
+  - expect: {gamestate: field_aim_x, greater: 300}
+  - expect: {entity: Player, rotation.y: {equals: 0, tolerance: 0.001}}
+  - input: {mouse: Right, mouse_pos: [1120, 360], frames: 15}
+  - expect: {gamestate: field_steering, equals: true}
+  - expect: {entity: Player, rotation.y: {less: -0.4}}
+  - input: {mouse_pos: [1120, 360], frames: 15}
+  - expect: {gamestate: field_steering, equals: false}
+  - expect: {entity: Player, rotation.y: {less: -0.4}}
+  - expect: {entity: Player, rotation.y: {greater: -0.9}}

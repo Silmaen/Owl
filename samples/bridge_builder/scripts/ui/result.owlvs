@@ -1,0 +1,521 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: victory, type: bool, default: true}
+    - {name: retry_scene, type: string, default: scenes/level_select.owl}
+    - {name: best_key, type: string, default: bridge_best}
+    - {name: prefix, type: string, default: bridge}
+    - {name: line_time, type: float, default: 0.45, min: 0.05}
+    - {name: sweep, type: color, default: '0.32, 0.18, 0.08, 1'}
+    - {name: clock, type: float, default: 0, exposed: false}
+    - {name: leaving, type: bool, default: false, exposed: false}
+  functions:
+    - name: write_tally
+      inputs: []
+      outputs: []
+  nodes:
+    - id: 6300000559431000001
+      type: event.on_create
+      position: [0, 0]
+    - id: 6300000559431000002
+      type: call.ui.is_transition_active
+      position: [-60, 300]
+    - id: 6300000559431000003
+      type: logic.not
+      position: [100, 150]
+    - id: 6300000559431000004
+      type: flow.branch
+      position: [300, 0]
+    - id: 6300000559431000005
+      type: var.get
+      position: [440, 150]
+      values:
+        variable: sweep
+    - id: 6300000559431000006
+      type: call.ui.transition_play
+      position: [600, 0]
+      values:
+        duration: 0.5
+        kind: wipe_left
+    - id: 6300000559431000007
+      type: flow.sequence
+      position: [900, 0]
+    - id: 6300000559431000008
+      type: var.get
+      position: [840, 300]
+      values:
+        variable: victory
+    - id: 6300000559431000009
+      type: logic.select
+      position: [1000, 150]
+      values:
+        False: sounds/ui/game_over.wav
+        True: sounds/ui/victory.wav
+    - id: 6300000559431000010
+      type: call.sound.play
+      position: [1200, 0]
+    - id: 6300000559431000011
+      type: var.get
+      position: [1140, 300]
+      values:
+        variable: prefix
+    - id: 6300000559431000012
+      type: text.concat
+      position: [1300, 150]
+      values:
+        B: _score
+    - id: 6300000559431000013
+      type: call.gamestate.get
+      position: [1500, 0]
+      values:
+        default: 0
+    - id: 6300000559431000014
+      type: var.get
+      position: [1640, 150]
+      values:
+        variable: best_key
+    - id: 6300000559431000015
+      type: call.settings.get
+      position: [1800, 0]
+      values:
+        default: 0
+    - id: 6300000559431000016
+      type: compare.greater
+      position: [1940, 150]
+    - id: 6300000559431000017
+      type: flow.branch
+      position: [2100, 0]
+    - id: 6300000559431000018
+      type: call.scene.find_entity
+      position: [2240, 150]
+      values:
+        name: ScoreLabel
+    - id: 6300000559431000019
+      type: text.format
+      position: [2240, 230]
+      values:
+        Format: 'SCORE %d'
+    - id: 6300000559431000020
+      type: call.ui.set_text
+      position: [2400, 0]
+    - id: 6300000559431000021
+      type: var.get
+      position: [2840, 150]
+      values:
+        variable: best_key
+    - id: 6300000559431000022
+      type: var.get
+      position: [2340, 300]
+      values:
+        variable: prefix
+    - id: 6300000559431000023
+      type: text.concat
+      position: [2500, 150]
+      values:
+        B: _score
+    - id: 6300000559431000024
+      type: call.gamestate.get
+      position: [2700, 0]
+      values:
+        default: 0
+    - id: 6300000559431000025
+      type: call.settings.set
+      position: [3000, 0]
+    - id: 6300000559431000026
+      type: call.settings.save
+      position: [3300, 0]
+    - id: 6300000559431000027
+      type: call.scene.find_entity
+      position: [3440, 150]
+      values:
+        name: BestLabel
+    - id: 6300000559431000028
+      type: call.ui.set_text
+      position: [3600, 0]
+      values:
+        text: 'NEW BEST SCORE!'
+    - id: 6300000559431000029
+      type: func.call
+      position: [3900, 0]
+      values:
+        function: write_tally
+    - id: 6300000559431000030
+      type: var.get
+      position: [4040, 150]
+      values:
+        variable: best_key
+    - id: 6300000559431000031
+      type: call.settings.get
+      position: [4200, 0]
+      values:
+        default: 0
+    - id: 6300000559431000032
+      type: text.format
+      position: [4340, 150]
+      values:
+        Format: 'BEST SCORE %d'
+    - id: 6300000559431000033
+      type: call.scene.find_entity
+      position: [4340, 230]
+      values:
+        name: BestLabel
+    - id: 6300000559431000034
+      type: call.ui.set_text
+      position: [4500, 0]
+    - id: 6300000559431000035
+      type: func.call
+      position: [4800, 0]
+      values:
+        function: write_tally
+    - id: 6300000559431000036
+      type: func.entry
+      position: [0, 420]
+      values:
+        function: write_tally
+    - id: 6300000559431000037
+      type: flow.for
+      position: [300, 420]
+      values:
+        First: 1
+        Last: 6
+    - id: 6300000559431000038
+      type: var.get
+      position: [0, 870]
+      values:
+        variable: prefix
+    - id: 6300000559431000039
+      type: text.concat
+      position: [160, 720]
+      values:
+        B: _line_
+    - id: 6300000559431000040
+      type: text.concat
+      position: [360, 570]
+    - id: 6300000559431000041
+      type: text.concat
+      position: [540, 720]
+      values:
+        A: StatLine
+    - id: 6300000559431000042
+      type: call.scene.find_entity
+      position: [700, 570]
+    - id: 6300000559431000043
+      type: call.gamestate.get
+      position: [600, 420]
+      values:
+        default: none
+    - id: 6300000559431000044
+      type: call.ui.set_text
+      position: [900, 420]
+    - id: 6300000559431000045
+      type: var.get
+      position: [840, 720]
+      values:
+        variable: prefix
+    - id: 6300000559431000046
+      type: text.concat
+      position: [1000, 570]
+      values:
+        B: _tally
+    - id: 6300000559431000047
+      type: call.gamestate.set
+      position: [1200, 420]
+      values:
+        value: true
+    - id: 6300000559431000048
+      type: func.return
+      position: [1500, 420]
+      values:
+        function: write_tally
+    - id: 6300000559431000049
+      type: event.on_update
+      position: [0, 840]
+    - id: 6300000559431000050
+      type: var.get
+      position: [-60, 1140]
+      values:
+        variable: clock
+    - id: 6300000559431000051
+      type: math.add
+      position: [100, 990]
+    - id: 6300000559431000052
+      type: var.set
+      position: [300, 840]
+      values:
+        variable: clock
+    - id: 6300000559431000053
+      type: flow.for
+      position: [600, 840]
+      values:
+        First: 1
+        Last: 6
+    - id: 6300000559431000054
+      type: var.get
+      position: [600, 1290]
+      values:
+        variable: clock
+    - id: 6300000559431000055
+      type: var.get
+      position: [400, 1520]
+      values:
+        variable: line_time
+    - id: 6300000559431000056
+      type: math.multiply
+      position: [560, 1370]
+    - id: 6300000559431000057
+      type: compare.greater
+      position: [760, 1140]
+    - id: 6300000559431000058
+      type: var.get
+      position: [300, 1290]
+      values:
+        variable: prefix
+    - id: 6300000559431000059
+      type: text.concat
+      position: [460, 1140]
+      values:
+        B: _line_
+    - id: 6300000559431000060
+      type: text.concat
+      position: [660, 990]
+    - id: 6300000559431000061
+      type: call.gamestate.get
+      position: [900, 840]
+      values:
+        default: none
+    - id: 6300000559431000062
+      type: compare.not_equal
+      position: [800, 1220]
+      values:
+        B: none
+    - id: 6300000559431000063
+      type: text.concat
+      position: [840, 1220]
+      values:
+        A: StatLine
+    - id: 6300000559431000064
+      type: call.scene.find_entity
+      position: [1000, 1070]
+    - id: 6300000559431000065
+      type: logic.and
+      position: [960, 990]
+    - id: 6300000559431000066
+      type: call.ui.set_visible
+      position: [1200, 840]
+    - id: 6300000559431000067
+      type: event.custom
+      position: [0, 1260]
+      values:
+        function: on_retry_clicked
+    - id: 6300000559431000068
+      type: var.get
+      position: [240, 1560]
+      values:
+        variable: prefix
+    - id: 6300000559431000069
+      type: text.concat
+      position: [400, 1410]
+      values:
+        B: _score
+    - id: 6300000559431000070
+      type: var.get
+      position: [-60, 1560]
+      values:
+        variable: prefix
+    - id: 6300000559431000071
+      type: text.concat
+      position: [100, 1410]
+      values:
+        B: _base
+    - id: 6300000559431000072
+      type: call.gamestate.get
+      position: [300, 1260]
+      values:
+        default: 0
+    - id: 6300000559431000073
+      type: call.gamestate.set
+      position: [600, 1260]
+    - id: 6300000559431000074
+      type: var.get
+      position: [540, 1560]
+      values:
+        variable: prefix
+    - id: 6300000559431000075
+      type: text.concat
+      position: [700, 1410]
+      values:
+        B: _retry
+    - id: 6300000559431000076
+      type: call.gamestate.get
+      position: [900, 1260]
+    - id: 6300000559431000077
+      type: var.get
+      position: [1440, 1560]
+      values:
+        variable: retry_scene
+    - id: 6300000559431000078
+      type: logic.default
+      position: [1600, 1410]
+    - id: 6300000559431000079
+      type: var.get
+      position: [1040, 1410]
+      values:
+        variable: leaving
+    - id: 6300000559431000080
+      type: flow.branch
+      position: [1200, 1260]
+    - id: 6300000559431000081
+      type: var.set
+      position: [1500, 1260]
+      values:
+        Value: true
+        variable: leaving
+    - id: 6300000559431000082
+      type: var.get
+      position: [1640, 1490]
+      values:
+        variable: sweep
+    - id: 6300000559431000083
+      type: call.scene.transition_to
+      position: [1800, 1260]
+      values:
+        duration: 0.45
+        kind: wipe_left
+    - id: 6300000559431000084
+      type: event.custom
+      position: [0, 1680]
+      values:
+        function: on_menu_clicked
+    - id: 6300000559431000085
+      type: var.get
+      position: [140, 1830]
+      values:
+        variable: leaving
+    - id: 6300000559431000086
+      type: flow.branch
+      position: [300, 1680]
+    - id: 6300000559431000087
+      type: var.set
+      position: [600, 1680]
+      values:
+        Value: true
+        variable: leaving
+    - id: 6300000559431000088
+      type: var.get
+      position: [740, 1830]
+      values:
+        variable: sweep
+    - id: 6300000559431000089
+      type: call.scene.transition_to
+      position: [900, 1680]
+      values:
+        duration: 0.45
+        kind: wipe_left
+        scene_path: scenes/title.owl
+  links:
+    - {from: 6300000559431000002, fromPin: active, to: 6300000559431000003, toPin: A}
+    - {from: 6300000559431000003, fromPin: Result, to: 6300000559431000004, toPin: Condition}
+    - {from: 6300000559431000001, fromPin: Then, to: 6300000559431000004, toPin: Exec}
+    - {from: 6300000559431000005, fromPin: Value, to: 6300000559431000006, toPin: rgba}
+    - {from: 6300000559431000004, fromPin: True, to: 6300000559431000006, toPin: Exec}
+    - {from: 6300000559431000004, fromPin: False, to: 6300000559431000007, toPin: Exec}
+    - {from: 6300000559431000006, fromPin: Then, to: 6300000559431000007, toPin: Exec}
+    - {from: 6300000559431000008, fromPin: Value, to: 6300000559431000009, toPin: Condition}
+    - {from: 6300000559431000009, fromPin: Result, to: 6300000559431000010, toPin: asset_path}
+    - {from: 6300000559431000011, fromPin: Value, to: 6300000559431000012, toPin: A}
+    - {from: 6300000559431000012, fromPin: Result, to: 6300000559431000013, toPin: key}
+    - {from: 6300000559431000014, fromPin: Value, to: 6300000559431000015, toPin: key}
+    - {from: 6300000559431000013, fromPin: value, to: 6300000559431000016, toPin: A}
+    - {from: 6300000559431000015, fromPin: value, to: 6300000559431000016, toPin: B}
+    - {from: 6300000559431000016, fromPin: Result, to: 6300000559431000017, toPin: Condition}
+    - {from: 6300000559431000013, fromPin: value, to: 6300000559431000019, toPin: A}
+    - {from: 6300000559431000018, fromPin: entity_id, to: 6300000559431000020, toPin: entity_id}
+    - {from: 6300000559431000019, fromPin: Result, to: 6300000559431000020, toPin: text}
+    - {from: 6300000559431000007, fromPin: Then 1, to: 6300000559431000010, toPin: Exec}
+    - {from: 6300000559431000010, fromPin: Then, to: 6300000559431000013, toPin: Exec}
+    - {from: 6300000559431000013, fromPin: Then, to: 6300000559431000020, toPin: Exec}
+    - {from: 6300000559431000020, fromPin: Then, to: 6300000559431000015, toPin: Exec}
+    - {from: 6300000559431000015, fromPin: Then, to: 6300000559431000017, toPin: Exec}
+    - {from: 6300000559431000022, fromPin: Value, to: 6300000559431000023, toPin: A}
+    - {from: 6300000559431000023, fromPin: Result, to: 6300000559431000024, toPin: key}
+    - {from: 6300000559431000021, fromPin: Value, to: 6300000559431000025, toPin: key}
+    - {from: 6300000559431000024, fromPin: value, to: 6300000559431000025, toPin: value}
+    - {from: 6300000559431000027, fromPin: entity_id, to: 6300000559431000028, toPin: entity_id}
+    - {from: 6300000559431000017, fromPin: True, to: 6300000559431000024, toPin: Exec}
+    - {from: 6300000559431000024, fromPin: Then, to: 6300000559431000025, toPin: Exec}
+    - {from: 6300000559431000025, fromPin: Then, to: 6300000559431000026, toPin: Exec}
+    - {from: 6300000559431000026, fromPin: Then, to: 6300000559431000028, toPin: Exec}
+    - {from: 6300000559431000028, fromPin: Then, to: 6300000559431000029, toPin: Exec}
+    - {from: 6300000559431000030, fromPin: Value, to: 6300000559431000031, toPin: key}
+    - {from: 6300000559431000031, fromPin: value, to: 6300000559431000032, toPin: A}
+    - {from: 6300000559431000033, fromPin: entity_id, to: 6300000559431000034, toPin: entity_id}
+    - {from: 6300000559431000032, fromPin: Result, to: 6300000559431000034, toPin: text}
+    - {from: 6300000559431000017, fromPin: False, to: 6300000559431000031, toPin: Exec}
+    - {from: 6300000559431000031, fromPin: Then, to: 6300000559431000034, toPin: Exec}
+    - {from: 6300000559431000034, fromPin: Then, to: 6300000559431000035, toPin: Exec}
+    - {from: 6300000559431000036, fromPin: Then, to: 6300000559431000037, toPin: Exec}
+    - {from: 6300000559431000038, fromPin: Value, to: 6300000559431000039, toPin: A}
+    - {from: 6300000559431000039, fromPin: Result, to: 6300000559431000040, toPin: A}
+    - {from: 6300000559431000037, fromPin: Index, to: 6300000559431000040, toPin: B}
+    - {from: 6300000559431000037, fromPin: Index, to: 6300000559431000041, toPin: B}
+    - {from: 6300000559431000041, fromPin: Result, to: 6300000559431000042, toPin: name}
+    - {from: 6300000559431000040, fromPin: Result, to: 6300000559431000043, toPin: key}
+    - {from: 6300000559431000042, fromPin: entity_id, to: 6300000559431000044, toPin: entity_id}
+    - {from: 6300000559431000043, fromPin: value, to: 6300000559431000044, toPin: text}
+    - {from: 6300000559431000037, fromPin: Body, to: 6300000559431000043, toPin: Exec}
+    - {from: 6300000559431000043, fromPin: Then, to: 6300000559431000044, toPin: Exec}
+    - {from: 6300000559431000045, fromPin: Value, to: 6300000559431000046, toPin: A}
+    - {from: 6300000559431000046, fromPin: Result, to: 6300000559431000047, toPin: key}
+    - {from: 6300000559431000037, fromPin: Completed, to: 6300000559431000047, toPin: Exec}
+    - {from: 6300000559431000047, fromPin: Then, to: 6300000559431000048, toPin: Exec}
+    - {from: 6300000559431000050, fromPin: Value, to: 6300000559431000051, toPin: A}
+    - {from: 6300000559431000049, fromPin: dt, to: 6300000559431000051, toPin: B}
+    - {from: 6300000559431000051, fromPin: Result, to: 6300000559431000052, toPin: Value}
+    - {from: 6300000559431000049, fromPin: Then, to: 6300000559431000052, toPin: Exec}
+    - {from: 6300000559431000052, fromPin: Then, to: 6300000559431000053, toPin: Exec}
+    - {from: 6300000559431000053, fromPin: Index, to: 6300000559431000056, toPin: A}
+    - {from: 6300000559431000055, fromPin: Value, to: 6300000559431000056, toPin: B}
+    - {from: 6300000559431000054, fromPin: Value, to: 6300000559431000057, toPin: A}
+    - {from: 6300000559431000056, fromPin: Result, to: 6300000559431000057, toPin: B}
+    - {from: 6300000559431000058, fromPin: Value, to: 6300000559431000059, toPin: A}
+    - {from: 6300000559431000059, fromPin: Result, to: 6300000559431000060, toPin: A}
+    - {from: 6300000559431000053, fromPin: Index, to: 6300000559431000060, toPin: B}
+    - {from: 6300000559431000060, fromPin: Result, to: 6300000559431000061, toPin: key}
+    - {from: 6300000559431000061, fromPin: value, to: 6300000559431000062, toPin: A}
+    - {from: 6300000559431000053, fromPin: Index, to: 6300000559431000063, toPin: B}
+    - {from: 6300000559431000063, fromPin: Result, to: 6300000559431000064, toPin: name}
+    - {from: 6300000559431000057, fromPin: Result, to: 6300000559431000065, toPin: A}
+    - {from: 6300000559431000062, fromPin: Result, to: 6300000559431000065, toPin: B}
+    - {from: 6300000559431000064, fromPin: entity_id, to: 6300000559431000066, toPin: entity_id}
+    - {from: 6300000559431000065, fromPin: Result, to: 6300000559431000066, toPin: visible}
+    - {from: 6300000559431000053, fromPin: Body, to: 6300000559431000061, toPin: Exec}
+    - {from: 6300000559431000061, fromPin: Then, to: 6300000559431000066, toPin: Exec}
+    - {from: 6300000559431000068, fromPin: Value, to: 6300000559431000069, toPin: A}
+    - {from: 6300000559431000070, fromPin: Value, to: 6300000559431000071, toPin: A}
+    - {from: 6300000559431000071, fromPin: Result, to: 6300000559431000072, toPin: key}
+    - {from: 6300000559431000069, fromPin: Result, to: 6300000559431000073, toPin: key}
+    - {from: 6300000559431000072, fromPin: value, to: 6300000559431000073, toPin: value}
+    - {from: 6300000559431000074, fromPin: Value, to: 6300000559431000075, toPin: A}
+    - {from: 6300000559431000075, fromPin: Result, to: 6300000559431000076, toPin: key}
+    - {from: 6300000559431000076, fromPin: value, to: 6300000559431000078, toPin: Value}
+    - {from: 6300000559431000077, fromPin: Value, to: 6300000559431000078, toPin: Default}
+    - {from: 6300000559431000079, fromPin: Value, to: 6300000559431000080, toPin: Condition}
+    - {from: 6300000559431000067, fromPin: Then, to: 6300000559431000080, toPin: Exec}
+    - {from: 6300000559431000078, fromPin: Result, to: 6300000559431000083, toPin: scene_path}
+    - {from: 6300000559431000082, fromPin: Value, to: 6300000559431000083, toPin: rgba}
+    - {from: 6300000559431000080, fromPin: False, to: 6300000559431000081, toPin: Exec}
+    - {from: 6300000559431000081, fromPin: Then, to: 6300000559431000072, toPin: Exec}
+    - {from: 6300000559431000072, fromPin: Then, to: 6300000559431000073, toPin: Exec}
+    - {from: 6300000559431000073, fromPin: Then, to: 6300000559431000076, toPin: Exec}
+    - {from: 6300000559431000076, fromPin: Then, to: 6300000559431000083, toPin: Exec}
+    - {from: 6300000559431000085, fromPin: Value, to: 6300000559431000086, toPin: Condition}
+    - {from: 6300000559431000084, fromPin: Then, to: 6300000559431000086, toPin: Exec}
+    - {from: 6300000559431000088, fromPin: Value, to: 6300000559431000089, toPin: rgba}
+    - {from: 6300000559431000086, fromPin: False, to: 6300000559431000087, toPin: Exec}
+    - {from: 6300000559431000087, fromPin: Then, to: 6300000559431000089, toPin: Exec}
+  groups:
+    - {id: 6300000559431000090, title: on_create, position: [-100, -60], size: [5200, 500], color: Red}
+    - {id: 6300000559431000091, title: write_tally, position: [-40, 360], size: [1840, 500], color: Red}
+    - {id: 6300000559431000092, title: on_update, position: [-100, 780], size: [1600, 580], color: Red}
+    - {id: 6300000559431000093, title: on_retry_clicked, position: [-100, 1200], size: [2200, 500], color: Red}
+    - {id: 6300000559431000094, title: on_menu_clicked, position: [-40, 1620], size: [1240, 350], color: Red}

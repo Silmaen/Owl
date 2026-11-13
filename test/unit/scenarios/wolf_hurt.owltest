@@ -1,0 +1,12 @@
+# Wolfenstein combat: a pistol shot alerts the guard of the start room of floor 1; it turns, aims and fires back
+# (guard.owlbt; its shot alerts the guards in earshot), and its hits take health off the player (arsenal.owlvs).
+scene: ../../../samples/wolfenstein/scenes/level_1.owl
+project: ../../../samples/wolfenstein
+steps:
+  - frames: 40
+  - actions: {fire: true, frames: 1}
+  - frames: 300
+  - expect: {gamestate: wolf_alerts, greater: 0}
+  - expect: {gamestate: wolf_hurts, greater: 0}
+  - expect: {gamestate: wolf_health, less: 100}
+  - expect: {gamestate: wolf_dead, equals: 0}

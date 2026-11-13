@@ -30,6 +30,18 @@ void ShipController::serialize(const core::Serializer& iOut) const {
 	out << YAML::Key << "assistDamping" << YAML::Value << assistDamping;
 	out << YAML::Key << "flightAssist" << YAML::Value << flightAssist;
 	out << YAML::Key << "captureCursor" << YAML::Value << captureCursor;
+	if (!mouseSteer)
+		out << YAML::Key << "mouseSteer" << YAML::Value << mouseSteer;
+	if (invertPitch)
+		out << YAML::Key << "invertPitch" << YAML::Value << invertPitch;
+	if (levelRate > 0.f)
+		out << YAML::Key << "levelRate" << YAML::Value << levelRate;
+	if (maxPitch > 0.f)
+		out << YAML::Key << "maxPitch" << YAML::Value << maxPitch;
+	if (throttleRate > 0.f) {
+		out << YAML::Key << "throttleRate" << YAML::Value << throttleRate;
+		out << YAML::Key << "minThrottle" << YAML::Value << minThrottle;
+	}
 	out << YAML::EndMap;// ShipController
 }
 
@@ -50,16 +62,29 @@ void ShipController::deserialize(const core::Serializer& iNode) {
 	if (node["mouseSensitivity"])
 		mouseSensitivity = std::clamp(node["mouseSensitivity"].as<float>(), 0.0001f, 0.05f);
 	if (node["angularResponse"])
-		angularResponse = std::clamp(node["angularResponse"].as<float>(), 0.1f, 100.f);
+		angularResponse = std::clamp(node["angularResponse"].as<float>(), 0.f, 100.f);
 	if (node["assistDamping"])
 		assistDamping = std::clamp(node["assistDamping"].as<float>(), 0.f, 100.f);
 	if (node["flightAssist"])
 		flightAssist = node["flightAssist"].as<bool>();
 	if (node["captureCursor"])
 		captureCursor = node["captureCursor"].as<bool>();
+	if (node["mouseSteer"])
+		mouseSteer = node["mouseSteer"].as<bool>();
+	if (node["invertPitch"])
+		invertPitch = node["invertPitch"].as<bool>();
+	if (node["levelRate"])
+		levelRate = std::clamp(node["levelRate"].as<float>(), 0.f, 100.f);
+	if (node["maxPitch"])
+		maxPitch = std::clamp(node["maxPitch"].as<float>(), 0.f, 1.57f);
+	if (node["throttleRate"])
+		throttleRate = std::clamp(node["throttleRate"].as<float>(), 0.f, 100.f);
+	if (node["minThrottle"])
+		minThrottle = std::clamp(node["minThrottle"].as<float>(), -1.f, 0.f);
 	m_velocity = {0.f, 0.f, 0.f};
 	m_angularVelocity = {0.f, 0.f, 0.f};
 	m_throttle = 0.f;
+	m_turnInput = {0.f, 0.f};
 	m_mouseValid = false;
 }
 

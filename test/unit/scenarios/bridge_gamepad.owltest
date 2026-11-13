@@ -1,0 +1,26 @@
+# Bridge Builder on a gamepad: the D-pad moves the cursor, A lays a road from the anchor, the left stick moves the
+# cursor on, A ends the road, X stops drawing, RB switches to wood, Y starts the test run and Y again goes back.
+scene: ../../../samples/bridge_builder/scenes/level_1.owl
+steps:
+  - frames: 10
+  - input: {gamepad: {button: A}, frames: 1}
+  - frames: 2
+  - input: {gamepad: {button: DpadRight}, frames: 1}
+  - frames: 2
+  - input: {gamepad: {left_x: 1.0}, frames: 1}
+  - frames: 2
+  - expect: {gamestate: bridge_cursor_x, equals: 2}
+  - input: {gamepad: {button: A}, frames: 1}
+  - frames: 2
+  - input: {gamepad: {button: X}, frames: 1}
+  - frames: 2
+  - expect: {gamestate: bridge_parts, equals: 1}
+  - input: {gamepad: {button: RightBumper}, frames: 1}
+  - frames: 2
+  - expect: {gamestate: bridge_kind, equals: wood}
+  - input: {gamepad: {button: Y}, frames: 1}
+  - frames: 30
+  - expect: {gamestate: bridge_state, equals: run}
+  - input: {gamepad: {button: Y}, frames: 1}
+  - frames: 5
+  - expect: {gamestate: bridge_state, equals: build}

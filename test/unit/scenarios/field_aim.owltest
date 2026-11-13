@@ -1,0 +1,20 @@
+# Asteroid Field gimballed guns: the mouse moves the aim circle (kept inside the view) without turning the fighter,
+# and the lasers leave toward it, here off to the right of the nose.
+scene: ../../../samples/asteroid_field/scenes/mission.owl
+timestep_ms: 33.333
+steps:
+  - frames: 5
+  - input: {mouse_pos: [640, 360], frames: 2}
+  - input: {mouse_pos: [800, 360], frames: 1}
+  - input: {mouse_pos: [960, 360], frames: 1}
+  - input: {mouse_pos: [1120, 360], frames: 1}
+  - input: {mouse_pos: [1280, 360], frames: 1}
+  - input: {mouse_pos: [1440, 360], frames: 1}
+  - input: {mouse_pos: [1600, 360], frames: 1}
+  - input: {mouse_pos: [1760, 360], frames: 1}
+  - expect: {gamestate: field_aim_x, greater: 500}
+  - expect: {gamestate: field_aim_x, less: 800}
+  - expect: {entity: Player, rotation.y: {equals: 0, tolerance: 0.001}}
+  - input: {key: Space, frames: 8}
+  - expect: {gamestate: field_shots, greater: 1}
+  - expect: {entity: Bolt, translation.x: {greater: 5}}

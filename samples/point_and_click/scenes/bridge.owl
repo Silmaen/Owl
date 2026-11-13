@@ -2,7 +2,7 @@ Scene: bridge
 FormatVersion: 7
 Hud: gid:378e3ea685c88ec3:huds/play.owlhud
 SceneScript:
-  scriptPath: gid:b09dddad22997020:scripts/rooms/bridge.lua
+  scriptPath: gid:b09dddad22997020:scripts/rooms/bridge.owlvs
 EnabledRenderers:
 - {Name: actors, Enabled: true}
 - {Name: world, Enabled: true}
@@ -468,3 +468,16 @@ Entities:
       playOnStart: true
       maxDistance: 50
       rolloff: 1
+  - Entity: 9100000000000099003
+    Tag:
+      tag: RoomNav
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    NavMeshVolume:
+      size: [40, 40, 40]
+      sources: WalkAreas

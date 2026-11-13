@@ -1,0 +1,22 @@
+# The Sunken Shrine, a stroke on entering a room: the sword taken in the armoury, the hero waits for the bat that
+# knocks it aside, walks back into the hall and strikes before taking a step there, the blade sweeping the way it
+# faces (up, its facing on entering).
+scene: ../../../samples/sunken_shrine/scenes/room_3.owl
+steps:
+  - frames: 5
+  - input: {key: W, frames: 30}
+  - input: {key: E, frames: 1}
+  - frames: 3
+  - expect: {gamestate: shrine_sword, equals: true}
+  - frames: 60
+  - expect: {gamestate: shrine_jolts, equals: 1}
+  - input: {key: A, frames: 30}
+  - input: {key: W, frames: 15}
+  - input: {key: A, frames: 100}
+  - frames: 60
+  - expect: {gamestate: shrine_room, equals: 1}
+  - input: {key: Space, frames: 1}
+  - frames: 6
+  - expect: {gamestate: shrine_striking, equals: true}
+  - frames: 20
+  - expect: {gamestate: shrine_striking, equals: false}

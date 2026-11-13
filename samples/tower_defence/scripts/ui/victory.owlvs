@@ -1,0 +1,1470 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: line_time, type: float, default: "0.7", min: 0.05}
+    - {name: wipe_color, type: color, default: "0.1, 0.14, 0.24, 1"}
+    - {name: lines, type: numbers, default: "", exposed: false}
+    - {name: unlock_line, type: string, default: "", exposed: false}
+    - {name: current, type: float, default: "1", exposed: false}
+    - {name: line_clock, type: float, default: "0", exposed: false}
+    - {name: leaving, type: bool, default: "false", exposed: false}
+    - {name: tmp_1, type: numbers, default: "", exposed: false}
+    - {name: tmp_2, type: numbers, default: "", exposed: false}
+    - {name: tmp_3, type: numbers, default: "", exposed: false}
+    - {name: tmp_4, type: numbers, default: "", exposed: false}
+    - {name: tmp_5, type: numbers, default: "", exposed: false}
+    - {name: unlock, type: float, default: "0", exposed: false}
+    - {name: unlock_id, type: entity, default: "0", exposed: false}
+    - {name: gained, type: float, default: "0", exposed: false}
+    - {name: tmp_6, type: string, default: "", exposed: false}
+    - {name: tmp_7, type: float, default: "0", exposed: false}
+    - {name: shown, type: float, default: "0", exposed: false}
+    - {name: finish_count_unlock_id, type: entity, default: "0", exposed: false}
+    - {name: real, type: float, default: "0", exposed: false}
+    - {name: line, type: float, default: "0", exposed: false}
+    - {name: t, type: float, default: "0", exposed: false}
+    - {name: tmp_8, type: float, default: "0", exposed: false}
+    - {name: tmp_9, type: float, default: "0", exposed: false}
+  functions:
+    - name: clock_text
+      inputs: [{name: seconds, type: any}]
+      outputs: [{name: result, type: any}]
+    - name: text_of
+      inputs: [{name: line, type: any}, {name: value, type: any}]
+      outputs: [{name: result, type: any}]
+    - name: finish_count
+      inputs: []
+      outputs: []
+    - name: leave
+      inputs: [{name: path, type: any}]
+      outputs: []
+  customNodes:
+    - name: init_state
+      title: Init State
+      inputs: []
+      outputs: []
+      code: |
+        lines = {}
+  nodes:
+    - id: 2284400001
+      type: func.entry
+      position: [340, 0]
+      values:
+        function: clock_text
+    - id: 2284400002
+      type: math.divide
+      position: [170, 160]
+      values:
+        B: "60"
+    - id: 2284400003
+      type: math.floor
+      position: [170, 280]
+    - id: 2284400004
+      type: math.modulo
+      position: [170, 400]
+      values:
+        B: "60"
+    - id: 2284400005
+      type: text.format
+      position: [170, 520]
+      values:
+        Format: "%d:%02d"
+    - id: 2284400006
+      type: func.return
+      position: [680, 0]
+      values:
+        function: clock_text
+    - id: 2284400007
+      type: event.on_create
+      position: [340, 780]
+    - id: 2284400008
+      type: call.ui.is_transition_active
+      position: [170, 940]
+    - id: 2284400009
+      type: logic.not
+      position: [170, 1060]
+    - id: 2284400010
+      type: flow.branch
+      position: [680, 780]
+    - id: 2284400011
+      type: call.ui.transition_play
+      position: [1020, 780]
+      values:
+        split.rgba: "true"
+        kind: wipe_down
+        duration: "0.5"
+    - id: 2284400012
+      type: var.get
+      position: [850, 940]
+      values:
+        variable: wipe_color
+    - id: 2284400013
+      type: math.break_color
+      position: [850, 1060]
+    - id: 2284400014
+      type: var.get
+      position: [850, 1180]
+      values:
+        variable: wipe_color
+    - id: 2284400015
+      type: math.break_color
+      position: [850, 1300]
+    - id: 2284400016
+      type: var.get
+      position: [850, 1420]
+      values:
+        variable: wipe_color
+    - id: 2284400017
+      type: math.break_color
+      position: [850, 1540]
+    - id: 2284400018
+      type: call.sound.play
+      position: [1360, 780]
+      values:
+        asset_path: sounds/ui/victory.wav
+    - id: 2284400019
+      type: table.make_list
+      position: [1190, 940]
+      values:
+        count: "5"
+    - id: 2284400020
+      type: value.table
+      position: [1190, 1060]
+      values:
+        Value: ""
+    - id: 2284400021
+      type: var.set
+      position: [1700, 780]
+      values:
+        variable: tmp_1
+    - id: 2284400022
+      type: table.set
+      position: [2040, 780]
+      values:
+        Key: label
+    - id: 2284400023
+      type: var.get
+      position: [1870, 940]
+      values:
+        variable: tmp_1
+    - id: 2284400024
+      type: value.string
+      position: [1870, 1060]
+      values:
+        Value: "Enemies stopped "
+    - id: 2284400025
+      type: call.gamestate.get
+      position: [2380, 780]
+      values:
+        key: tower_result_kills
+        default: "0"
+    - id: 2284400026
+      type: table.set
+      position: [2720, 780]
+      values:
+        Key: value
+    - id: 2284400027
+      type: var.get
+      position: [2550, 940]
+      values:
+        variable: tmp_1
+    - id: 2284400028
+      type: var.get
+      position: [2550, 1060]
+      values:
+        variable: tmp_1
+    - id: 2284400029
+      type: value.table
+      position: [2550, 1180]
+      values:
+        Value: ""
+    - id: 2284400030
+      type: var.set
+      position: [3060, 780]
+      values:
+        variable: tmp_2
+    - id: 2284400031
+      type: table.set
+      position: [3400, 780]
+      values:
+        Key: label
+    - id: 2284400032
+      type: var.get
+      position: [3230, 940]
+      values:
+        variable: tmp_2
+    - id: 2284400033
+      type: value.string
+      position: [3230, 1060]
+      values:
+        Value: "Lives kept      "
+    - id: 2284400034
+      type: call.gamestate.get
+      position: [3740, 780]
+      values:
+        key: tower_result_lives
+        default: "0"
+    - id: 2284400035
+      type: table.set
+      position: [4080, 780]
+      values:
+        Key: value
+    - id: 2284400036
+      type: var.get
+      position: [3910, 940]
+      values:
+        variable: tmp_2
+    - id: 2284400037
+      type: call.gamestate.get
+      position: [4420, 780]
+      values:
+        key: tower_result_max_lives
+        default: "20"
+    - id: 2284400038
+      type: text.concat
+      position: [4250, 940]
+    - id: 2284400039
+      type: value.string
+      position: [4250, 1060]
+      values:
+        Value: " / "
+    - id: 2284400040
+      type: table.set
+      position: [4760, 780]
+      values:
+        Key: suffix
+    - id: 2284400041
+      type: var.get
+      position: [4590, 940]
+      values:
+        variable: tmp_2
+    - id: 2284400042
+      type: var.get
+      position: [4590, 1060]
+      values:
+        variable: tmp_2
+    - id: 2284400043
+      type: value.table
+      position: [4590, 1180]
+      values:
+        Value: ""
+    - id: 2284400044
+      type: var.set
+      position: [5100, 780]
+      values:
+        variable: tmp_3
+    - id: 2284400045
+      type: table.set
+      position: [5440, 780]
+      values:
+        Key: label
+    - id: 2284400046
+      type: var.get
+      position: [5270, 940]
+      values:
+        variable: tmp_3
+    - id: 2284400047
+      type: value.string
+      position: [5270, 1060]
+      values:
+        Value: "Gold earned     "
+    - id: 2284400048
+      type: call.gamestate.get
+      position: [5780, 780]
+      values:
+        key: tower_result_gold
+        default: "0"
+    - id: 2284400049
+      type: table.set
+      position: [6120, 780]
+      values:
+        Key: value
+    - id: 2284400050
+      type: var.get
+      position: [5950, 940]
+      values:
+        variable: tmp_3
+    - id: 2284400051
+      type: var.get
+      position: [5950, 1060]
+      values:
+        variable: tmp_3
+    - id: 2284400052
+      type: value.table
+      position: [5950, 1180]
+      values:
+        Value: ""
+    - id: 2284400053
+      type: var.set
+      position: [6460, 780]
+      values:
+        variable: tmp_4
+    - id: 2284400054
+      type: table.set
+      position: [6800, 780]
+      values:
+        Key: label
+    - id: 2284400055
+      type: var.get
+      position: [6630, 940]
+      values:
+        variable: tmp_4
+    - id: 2284400056
+      type: value.string
+      position: [6630, 1060]
+      values:
+        Value: "Time            "
+    - id: 2284400057
+      type: call.gamestate.get
+      position: [7140, 780]
+      values:
+        key: tower_result_time
+        default: "0"
+    - id: 2284400058
+      type: table.set
+      position: [7480, 780]
+      values:
+        Key: value
+    - id: 2284400059
+      type: var.get
+      position: [7310, 940]
+      values:
+        variable: tmp_4
+    - id: 2284400060
+      type: table.set
+      position: [7820, 780]
+      values:
+        Key: time
+        Value: "true"
+    - id: 2284400061
+      type: var.get
+      position: [7650, 940]
+      values:
+        variable: tmp_4
+    - id: 2284400062
+      type: var.get
+      position: [7650, 1060]
+      values:
+        variable: tmp_4
+    - id: 2284400063
+      type: value.table
+      position: [7650, 1180]
+      values:
+        Value: ""
+    - id: 2284400064
+      type: var.set
+      position: [8160, 780]
+      values:
+        variable: tmp_5
+    - id: 2284400065
+      type: table.set
+      position: [8500, 780]
+      values:
+        Key: label
+    - id: 2284400066
+      type: var.get
+      position: [8330, 940]
+      values:
+        variable: tmp_5
+    - id: 2284400067
+      type: value.string
+      position: [8330, 1060]
+      values:
+        Value: "Stars           "
+    - id: 2284400068
+      type: call.gamestate.get
+      position: [8840, 780]
+      values:
+        key: tower_result_stars
+        default: "0"
+    - id: 2284400069
+      type: table.set
+      position: [9180, 780]
+      values:
+        Key: value
+    - id: 2284400070
+      type: var.get
+      position: [9010, 940]
+      values:
+        variable: tmp_5
+    - id: 2284400071
+      type: table.set
+      position: [9520, 780]
+      values:
+        Key: suffix
+    - id: 2284400072
+      type: var.get
+      position: [9350, 940]
+      values:
+        variable: tmp_5
+    - id: 2284400073
+      type: value.string
+      position: [9350, 1060]
+      values:
+        Value: " / 3"
+    - id: 2284400074
+      type: var.get
+      position: [9350, 1180]
+      values:
+        variable: tmp_5
+    - id: 2284400075
+      type: var.set
+      position: [9860, 780]
+      values:
+        variable: lines
+    - id: 2284400076
+      type: call.gamestate.get
+      position: [10200, 780]
+      values:
+        key: tower_result_unlock_text
+    - id: 2284400077
+      type: value.string
+      position: [10030, 940]
+      values:
+        Value: ""
+    - id: 2284400078
+      type: var.set
+      position: [10540, 780]
+      values:
+        variable: unlock
+    - id: 2284400079
+      type: call.scene.find_entity
+      position: [10370, 940]
+      values:
+        name: StatLine6
+    - id: 2284400080
+      type: var.set
+      position: [10880, 780]
+      values:
+        variable: unlock_id
+    - id: 2284400081
+      type: var.get
+      position: [10710, 940]
+      values:
+        variable: unlock_id
+    - id: 2284400082
+      type: compare.not_equal
+      position: [10710, 1060]
+      values:
+        B: "0"
+    - id: 2284400083
+      type: flow.branch
+      position: [11220, 780]
+    - id: 2284400084
+      type: call.ui.set_text
+      position: [11560, 780]
+      values:
+        text: ""
+    - id: 2284400085
+      type: var.get
+      position: [11390, 940]
+      values:
+        variable: unlock_id
+    - id: 2284400086
+      type: call.gamestate.get
+      position: [11900, 780]
+      values:
+        key: tower_result_stars_gained
+        default: "0"
+    - id: 2284400087
+      type: var.set
+      position: [12240, 780]
+      values:
+        variable: gained
+    - id: 2284400088
+      type: var.get
+      position: [12070, 940]
+      values:
+        variable: gained
+    - id: 2284400089
+      type: compare.greater
+      position: [12070, 1060]
+      values:
+        B: "0"
+    - id: 2284400090
+      type: var.get
+      position: [12070, 1180]
+      values:
+        variable: gained
+    - id: 2284400091
+      type: text.format
+      position: [12070, 1300]
+      values:
+        Format: "  (+%d to spend)"
+    - id: 2284400092
+      type: logic.select
+      position: [12070, 1420]
+    - id: 2284400093
+      type: value.string
+      position: [12070, 1540]
+      values:
+        Value: ""
+    - id: 2284400094
+      type: text.join
+      position: [12070, 1660]
+      values:
+        A: " / 3"
+    - id: 2284400095
+      type: var.get
+      position: [12070, 1780]
+      values:
+        variable: lines
+    - id: 2284400096
+      type: table.get
+      position: [12070, 1900]
+      values:
+        Key: "5"
+    - id: 2284400097
+      type: table.set
+      position: [12580, 780]
+      values:
+        Key: suffix
+    - id: 2284400098
+      type: var.get
+      position: [12410, 940]
+      values:
+        variable: unlock
+    - id: 2284400099
+      type: compare.not_equal
+      position: [12410, 1060]
+    - id: 2284400100
+      type: value.string
+      position: [12410, 1180]
+      values:
+        Value: ""
+    - id: 2284400101
+      type: var.get
+      position: [12410, 1300]
+      values:
+        variable: unlock
+    - id: 2284400102
+      type: text.concat
+      position: [12410, 1420]
+    - id: 2284400103
+      type: value.string
+      position: [12410, 1540]
+      values:
+        Value: "Unlocked: "
+    - id: 2284400104
+      type: logic.select
+      position: [12410, 1660]
+    - id: 2284400105
+      type: value.string
+      position: [12410, 1780]
+      values:
+        Value: ""
+    - id: 2284400106
+      type: var.set
+      position: [12920, 780]
+      values:
+        variable: unlock_line
+    - id: 2284400107
+      type: var.get
+      position: [12750, 940]
+      values:
+        variable: lines
+    - id: 2284400108
+      type: flow.for_each
+      position: [13260, 780]
+    - id: 2284400109
+      type: call.scene.find_entity
+      position: [13090, 940]
+    - id: 2284400110
+      type: text.concat
+      position: [13090, 1060]
+      values:
+        A: StatLine
+    - id: 2284400111
+      type: table.set
+      position: [13600, 780]
+      values:
+        Key: id
+    - id: 2284400112
+      type: table.get
+      position: [13430, 940]
+      values:
+        Key: id
+    - id: 2284400113
+      type: compare.not_equal
+      position: [13430, 1060]
+      values:
+        B: "0"
+    - id: 2284400114
+      type: flow.branch
+      position: [13940, 780]
+    - id: 2284400115
+      type: call.ui.set_text
+      position: [14280, 780]
+      values:
+        text: ""
+    - id: 2284400116
+      type: table.get
+      position: [14110, 940]
+      values:
+        Key: id
+    - id: 2284400117
+      type: call.gamestate.set
+      position: [14620, 780]
+      values:
+        key: tower_tally_done
+        value: "false"
+    - id: 2284400118
+      type: func.entry
+      position: [340, 2160]
+      values:
+        function: text_of
+    - id: 2284400119
+      type: table.get
+      position: [170, 2320]
+      values:
+        Key: time
+    - id: 2284400120
+      type: var.set
+      position: [680, 2160]
+      values:
+        variable: tmp_7
+    - id: 2284400121
+      type: flow.branch
+      position: [1020, 2160]
+    - id: 2284400122
+      type: var.get
+      position: [850, 2320]
+      values:
+        variable: tmp_7
+    - id: 2284400123
+      type: func.call
+      position: [1360, 2160]
+      values:
+        function: clock_text
+    - id: 2284400124
+      type: math.floor
+      position: [1190, 2320]
+    - id: 2284400125
+      type: var.set
+      position: [1700, 2160]
+      values:
+        variable: tmp_7
+    - id: 2284400126
+      type: var.get
+      position: [1530, 2320]
+      values:
+        variable: tmp_7
+    - id: 2284400127
+      type: var.set
+      position: [2040, 2160]
+      values:
+        variable: tmp_6
+    - id: 2284400128
+      type: flow.branch
+      position: [2380, 2160]
+    - id: 2284400129
+      type: var.get
+      position: [2210, 2320]
+      values:
+        variable: tmp_6
+    - id: 2284400130
+      type: math.floor
+      position: [2210, 2440]
+    - id: 2284400131
+      type: text.to_text
+      position: [2210, 2560]
+    - id: 2284400132
+      type: var.set
+      position: [2720, 2160]
+      values:
+        variable: tmp_6
+    - id: 2284400133
+      type: var.get
+      position: [2550, 2320]
+      values:
+        variable: tmp_6
+    - id: 2284400134
+      type: var.set
+      position: [3060, 2160]
+      values:
+        variable: shown
+    - id: 2284400135
+      type: table.get
+      position: [2890, 2320]
+      values:
+        Key: label
+    - id: 2284400136
+      type: var.get
+      position: [2890, 2440]
+      values:
+        variable: shown
+    - id: 2284400137
+      type: table.get
+      position: [2890, 2560]
+      values:
+        Key: suffix
+    - id: 2284400138
+      type: logic.default
+      position: [2890, 2680]
+    - id: 2284400139
+      type: value.string
+      position: [2890, 2800]
+      values:
+        Value: ""
+    - id: 2284400140
+      type: text.concat
+      position: [2890, 2920]
+    - id: 2284400141
+      type: text.concat
+      position: [2890, 3040]
+    - id: 2284400142
+      type: func.return
+      position: [3400, 2160]
+      values:
+        function: text_of
+    - id: 2284400143
+      type: func.entry
+      position: [340, 3420]
+      values:
+        function: finish_count
+    - id: 2284400144
+      type: var.get
+      position: [170, 3580]
+      values:
+        variable: lines
+    - id: 2284400145
+      type: flow.for_each
+      position: [680, 3420]
+    - id: 2284400146
+      type: table.get
+      position: [510, 3580]
+      values:
+        Key: id
+    - id: 2284400147
+      type: compare.not_equal
+      position: [510, 3700]
+      values:
+        B: "0"
+    - id: 2284400148
+      type: flow.branch
+      position: [1020, 3420]
+    - id: 2284400149
+      type: call.ui.set_text
+      position: [1360, 3420]
+    - id: 2284400150
+      type: table.get
+      position: [1190, 3580]
+      values:
+        Key: id
+    - id: 2284400151
+      type: func.call
+      position: [1700, 3420]
+      values:
+        function: text_of
+    - id: 2284400152
+      type: table.get
+      position: [1530, 3580]
+      values:
+        Key: value
+    - id: 2284400153
+      type: var.get
+      position: [1530, 3700]
+      values:
+        variable: lines
+    - id: 2284400154
+      type: table.length
+      position: [1530, 3820]
+    - id: 2284400155
+      type: math.add
+      position: [1530, 3940]
+      values:
+        B: "1"
+    - id: 2284400156
+      type: var.set
+      position: [2040, 3420]
+      values:
+        variable: current
+    - id: 2284400157
+      type: call.scene.find_entity
+      position: [1870, 3580]
+      values:
+        name: StatLine6
+    - id: 2284400158
+      type: var.set
+      position: [2380, 3420]
+      values:
+        variable: finish_count_unlock_id
+    - id: 2284400159
+      type: var.get
+      position: [2210, 3580]
+      values:
+        variable: finish_count_unlock_id
+    - id: 2284400160
+      type: compare.not_equal
+      position: [2210, 3700]
+      values:
+        B: "0"
+    - id: 2284400161
+      type: flow.branch
+      position: [2720, 3420]
+    - id: 2284400162
+      type: call.ui.set_text
+      position: [3060, 3420]
+    - id: 2284400163
+      type: var.get
+      position: [2890, 3580]
+      values:
+        variable: finish_count_unlock_id
+    - id: 2284400164
+      type: var.get
+      position: [2890, 3700]
+      values:
+        variable: unlock_line
+    - id: 2284400165
+      type: call.gamestate.set
+      position: [3400, 3420]
+      values:
+        key: tower_tally_done
+        value: "true"
+    - id: 2284400166
+      type: event.on_update
+      position: [340, 4200]
+    - id: 2284400167
+      type: call.time.real_delta
+      position: [170, 4360]
+    - id: 2284400168
+      type: var.set
+      position: [680, 4200]
+      values:
+        variable: real
+    - id: 2284400169
+      type: var.get
+      position: [510, 4360]
+      values:
+        variable: current
+    - id: 2284400170
+      type: var.get
+      position: [510, 4480]
+      values:
+        variable: lines
+    - id: 2284400171
+      type: table.length
+      position: [510, 4600]
+    - id: 2284400172
+      type: compare.less_equal
+      position: [510, 4720]
+    - id: 2284400173
+      type: flow.branch
+      position: [1020, 4200]
+    - id: 2284400174
+      type: call.input.is_action_just_pressed
+      position: [850, 4360]
+      values:
+        action: ui_accept
+    - id: 2284400175
+      type: flow.branch
+      position: [1360, 4200]
+    - id: 2284400176
+      type: func.call
+      position: [1700, 4200]
+      values:
+        function: finish_count
+    - id: 2284400177
+      type: var.get
+      position: [1530, 4360]
+      values:
+        variable: line_clock
+    - id: 2284400178
+      type: var.get
+      position: [1530, 4480]
+      values:
+        variable: real
+    - id: 2284400179
+      type: math.add
+      position: [1530, 4600]
+    - id: 2284400180
+      type: var.set
+      position: [2040, 4200]
+      values:
+        variable: line_clock
+    - id: 2284400181
+      type: var.get
+      position: [1870, 4360]
+      values:
+        variable: lines
+    - id: 2284400182
+      type: var.get
+      position: [1870, 4480]
+      values:
+        variable: current
+    - id: 2284400183
+      type: table.get
+      position: [1870, 4600]
+    - id: 2284400184
+      type: var.set
+      position: [2380, 4200]
+      values:
+        variable: line
+    - id: 2284400185
+      type: var.get
+      position: [2210, 4360]
+      values:
+        variable: line_clock
+    - id: 2284400186
+      type: var.get
+      position: [2210, 4480]
+      values:
+        variable: line_time
+    - id: 2284400187
+      type: math.divide
+      position: [2210, 4600]
+    - id: 2284400188
+      type: math.min
+      position: [2210, 4720]
+      values:
+        A: "1"
+    - id: 2284400189
+      type: var.set
+      position: [2720, 4200]
+      values:
+        variable: t
+    - id: 2284400190
+      type: var.get
+      position: [2550, 4360]
+      values:
+        variable: line
+    - id: 2284400191
+      type: table.get
+      position: [2550, 4480]
+      values:
+        Key: id
+    - id: 2284400192
+      type: compare.not_equal
+      position: [2550, 4600]
+      values:
+        B: "0"
+    - id: 2284400193
+      type: flow.branch
+      position: [3060, 4200]
+    - id: 2284400194
+      type: call.ui.set_text
+      position: [3400, 4200]
+    - id: 2284400195
+      type: var.get
+      position: [3230, 4360]
+      values:
+        variable: line
+    - id: 2284400196
+      type: table.get
+      position: [3230, 4480]
+      values:
+        Key: id
+    - id: 2284400197
+      type: func.call
+      position: [3740, 4200]
+      values:
+        function: text_of
+    - id: 2284400198
+      type: var.get
+      position: [3570, 4360]
+      values:
+        variable: line
+    - id: 2284400199
+      type: var.get
+      position: [3570, 4480]
+      values:
+        variable: line
+    - id: 2284400200
+      type: table.get
+      position: [3570, 4600]
+      values:
+        Key: value
+    - id: 2284400201
+      type: var.get
+      position: [3570, 4720]
+      values:
+        variable: t
+    - id: 2284400202
+      type: math.multiply
+      position: [3570, 4840]
+    - id: 2284400203
+      type: var.get
+      position: [3570, 4960]
+      values:
+        variable: t
+    - id: 2284400204
+      type: compare.greater_equal
+      position: [3570, 5080]
+      values:
+        B: "1"
+    - id: 2284400205
+      type: flow.branch
+      position: [4080, 4200]
+    - id: 2284400206
+      type: call.sound.play
+      position: [4420, 4200]
+      values:
+        asset_path: sounds/ui/click.wav
+    - id: 2284400207
+      type: var.get
+      position: [4250, 4360]
+      values:
+        variable: current
+    - id: 2284400208
+      type: math.add
+      position: [4250, 4480]
+      values:
+        B: "1"
+    - id: 2284400209
+      type: var.set
+      position: [4760, 4200]
+      values:
+        variable: tmp_8
+    - id: 2284400210
+      type: var.set
+      position: [5100, 4200]
+      values:
+        variable: tmp_9
+        Value: "0"
+    - id: 2284400211
+      type: var.get
+      position: [4930, 4360]
+      values:
+        variable: tmp_8
+    - id: 2284400212
+      type: var.set
+      position: [5440, 4200]
+      values:
+        variable: current
+    - id: 2284400213
+      type: var.get
+      position: [5270, 4360]
+      values:
+        variable: tmp_9
+    - id: 2284400214
+      type: var.set
+      position: [5780, 4200]
+      values:
+        variable: line_clock
+    - id: 2284400215
+      type: var.get
+      position: [5610, 4360]
+      values:
+        variable: current
+    - id: 2284400216
+      type: var.get
+      position: [5610, 4480]
+      values:
+        variable: lines
+    - id: 2284400217
+      type: table.length
+      position: [5610, 4600]
+    - id: 2284400218
+      type: compare.greater
+      position: [5610, 4720]
+    - id: 2284400219
+      type: flow.branch
+      position: [6120, 4200]
+    - id: 2284400220
+      type: func.call
+      position: [6460, 4200]
+      values:
+        function: finish_count
+    - id: 2284400221
+      type: func.entry
+      position: [340, 5460]
+      values:
+        function: leave
+    - id: 2284400222
+      type: var.get
+      position: [170, 5620]
+      values:
+        variable: leaving
+    - id: 2284400223
+      type: flow.branch
+      position: [680, 5460]
+    - id: 2284400224
+      type: func.return
+      position: [1020, 5460]
+      values:
+        function: leave
+    - id: 2284400225
+      type: var.set
+      position: [1360, 5460]
+      values:
+        variable: leaving
+        Value: "true"
+    - id: 2284400226
+      type: call.scene.transition_to
+      position: [1700, 5460]
+      values:
+        split.rgba: "true"
+        kind: wipe_down
+        duration: "0.35"
+    - id: 2284400227
+      type: var.get
+      position: [1530, 5620]
+      values:
+        variable: wipe_color
+    - id: 2284400228
+      type: math.break_color
+      position: [1530, 5740]
+    - id: 2284400229
+      type: var.get
+      position: [1530, 5860]
+      values:
+        variable: wipe_color
+    - id: 2284400230
+      type: math.break_color
+      position: [1530, 5980]
+    - id: 2284400231
+      type: var.get
+      position: [1530, 6100]
+      values:
+        variable: wipe_color
+    - id: 2284400232
+      type: math.break_color
+      position: [1530, 6220]
+    - id: 2284400233
+      type: event.custom
+      position: [340, 6480]
+      values:
+        function: on_again_clicked
+    - id: 2284400234
+      type: func.call
+      position: [680, 6480]
+      values:
+        function: leave
+    - id: 2284400235
+      type: call.gamestate.get
+      position: [1020, 6480]
+      values:
+        key: tower_scene
+        default: scenes/level_01.owl
+    - id: 2284400236
+      type: event.custom
+      position: [340, 6780]
+      values:
+        function: on_title_clicked
+    - id: 2284400237
+      type: func.call
+      position: [680, 6780]
+      values:
+        function: leave
+        path: scenes/world_map.owl
+    - id: 2284400238
+      type: custom.call
+      position: [170, 780]
+      values:
+        custom: init_state
+    - id: 2284400239
+      type: logic.select
+      position: [850, 2440]
+      values:
+        Condition: "true"
+    - id: 2284400240
+      type: logic.select
+      position: [1870, 2320]
+      values:
+        Condition: "true"
+    - id: 2284400241
+      type: logic.select
+      position: [2210, 2680]
+      values:
+        Condition: "true"
+    - id: 2284400242
+      type: logic.select
+      position: [2890, 3160]
+      values:
+        Condition: "true"
+    - id: 2284400243
+      type: logic.select
+      position: [2550, 4720]
+      values:
+        Condition: "true"
+    - id: 2284400244
+      type: logic.select
+      position: [3230, 4600]
+      values:
+        Condition: "true"
+    - id: 2284400245
+      type: logic.select
+      position: [3570, 5200]
+      values:
+        Condition: "true"
+  links:
+    - {from: 2284400001, fromPin: seconds, to: 2284400002, toPin: A}
+    - {from: 2284400002, fromPin: Result, to: 2284400003, toPin: A}
+    - {from: 2284400001, fromPin: seconds, to: 2284400004, toPin: A}
+    - {from: 2284400003, fromPin: Result, to: 2284400005, toPin: A}
+    - {from: 2284400004, fromPin: Result, to: 2284400005, toPin: B}
+    - {from: 2284400005, fromPin: Result, to: 2284400006, toPin: result}
+    - {from: 2284400001, fromPin: Then, to: 2284400006, toPin: Exec}
+    - {from: 2284400008, fromPin: active, to: 2284400009, toPin: A}
+    - {from: 2284400009, fromPin: Result, to: 2284400010, toPin: Condition}
+    - {from: 2284400238, fromPin: Then, to: 2284400010, toPin: Exec}
+    - {from: 2284400012, fromPin: Value, to: 2284400013, toPin: Value}
+    - {from: 2284400013, fromPin: R, to: 2284400011, toPin: r}
+    - {from: 2284400014, fromPin: Value, to: 2284400015, toPin: Value}
+    - {from: 2284400015, fromPin: G, to: 2284400011, toPin: g}
+    - {from: 2284400016, fromPin: Value, to: 2284400017, toPin: Value}
+    - {from: 2284400017, fromPin: B, to: 2284400011, toPin: b}
+    - {from: 2284400010, fromPin: "True", to: 2284400011, toPin: Exec}
+    - {from: 2284400011, fromPin: Then, to: 2284400018, toPin: Exec}
+    - {from: 2284400010, fromPin: "False", to: 2284400018, toPin: Exec}
+    - {from: 2284400020, fromPin: Result, to: 2284400021, toPin: Value}
+    - {from: 2284400018, fromPin: Then, to: 2284400021, toPin: Exec}
+    - {from: 2284400023, fromPin: Value, to: 2284400022, toPin: Table}
+    - {from: 2284400024, fromPin: Result, to: 2284400022, toPin: Value}
+    - {from: 2284400021, fromPin: Then, to: 2284400022, toPin: Exec}
+    - {from: 2284400022, fromPin: Then, to: 2284400025, toPin: Exec}
+    - {from: 2284400027, fromPin: Value, to: 2284400026, toPin: Table}
+    - {from: 2284400025, fromPin: value, to: 2284400026, toPin: Value}
+    - {from: 2284400025, fromPin: Then, to: 2284400026, toPin: Exec}
+    - {from: 2284400028, fromPin: Value, to: 2284400019, toPin: A}
+    - {from: 2284400029, fromPin: Result, to: 2284400030, toPin: Value}
+    - {from: 2284400026, fromPin: Then, to: 2284400030, toPin: Exec}
+    - {from: 2284400032, fromPin: Value, to: 2284400031, toPin: Table}
+    - {from: 2284400033, fromPin: Result, to: 2284400031, toPin: Value}
+    - {from: 2284400030, fromPin: Then, to: 2284400031, toPin: Exec}
+    - {from: 2284400031, fromPin: Then, to: 2284400034, toPin: Exec}
+    - {from: 2284400036, fromPin: Value, to: 2284400035, toPin: Table}
+    - {from: 2284400034, fromPin: value, to: 2284400035, toPin: Value}
+    - {from: 2284400034, fromPin: Then, to: 2284400035, toPin: Exec}
+    - {from: 2284400035, fromPin: Then, to: 2284400037, toPin: Exec}
+    - {from: 2284400039, fromPin: Result, to: 2284400038, toPin: A}
+    - {from: 2284400037, fromPin: value, to: 2284400038, toPin: B}
+    - {from: 2284400041, fromPin: Value, to: 2284400040, toPin: Table}
+    - {from: 2284400038, fromPin: Result, to: 2284400040, toPin: Value}
+    - {from: 2284400037, fromPin: Then, to: 2284400040, toPin: Exec}
+    - {from: 2284400042, fromPin: Value, to: 2284400019, toPin: B}
+    - {from: 2284400043, fromPin: Result, to: 2284400044, toPin: Value}
+    - {from: 2284400040, fromPin: Then, to: 2284400044, toPin: Exec}
+    - {from: 2284400046, fromPin: Value, to: 2284400045, toPin: Table}
+    - {from: 2284400047, fromPin: Result, to: 2284400045, toPin: Value}
+    - {from: 2284400044, fromPin: Then, to: 2284400045, toPin: Exec}
+    - {from: 2284400045, fromPin: Then, to: 2284400048, toPin: Exec}
+    - {from: 2284400050, fromPin: Value, to: 2284400049, toPin: Table}
+    - {from: 2284400048, fromPin: value, to: 2284400049, toPin: Value}
+    - {from: 2284400048, fromPin: Then, to: 2284400049, toPin: Exec}
+    - {from: 2284400051, fromPin: Value, to: 2284400019, toPin: C}
+    - {from: 2284400052, fromPin: Result, to: 2284400053, toPin: Value}
+    - {from: 2284400049, fromPin: Then, to: 2284400053, toPin: Exec}
+    - {from: 2284400055, fromPin: Value, to: 2284400054, toPin: Table}
+    - {from: 2284400056, fromPin: Result, to: 2284400054, toPin: Value}
+    - {from: 2284400053, fromPin: Then, to: 2284400054, toPin: Exec}
+    - {from: 2284400054, fromPin: Then, to: 2284400057, toPin: Exec}
+    - {from: 2284400059, fromPin: Value, to: 2284400058, toPin: Table}
+    - {from: 2284400057, fromPin: value, to: 2284400058, toPin: Value}
+    - {from: 2284400057, fromPin: Then, to: 2284400058, toPin: Exec}
+    - {from: 2284400061, fromPin: Value, to: 2284400060, toPin: Table}
+    - {from: 2284400058, fromPin: Then, to: 2284400060, toPin: Exec}
+    - {from: 2284400062, fromPin: Value, to: 2284400019, toPin: D}
+    - {from: 2284400063, fromPin: Result, to: 2284400064, toPin: Value}
+    - {from: 2284400060, fromPin: Then, to: 2284400064, toPin: Exec}
+    - {from: 2284400066, fromPin: Value, to: 2284400065, toPin: Table}
+    - {from: 2284400067, fromPin: Result, to: 2284400065, toPin: Value}
+    - {from: 2284400064, fromPin: Then, to: 2284400065, toPin: Exec}
+    - {from: 2284400065, fromPin: Then, to: 2284400068, toPin: Exec}
+    - {from: 2284400070, fromPin: Value, to: 2284400069, toPin: Table}
+    - {from: 2284400068, fromPin: value, to: 2284400069, toPin: Value}
+    - {from: 2284400068, fromPin: Then, to: 2284400069, toPin: Exec}
+    - {from: 2284400072, fromPin: Value, to: 2284400071, toPin: Table}
+    - {from: 2284400073, fromPin: Result, to: 2284400071, toPin: Value}
+    - {from: 2284400069, fromPin: Then, to: 2284400071, toPin: Exec}
+    - {from: 2284400074, fromPin: Value, to: 2284400019, toPin: E}
+    - {from: 2284400019, fromPin: Result, to: 2284400075, toPin: Value}
+    - {from: 2284400071, fromPin: Then, to: 2284400075, toPin: Exec}
+    - {from: 2284400077, fromPin: Result, to: 2284400076, toPin: default}
+    - {from: 2284400075, fromPin: Then, to: 2284400076, toPin: Exec}
+    - {from: 2284400076, fromPin: value, to: 2284400078, toPin: Value}
+    - {from: 2284400076, fromPin: Then, to: 2284400078, toPin: Exec}
+    - {from: 2284400079, fromPin: entity_id, to: 2284400080, toPin: Value}
+    - {from: 2284400078, fromPin: Then, to: 2284400080, toPin: Exec}
+    - {from: 2284400081, fromPin: Value, to: 2284400082, toPin: A}
+    - {from: 2284400082, fromPin: Result, to: 2284400083, toPin: Condition}
+    - {from: 2284400080, fromPin: Then, to: 2284400083, toPin: Exec}
+    - {from: 2284400085, fromPin: Value, to: 2284400084, toPin: entity_id}
+    - {from: 2284400083, fromPin: "True", to: 2284400084, toPin: Exec}
+    - {from: 2284400084, fromPin: Then, to: 2284400086, toPin: Exec}
+    - {from: 2284400083, fromPin: "False", to: 2284400086, toPin: Exec}
+    - {from: 2284400086, fromPin: value, to: 2284400087, toPin: Value}
+    - {from: 2284400086, fromPin: Then, to: 2284400087, toPin: Exec}
+    - {from: 2284400088, fromPin: Value, to: 2284400089, toPin: A}
+    - {from: 2284400090, fromPin: Value, to: 2284400091, toPin: A}
+    - {from: 2284400089, fromPin: Result, to: 2284400092, toPin: Condition}
+    - {from: 2284400091, fromPin: Result, to: 2284400092, toPin: "True"}
+    - {from: 2284400093, fromPin: Result, to: 2284400092, toPin: "False"}
+    - {from: 2284400092, fromPin: Result, to: 2284400094, toPin: B}
+    - {from: 2284400095, fromPin: Value, to: 2284400096, toPin: Table}
+    - {from: 2284400096, fromPin: Result, to: 2284400097, toPin: Table}
+    - {from: 2284400094, fromPin: Result, to: 2284400097, toPin: Value}
+    - {from: 2284400087, fromPin: Then, to: 2284400097, toPin: Exec}
+    - {from: 2284400098, fromPin: Value, to: 2284400099, toPin: A}
+    - {from: 2284400100, fromPin: Result, to: 2284400099, toPin: B}
+    - {from: 2284400103, fromPin: Result, to: 2284400102, toPin: A}
+    - {from: 2284400101, fromPin: Value, to: 2284400102, toPin: B}
+    - {from: 2284400099, fromPin: Result, to: 2284400104, toPin: Condition}
+    - {from: 2284400102, fromPin: Result, to: 2284400104, toPin: "True"}
+    - {from: 2284400105, fromPin: Result, to: 2284400104, toPin: "False"}
+    - {from: 2284400104, fromPin: Result, to: 2284400106, toPin: Value}
+    - {from: 2284400097, fromPin: Then, to: 2284400106, toPin: Exec}
+    - {from: 2284400107, fromPin: Value, to: 2284400108, toPin: List}
+    - {from: 2284400106, fromPin: Then, to: 2284400108, toPin: Exec}
+    - {from: 2284400108, fromPin: Index, to: 2284400110, toPin: B}
+    - {from: 2284400110, fromPin: Result, to: 2284400109, toPin: name}
+    - {from: 2284400108, fromPin: Item, to: 2284400111, toPin: Table}
+    - {from: 2284400109, fromPin: entity_id, to: 2284400111, toPin: Value}
+    - {from: 2284400108, fromPin: Body, to: 2284400111, toPin: Exec}
+    - {from: 2284400108, fromPin: Item, to: 2284400112, toPin: Table}
+    - {from: 2284400112, fromPin: Result, to: 2284400113, toPin: A}
+    - {from: 2284400113, fromPin: Result, to: 2284400114, toPin: Condition}
+    - {from: 2284400111, fromPin: Then, to: 2284400114, toPin: Exec}
+    - {from: 2284400108, fromPin: Item, to: 2284400116, toPin: Table}
+    - {from: 2284400116, fromPin: Result, to: 2284400115, toPin: entity_id}
+    - {from: 2284400114, fromPin: "True", to: 2284400115, toPin: Exec}
+    - {from: 2284400108, fromPin: Completed, to: 2284400117, toPin: Exec}
+    - {from: 2284400118, fromPin: line, to: 2284400119, toPin: Table}
+    - {from: 2284400119, fromPin: Result, to: 2284400120, toPin: Value}
+    - {from: 2284400118, fromPin: Then, to: 2284400120, toPin: Exec}
+    - {from: 2284400122, fromPin: Value, to: 2284400239, toPin: "True"}
+    - {from: 2284400239, fromPin: Result, to: 2284400121, toPin: Condition}
+    - {from: 2284400120, fromPin: Then, to: 2284400121, toPin: Exec}
+    - {from: 2284400118, fromPin: value, to: 2284400124, toPin: A}
+    - {from: 2284400124, fromPin: Result, to: 2284400123, toPin: seconds}
+    - {from: 2284400121, fromPin: "True", to: 2284400123, toPin: Exec}
+    - {from: 2284400123, fromPin: result, to: 2284400125, toPin: Value}
+    - {from: 2284400123, fromPin: Then, to: 2284400125, toPin: Exec}
+    - {from: 2284400126, fromPin: Value, to: 2284400240, toPin: "True"}
+    - {from: 2284400240, fromPin: Result, to: 2284400127, toPin: Value}
+    - {from: 2284400125, fromPin: Then, to: 2284400127, toPin: Exec}
+    - {from: 2284400121, fromPin: "False", to: 2284400127, toPin: Exec}
+    - {from: 2284400129, fromPin: Value, to: 2284400241, toPin: "True"}
+    - {from: 2284400241, fromPin: Result, to: 2284400128, toPin: Condition}
+    - {from: 2284400127, fromPin: Then, to: 2284400128, toPin: Exec}
+    - {from: 2284400118, fromPin: value, to: 2284400130, toPin: A}
+    - {from: 2284400130, fromPin: Result, to: 2284400131, toPin: Value}
+    - {from: 2284400131, fromPin: Result, to: 2284400132, toPin: Value}
+    - {from: 2284400128, fromPin: "False", to: 2284400132, toPin: Exec}
+    - {from: 2284400133, fromPin: Value, to: 2284400242, toPin: "True"}
+    - {from: 2284400242, fromPin: Result, to: 2284400134, toPin: Value}
+    - {from: 2284400132, fromPin: Then, to: 2284400134, toPin: Exec}
+    - {from: 2284400128, fromPin: "True", to: 2284400134, toPin: Exec}
+    - {from: 2284400118, fromPin: line, to: 2284400135, toPin: Table}
+    - {from: 2284400118, fromPin: line, to: 2284400137, toPin: Table}
+    - {from: 2284400137, fromPin: Result, to: 2284400138, toPin: Value}
+    - {from: 2284400139, fromPin: Result, to: 2284400138, toPin: Default}
+    - {from: 2284400136, fromPin: Value, to: 2284400140, toPin: A}
+    - {from: 2284400138, fromPin: Result, to: 2284400140, toPin: B}
+    - {from: 2284400135, fromPin: Result, to: 2284400141, toPin: A}
+    - {from: 2284400140, fromPin: Result, to: 2284400141, toPin: B}
+    - {from: 2284400141, fromPin: Result, to: 2284400142, toPin: result}
+    - {from: 2284400134, fromPin: Then, to: 2284400142, toPin: Exec}
+    - {from: 2284400144, fromPin: Value, to: 2284400145, toPin: List}
+    - {from: 2284400143, fromPin: Then, to: 2284400145, toPin: Exec}
+    - {from: 2284400145, fromPin: Item, to: 2284400146, toPin: Table}
+    - {from: 2284400146, fromPin: Result, to: 2284400147, toPin: A}
+    - {from: 2284400147, fromPin: Result, to: 2284400148, toPin: Condition}
+    - {from: 2284400145, fromPin: Body, to: 2284400148, toPin: Exec}
+    - {from: 2284400145, fromPin: Item, to: 2284400150, toPin: Table}
+    - {from: 2284400150, fromPin: Result, to: 2284400149, toPin: entity_id}
+    - {from: 2284400145, fromPin: Item, to: 2284400152, toPin: Table}
+    - {from: 2284400145, fromPin: Item, to: 2284400151, toPin: line}
+    - {from: 2284400152, fromPin: Result, to: 2284400151, toPin: value}
+    - {from: 2284400148, fromPin: "True", to: 2284400151, toPin: Exec}
+    - {from: 2284400151, fromPin: result, to: 2284400149, toPin: text}
+    - {from: 2284400151, fromPin: Then, to: 2284400149, toPin: Exec}
+    - {from: 2284400153, fromPin: Value, to: 2284400154, toPin: List}
+    - {from: 2284400154, fromPin: Result, to: 2284400155, toPin: A}
+    - {from: 2284400155, fromPin: Result, to: 2284400156, toPin: Value}
+    - {from: 2284400145, fromPin: Completed, to: 2284400156, toPin: Exec}
+    - {from: 2284400157, fromPin: entity_id, to: 2284400158, toPin: Value}
+    - {from: 2284400156, fromPin: Then, to: 2284400158, toPin: Exec}
+    - {from: 2284400159, fromPin: Value, to: 2284400160, toPin: A}
+    - {from: 2284400160, fromPin: Result, to: 2284400161, toPin: Condition}
+    - {from: 2284400158, fromPin: Then, to: 2284400161, toPin: Exec}
+    - {from: 2284400163, fromPin: Value, to: 2284400162, toPin: entity_id}
+    - {from: 2284400164, fromPin: Value, to: 2284400162, toPin: text}
+    - {from: 2284400161, fromPin: "True", to: 2284400162, toPin: Exec}
+    - {from: 2284400162, fromPin: Then, to: 2284400165, toPin: Exec}
+    - {from: 2284400161, fromPin: "False", to: 2284400165, toPin: Exec}
+    - {from: 2284400167, fromPin: seconds, to: 2284400168, toPin: Value}
+    - {from: 2284400166, fromPin: Then, to: 2284400168, toPin: Exec}
+    - {from: 2284400170, fromPin: Value, to: 2284400171, toPin: List}
+    - {from: 2284400169, fromPin: Value, to: 2284400172, toPin: A}
+    - {from: 2284400171, fromPin: Result, to: 2284400172, toPin: B}
+    - {from: 2284400172, fromPin: Result, to: 2284400173, toPin: Condition}
+    - {from: 2284400168, fromPin: Then, to: 2284400173, toPin: Exec}
+    - {from: 2284400174, fromPin: pressed, to: 2284400175, toPin: Condition}
+    - {from: 2284400173, fromPin: "True", to: 2284400175, toPin: Exec}
+    - {from: 2284400175, fromPin: "True", to: 2284400176, toPin: Exec}
+    - {from: 2284400177, fromPin: Value, to: 2284400179, toPin: A}
+    - {from: 2284400178, fromPin: Value, to: 2284400179, toPin: B}
+    - {from: 2284400179, fromPin: Result, to: 2284400180, toPin: Value}
+    - {from: 2284400175, fromPin: "False", to: 2284400180, toPin: Exec}
+    - {from: 2284400181, fromPin: Value, to: 2284400183, toPin: Table}
+    - {from: 2284400182, fromPin: Value, to: 2284400183, toPin: Key}
+    - {from: 2284400183, fromPin: Result, to: 2284400184, toPin: Value}
+    - {from: 2284400180, fromPin: Then, to: 2284400184, toPin: Exec}
+    - {from: 2284400185, fromPin: Value, to: 2284400187, toPin: A}
+    - {from: 2284400186, fromPin: Value, to: 2284400187, toPin: B}
+    - {from: 2284400187, fromPin: Result, to: 2284400188, toPin: B}
+    - {from: 2284400188, fromPin: Result, to: 2284400189, toPin: Value}
+    - {from: 2284400184, fromPin: Then, to: 2284400189, toPin: Exec}
+    - {from: 2284400190, fromPin: Value, to: 2284400243, toPin: "True"}
+    - {from: 2284400243, fromPin: Result, to: 2284400191, toPin: Table}
+    - {from: 2284400191, fromPin: Result, to: 2284400192, toPin: A}
+    - {from: 2284400192, fromPin: Result, to: 2284400193, toPin: Condition}
+    - {from: 2284400189, fromPin: Then, to: 2284400193, toPin: Exec}
+    - {from: 2284400195, fromPin: Value, to: 2284400244, toPin: "True"}
+    - {from: 2284400244, fromPin: Result, to: 2284400196, toPin: Table}
+    - {from: 2284400196, fromPin: Result, to: 2284400194, toPin: entity_id}
+    - {from: 2284400199, fromPin: Value, to: 2284400245, toPin: "True"}
+    - {from: 2284400245, fromPin: Result, to: 2284400200, toPin: Table}
+    - {from: 2284400200, fromPin: Result, to: 2284400202, toPin: A}
+    - {from: 2284400201, fromPin: Value, to: 2284400202, toPin: B}
+    - {from: 2284400198, fromPin: Value, to: 2284400197, toPin: line}
+    - {from: 2284400202, fromPin: Result, to: 2284400197, toPin: value}
+    - {from: 2284400193, fromPin: "True", to: 2284400197, toPin: Exec}
+    - {from: 2284400197, fromPin: result, to: 2284400194, toPin: text}
+    - {from: 2284400197, fromPin: Then, to: 2284400194, toPin: Exec}
+    - {from: 2284400203, fromPin: Value, to: 2284400204, toPin: A}
+    - {from: 2284400204, fromPin: Result, to: 2284400205, toPin: Condition}
+    - {from: 2284400194, fromPin: Then, to: 2284400205, toPin: Exec}
+    - {from: 2284400193, fromPin: "False", to: 2284400205, toPin: Exec}
+    - {from: 2284400205, fromPin: "True", to: 2284400206, toPin: Exec}
+    - {from: 2284400207, fromPin: Value, to: 2284400208, toPin: A}
+    - {from: 2284400208, fromPin: Result, to: 2284400209, toPin: Value}
+    - {from: 2284400206, fromPin: Then, to: 2284400209, toPin: Exec}
+    - {from: 2284400209, fromPin: Then, to: 2284400210, toPin: Exec}
+    - {from: 2284400211, fromPin: Value, to: 2284400212, toPin: Value}
+    - {from: 2284400210, fromPin: Then, to: 2284400212, toPin: Exec}
+    - {from: 2284400213, fromPin: Value, to: 2284400214, toPin: Value}
+    - {from: 2284400212, fromPin: Then, to: 2284400214, toPin: Exec}
+    - {from: 2284400216, fromPin: Value, to: 2284400217, toPin: List}
+    - {from: 2284400215, fromPin: Value, to: 2284400218, toPin: A}
+    - {from: 2284400217, fromPin: Result, to: 2284400218, toPin: B}
+    - {from: 2284400218, fromPin: Result, to: 2284400219, toPin: Condition}
+    - {from: 2284400214, fromPin: Then, to: 2284400219, toPin: Exec}
+    - {from: 2284400219, fromPin: "True", to: 2284400220, toPin: Exec}
+    - {from: 2284400222, fromPin: Value, to: 2284400223, toPin: Condition}
+    - {from: 2284400221, fromPin: Then, to: 2284400223, toPin: Exec}
+    - {from: 2284400223, fromPin: "True", to: 2284400224, toPin: Exec}
+    - {from: 2284400223, fromPin: "False", to: 2284400225, toPin: Exec}
+    - {from: 2284400221, fromPin: path, to: 2284400226, toPin: scene_path}
+    - {from: 2284400227, fromPin: Value, to: 2284400228, toPin: Value}
+    - {from: 2284400228, fromPin: R, to: 2284400226, toPin: r}
+    - {from: 2284400229, fromPin: Value, to: 2284400230, toPin: Value}
+    - {from: 2284400230, fromPin: G, to: 2284400226, toPin: g}
+    - {from: 2284400231, fromPin: Value, to: 2284400232, toPin: Value}
+    - {from: 2284400232, fromPin: B, to: 2284400226, toPin: b}
+    - {from: 2284400225, fromPin: Then, to: 2284400226, toPin: Exec}
+    - {from: 2284400233, fromPin: Then, to: 2284400235, toPin: Exec}
+    - {from: 2284400235, fromPin: value, to: 2284400234, toPin: path}
+    - {from: 2284400235, fromPin: Then, to: 2284400234, toPin: Exec}
+    - {from: 2284400236, fromPin: Then, to: 2284400237, toPin: Exec}
+    - {from: 2284400007, fromPin: Then, to: 2284400238, toPin: Exec}
+  groups:
+    - {id: 2284490000, title: clock_text, position: [146, -52], size: [830, 720], color: Teal}
+    - {id: 2284490001, title: on_create, position: [146, 728], size: [14770, 1320], color: Red}
+    - {id: 2284490002, title: text_of, position: [146, 2108], size: [3550, 1200], color: Teal}
+    - {id: 2284490003, title: finish_count, position: [146, 3368], size: [3550, 720], color: Teal}
+    - {id: 2284490004, title: on_update, position: [146, 4148], size: [6610, 1200], color: Red}
+    - {id: 2284490005, title: leave, position: [146, 5408], size: [1850, 960], color: Teal}
+    - {id: 2284490006, title: on_again_clicked, position: [316, 6428], size: [1000, 200], color: Red}
+    - {id: 2284490007, title: on_title_clicked, position: [316, 6728], size: [660, 200], color: Red}

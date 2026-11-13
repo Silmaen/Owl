@@ -1,0 +1,2516 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: save_period, type: float, default: "0.5"}
+    - {name: hearing, type: int, default: "12"}
+    - {name: fog_rays, type: int, default: "41", min: 2}
+    - {name: fog_fov, type: float, default: "80", min: 10, max: 170}
+    - {name: fog_range, type: float, default: "14", min: 1}
+    - {name: fog_rows_per_frame, type: int, default: "8", min: 1}
+    - {name: MAP_SIZE, type: float, default: "32", exposed: false}
+    - {name: WALL_LAYER, type: float, default: "0", exposed: false}
+    - {name: SEEN_LAYER, type: float, default: "1", exposed: false}
+    - {name: TILE_WALL, type: float, default: "0", exposed: false}
+    - {name: TILE_FLOOR, type: float, default: "1", exposed: false}
+    - {name: SAVE_PERIOD, type: float, default: "0", exposed: false}
+    - {name: HEARING, type: int, default: "0", exposed: false}
+    - {name: SMALL, type: numbers, default: "", exposed: false}
+    - {name: LARGE, type: numbers, default: "", exposed: false}
+    - {name: DOOR_TAGS, type: numbers, default: "", exposed: false}
+    - {name: MARKER_TAGS, type: numbers, default: "", exposed: false}
+    - {name: player_id, type: entity, default: "0", exposed: false}
+    - {name: dot_id, type: entity, default: "0", exposed: false}
+    - {name: facing_id, type: entity, default: "0", exposed: false}
+    - {name: view, type: numbers, default: "", exposed: false}
+    - {name: solid, type: numbers, default: "", exposed: false}
+    - {name: blockers, type: numbers, default: "", exposed: false}
+    - {name: doors, type: numbers, default: "", exposed: false}
+    - {name: secrets, type: numbers, default: "", exposed: false}
+    - {name: seen, type: numbers, default: "", exposed: false}
+    - {name: bits, type: numbers, default: "", exposed: false}
+    - {name: floor_total, type: float, default: "0", exposed: false}
+    - {name: floor_seen, type: float, default: "0", exposed: false}
+    - {name: dirty, type: bool, default: "false", exposed: false}
+    - {name: save_clock, type: float, default: "0", exposed: false}
+    - {name: fog_row, type: float, default: "0", exposed: false}
+    - {name: markers, type: numbers, default: "", exposed: false}
+    - {name: markers_shown, type: float, default: "0", exposed: false}
+    - {name: markers_hidden, type: bool, default: "false", exposed: false}
+    - {name: blocker, type: float, default: "0", exposed: false}
+    - {name: key, type: float, default: "0", exposed: false}
+    - {name: tmp_1, type: float, default: "0", exposed: false}
+    - {name: wall, type: float, default: "0", exposed: false}
+    - {name: reveal_key, type: float, default: "0", exposed: false}
+    - {name: dx, type: float, default: "0", exposed: false}
+    - {name: dy, type: float, default: "0", exposed: false}
+    - {name: c, type: float, default: "0", exposed: false}
+    - {name: r, type: float, default: "0", exposed: false}
+    - {name: step_c, type: int, default: "0", exposed: false}
+    - {name: step_r, type: int, default: "0", exposed: false}
+    - {name: delta_c, type: float, default: "0", exposed: false}
+    - {name: delta_r, type: float, default: "0", exposed: false}
+    - {name: side_c, type: float, default: "0", exposed: false}
+    - {name: side_r, type: float, default: "0", exposed: false}
+    - {name: distance, type: float, default: "0", exposed: false}
+    - {name: cast_key, type: float, default: "0", exposed: false}
+    - {name: last, type: float, default: "0", exposed: false}
+    - {name: setup_fog_rows_key, type: float, default: "0", exposed: false}
+    - {name: tmp_2, type: numbers, default: "", exposed: false}
+    - {name: tmp_3, type: numbers, default: "", exposed: false}
+    - {name: px, type: float, default: "0", exposed: false}
+    - {name: py, type: float, default: "0", exposed: false}
+    - {name: x, type: float, default: "0", exposed: false}
+    - {name: y, type: float, default: "0", exposed: false}
+    - {name: near, type: float, default: "0", exposed: false}
+    - {name: settle_x, type: float, default: "0", exposed: false}
+    - {name: settle_y, type: float, default: "0", exposed: false}
+    - {name: settle_c, type: float, default: "0", exposed: false}
+    - {name: settle_r, type: float, default: "0", exposed: false}
+    - {name: settle_key, type: float, default: "0", exposed: false}
+  functions:
+    - name: cell_of
+      inputs: [{name: x, type: any}, {name: y, type: any}, {name: _z, type: any}]
+      outputs: [{name: result, type: any}, {name: result_2, type: any}]
+      exported: true
+    - name: key_of
+      inputs: [{name: c, type: any}, {name: r, type: any}]
+      outputs: [{name: result, type: any}]
+      exported: true
+    - name: closed
+      inputs: [{name: key, type: any}]
+      outputs: [{name: result, type: any}]
+      exported: true
+    - name: show
+      inputs: [{name: c, type: any}, {name: r, type: any}]
+      outputs: []
+      exported: true
+    - name: mark
+      inputs: [{name: key, type: any}]
+      outputs: []
+      exported: true
+    - name: reveal
+      inputs: [{name: c, type: any}, {name: r, type: any}]
+      outputs: []
+      exported: true
+    - name: cast
+      inputs: [{name: px, type: any}, {name: py, type: any}, {name: angle, type: any}]
+      outputs: []
+      exported: true
+    - name: percent
+      inputs: []
+      outputs: [{name: result, type: any}]
+      exported: true
+    - name: setup_fog_rows
+      inputs: []
+      outputs: [{name: result, type: any}]
+      exported: true
+    - name: place
+      inputs: [{name: scale, type: any}, {name: x, type: any}, {name: y, type: any}]
+      outputs: []
+      exported: true
+    - name: play_near
+      inputs: [{name: path, type: any}, {name: id, type: any}]
+      outputs: []
+      exported: true
+    - name: settle
+      inputs: [{name: d, type: any}]
+      outputs: []
+      exported: true
+  customNodes:
+    - name: init_state
+      title: Init State
+      inputs: []
+      outputs: []
+      code: |
+        SAVE_PERIOD = nil
+        HEARING = nil
+        SMALL = { scale = 5, x = 96, y = 211 }
+        LARGE = { scale = 11, x = 192, y = 307 }
+        DOOR_TAGS = { "Door", "GoldDoor", "BlueDoor", "ElevatorDoor" }
+        MARKER_TAGS = { "GoldKey", "BlueKey", "ExitElevator" }
+        view = SMALL
+        solid = {}
+        blockers = {}
+        doors = {}
+        secrets = {}
+        seen = {}
+        bits = {}
+        markers = {}
+    - name: update_fog
+      title: Update fog
+      inputs: [{name: dt, type: any}]
+      outputs: []
+      code: |
+        local px, py = transform.get_position(player_id)
+        local _, _, yaw = transform.get_rotation(player_id)
+        local tx, ty = px + MAP_SIZE / 2, MAP_SIZE / 2 - py
+        local c, r = math.floor(tx), math.floor(ty)
+        for dr = -1, 1 do
+            for dc = -1, 1 do
+                reveal(c + dc, r + dr)
+            end
+        end
+        for i = 0, fog_rays - 1 do
+            cast(tx, ty, yaw + (i / (fog_rays - 1) - 0.5) * math.rad(fog_fov))
+        end
+        gamestate.set("wolf_seen", floor_seen)
+        gamestate.set("wolf_explored", percent())
+        save_clock = save_clock + dt
+        if dirty and save_clock >= SAVE_PERIOD then
+            dirty = false
+            save_clock = 0
+            gamestate.set("wolf_seen_map", table.concat(bits))
+        end
+    - name: restore_seen
+      title: Restore seen
+      inputs: []
+      outputs: []
+      code: |
+        local saved = gamestate.get("wolf_seen_map", "")
+        for key = 0, MAP_SIZE * MAP_SIZE - 1 do
+            if saved:byte(key + 1) == 49 then
+                mark(key)
+                show(key % MAP_SIZE, key // MAP_SIZE)
+            end
+        end
+    - name: add_blocker
+      title: Add blocker
+      inputs: [{name: list, type: any}, {name: id, type: any}, {name: state, type: any}]
+      outputs: []
+      code: |
+        local x, y = transform.get_position(id)
+        local c, r = cell_of(x, y)
+        local blocker = { closed = state == "idle" }
+        blockers[key_of(c, r)] = blocker
+        list[#list + 1] = { id = id, state = state, blocker = blocker, c = c, r = r }
+    - name: update_markers
+      title: Update markers
+      inputs: []
+      outputs: []
+      code: |
+        if gamestate.get("wolf_leaving", 0) == 1 then
+            if not markers_hidden then
+                markers_hidden = true
+                for _, m in ipairs(markers) do
+                    if m.shown and entity.has_component(m.id, "HudMarker") then
+                        entity.set_hud_marker_enabled(m.id, false)
+                    end
+                end
+            end
+            return
+        end
+        for _, m in ipairs(markers) do
+            if not m.shown and entity.has_component(m.id, "HudMarker")
+                    and seen[key_of(cell_of(transform.get_position(m.id)))] then
+                m.shown = true
+                entity.set_hud_marker_enabled(m.id, true)
+                markers_shown = markers_shown + 1
+                gamestate.set("wolf_markers", markers_shown)
+            end
+        end
+    - name: follow
+      title: Follow
+      inputs: [{name: list, type: any}, {name: state_of, type: any}]
+      outputs: []
+      code: |
+        for _, d in ipairs(list) do
+            local state = state_of(d.id)
+            if state ~= d.state then
+                if state == "opening" and list == doors and player_id ~= 0 then
+                    play_near("sounds/game/door.wav", d.id)
+                    gamestate.set("wolf_doors_opened", gamestate.get("wolf_doors_opened", 0) + 1)
+                end
+                d.blocker.closed = state == "idle"
+                if seen[key_of(d.c, d.r)] then
+                    show(d.c, d.r)
+                end
+                if state == "final" and list == secrets then
+                    settle(d)
+                end
+                d.state = state
+            end
+        end
+    - name: do_on_update
+      title: On update
+      inputs: [{name: dt, type: any}]
+      outputs: []
+      code: |
+        follow(doors, door.get_state)
+        follow(secrets, pushwall.get_state)
+        if fog_row < MAP_SIZE then
+            if setup_fog_rows() then
+                restore_seen()
+            end
+            return
+        end
+        if player_id == 0 then
+            return
+        end
+        update_fog(dt)
+        update_markers()
+
+        if input.is_action_just_pressed("map") then
+            local next_view = view.scale == SMALL.scale and LARGE or SMALL
+            place(next_view.scale, next_view.x, next_view.y)
+            gamestate.set("wolf_large_map", view.scale == LARGE.scale and 1 or 0)
+        end
+        local px, py = transform.get_position(player_id)
+        -- Clamped to the map so that a player pushed outside never leaves it.
+        local cx = math.max(-MAP_SIZE / 2, math.min(MAP_SIZE / 2, px)) * view.scale
+        local cy = math.max(-MAP_SIZE / 2, math.min(MAP_SIZE / 2, py)) * view.scale
+        transform.set_position(dot_id, view.x + cx, view.y + cy, 0.1)
+        local _, _, yaw = transform.get_rotation(player_id)
+        local offset = view.scale * 1.4
+        transform.set_position(facing_id, view.x + cx - math.sin(yaw) * offset, view.y + cy + math.cos(yaw) * offset, 0.2)
+  nodes:
+    - id: 2088500001
+      type: func.entry
+      position: [340, 0]
+      values:
+        function: cell_of
+    - id: 2088500002
+      type: var.get
+      position: [170, 160]
+      values:
+        variable: MAP_SIZE
+    - id: 2088500003
+      type: math.divide
+      position: [170, 280]
+      values:
+        B: "2"
+    - id: 2088500004
+      type: math.add
+      position: [170, 400]
+    - id: 2088500005
+      type: math.floor
+      position: [170, 520]
+    - id: 2088500006
+      type: var.get
+      position: [170, 640]
+      values:
+        variable: MAP_SIZE
+    - id: 2088500007
+      type: math.divide
+      position: [170, 760]
+      values:
+        B: "2"
+    - id: 2088500008
+      type: math.subtract
+      position: [170, 880]
+    - id: 2088500009
+      type: math.floor
+      position: [170, 1000]
+    - id: 2088500010
+      type: func.return
+      position: [680, 0]
+      values:
+        function: cell_of
+    - id: 2088500011
+      type: func.entry
+      position: [340, 1260]
+      values:
+        function: key_of
+    - id: 2088500012
+      type: var.get
+      position: [170, 1420]
+      values:
+        variable: MAP_SIZE
+    - id: 2088500013
+      type: math.multiply
+      position: [170, 1540]
+    - id: 2088500014
+      type: math.add
+      position: [170, 1660]
+    - id: 2088500015
+      type: func.return
+      position: [680, 1260]
+      values:
+        function: key_of
+    - id: 2088500016
+      type: func.entry
+      position: [340, 1920]
+      values:
+        function: closed
+    - id: 2088500017
+      type: var.get
+      position: [170, 2080]
+      values:
+        variable: blockers
+    - id: 2088500018
+      type: table.get
+      position: [170, 2200]
+    - id: 2088500019
+      type: var.set
+      position: [680, 1920]
+      values:
+        variable: blocker
+    - id: 2088500020
+      type: var.get
+      position: [510, 2080]
+      values:
+        variable: blocker
+    - id: 2088500021
+      type: compare.not_equal
+      position: [510, 2200]
+    - id: 2088500022
+      type: value.nil
+      position: [510, 2320]
+    - id: 2088500023
+      type: var.get
+      position: [510, 2440]
+      values:
+        variable: blocker
+    - id: 2088500024
+      type: table.get
+      position: [510, 2560]
+      values:
+        Key: closed
+    - id: 2088500025
+      type: logic.and
+      position: [510, 2680]
+    - id: 2088500026
+      type: func.return
+      position: [1020, 1920]
+      values:
+        function: closed
+    - id: 2088500027
+      type: func.entry
+      position: [340, 3060]
+      values:
+        function: show
+    - id: 2088500028
+      type: func.call
+      position: [680, 3060]
+      values:
+        function: key_of
+    - id: 2088500029
+      type: var.set
+      position: [1020, 3060]
+      values:
+        variable: key
+    - id: 2088500030
+      type: var.get
+      position: [850, 3220]
+      values:
+        variable: solid
+    - id: 2088500031
+      type: var.get
+      position: [850, 3340]
+      values:
+        variable: key
+    - id: 2088500032
+      type: table.get
+      position: [850, 3460]
+    - id: 2088500033
+      type: var.set
+      position: [1360, 3060]
+      values:
+        variable: tmp_1
+    - id: 2088500034
+      type: flow.branch
+      position: [1700, 3060]
+    - id: 2088500035
+      type: var.get
+      position: [1530, 3220]
+      values:
+        variable: tmp_1
+    - id: 2088500036
+      type: func.call
+      position: [2040, 3060]
+      values:
+        function: closed
+    - id: 2088500037
+      type: var.get
+      position: [1870, 3220]
+      values:
+        variable: key
+    - id: 2088500038
+      type: var.set
+      position: [2380, 3060]
+      values:
+        variable: tmp_1
+    - id: 2088500039
+      type: var.get
+      position: [2210, 3220]
+      values:
+        variable: tmp_1
+    - id: 2088500040
+      type: var.set
+      position: [2720, 3060]
+      values:
+        variable: wall
+    - id: 2088500041
+      type: call.isometric.set_cell
+      position: [3060, 3060]
+      values:
+        split.cell: "true"
+        overlay: "-1"
+    - id: 2088500042
+      type: value.self
+      position: [2890, 3220]
+    - id: 2088500043
+      type: var.get
+      position: [2890, 3340]
+      values:
+        variable: SEEN_LAYER
+    - id: 2088500044
+      type: math.floor
+      position: [2890, 3460]
+    - id: 2088500045
+      type: var.get
+      position: [2890, 3580]
+      values:
+        variable: wall
+    - id: 2088500046
+      type: var.get
+      position: [2890, 3700]
+      values:
+        variable: TILE_WALL
+    - id: 2088500047
+      type: var.get
+      position: [2890, 3820]
+      values:
+        variable: TILE_FLOOR
+    - id: 2088500048
+      type: logic.select
+      position: [2890, 3940]
+    - id: 2088500049
+      type: math.floor
+      position: [2890, 4060]
+    - id: 2088500050
+      type: func.entry
+      position: [340, 4440]
+      values:
+        function: mark
+    - id: 2088500051
+      type: var.get
+      position: [170, 4600]
+      values:
+        variable: seen
+    - id: 2088500052
+      type: table.set
+      position: [680, 4440]
+      values:
+        Value: "true"
+    - id: 2088500053
+      type: var.get
+      position: [510, 4600]
+      values:
+        variable: bits
+    - id: 2088500054
+      type: math.add
+      position: [510, 4720]
+      values:
+        B: "1"
+    - id: 2088500055
+      type: table.set
+      position: [1020, 4440]
+    - id: 2088500056
+      type: value.string
+      position: [850, 4600]
+      values:
+        Value: "1"
+    - id: 2088500057
+      type: var.get
+      position: [850, 4720]
+      values:
+        variable: solid
+    - id: 2088500058
+      type: table.get
+      position: [850, 4840]
+    - id: 2088500059
+      type: logic.not
+      position: [850, 4960]
+    - id: 2088500060
+      type: flow.branch
+      position: [1360, 4440]
+    - id: 2088500061
+      type: var.get
+      position: [1190, 4600]
+      values:
+        variable: floor_seen
+    - id: 2088500062
+      type: math.add
+      position: [1190, 4720]
+      values:
+        B: "1"
+    - id: 2088500063
+      type: var.set
+      position: [1700, 4440]
+      values:
+        variable: floor_seen
+    - id: 2088500064
+      type: func.entry
+      position: [340, 5220]
+      values:
+        function: reveal
+    - id: 2088500065
+      type: compare.less
+      position: [170, 5380]
+      values:
+        B: "0"
+    - id: 2088500066
+      type: compare.less
+      position: [170, 5500]
+      values:
+        B: "0"
+    - id: 2088500067
+      type: logic.or
+      position: [170, 5620]
+    - id: 2088500068
+      type: var.get
+      position: [170, 5740]
+      values:
+        variable: MAP_SIZE
+    - id: 2088500069
+      type: compare.greater_equal
+      position: [170, 5860]
+    - id: 2088500070
+      type: logic.or
+      position: [170, 5980]
+    - id: 2088500071
+      type: var.get
+      position: [170, 6100]
+      values:
+        variable: MAP_SIZE
+    - id: 2088500072
+      type: compare.greater_equal
+      position: [170, 6220]
+    - id: 2088500073
+      type: logic.or
+      position: [170, 6340]
+    - id: 2088500074
+      type: flow.branch
+      position: [680, 5220]
+    - id: 2088500075
+      type: func.return
+      position: [1020, 5220]
+      values:
+        function: reveal
+    - id: 2088500076
+      type: func.call
+      position: [1360, 5220]
+      values:
+        function: key_of
+    - id: 2088500077
+      type: var.set
+      position: [1700, 5220]
+      values:
+        variable: reveal_key
+    - id: 2088500078
+      type: var.get
+      position: [1530, 5380]
+      values:
+        variable: seen
+    - id: 2088500079
+      type: var.get
+      position: [1530, 5500]
+      values:
+        variable: reveal_key
+    - id: 2088500080
+      type: table.get
+      position: [1530, 5620]
+    - id: 2088500081
+      type: logic.not
+      position: [1530, 5740]
+    - id: 2088500082
+      type: flow.branch
+      position: [2040, 5220]
+    - id: 2088500083
+      type: func.call
+      position: [2380, 5220]
+      values:
+        function: mark
+    - id: 2088500084
+      type: var.get
+      position: [2210, 5380]
+      values:
+        variable: reveal_key
+    - id: 2088500085
+      type: var.set
+      position: [2720, 5220]
+      values:
+        variable: dirty
+        Value: "true"
+    - id: 2088500086
+      type: func.call
+      position: [3060, 5220]
+      values:
+        function: show
+    - id: 2088500087
+      type: func.entry
+      position: [340, 6600]
+      values:
+        function: cast
+    - id: 2088500088
+      type: math.sin
+      position: [170, 6760]
+    - id: 2088500089
+      type: math.negate
+      position: [170, 6880]
+    - id: 2088500090
+      type: math.cos
+      position: [170, 7000]
+    - id: 2088500091
+      type: math.negate
+      position: [170, 7120]
+    - id: 2088500092
+      type: var.set
+      position: [680, 6600]
+      values:
+        variable: dx
+    - id: 2088500093
+      type: var.set
+      position: [1020, 6600]
+      values:
+        variable: dy
+    - id: 2088500094
+      type: math.floor
+      position: [850, 6760]
+    - id: 2088500095
+      type: math.floor
+      position: [850, 6880]
+    - id: 2088500096
+      type: var.set
+      position: [1360, 6600]
+      values:
+        variable: c
+    - id: 2088500097
+      type: var.set
+      position: [1700, 6600]
+      values:
+        variable: r
+    - id: 2088500098
+      type: var.get
+      position: [1530, 6760]
+      values:
+        variable: dx
+    - id: 2088500099
+      type: compare.less
+      position: [1530, 6880]
+      values:
+        B: "0"
+    - id: 2088500100
+      type: logic.select
+      position: [1530, 7000]
+      values:
+        "True": "-1"
+        "False": "1"
+    - id: 2088500101
+      type: var.get
+      position: [1530, 7120]
+      values:
+        variable: dy
+    - id: 2088500102
+      type: compare.less
+      position: [1530, 7240]
+      values:
+        B: "0"
+    - id: 2088500103
+      type: logic.select
+      position: [1530, 7360]
+      values:
+        "True": "-1"
+        "False": "1"
+    - id: 2088500104
+      type: var.set
+      position: [2040, 6600]
+      values:
+        variable: step_c
+    - id: 2088500105
+      type: var.set
+      position: [2380, 6600]
+      values:
+        variable: step_r
+    - id: 2088500106
+      type: var.get
+      position: [2210, 6760]
+      values:
+        variable: dx
+    - id: 2088500107
+      type: compare.equal
+      position: [2210, 6880]
+      values:
+        B: "0"
+    - id: 2088500108
+      type: var.get
+      position: [2210, 7000]
+      values:
+        variable: dx
+    - id: 2088500109
+      type: math.divide
+      position: [2210, 7120]
+      values:
+        A: "1"
+    - id: 2088500110
+      type: math.abs
+      position: [2210, 7240]
+    - id: 2088500111
+      type: logic.select
+      position: [2210, 7360]
+      values:
+        "True": "1e+300"
+    - id: 2088500112
+      type: var.set
+      position: [2720, 6600]
+      values:
+        variable: delta_c
+    - id: 2088500113
+      type: var.get
+      position: [2550, 6760]
+      values:
+        variable: dy
+    - id: 2088500114
+      type: compare.equal
+      position: [2550, 6880]
+      values:
+        B: "0"
+    - id: 2088500115
+      type: var.get
+      position: [2550, 7000]
+      values:
+        variable: dy
+    - id: 2088500116
+      type: math.divide
+      position: [2550, 7120]
+      values:
+        A: "1"
+    - id: 2088500117
+      type: math.abs
+      position: [2550, 7240]
+    - id: 2088500118
+      type: logic.select
+      position: [2550, 7360]
+      values:
+        "True": "1e+300"
+    - id: 2088500119
+      type: var.set
+      position: [3060, 6600]
+      values:
+        variable: delta_r
+    - id: 2088500120
+      type: var.get
+      position: [2890, 6760]
+      values:
+        variable: dx
+    - id: 2088500121
+      type: compare.equal
+      position: [2890, 6880]
+      values:
+        B: "0"
+    - id: 2088500122
+      type: var.get
+      position: [2890, 7000]
+      values:
+        variable: dx
+    - id: 2088500123
+      type: compare.less
+      position: [2890, 7120]
+      values:
+        B: "0"
+    - id: 2088500124
+      type: var.get
+      position: [2890, 7240]
+      values:
+        variable: c
+    - id: 2088500125
+      type: math.subtract
+      position: [2890, 7360]
+    - id: 2088500126
+      type: var.get
+      position: [2890, 7480]
+      values:
+        variable: c
+    - id: 2088500127
+      type: math.add
+      position: [2890, 7600]
+      values:
+        B: "1"
+    - id: 2088500128
+      type: math.subtract
+      position: [2890, 7720]
+    - id: 2088500129
+      type: logic.select
+      position: [2890, 7840]
+    - id: 2088500130
+      type: var.get
+      position: [2890, 7960]
+      values:
+        variable: delta_c
+    - id: 2088500131
+      type: math.multiply
+      position: [2890, 8080]
+    - id: 2088500132
+      type: logic.select
+      position: [2890, 8200]
+      values:
+        "True": "1e+300"
+    - id: 2088500133
+      type: var.set
+      position: [3400, 6600]
+      values:
+        variable: side_c
+    - id: 2088500134
+      type: var.get
+      position: [3230, 6760]
+      values:
+        variable: dy
+    - id: 2088500135
+      type: compare.equal
+      position: [3230, 6880]
+      values:
+        B: "0"
+    - id: 2088500136
+      type: var.get
+      position: [3230, 7000]
+      values:
+        variable: dy
+    - id: 2088500137
+      type: compare.less
+      position: [3230, 7120]
+      values:
+        B: "0"
+    - id: 2088500138
+      type: var.get
+      position: [3230, 7240]
+      values:
+        variable: r
+    - id: 2088500139
+      type: math.subtract
+      position: [3230, 7360]
+    - id: 2088500140
+      type: var.get
+      position: [3230, 7480]
+      values:
+        variable: r
+    - id: 2088500141
+      type: math.add
+      position: [3230, 7600]
+      values:
+        B: "1"
+    - id: 2088500142
+      type: math.subtract
+      position: [3230, 7720]
+    - id: 2088500143
+      type: logic.select
+      position: [3230, 7840]
+    - id: 2088500144
+      type: var.get
+      position: [3230, 7960]
+      values:
+        variable: delta_r
+    - id: 2088500145
+      type: math.multiply
+      position: [3230, 8080]
+    - id: 2088500146
+      type: logic.select
+      position: [3230, 8200]
+      values:
+        "True": "1e+300"
+    - id: 2088500147
+      type: var.set
+      position: [3740, 6600]
+      values:
+        variable: side_r
+    - id: 2088500148
+      type: flow.while
+      position: [4080, 6600]
+      values:
+        Condition: "true"
+    - id: 2088500149
+      type: var.set
+      position: [4420, 6600]
+      values:
+        variable: distance
+    - id: 2088500150
+      type: value.nil
+      position: [4250, 6760]
+    - id: 2088500151
+      type: var.get
+      position: [4250, 6880]
+      values:
+        variable: side_c
+    - id: 2088500152
+      type: var.get
+      position: [4250, 7000]
+      values:
+        variable: side_r
+    - id: 2088500153
+      type: compare.less
+      position: [4250, 7120]
+    - id: 2088500154
+      type: flow.branch
+      position: [4760, 6600]
+    - id: 2088500155
+      type: var.get
+      position: [4590, 6760]
+      values:
+        variable: side_c
+    - id: 2088500156
+      type: var.set
+      position: [5100, 6600]
+      values:
+        variable: distance
+    - id: 2088500157
+      type: var.get
+      position: [4930, 6760]
+      values:
+        variable: side_c
+    - id: 2088500158
+      type: var.get
+      position: [4930, 6880]
+      values:
+        variable: delta_c
+    - id: 2088500159
+      type: math.add
+      position: [4930, 7000]
+    - id: 2088500160
+      type: var.set
+      position: [5440, 6600]
+      values:
+        variable: side_c
+    - id: 2088500161
+      type: var.get
+      position: [5270, 6760]
+      values:
+        variable: c
+    - id: 2088500162
+      type: var.get
+      position: [5270, 6880]
+      values:
+        variable: step_c
+    - id: 2088500163
+      type: math.add
+      position: [5270, 7000]
+    - id: 2088500164
+      type: var.set
+      position: [5780, 6600]
+      values:
+        variable: c
+    - id: 2088500165
+      type: var.get
+      position: [5610, 6760]
+      values:
+        variable: side_r
+    - id: 2088500166
+      type: var.set
+      position: [6120, 6600]
+      values:
+        variable: distance
+    - id: 2088500167
+      type: var.get
+      position: [5950, 6760]
+      values:
+        variable: side_r
+    - id: 2088500168
+      type: var.get
+      position: [5950, 6880]
+      values:
+        variable: delta_r
+    - id: 2088500169
+      type: math.add
+      position: [5950, 7000]
+    - id: 2088500170
+      type: var.set
+      position: [6460, 6600]
+      values:
+        variable: side_r
+    - id: 2088500171
+      type: var.get
+      position: [6290, 6760]
+      values:
+        variable: r
+    - id: 2088500172
+      type: var.get
+      position: [6290, 6880]
+      values:
+        variable: step_r
+    - id: 2088500173
+      type: math.add
+      position: [6290, 7000]
+    - id: 2088500174
+      type: var.set
+      position: [6800, 6600]
+      values:
+        variable: r
+    - id: 2088500175
+      type: var.get
+      position: [6630, 6760]
+      values:
+        variable: distance
+    - id: 2088500176
+      type: var.get
+      position: [6630, 6880]
+      values:
+        variable: fog_range
+    - id: 2088500177
+      type: compare.greater
+      position: [6630, 7000]
+    - id: 2088500178
+      type: var.get
+      position: [6630, 7120]
+      values:
+        variable: c
+    - id: 2088500179
+      type: compare.less
+      position: [6630, 7240]
+      values:
+        B: "0"
+    - id: 2088500180
+      type: logic.or
+      position: [6630, 7360]
+    - id: 2088500181
+      type: var.get
+      position: [6630, 7480]
+      values:
+        variable: r
+    - id: 2088500182
+      type: compare.less
+      position: [6630, 7600]
+      values:
+        B: "0"
+    - id: 2088500183
+      type: logic.or
+      position: [6630, 7720]
+    - id: 2088500184
+      type: var.get
+      position: [6630, 7840]
+      values:
+        variable: c
+    - id: 2088500185
+      type: var.get
+      position: [6630, 7960]
+      values:
+        variable: MAP_SIZE
+    - id: 2088500186
+      type: compare.greater_equal
+      position: [6630, 8080]
+    - id: 2088500187
+      type: logic.or
+      position: [6630, 8200]
+    - id: 2088500188
+      type: var.get
+      position: [6630, 8320]
+      values:
+        variable: r
+    - id: 2088500189
+      type: var.get
+      position: [6630, 8440]
+      values:
+        variable: MAP_SIZE
+    - id: 2088500190
+      type: compare.greater_equal
+      position: [6630, 8560]
+    - id: 2088500191
+      type: logic.or
+      position: [6630, 8680]
+    - id: 2088500192
+      type: flow.branch
+      position: [7140, 6600]
+    - id: 2088500193
+      type: func.return
+      position: [7480, 6600]
+      values:
+        function: cast
+    - id: 2088500194
+      type: func.call
+      position: [7820, 6600]
+      values:
+        function: reveal
+    - id: 2088500195
+      type: var.get
+      position: [7650, 6760]
+      values:
+        variable: c
+    - id: 2088500196
+      type: var.get
+      position: [7650, 6880]
+      values:
+        variable: r
+    - id: 2088500197
+      type: func.call
+      position: [8160, 6600]
+      values:
+        function: key_of
+    - id: 2088500198
+      type: var.get
+      position: [7990, 6760]
+      values:
+        variable: c
+    - id: 2088500199
+      type: var.get
+      position: [7990, 6880]
+      values:
+        variable: r
+    - id: 2088500200
+      type: var.set
+      position: [8500, 6600]
+      values:
+        variable: cast_key
+    - id: 2088500201
+      type: var.get
+      position: [8330, 6760]
+      values:
+        variable: solid
+    - id: 2088500202
+      type: var.get
+      position: [8330, 6880]
+      values:
+        variable: cast_key
+    - id: 2088500203
+      type: table.get
+      position: [8330, 7000]
+    - id: 2088500204
+      type: flow.branch
+      position: [8840, 6600]
+    - id: 2088500205
+      type: func.call
+      position: [9180, 6600]
+      values:
+        function: closed
+    - id: 2088500206
+      type: var.get
+      position: [9010, 6760]
+      values:
+        variable: cast_key
+    - id: 2088500207
+      type: flow.branch
+      position: [9520, 6600]
+    - id: 2088500208
+      type: func.return
+      position: [9860, 6600]
+      values:
+        function: cast
+    - id: 2088500209
+      type: func.entry
+      position: [340, 8940]
+      values:
+        function: percent
+    - id: 2088500210
+      type: var.get
+      position: [170, 9100]
+      values:
+        variable: floor_total
+    - id: 2088500211
+      type: compare.equal
+      position: [170, 9220]
+      values:
+        B: "0"
+    - id: 2088500212
+      type: flow.branch
+      position: [680, 8940]
+    - id: 2088500213
+      type: func.return
+      position: [1020, 8940]
+      values:
+        function: percent
+        result: "100"
+    - id: 2088500214
+      type: var.get
+      position: [850, 9100]
+      values:
+        variable: floor_seen
+    - id: 2088500215
+      type: math.multiply
+      position: [850, 9220]
+      values:
+        A: "100"
+    - id: 2088500216
+      type: var.get
+      position: [850, 9340]
+      values:
+        variable: floor_total
+    - id: 2088500217
+      type: math.divide
+      position: [850, 9460]
+    - id: 2088500218
+      type: math.floor
+      position: [850, 9580]
+    - id: 2088500219
+      type: func.return
+      position: [1360, 8940]
+      values:
+        function: percent
+    - id: 2088500220
+      type: func.entry
+      position: [340, 9840]
+      values:
+        function: setup_fog_rows
+    - id: 2088500221
+      type: var.get
+      position: [170, 10000]
+      values:
+        variable: fog_row
+    - id: 2088500222
+      type: var.get
+      position: [170, 10120]
+      values:
+        variable: fog_rows_per_frame
+    - id: 2088500223
+      type: math.add
+      position: [170, 10240]
+    - id: 2088500224
+      type: var.get
+      position: [170, 10360]
+      values:
+        variable: MAP_SIZE
+    - id: 2088500225
+      type: math.min
+      position: [170, 10480]
+    - id: 2088500226
+      type: math.subtract
+      position: [170, 10600]
+      values:
+        B: "1"
+    - id: 2088500227
+      type: var.set
+      position: [680, 9840]
+      values:
+        variable: last
+    - id: 2088500228
+      type: var.get
+      position: [510, 10000]
+      values:
+        variable: fog_row
+    - id: 2088500229
+      type: var.get
+      position: [510, 10120]
+      values:
+        variable: last
+    - id: 2088500230
+      type: flow.for
+      position: [1020, 9840]
+    - id: 2088500231
+      type: math.floor
+      position: [850, 10000]
+    - id: 2088500232
+      type: math.floor
+      position: [850, 10120]
+    - id: 2088500233
+      type: var.get
+      position: [850, 10240]
+      values:
+        variable: MAP_SIZE
+    - id: 2088500234
+      type: math.subtract
+      position: [850, 10360]
+      values:
+        B: "1"
+    - id: 2088500235
+      type: flow.for
+      position: [1360, 9840]
+      values:
+        First: "0"
+    - id: 2088500236
+      type: math.floor
+      position: [1190, 10000]
+    - id: 2088500237
+      type: func.call
+      position: [1700, 9840]
+      values:
+        function: key_of
+    - id: 2088500238
+      type: var.set
+      position: [2040, 9840]
+      values:
+        variable: setup_fog_rows_key
+    - id: 2088500239
+      type: call.isometric.get_cell
+      position: [1870, 10000]
+      values:
+        split.cell: "true"
+    - id: 2088500240
+      type: value.self
+      position: [1870, 10120]
+    - id: 2088500241
+      type: var.get
+      position: [1870, 10240]
+      values:
+        variable: WALL_LAYER
+    - id: 2088500242
+      type: math.floor
+      position: [1870, 10360]
+    - id: 2088500243
+      type: var.get
+      position: [1870, 10480]
+      values:
+        variable: TILE_WALL
+    - id: 2088500244
+      type: compare.equal
+      position: [1870, 10600]
+    - id: 2088500245
+      type: var.get
+      position: [1870, 10720]
+      values:
+        variable: solid
+    - id: 2088500246
+      type: var.get
+      position: [1870, 10840]
+      values:
+        variable: setup_fog_rows_key
+    - id: 2088500247
+      type: table.set
+      position: [2380, 9840]
+    - id: 2088500248
+      type: var.get
+      position: [2210, 10000]
+      values:
+        variable: solid
+    - id: 2088500249
+      type: var.get
+      position: [2210, 10120]
+      values:
+        variable: setup_fog_rows_key
+    - id: 2088500250
+      type: table.get
+      position: [2210, 10240]
+    - id: 2088500251
+      type: logic.not
+      position: [2210, 10360]
+    - id: 2088500252
+      type: flow.branch
+      position: [2720, 9840]
+    - id: 2088500253
+      type: var.get
+      position: [2550, 10000]
+      values:
+        variable: floor_total
+    - id: 2088500254
+      type: math.add
+      position: [2550, 10120]
+      values:
+        B: "1"
+    - id: 2088500255
+      type: var.set
+      position: [3060, 9840]
+      values:
+        variable: floor_total
+    - id: 2088500256
+      type: var.get
+      position: [2890, 10000]
+      values:
+        variable: bits
+    - id: 2088500257
+      type: var.get
+      position: [2890, 10120]
+      values:
+        variable: setup_fog_rows_key
+    - id: 2088500258
+      type: math.add
+      position: [2890, 10240]
+      values:
+        B: "1"
+    - id: 2088500259
+      type: table.set
+      position: [3400, 9840]
+    - id: 2088500260
+      type: value.string
+      position: [3230, 10000]
+      values:
+        Value: "0"
+    - id: 2088500261
+      type: call.isometric.get_cell
+      position: [3230, 10120]
+      values:
+        split.cell: "true"
+    - id: 2088500262
+      type: value.self
+      position: [3230, 10240]
+    - id: 2088500263
+      type: var.get
+      position: [3230, 10360]
+      values:
+        variable: SEEN_LAYER
+    - id: 2088500264
+      type: math.floor
+      position: [3230, 10480]
+    - id: 2088500265
+      type: compare.greater_equal
+      position: [3230, 10600]
+      values:
+        B: "0"
+    - id: 2088500266
+      type: flow.branch
+      position: [3740, 9840]
+    - id: 2088500267
+      type: call.isometric.set_cell
+      position: [4080, 9840]
+      values:
+        split.cell: "true"
+        terrain: "-1"
+        overlay: "-1"
+    - id: 2088500268
+      type: value.self
+      position: [3910, 10000]
+    - id: 2088500269
+      type: var.get
+      position: [3910, 10120]
+      values:
+        variable: SEEN_LAYER
+    - id: 2088500270
+      type: math.floor
+      position: [3910, 10240]
+    - id: 2088500271
+      type: var.get
+      position: [3910, 10360]
+      values:
+        variable: last
+    - id: 2088500272
+      type: math.add
+      position: [3910, 10480]
+      values:
+        B: "1"
+    - id: 2088500273
+      type: var.set
+      position: [4420, 9840]
+      values:
+        variable: fog_row
+    - id: 2088500274
+      type: var.get
+      position: [4250, 10000]
+      values:
+        variable: fog_row
+    - id: 2088500275
+      type: var.get
+      position: [4250, 10120]
+      values:
+        variable: MAP_SIZE
+    - id: 2088500276
+      type: compare.greater_equal
+      position: [4250, 10240]
+    - id: 2088500277
+      type: func.return
+      position: [4760, 9840]
+      values:
+        function: setup_fog_rows
+    - id: 2088500278
+      type: func.entry
+      position: [340, 11100]
+      values:
+        function: place
+    - id: 2088500279
+      type: value.table
+      position: [170, 11260]
+      values:
+        Value: ""
+    - id: 2088500280
+      type: var.set
+      position: [680, 11100]
+      values:
+        variable: tmp_2
+    - id: 2088500281
+      type: table.set
+      position: [1020, 11100]
+      values:
+        Key: scale
+    - id: 2088500282
+      type: var.get
+      position: [850, 11260]
+      values:
+        variable: tmp_2
+    - id: 2088500283
+      type: table.set
+      position: [1360, 11100]
+      values:
+        Key: x
+    - id: 2088500284
+      type: var.get
+      position: [1190, 11260]
+      values:
+        variable: tmp_2
+    - id: 2088500285
+      type: table.set
+      position: [1700, 11100]
+      values:
+        Key: y
+    - id: 2088500286
+      type: var.get
+      position: [1530, 11260]
+      values:
+        variable: tmp_2
+    - id: 2088500287
+      type: var.get
+      position: [1530, 11380]
+      values:
+        variable: tmp_2
+    - id: 2088500288
+      type: var.set
+      position: [2040, 11100]
+      values:
+        variable: view
+    - id: 2088500289
+      type: call.transform.set_position
+      position: [2380, 11100]
+      values:
+        split.xyz: "true"
+        z: "0"
+    - id: 2088500290
+      type: value.self
+      position: [2210, 11260]
+    - id: 2088500291
+      type: call.transform.set_scale
+      position: [2720, 11100]
+      values:
+        split.scale: "true"
+        sz: "1"
+    - id: 2088500292
+      type: value.self
+      position: [2550, 11260]
+    - id: 2088500293
+      type: event.on_create
+      position: [340, 11640]
+    - id: 2088500294
+      type: var.get
+      position: [170, 11800]
+      values:
+        variable: save_period
+    - id: 2088500295
+      type: var.set
+      position: [680, 11640]
+      values:
+        variable: SAVE_PERIOD
+    - id: 2088500296
+      type: var.get
+      position: [510, 11800]
+      values:
+        variable: hearing
+    - id: 2088500297
+      type: var.set
+      position: [1020, 11640]
+      values:
+        variable: HEARING
+    - id: 2088500298
+      type: call.scene.find_entity
+      position: [850, 11800]
+      values:
+        name: Player
+    - id: 2088500299
+      type: var.set
+      position: [1360, 11640]
+      values:
+        variable: player_id
+    - id: 2088500300
+      type: call.scene.find_entity
+      position: [1190, 11800]
+      values:
+        name: MinimapPlayer
+    - id: 2088500301
+      type: var.set
+      position: [1700, 11640]
+      values:
+        variable: dot_id
+    - id: 2088500302
+      type: call.scene.find_entity
+      position: [1530, 11800]
+      values:
+        name: MinimapFacing
+    - id: 2088500303
+      type: var.set
+      position: [2040, 11640]
+      values:
+        variable: facing_id
+    - id: 2088500304
+      type: var.get
+      position: [1870, 11800]
+      values:
+        variable: DOOR_TAGS
+    - id: 2088500305
+      type: flow.for_each
+      position: [2380, 11640]
+    - id: 2088500306
+      type: call.scene.find_entities
+      position: [2720, 11640]
+    - id: 2088500307
+      type: flow.for_each
+      position: [3060, 11640]
+    - id: 2088500308
+      type: custom.call
+      position: [3400, 11640]
+      values:
+        custom: add_blocker
+    - id: 2088500309
+      type: var.get
+      position: [3230, 11800]
+      values:
+        variable: doors
+    - id: 2088500310
+      type: call.door.get_state
+      position: [3230, 11920]
+    - id: 2088500311
+      type: call.scene.find_entities
+      position: [3740, 11640]
+      values:
+        name: Secret
+    - id: 2088500312
+      type: flow.for_each
+      position: [4080, 11640]
+    - id: 2088500313
+      type: custom.call
+      position: [4420, 11640]
+      values:
+        custom: add_blocker
+    - id: 2088500314
+      type: var.get
+      position: [4250, 11800]
+      values:
+        variable: secrets
+    - id: 2088500315
+      type: call.pushwall.get_state
+      position: [4250, 11920]
+    - id: 2088500316
+      type: var.get
+      position: [4250, 12040]
+      values:
+        variable: MARKER_TAGS
+    - id: 2088500317
+      type: flow.for_each
+      position: [4760, 11640]
+    - id: 2088500318
+      type: call.scene.find_entities
+      position: [5100, 11640]
+    - id: 2088500319
+      type: flow.for_each
+      position: [5440, 11640]
+    - id: 2088500320
+      type: value.table
+      position: [5270, 11800]
+      values:
+        Value: ""
+    - id: 2088500321
+      type: var.set
+      position: [5780, 11640]
+      values:
+        variable: tmp_3
+    - id: 2088500322
+      type: table.set
+      position: [6120, 11640]
+      values:
+        Key: id
+    - id: 2088500323
+      type: var.get
+      position: [5950, 11800]
+      values:
+        variable: tmp_3
+    - id: 2088500324
+      type: table.set
+      position: [6460, 11640]
+      values:
+        Key: shown
+        Value: "false"
+    - id: 2088500325
+      type: var.get
+      position: [6290, 11800]
+      values:
+        variable: tmp_3
+    - id: 2088500326
+      type: var.get
+      position: [6290, 11920]
+      values:
+        variable: tmp_3
+    - id: 2088500327
+      type: var.get
+      position: [6290, 12040]
+      values:
+        variable: markers
+    - id: 2088500328
+      type: var.get
+      position: [6290, 12160]
+      values:
+        variable: markers
+    - id: 2088500329
+      type: table.length
+      position: [6290, 12280]
+    - id: 2088500330
+      type: math.add
+      position: [6290, 12400]
+      values:
+        B: "1"
+    - id: 2088500331
+      type: table.set
+      position: [6800, 11640]
+    - id: 2088500332
+      type: call.gamestate.set
+      position: [7140, 11640]
+      values:
+        key: wolf_markers
+        value: "0"
+    - id: 2088500333
+      type: func.call
+      position: [7480, 11640]
+      values:
+        function: place
+    - id: 2088500334
+      type: var.get
+      position: [7310, 11800]
+      values:
+        variable: SMALL
+    - id: 2088500335
+      type: table.get
+      position: [7310, 11920]
+      values:
+        Key: scale
+    - id: 2088500336
+      type: var.get
+      position: [7310, 12040]
+      values:
+        variable: SMALL
+    - id: 2088500337
+      type: table.get
+      position: [7310, 12160]
+      values:
+        Key: x
+    - id: 2088500338
+      type: var.get
+      position: [7310, 12280]
+      values:
+        variable: SMALL
+    - id: 2088500339
+      type: table.get
+      position: [7310, 12400]
+      values:
+        Key: y
+    - id: 2088500340
+      type: func.entry
+      position: [340, 12660]
+      values:
+        function: play_near
+    - id: 2088500341
+      type: call.transform.get_position
+      position: [170, 12820]
+      values:
+        split.xyz: "true"
+    - id: 2088500342
+      type: var.get
+      position: [170, 12940]
+      values:
+        variable: player_id
+    - id: 2088500343
+      type: var.set
+      position: [680, 12660]
+      values:
+        variable: px
+    - id: 2088500344
+      type: var.set
+      position: [1020, 12660]
+      values:
+        variable: py
+    - id: 2088500345
+      type: call.transform.get_position
+      position: [850, 12820]
+      values:
+        split.xyz: "true"
+    - id: 2088500346
+      type: var.set
+      position: [1360, 12660]
+      values:
+        variable: x
+    - id: 2088500347
+      type: var.set
+      position: [1700, 12660]
+      values:
+        variable: y
+    - id: 2088500348
+      type: var.get
+      position: [1530, 12820]
+      values:
+        variable: px
+    - id: 2088500349
+      type: var.get
+      position: [1530, 12940]
+      values:
+        variable: x
+    - id: 2088500350
+      type: math.subtract
+      position: [1530, 13060]
+    - id: 2088500351
+      type: math.power
+      position: [1530, 13180]
+      values:
+        Exponent: "2"
+    - id: 2088500352
+      type: var.get
+      position: [1530, 13300]
+      values:
+        variable: py
+    - id: 2088500353
+      type: var.get
+      position: [1530, 13420]
+      values:
+        variable: y
+    - id: 2088500354
+      type: math.subtract
+      position: [1530, 13540]
+    - id: 2088500355
+      type: math.power
+      position: [1530, 13660]
+      values:
+        Exponent: "2"
+    - id: 2088500356
+      type: math.add
+      position: [1530, 13780]
+    - id: 2088500357
+      type: math.sqrt
+      position: [1530, 13900]
+    - id: 2088500358
+      type: var.get
+      position: [1530, 14020]
+      values:
+        variable: HEARING
+    - id: 2088500359
+      type: math.divide
+      position: [1530, 14140]
+    - id: 2088500360
+      type: math.subtract
+      position: [1530, 14260]
+      values:
+        A: "1"
+    - id: 2088500361
+      type: var.set
+      position: [2040, 12660]
+      values:
+        variable: near
+    - id: 2088500362
+      type: var.get
+      position: [1870, 12820]
+      values:
+        variable: near
+    - id: 2088500363
+      type: compare.greater
+      position: [1870, 12940]
+      values:
+        B: "0"
+    - id: 2088500364
+      type: flow.branch
+      position: [2380, 12660]
+    - id: 2088500365
+      type: call.sound.set_volume
+      position: [2720, 12660]
+    - id: 2088500366
+      type: call.sound.play
+      position: [3060, 12660]
+    - id: 2088500367
+      type: var.get
+      position: [2890, 12820]
+      values:
+        variable: near
+    - id: 2088500368
+      type: func.entry
+      position: [340, 14520]
+      values:
+        function: settle
+    - id: 2088500369
+      type: call.transform.get_position
+      position: [170, 14680]
+      values:
+        split.xyz: "true"
+    - id: 2088500370
+      type: table.get
+      position: [170, 14800]
+      values:
+        Key: id
+    - id: 2088500371
+      type: var.set
+      position: [680, 14520]
+      values:
+        variable: settle_x
+    - id: 2088500372
+      type: var.set
+      position: [1020, 14520]
+      values:
+        variable: settle_y
+    - id: 2088500373
+      type: func.call
+      position: [1360, 14520]
+      values:
+        function: cell_of
+    - id: 2088500374
+      type: var.get
+      position: [1190, 14680]
+      values:
+        variable: settle_x
+    - id: 2088500375
+      type: var.get
+      position: [1190, 14800]
+      values:
+        variable: settle_y
+    - id: 2088500376
+      type: var.set
+      position: [1700, 14520]
+      values:
+        variable: settle_c
+    - id: 2088500377
+      type: var.set
+      position: [2040, 14520]
+      values:
+        variable: settle_r
+    - id: 2088500378
+      type: func.call
+      position: [2380, 14520]
+      values:
+        function: key_of
+    - id: 2088500379
+      type: var.get
+      position: [2210, 14680]
+      values:
+        variable: settle_c
+    - id: 2088500380
+      type: var.get
+      position: [2210, 14800]
+      values:
+        variable: settle_r
+    - id: 2088500381
+      type: var.set
+      position: [2720, 14520]
+      values:
+        variable: settle_key
+    - id: 2088500382
+      type: value.table
+      position: [2550, 14680]
+      values:
+        Value: closed = true
+    - id: 2088500383
+      type: var.get
+      position: [2550, 14800]
+      values:
+        variable: blockers
+    - id: 2088500384
+      type: var.get
+      position: [2550, 14920]
+      values:
+        variable: settle_key
+    - id: 2088500385
+      type: table.set
+      position: [3060, 14520]
+    - id: 2088500386
+      type: var.get
+      position: [2890, 14680]
+      values:
+        variable: seen
+    - id: 2088500387
+      type: var.get
+      position: [2890, 14800]
+      values:
+        variable: settle_key
+    - id: 2088500388
+      type: table.get
+      position: [2890, 14920]
+    - id: 2088500389
+      type: flow.branch
+      position: [3400, 14520]
+    - id: 2088500390
+      type: func.call
+      position: [3740, 14520]
+      values:
+        function: show
+    - id: 2088500391
+      type: var.get
+      position: [3570, 14680]
+      values:
+        variable: settle_c
+    - id: 2088500392
+      type: var.get
+      position: [3570, 14800]
+      values:
+        variable: settle_r
+    - id: 2088500393
+      type: event.on_update
+      position: [340, 15180]
+    - id: 2088500394
+      type: custom.call
+      position: [680, 15180]
+      values:
+        custom: do_on_update
+    - id: 2088500395
+      type: custom.call
+      position: [170, 11640]
+      values:
+        custom: init_state
+    - id: 2088500396
+      type: logic.select
+      position: [510, 2800]
+      values:
+        Condition: "true"
+    - id: 2088500397
+      type: logic.select
+      position: [1530, 3340]
+      values:
+        Condition: "true"
+    - id: 2088500398
+      type: logic.select
+      position: [2890, 4180]
+      values:
+        Condition: "true"
+  links:
+    - {from: 2088500002, fromPin: Value, to: 2088500003, toPin: A}
+    - {from: 2088500001, fromPin: x, to: 2088500004, toPin: A}
+    - {from: 2088500003, fromPin: Result, to: 2088500004, toPin: B}
+    - {from: 2088500004, fromPin: Result, to: 2088500005, toPin: A}
+    - {from: 2088500006, fromPin: Value, to: 2088500007, toPin: A}
+    - {from: 2088500007, fromPin: Result, to: 2088500008, toPin: A}
+    - {from: 2088500001, fromPin: y, to: 2088500008, toPin: B}
+    - {from: 2088500008, fromPin: Result, to: 2088500009, toPin: A}
+    - {from: 2088500005, fromPin: Result, to: 2088500010, toPin: result}
+    - {from: 2088500009, fromPin: Result, to: 2088500010, toPin: result_2}
+    - {from: 2088500001, fromPin: Then, to: 2088500010, toPin: Exec}
+    - {from: 2088500011, fromPin: r, to: 2088500013, toPin: A}
+    - {from: 2088500012, fromPin: Value, to: 2088500013, toPin: B}
+    - {from: 2088500013, fromPin: Result, to: 2088500014, toPin: A}
+    - {from: 2088500011, fromPin: c, to: 2088500014, toPin: B}
+    - {from: 2088500014, fromPin: Result, to: 2088500015, toPin: result}
+    - {from: 2088500011, fromPin: Then, to: 2088500015, toPin: Exec}
+    - {from: 2088500017, fromPin: Value, to: 2088500018, toPin: Table}
+    - {from: 2088500016, fromPin: key, to: 2088500018, toPin: Key}
+    - {from: 2088500018, fromPin: Result, to: 2088500019, toPin: Value}
+    - {from: 2088500016, fromPin: Then, to: 2088500019, toPin: Exec}
+    - {from: 2088500020, fromPin: Value, to: 2088500021, toPin: A}
+    - {from: 2088500022, fromPin: Result, to: 2088500021, toPin: B}
+    - {from: 2088500023, fromPin: Value, to: 2088500396, toPin: "True"}
+    - {from: 2088500396, fromPin: Result, to: 2088500024, toPin: Table}
+    - {from: 2088500021, fromPin: Result, to: 2088500025, toPin: A}
+    - {from: 2088500024, fromPin: Result, to: 2088500025, toPin: B}
+    - {from: 2088500025, fromPin: Result, to: 2088500026, toPin: result}
+    - {from: 2088500019, fromPin: Then, to: 2088500026, toPin: Exec}
+    - {from: 2088500027, fromPin: c, to: 2088500028, toPin: c}
+    - {from: 2088500027, fromPin: r, to: 2088500028, toPin: r}
+    - {from: 2088500027, fromPin: Then, to: 2088500028, toPin: Exec}
+    - {from: 2088500028, fromPin: result, to: 2088500029, toPin: Value}
+    - {from: 2088500028, fromPin: Then, to: 2088500029, toPin: Exec}
+    - {from: 2088500030, fromPin: Value, to: 2088500032, toPin: Table}
+    - {from: 2088500031, fromPin: Value, to: 2088500032, toPin: Key}
+    - {from: 2088500032, fromPin: Result, to: 2088500033, toPin: Value}
+    - {from: 2088500029, fromPin: Then, to: 2088500033, toPin: Exec}
+    - {from: 2088500035, fromPin: Value, to: 2088500397, toPin: "True"}
+    - {from: 2088500397, fromPin: Result, to: 2088500034, toPin: Condition}
+    - {from: 2088500033, fromPin: Then, to: 2088500034, toPin: Exec}
+    - {from: 2088500037, fromPin: Value, to: 2088500036, toPin: key}
+    - {from: 2088500034, fromPin: "False", to: 2088500036, toPin: Exec}
+    - {from: 2088500036, fromPin: result, to: 2088500038, toPin: Value}
+    - {from: 2088500036, fromPin: Then, to: 2088500038, toPin: Exec}
+    - {from: 2088500039, fromPin: Value, to: 2088500040, toPin: Value}
+    - {from: 2088500038, fromPin: Then, to: 2088500040, toPin: Exec}
+    - {from: 2088500034, fromPin: "True", to: 2088500040, toPin: Exec}
+    - {from: 2088500042, fromPin: Result, to: 2088500041, toPin: entity_id}
+    - {from: 2088500043, fromPin: Value, to: 2088500044, toPin: A}
+    - {from: 2088500044, fromPin: Result, to: 2088500041, toPin: layer}
+    - {from: 2088500027, fromPin: c, to: 2088500041, toPin: cell_x}
+    - {from: 2088500027, fromPin: r, to: 2088500041, toPin: cell_y}
+    - {from: 2088500045, fromPin: Value, to: 2088500398, toPin: "True"}
+    - {from: 2088500398, fromPin: Result, to: 2088500048, toPin: Condition}
+    - {from: 2088500046, fromPin: Value, to: 2088500048, toPin: "True"}
+    - {from: 2088500047, fromPin: Value, to: 2088500048, toPin: "False"}
+    - {from: 2088500048, fromPin: Result, to: 2088500049, toPin: A}
+    - {from: 2088500049, fromPin: Result, to: 2088500041, toPin: terrain}
+    - {from: 2088500040, fromPin: Then, to: 2088500041, toPin: Exec}
+    - {from: 2088500051, fromPin: Value, to: 2088500052, toPin: Table}
+    - {from: 2088500050, fromPin: key, to: 2088500052, toPin: Key}
+    - {from: 2088500050, fromPin: Then, to: 2088500052, toPin: Exec}
+    - {from: 2088500050, fromPin: key, to: 2088500054, toPin: A}
+    - {from: 2088500053, fromPin: Value, to: 2088500055, toPin: Table}
+    - {from: 2088500054, fromPin: Result, to: 2088500055, toPin: Key}
+    - {from: 2088500056, fromPin: Result, to: 2088500055, toPin: Value}
+    - {from: 2088500052, fromPin: Then, to: 2088500055, toPin: Exec}
+    - {from: 2088500057, fromPin: Value, to: 2088500058, toPin: Table}
+    - {from: 2088500050, fromPin: key, to: 2088500058, toPin: Key}
+    - {from: 2088500058, fromPin: Result, to: 2088500059, toPin: A}
+    - {from: 2088500059, fromPin: Result, to: 2088500060, toPin: Condition}
+    - {from: 2088500055, fromPin: Then, to: 2088500060, toPin: Exec}
+    - {from: 2088500061, fromPin: Value, to: 2088500062, toPin: A}
+    - {from: 2088500062, fromPin: Result, to: 2088500063, toPin: Value}
+    - {from: 2088500060, fromPin: "True", to: 2088500063, toPin: Exec}
+    - {from: 2088500064, fromPin: c, to: 2088500065, toPin: A}
+    - {from: 2088500064, fromPin: r, to: 2088500066, toPin: A}
+    - {from: 2088500065, fromPin: Result, to: 2088500067, toPin: A}
+    - {from: 2088500066, fromPin: Result, to: 2088500067, toPin: B}
+    - {from: 2088500064, fromPin: c, to: 2088500069, toPin: A}
+    - {from: 2088500068, fromPin: Value, to: 2088500069, toPin: B}
+    - {from: 2088500067, fromPin: Result, to: 2088500070, toPin: A}
+    - {from: 2088500069, fromPin: Result, to: 2088500070, toPin: B}
+    - {from: 2088500064, fromPin: r, to: 2088500072, toPin: A}
+    - {from: 2088500071, fromPin: Value, to: 2088500072, toPin: B}
+    - {from: 2088500070, fromPin: Result, to: 2088500073, toPin: A}
+    - {from: 2088500072, fromPin: Result, to: 2088500073, toPin: B}
+    - {from: 2088500073, fromPin: Result, to: 2088500074, toPin: Condition}
+    - {from: 2088500064, fromPin: Then, to: 2088500074, toPin: Exec}
+    - {from: 2088500074, fromPin: "True", to: 2088500075, toPin: Exec}
+    - {from: 2088500064, fromPin: c, to: 2088500076, toPin: c}
+    - {from: 2088500064, fromPin: r, to: 2088500076, toPin: r}
+    - {from: 2088500074, fromPin: "False", to: 2088500076, toPin: Exec}
+    - {from: 2088500076, fromPin: result, to: 2088500077, toPin: Value}
+    - {from: 2088500076, fromPin: Then, to: 2088500077, toPin: Exec}
+    - {from: 2088500078, fromPin: Value, to: 2088500080, toPin: Table}
+    - {from: 2088500079, fromPin: Value, to: 2088500080, toPin: Key}
+    - {from: 2088500080, fromPin: Result, to: 2088500081, toPin: A}
+    - {from: 2088500081, fromPin: Result, to: 2088500082, toPin: Condition}
+    - {from: 2088500077, fromPin: Then, to: 2088500082, toPin: Exec}
+    - {from: 2088500084, fromPin: Value, to: 2088500083, toPin: key}
+    - {from: 2088500082, fromPin: "True", to: 2088500083, toPin: Exec}
+    - {from: 2088500083, fromPin: Then, to: 2088500085, toPin: Exec}
+    - {from: 2088500064, fromPin: c, to: 2088500086, toPin: c}
+    - {from: 2088500064, fromPin: r, to: 2088500086, toPin: r}
+    - {from: 2088500085, fromPin: Then, to: 2088500086, toPin: Exec}
+    - {from: 2088500087, fromPin: angle, to: 2088500088, toPin: A}
+    - {from: 2088500088, fromPin: Result, to: 2088500089, toPin: A}
+    - {from: 2088500087, fromPin: angle, to: 2088500090, toPin: A}
+    - {from: 2088500090, fromPin: Result, to: 2088500091, toPin: A}
+    - {from: 2088500089, fromPin: Result, to: 2088500092, toPin: Value}
+    - {from: 2088500087, fromPin: Then, to: 2088500092, toPin: Exec}
+    - {from: 2088500091, fromPin: Result, to: 2088500093, toPin: Value}
+    - {from: 2088500092, fromPin: Then, to: 2088500093, toPin: Exec}
+    - {from: 2088500087, fromPin: px, to: 2088500094, toPin: A}
+    - {from: 2088500087, fromPin: py, to: 2088500095, toPin: A}
+    - {from: 2088500094, fromPin: Result, to: 2088500096, toPin: Value}
+    - {from: 2088500093, fromPin: Then, to: 2088500096, toPin: Exec}
+    - {from: 2088500095, fromPin: Result, to: 2088500097, toPin: Value}
+    - {from: 2088500096, fromPin: Then, to: 2088500097, toPin: Exec}
+    - {from: 2088500098, fromPin: Value, to: 2088500099, toPin: A}
+    - {from: 2088500099, fromPin: Result, to: 2088500100, toPin: Condition}
+    - {from: 2088500101, fromPin: Value, to: 2088500102, toPin: A}
+    - {from: 2088500102, fromPin: Result, to: 2088500103, toPin: Condition}
+    - {from: 2088500100, fromPin: Result, to: 2088500104, toPin: Value}
+    - {from: 2088500097, fromPin: Then, to: 2088500104, toPin: Exec}
+    - {from: 2088500103, fromPin: Result, to: 2088500105, toPin: Value}
+    - {from: 2088500104, fromPin: Then, to: 2088500105, toPin: Exec}
+    - {from: 2088500106, fromPin: Value, to: 2088500107, toPin: A}
+    - {from: 2088500108, fromPin: Value, to: 2088500109, toPin: B}
+    - {from: 2088500109, fromPin: Result, to: 2088500110, toPin: A}
+    - {from: 2088500107, fromPin: Result, to: 2088500111, toPin: Condition}
+    - {from: 2088500110, fromPin: Result, to: 2088500111, toPin: "False"}
+    - {from: 2088500111, fromPin: Result, to: 2088500112, toPin: Value}
+    - {from: 2088500105, fromPin: Then, to: 2088500112, toPin: Exec}
+    - {from: 2088500113, fromPin: Value, to: 2088500114, toPin: A}
+    - {from: 2088500115, fromPin: Value, to: 2088500116, toPin: B}
+    - {from: 2088500116, fromPin: Result, to: 2088500117, toPin: A}
+    - {from: 2088500114, fromPin: Result, to: 2088500118, toPin: Condition}
+    - {from: 2088500117, fromPin: Result, to: 2088500118, toPin: "False"}
+    - {from: 2088500118, fromPin: Result, to: 2088500119, toPin: Value}
+    - {from: 2088500112, fromPin: Then, to: 2088500119, toPin: Exec}
+    - {from: 2088500120, fromPin: Value, to: 2088500121, toPin: A}
+    - {from: 2088500122, fromPin: Value, to: 2088500123, toPin: A}
+    - {from: 2088500087, fromPin: px, to: 2088500125, toPin: A}
+    - {from: 2088500124, fromPin: Value, to: 2088500125, toPin: B}
+    - {from: 2088500126, fromPin: Value, to: 2088500127, toPin: A}
+    - {from: 2088500127, fromPin: Result, to: 2088500128, toPin: A}
+    - {from: 2088500087, fromPin: px, to: 2088500128, toPin: B}
+    - {from: 2088500123, fromPin: Result, to: 2088500129, toPin: Condition}
+    - {from: 2088500125, fromPin: Result, to: 2088500129, toPin: "True"}
+    - {from: 2088500128, fromPin: Result, to: 2088500129, toPin: "False"}
+    - {from: 2088500129, fromPin: Result, to: 2088500131, toPin: A}
+    - {from: 2088500130, fromPin: Value, to: 2088500131, toPin: B}
+    - {from: 2088500121, fromPin: Result, to: 2088500132, toPin: Condition}
+    - {from: 2088500131, fromPin: Result, to: 2088500132, toPin: "False"}
+    - {from: 2088500132, fromPin: Result, to: 2088500133, toPin: Value}
+    - {from: 2088500119, fromPin: Then, to: 2088500133, toPin: Exec}
+    - {from: 2088500134, fromPin: Value, to: 2088500135, toPin: A}
+    - {from: 2088500136, fromPin: Value, to: 2088500137, toPin: A}
+    - {from: 2088500087, fromPin: py, to: 2088500139, toPin: A}
+    - {from: 2088500138, fromPin: Value, to: 2088500139, toPin: B}
+    - {from: 2088500140, fromPin: Value, to: 2088500141, toPin: A}
+    - {from: 2088500141, fromPin: Result, to: 2088500142, toPin: A}
+    - {from: 2088500087, fromPin: py, to: 2088500142, toPin: B}
+    - {from: 2088500137, fromPin: Result, to: 2088500143, toPin: Condition}
+    - {from: 2088500139, fromPin: Result, to: 2088500143, toPin: "True"}
+    - {from: 2088500142, fromPin: Result, to: 2088500143, toPin: "False"}
+    - {from: 2088500143, fromPin: Result, to: 2088500145, toPin: A}
+    - {from: 2088500144, fromPin: Value, to: 2088500145, toPin: B}
+    - {from: 2088500135, fromPin: Result, to: 2088500146, toPin: Condition}
+    - {from: 2088500145, fromPin: Result, to: 2088500146, toPin: "False"}
+    - {from: 2088500146, fromPin: Result, to: 2088500147, toPin: Value}
+    - {from: 2088500133, fromPin: Then, to: 2088500147, toPin: Exec}
+    - {from: 2088500147, fromPin: Then, to: 2088500148, toPin: Exec}
+    - {from: 2088500150, fromPin: Result, to: 2088500149, toPin: Value}
+    - {from: 2088500148, fromPin: Body, to: 2088500149, toPin: Exec}
+    - {from: 2088500151, fromPin: Value, to: 2088500153, toPin: A}
+    - {from: 2088500152, fromPin: Value, to: 2088500153, toPin: B}
+    - {from: 2088500153, fromPin: Result, to: 2088500154, toPin: Condition}
+    - {from: 2088500149, fromPin: Then, to: 2088500154, toPin: Exec}
+    - {from: 2088500155, fromPin: Value, to: 2088500156, toPin: Value}
+    - {from: 2088500154, fromPin: "True", to: 2088500156, toPin: Exec}
+    - {from: 2088500157, fromPin: Value, to: 2088500159, toPin: A}
+    - {from: 2088500158, fromPin: Value, to: 2088500159, toPin: B}
+    - {from: 2088500159, fromPin: Result, to: 2088500160, toPin: Value}
+    - {from: 2088500156, fromPin: Then, to: 2088500160, toPin: Exec}
+    - {from: 2088500161, fromPin: Value, to: 2088500163, toPin: A}
+    - {from: 2088500162, fromPin: Value, to: 2088500163, toPin: B}
+    - {from: 2088500163, fromPin: Result, to: 2088500164, toPin: Value}
+    - {from: 2088500160, fromPin: Then, to: 2088500164, toPin: Exec}
+    - {from: 2088500165, fromPin: Value, to: 2088500166, toPin: Value}
+    - {from: 2088500154, fromPin: "False", to: 2088500166, toPin: Exec}
+    - {from: 2088500167, fromPin: Value, to: 2088500169, toPin: A}
+    - {from: 2088500168, fromPin: Value, to: 2088500169, toPin: B}
+    - {from: 2088500169, fromPin: Result, to: 2088500170, toPin: Value}
+    - {from: 2088500166, fromPin: Then, to: 2088500170, toPin: Exec}
+    - {from: 2088500171, fromPin: Value, to: 2088500173, toPin: A}
+    - {from: 2088500172, fromPin: Value, to: 2088500173, toPin: B}
+    - {from: 2088500173, fromPin: Result, to: 2088500174, toPin: Value}
+    - {from: 2088500170, fromPin: Then, to: 2088500174, toPin: Exec}
+    - {from: 2088500175, fromPin: Value, to: 2088500177, toPin: A}
+    - {from: 2088500176, fromPin: Value, to: 2088500177, toPin: B}
+    - {from: 2088500178, fromPin: Value, to: 2088500179, toPin: A}
+    - {from: 2088500177, fromPin: Result, to: 2088500180, toPin: A}
+    - {from: 2088500179, fromPin: Result, to: 2088500180, toPin: B}
+    - {from: 2088500181, fromPin: Value, to: 2088500182, toPin: A}
+    - {from: 2088500180, fromPin: Result, to: 2088500183, toPin: A}
+    - {from: 2088500182, fromPin: Result, to: 2088500183, toPin: B}
+    - {from: 2088500184, fromPin: Value, to: 2088500186, toPin: A}
+    - {from: 2088500185, fromPin: Value, to: 2088500186, toPin: B}
+    - {from: 2088500183, fromPin: Result, to: 2088500187, toPin: A}
+    - {from: 2088500186, fromPin: Result, to: 2088500187, toPin: B}
+    - {from: 2088500188, fromPin: Value, to: 2088500190, toPin: A}
+    - {from: 2088500189, fromPin: Value, to: 2088500190, toPin: B}
+    - {from: 2088500187, fromPin: Result, to: 2088500191, toPin: A}
+    - {from: 2088500190, fromPin: Result, to: 2088500191, toPin: B}
+    - {from: 2088500191, fromPin: Result, to: 2088500192, toPin: Condition}
+    - {from: 2088500164, fromPin: Then, to: 2088500192, toPin: Exec}
+    - {from: 2088500174, fromPin: Then, to: 2088500192, toPin: Exec}
+    - {from: 2088500192, fromPin: "True", to: 2088500193, toPin: Exec}
+    - {from: 2088500195, fromPin: Value, to: 2088500194, toPin: c}
+    - {from: 2088500196, fromPin: Value, to: 2088500194, toPin: r}
+    - {from: 2088500192, fromPin: "False", to: 2088500194, toPin: Exec}
+    - {from: 2088500198, fromPin: Value, to: 2088500197, toPin: c}
+    - {from: 2088500199, fromPin: Value, to: 2088500197, toPin: r}
+    - {from: 2088500194, fromPin: Then, to: 2088500197, toPin: Exec}
+    - {from: 2088500197, fromPin: result, to: 2088500200, toPin: Value}
+    - {from: 2088500197, fromPin: Then, to: 2088500200, toPin: Exec}
+    - {from: 2088500201, fromPin: Value, to: 2088500203, toPin: Table}
+    - {from: 2088500202, fromPin: Value, to: 2088500203, toPin: Key}
+    - {from: 2088500203, fromPin: Result, to: 2088500204, toPin: Condition}
+    - {from: 2088500200, fromPin: Then, to: 2088500204, toPin: Exec}
+    - {from: 2088500206, fromPin: Value, to: 2088500205, toPin: key}
+    - {from: 2088500204, fromPin: "False", to: 2088500205, toPin: Exec}
+    - {from: 2088500205, fromPin: result, to: 2088500207, toPin: Condition}
+    - {from: 2088500205, fromPin: Then, to: 2088500207, toPin: Exec}
+    - {from: 2088500204, fromPin: "True", to: 2088500208, toPin: Exec}
+    - {from: 2088500207, fromPin: "True", to: 2088500208, toPin: Exec}
+    - {from: 2088500210, fromPin: Value, to: 2088500211, toPin: A}
+    - {from: 2088500211, fromPin: Result, to: 2088500212, toPin: Condition}
+    - {from: 2088500209, fromPin: Then, to: 2088500212, toPin: Exec}
+    - {from: 2088500212, fromPin: "True", to: 2088500213, toPin: Exec}
+    - {from: 2088500214, fromPin: Value, to: 2088500215, toPin: B}
+    - {from: 2088500215, fromPin: Result, to: 2088500217, toPin: A}
+    - {from: 2088500216, fromPin: Value, to: 2088500217, toPin: B}
+    - {from: 2088500217, fromPin: Result, to: 2088500218, toPin: A}
+    - {from: 2088500218, fromPin: Result, to: 2088500219, toPin: result}
+    - {from: 2088500212, fromPin: "False", to: 2088500219, toPin: Exec}
+    - {from: 2088500221, fromPin: Value, to: 2088500223, toPin: A}
+    - {from: 2088500222, fromPin: Value, to: 2088500223, toPin: B}
+    - {from: 2088500223, fromPin: Result, to: 2088500225, toPin: A}
+    - {from: 2088500224, fromPin: Value, to: 2088500225, toPin: B}
+    - {from: 2088500225, fromPin: Result, to: 2088500226, toPin: A}
+    - {from: 2088500226, fromPin: Result, to: 2088500227, toPin: Value}
+    - {from: 2088500220, fromPin: Then, to: 2088500227, toPin: Exec}
+    - {from: 2088500228, fromPin: Value, to: 2088500231, toPin: A}
+    - {from: 2088500231, fromPin: Result, to: 2088500230, toPin: First}
+    - {from: 2088500229, fromPin: Value, to: 2088500232, toPin: A}
+    - {from: 2088500232, fromPin: Result, to: 2088500230, toPin: Last}
+    - {from: 2088500227, fromPin: Then, to: 2088500230, toPin: Exec}
+    - {from: 2088500233, fromPin: Value, to: 2088500234, toPin: A}
+    - {from: 2088500234, fromPin: Result, to: 2088500236, toPin: A}
+    - {from: 2088500236, fromPin: Result, to: 2088500235, toPin: Last}
+    - {from: 2088500230, fromPin: Body, to: 2088500235, toPin: Exec}
+    - {from: 2088500235, fromPin: Index, to: 2088500237, toPin: c}
+    - {from: 2088500230, fromPin: Index, to: 2088500237, toPin: r}
+    - {from: 2088500235, fromPin: Body, to: 2088500237, toPin: Exec}
+    - {from: 2088500237, fromPin: result, to: 2088500238, toPin: Value}
+    - {from: 2088500237, fromPin: Then, to: 2088500238, toPin: Exec}
+    - {from: 2088500240, fromPin: Result, to: 2088500239, toPin: entity_id}
+    - {from: 2088500241, fromPin: Value, to: 2088500242, toPin: A}
+    - {from: 2088500242, fromPin: Result, to: 2088500239, toPin: layer}
+    - {from: 2088500235, fromPin: Index, to: 2088500239, toPin: cell_x}
+    - {from: 2088500230, fromPin: Index, to: 2088500239, toPin: cell_y}
+    - {from: 2088500239, fromPin: terrain, to: 2088500244, toPin: A}
+    - {from: 2088500243, fromPin: Value, to: 2088500244, toPin: B}
+    - {from: 2088500245, fromPin: Value, to: 2088500247, toPin: Table}
+    - {from: 2088500246, fromPin: Value, to: 2088500247, toPin: Key}
+    - {from: 2088500244, fromPin: Result, to: 2088500247, toPin: Value}
+    - {from: 2088500238, fromPin: Then, to: 2088500247, toPin: Exec}
+    - {from: 2088500248, fromPin: Value, to: 2088500250, toPin: Table}
+    - {from: 2088500249, fromPin: Value, to: 2088500250, toPin: Key}
+    - {from: 2088500250, fromPin: Result, to: 2088500251, toPin: A}
+    - {from: 2088500251, fromPin: Result, to: 2088500252, toPin: Condition}
+    - {from: 2088500247, fromPin: Then, to: 2088500252, toPin: Exec}
+    - {from: 2088500253, fromPin: Value, to: 2088500254, toPin: A}
+    - {from: 2088500254, fromPin: Result, to: 2088500255, toPin: Value}
+    - {from: 2088500252, fromPin: "True", to: 2088500255, toPin: Exec}
+    - {from: 2088500257, fromPin: Value, to: 2088500258, toPin: A}
+    - {from: 2088500256, fromPin: Value, to: 2088500259, toPin: Table}
+    - {from: 2088500258, fromPin: Result, to: 2088500259, toPin: Key}
+    - {from: 2088500260, fromPin: Result, to: 2088500259, toPin: Value}
+    - {from: 2088500255, fromPin: Then, to: 2088500259, toPin: Exec}
+    - {from: 2088500252, fromPin: "False", to: 2088500259, toPin: Exec}
+    - {from: 2088500262, fromPin: Result, to: 2088500261, toPin: entity_id}
+    - {from: 2088500263, fromPin: Value, to: 2088500264, toPin: A}
+    - {from: 2088500264, fromPin: Result, to: 2088500261, toPin: layer}
+    - {from: 2088500235, fromPin: Index, to: 2088500261, toPin: cell_x}
+    - {from: 2088500230, fromPin: Index, to: 2088500261, toPin: cell_y}
+    - {from: 2088500261, fromPin: terrain, to: 2088500265, toPin: A}
+    - {from: 2088500265, fromPin: Result, to: 2088500266, toPin: Condition}
+    - {from: 2088500259, fromPin: Then, to: 2088500266, toPin: Exec}
+    - {from: 2088500268, fromPin: Result, to: 2088500267, toPin: entity_id}
+    - {from: 2088500269, fromPin: Value, to: 2088500270, toPin: A}
+    - {from: 2088500270, fromPin: Result, to: 2088500267, toPin: layer}
+    - {from: 2088500235, fromPin: Index, to: 2088500267, toPin: cell_x}
+    - {from: 2088500230, fromPin: Index, to: 2088500267, toPin: cell_y}
+    - {from: 2088500266, fromPin: "True", to: 2088500267, toPin: Exec}
+    - {from: 2088500271, fromPin: Value, to: 2088500272, toPin: A}
+    - {from: 2088500272, fromPin: Result, to: 2088500273, toPin: Value}
+    - {from: 2088500230, fromPin: Completed, to: 2088500273, toPin: Exec}
+    - {from: 2088500274, fromPin: Value, to: 2088500276, toPin: A}
+    - {from: 2088500275, fromPin: Value, to: 2088500276, toPin: B}
+    - {from: 2088500276, fromPin: Result, to: 2088500277, toPin: result}
+    - {from: 2088500273, fromPin: Then, to: 2088500277, toPin: Exec}
+    - {from: 2088500279, fromPin: Result, to: 2088500280, toPin: Value}
+    - {from: 2088500278, fromPin: Then, to: 2088500280, toPin: Exec}
+    - {from: 2088500282, fromPin: Value, to: 2088500281, toPin: Table}
+    - {from: 2088500278, fromPin: scale, to: 2088500281, toPin: Value}
+    - {from: 2088500280, fromPin: Then, to: 2088500281, toPin: Exec}
+    - {from: 2088500284, fromPin: Value, to: 2088500283, toPin: Table}
+    - {from: 2088500278, fromPin: x, to: 2088500283, toPin: Value}
+    - {from: 2088500281, fromPin: Then, to: 2088500283, toPin: Exec}
+    - {from: 2088500286, fromPin: Value, to: 2088500285, toPin: Table}
+    - {from: 2088500278, fromPin: y, to: 2088500285, toPin: Value}
+    - {from: 2088500283, fromPin: Then, to: 2088500285, toPin: Exec}
+    - {from: 2088500287, fromPin: Value, to: 2088500288, toPin: Value}
+    - {from: 2088500285, fromPin: Then, to: 2088500288, toPin: Exec}
+    - {from: 2088500290, fromPin: Result, to: 2088500289, toPin: entity_id}
+    - {from: 2088500278, fromPin: x, to: 2088500289, toPin: x}
+    - {from: 2088500278, fromPin: y, to: 2088500289, toPin: y}
+    - {from: 2088500288, fromPin: Then, to: 2088500289, toPin: Exec}
+    - {from: 2088500292, fromPin: Result, to: 2088500291, toPin: entity_id}
+    - {from: 2088500278, fromPin: scale, to: 2088500291, toPin: sx}
+    - {from: 2088500278, fromPin: scale, to: 2088500291, toPin: sy}
+    - {from: 2088500289, fromPin: Then, to: 2088500291, toPin: Exec}
+    - {from: 2088500294, fromPin: Value, to: 2088500295, toPin: Value}
+    - {from: 2088500395, fromPin: Then, to: 2088500295, toPin: Exec}
+    - {from: 2088500296, fromPin: Value, to: 2088500297, toPin: Value}
+    - {from: 2088500295, fromPin: Then, to: 2088500297, toPin: Exec}
+    - {from: 2088500298, fromPin: entity_id, to: 2088500299, toPin: Value}
+    - {from: 2088500297, fromPin: Then, to: 2088500299, toPin: Exec}
+    - {from: 2088500300, fromPin: entity_id, to: 2088500301, toPin: Value}
+    - {from: 2088500299, fromPin: Then, to: 2088500301, toPin: Exec}
+    - {from: 2088500302, fromPin: entity_id, to: 2088500303, toPin: Value}
+    - {from: 2088500301, fromPin: Then, to: 2088500303, toPin: Exec}
+    - {from: 2088500304, fromPin: Value, to: 2088500305, toPin: List}
+    - {from: 2088500303, fromPin: Then, to: 2088500305, toPin: Exec}
+    - {from: 2088500305, fromPin: Item, to: 2088500306, toPin: name}
+    - {from: 2088500305, fromPin: Body, to: 2088500306, toPin: Exec}
+    - {from: 2088500306, fromPin: entity_ids, to: 2088500307, toPin: List}
+    - {from: 2088500306, fromPin: Then, to: 2088500307, toPin: Exec}
+    - {from: 2088500307, fromPin: Item, to: 2088500310, toPin: entity_id}
+    - {from: 2088500309, fromPin: Value, to: 2088500308, toPin: list}
+    - {from: 2088500307, fromPin: Item, to: 2088500308, toPin: id}
+    - {from: 2088500310, fromPin: state, to: 2088500308, toPin: state}
+    - {from: 2088500307, fromPin: Body, to: 2088500308, toPin: Exec}
+    - {from: 2088500305, fromPin: Completed, to: 2088500311, toPin: Exec}
+    - {from: 2088500311, fromPin: entity_ids, to: 2088500312, toPin: List}
+    - {from: 2088500311, fromPin: Then, to: 2088500312, toPin: Exec}
+    - {from: 2088500312, fromPin: Item, to: 2088500315, toPin: entity_id}
+    - {from: 2088500314, fromPin: Value, to: 2088500313, toPin: list}
+    - {from: 2088500312, fromPin: Item, to: 2088500313, toPin: id}
+    - {from: 2088500315, fromPin: state, to: 2088500313, toPin: state}
+    - {from: 2088500312, fromPin: Body, to: 2088500313, toPin: Exec}
+    - {from: 2088500316, fromPin: Value, to: 2088500317, toPin: List}
+    - {from: 2088500312, fromPin: Completed, to: 2088500317, toPin: Exec}
+    - {from: 2088500317, fromPin: Item, to: 2088500318, toPin: name}
+    - {from: 2088500317, fromPin: Body, to: 2088500318, toPin: Exec}
+    - {from: 2088500318, fromPin: entity_ids, to: 2088500319, toPin: List}
+    - {from: 2088500318, fromPin: Then, to: 2088500319, toPin: Exec}
+    - {from: 2088500320, fromPin: Result, to: 2088500321, toPin: Value}
+    - {from: 2088500319, fromPin: Body, to: 2088500321, toPin: Exec}
+    - {from: 2088500323, fromPin: Value, to: 2088500322, toPin: Table}
+    - {from: 2088500319, fromPin: Item, to: 2088500322, toPin: Value}
+    - {from: 2088500321, fromPin: Then, to: 2088500322, toPin: Exec}
+    - {from: 2088500325, fromPin: Value, to: 2088500324, toPin: Table}
+    - {from: 2088500322, fromPin: Then, to: 2088500324, toPin: Exec}
+    - {from: 2088500328, fromPin: Value, to: 2088500329, toPin: List}
+    - {from: 2088500329, fromPin: Result, to: 2088500330, toPin: A}
+    - {from: 2088500327, fromPin: Value, to: 2088500331, toPin: Table}
+    - {from: 2088500330, fromPin: Result, to: 2088500331, toPin: Key}
+    - {from: 2088500326, fromPin: Value, to: 2088500331, toPin: Value}
+    - {from: 2088500324, fromPin: Then, to: 2088500331, toPin: Exec}
+    - {from: 2088500317, fromPin: Completed, to: 2088500332, toPin: Exec}
+    - {from: 2088500334, fromPin: Value, to: 2088500335, toPin: Table}
+    - {from: 2088500336, fromPin: Value, to: 2088500337, toPin: Table}
+    - {from: 2088500338, fromPin: Value, to: 2088500339, toPin: Table}
+    - {from: 2088500335, fromPin: Result, to: 2088500333, toPin: scale}
+    - {from: 2088500337, fromPin: Result, to: 2088500333, toPin: x}
+    - {from: 2088500339, fromPin: Result, to: 2088500333, toPin: y}
+    - {from: 2088500332, fromPin: Then, to: 2088500333, toPin: Exec}
+    - {from: 2088500342, fromPin: Value, to: 2088500341, toPin: entity_id}
+    - {from: 2088500341, fromPin: x, to: 2088500343, toPin: Value}
+    - {from: 2088500340, fromPin: Then, to: 2088500343, toPin: Exec}
+    - {from: 2088500341, fromPin: y, to: 2088500344, toPin: Value}
+    - {from: 2088500343, fromPin: Then, to: 2088500344, toPin: Exec}
+    - {from: 2088500340, fromPin: id, to: 2088500345, toPin: entity_id}
+    - {from: 2088500345, fromPin: x, to: 2088500346, toPin: Value}
+    - {from: 2088500344, fromPin: Then, to: 2088500346, toPin: Exec}
+    - {from: 2088500345, fromPin: y, to: 2088500347, toPin: Value}
+    - {from: 2088500346, fromPin: Then, to: 2088500347, toPin: Exec}
+    - {from: 2088500348, fromPin: Value, to: 2088500350, toPin: A}
+    - {from: 2088500349, fromPin: Value, to: 2088500350, toPin: B}
+    - {from: 2088500350, fromPin: Result, to: 2088500351, toPin: A}
+    - {from: 2088500352, fromPin: Value, to: 2088500354, toPin: A}
+    - {from: 2088500353, fromPin: Value, to: 2088500354, toPin: B}
+    - {from: 2088500354, fromPin: Result, to: 2088500355, toPin: A}
+    - {from: 2088500351, fromPin: Result, to: 2088500356, toPin: A}
+    - {from: 2088500355, fromPin: Result, to: 2088500356, toPin: B}
+    - {from: 2088500356, fromPin: Result, to: 2088500357, toPin: A}
+    - {from: 2088500357, fromPin: Result, to: 2088500359, toPin: A}
+    - {from: 2088500358, fromPin: Value, to: 2088500359, toPin: B}
+    - {from: 2088500359, fromPin: Result, to: 2088500360, toPin: B}
+    - {from: 2088500360, fromPin: Result, to: 2088500361, toPin: Value}
+    - {from: 2088500347, fromPin: Then, to: 2088500361, toPin: Exec}
+    - {from: 2088500362, fromPin: Value, to: 2088500363, toPin: A}
+    - {from: 2088500363, fromPin: Result, to: 2088500364, toPin: Condition}
+    - {from: 2088500361, fromPin: Then, to: 2088500364, toPin: Exec}
+    - {from: 2088500340, fromPin: path, to: 2088500366, toPin: asset_path}
+    - {from: 2088500364, fromPin: "True", to: 2088500366, toPin: Exec}
+    - {from: 2088500366, fromPin: handle, to: 2088500365, toPin: handle}
+    - {from: 2088500367, fromPin: Value, to: 2088500365, toPin: volume}
+    - {from: 2088500366, fromPin: Then, to: 2088500365, toPin: Exec}
+    - {from: 2088500368, fromPin: d, to: 2088500370, toPin: Table}
+    - {from: 2088500370, fromPin: Result, to: 2088500369, toPin: entity_id}
+    - {from: 2088500369, fromPin: x, to: 2088500371, toPin: Value}
+    - {from: 2088500368, fromPin: Then, to: 2088500371, toPin: Exec}
+    - {from: 2088500369, fromPin: y, to: 2088500372, toPin: Value}
+    - {from: 2088500371, fromPin: Then, to: 2088500372, toPin: Exec}
+    - {from: 2088500374, fromPin: Value, to: 2088500373, toPin: x}
+    - {from: 2088500375, fromPin: Value, to: 2088500373, toPin: y}
+    - {from: 2088500372, fromPin: Then, to: 2088500373, toPin: Exec}
+    - {from: 2088500373, fromPin: result, to: 2088500376, toPin: Value}
+    - {from: 2088500373, fromPin: Then, to: 2088500376, toPin: Exec}
+    - {from: 2088500373, fromPin: result_2, to: 2088500377, toPin: Value}
+    - {from: 2088500376, fromPin: Then, to: 2088500377, toPin: Exec}
+    - {from: 2088500379, fromPin: Value, to: 2088500378, toPin: c}
+    - {from: 2088500380, fromPin: Value, to: 2088500378, toPin: r}
+    - {from: 2088500377, fromPin: Then, to: 2088500378, toPin: Exec}
+    - {from: 2088500378, fromPin: result, to: 2088500381, toPin: Value}
+    - {from: 2088500378, fromPin: Then, to: 2088500381, toPin: Exec}
+    - {from: 2088500383, fromPin: Value, to: 2088500385, toPin: Table}
+    - {from: 2088500384, fromPin: Value, to: 2088500385, toPin: Key}
+    - {from: 2088500382, fromPin: Result, to: 2088500385, toPin: Value}
+    - {from: 2088500381, fromPin: Then, to: 2088500385, toPin: Exec}
+    - {from: 2088500386, fromPin: Value, to: 2088500388, toPin: Table}
+    - {from: 2088500387, fromPin: Value, to: 2088500388, toPin: Key}
+    - {from: 2088500388, fromPin: Result, to: 2088500389, toPin: Condition}
+    - {from: 2088500385, fromPin: Then, to: 2088500389, toPin: Exec}
+    - {from: 2088500391, fromPin: Value, to: 2088500390, toPin: c}
+    - {from: 2088500392, fromPin: Value, to: 2088500390, toPin: r}
+    - {from: 2088500389, fromPin: "True", to: 2088500390, toPin: Exec}
+    - {from: 2088500393, fromPin: dt, to: 2088500394, toPin: dt}
+    - {from: 2088500393, fromPin: Then, to: 2088500394, toPin: Exec}
+    - {from: 2088500293, fromPin: Then, to: 2088500395, toPin: Exec}
+  groups:
+    - {id: 2088590000, title: cell_of, position: [146, -52], size: [830, 1200], color: Teal}
+    - {id: 2088590001, title: key_of, position: [146, 1208], size: [830, 600], color: Teal}
+    - {id: 2088590002, title: closed, position: [146, 1868], size: [1170, 1080], color: Teal}
+    - {id: 2088590003, title: show, position: [316, 3008], size: [3040, 1320], color: Teal}
+    - {id: 2088590004, title: mark, position: [146, 4388], size: [1850, 720], color: Teal}
+    - {id: 2088590005, title: reveal, position: [146, 5168], size: [3210, 1320], color: Teal}
+    - {id: 2088590006, title: cast, position: [146, 6548], size: [10010, 2280], color: Teal}
+    - {id: 2088590007, title: percent, position: [146, 8888], size: [1510, 840], color: Teal}
+    - {id: 2088590008, title: setup_fog_rows, position: [146, 9788], size: [4910, 1200], color: Teal}
+    - {id: 2088590009, title: place, position: [146, 11048], size: [2870, 480], color: Teal}
+    - {id: 2088590010, title: on_create, position: [146, 11588], size: [7630, 960], color: Red}
+    - {id: 2088590011, title: play_near, position: [146, 12608], size: [3210, 1800], color: Teal}
+    - {id: 2088590012, title: settle, position: [146, 14468], size: [3890, 600], color: Teal}
+    - {id: 2088590013, title: on_update, position: [316, 15128], size: [660, 200], color: Red}

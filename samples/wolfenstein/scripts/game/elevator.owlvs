@@ -1,0 +1,605 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: tally_scene, type: string, default: scenes/tally.owl}
+    - {name: fade_seconds, type: float, default: "0.6", min: 0}
+    - {name: turn_seconds, type: float, default: "1.2", min: 0}
+    - {name: skip_after, type: float, default: "0.3", min: 0}
+    - {name: fade_color, type: color, default: "0.22, 0.02, 0.02, 1"}
+    - {name: player_id, type: entity, default: "0", exposed: false}
+    - {name: door_id, type: entity, default: "0", exposed: false}
+    - {name: riding, type: bool, default: "false", exposed: false}
+    - {name: leaving, type: bool, default: "false", exposed: false}
+    - {name: ride_time, type: float, default: "0", exposed: false}
+    - {name: x, type: float, default: "0", exposed: false}
+    - {name: y, type: float, default: "0", exposed: false}
+    - {name: z, type: float, default: "0", exposed: false}
+    - {name: yaw, type: float, default: "0", exposed: false}
+    - {name: reduced, type: float, default: "0", exposed: false}
+  functions:
+    - name: leave
+      inputs: []
+      outputs: []
+    - name: on_ride_turned
+      inputs: []
+      outputs: []
+      exported: true
+    - name: start
+      inputs: []
+      outputs: []
+  nodes:
+    - id: 8191100001
+      type: event.on_create
+      position: [340, 0]
+    - id: 8191100002
+      type: call.scene.find_entity
+      position: [170, 160]
+      values:
+        name: Player
+    - id: 8191100003
+      type: var.set
+      position: [680, 0]
+      values:
+        variable: player_id
+    - id: 8191100004
+      type: call.scene.find_entity
+      position: [510, 160]
+      values:
+        name: ElevatorDoor
+    - id: 8191100005
+      type: var.set
+      position: [1020, 0]
+      values:
+        variable: door_id
+    - id: 8191100006
+      type: call.gamestate.set
+      position: [1360, 0]
+      values:
+        key: wolf_ride
+        value: "0"
+    - id: 8191100007
+      type: func.entry
+      position: [340, 420]
+      values:
+        function: leave
+    - id: 8191100008
+      type: var.get
+      position: [170, 580]
+      values:
+        variable: leaving
+    - id: 8191100009
+      type: flow.branch
+      position: [680, 420]
+    - id: 8191100010
+      type: func.return
+      position: [1020, 420]
+      values:
+        function: leave
+    - id: 8191100011
+      type: var.set
+      position: [1360, 420]
+      values:
+        variable: leaving
+        Value: "true"
+    - id: 8191100012
+      type: call.gamestate.set
+      position: [1700, 420]
+      values:
+        key: wolf_ride
+        value: "3"
+    - id: 8191100013
+      type: call.scene.transition_to
+      position: [2040, 420]
+      values:
+        split.rgba: "true"
+        kind: fade_out
+    - id: 8191100014
+      type: var.get
+      position: [1870, 580]
+      values:
+        variable: tally_scene
+    - id: 8191100015
+      type: var.get
+      position: [1870, 700]
+      values:
+        variable: fade_seconds
+    - id: 8191100016
+      type: var.get
+      position: [1870, 820]
+      values:
+        variable: fade_color
+    - id: 8191100017
+      type: math.break_color
+      position: [1870, 940]
+    - id: 8191100018
+      type: var.get
+      position: [1870, 1060]
+      values:
+        variable: fade_color
+    - id: 8191100019
+      type: math.break_color
+      position: [1870, 1180]
+    - id: 8191100020
+      type: var.get
+      position: [1870, 1300]
+      values:
+        variable: fade_color
+    - id: 8191100021
+      type: math.break_color
+      position: [1870, 1420]
+    - id: 8191100022
+      type: func.entry
+      position: [340, 1680]
+      values:
+        function: on_ride_turned
+    - id: 8191100023
+      type: var.get
+      position: [170, 1840]
+      values:
+        variable: door_id
+    - id: 8191100024
+      type: compare.not_equal
+      position: [170, 1960]
+      values:
+        B: "0"
+    - id: 8191100025
+      type: call.door.get_state
+      position: [170, 2080]
+    - id: 8191100026
+      type: var.get
+      position: [170, 2200]
+      values:
+        variable: door_id
+    - id: 8191100027
+      type: compare.not_equal
+      position: [170, 2320]
+      values:
+        B: idle
+    - id: 8191100028
+      type: logic.and
+      position: [170, 2440]
+    - id: 8191100029
+      type: flow.branch
+      position: [680, 1680]
+    - id: 8191100030
+      type: call.door.close
+      position: [1020, 1680]
+    - id: 8191100031
+      type: var.get
+      position: [850, 1840]
+      values:
+        variable: door_id
+    - id: 8191100032
+      type: event.custom
+      position: [340, 2700]
+      values:
+        function: on_ride_fade
+    - id: 8191100033
+      type: func.call
+      position: [680, 2700]
+      values:
+        function: leave
+    - id: 8191100034
+      type: event.custom
+      position: [340, 3000]
+      values:
+        function: on_ride_finished
+    - id: 8191100035
+      type: func.call
+      position: [680, 3000]
+      values:
+        function: leave
+    - id: 8191100036
+      type: func.entry
+      position: [340, 3300]
+      values:
+        function: start
+    - id: 8191100037
+      type: var.set
+      position: [680, 3300]
+      values:
+        variable: riding
+        Value: "true"
+    - id: 8191100038
+      type: var.set
+      position: [1020, 3300]
+      values:
+        variable: ride_time
+        Value: "0"
+    - id: 8191100039
+      type: call.gamestate.set
+      position: [1360, 3300]
+      values:
+        key: wolf_ride
+        value: "2"
+    - id: 8191100040
+      type: var.get
+      position: [1190, 3460]
+      values:
+        variable: player_id
+    - id: 8191100041
+      type: compare.not_equal
+      position: [1190, 3580]
+      values:
+        B: "0"
+    - id: 8191100042
+      type: flow.branch
+      position: [1700, 3300]
+    - id: 8191100043
+      type: call.transform.get_position
+      position: [1530, 3460]
+      values:
+        split.xyz: "true"
+    - id: 8191100044
+      type: var.get
+      position: [1530, 3580]
+      values:
+        variable: player_id
+    - id: 8191100045
+      type: var.set
+      position: [2040, 3300]
+      values:
+        variable: x
+    - id: 8191100046
+      type: var.set
+      position: [2380, 3300]
+      values:
+        variable: y
+    - id: 8191100047
+      type: var.set
+      position: [2720, 3300]
+      values:
+        variable: z
+    - id: 8191100048
+      type: call.transform.get_rotation
+      position: [2550, 3460]
+      values:
+        split.rotation: "true"
+    - id: 8191100049
+      type: var.get
+      position: [2550, 3580]
+      values:
+        variable: player_id
+    - id: 8191100050
+      type: var.set
+      position: [3060, 3300]
+      values:
+        variable: yaw
+    - id: 8191100051
+      type: call.transform.set_position
+      position: [3400, 3300]
+      values:
+        split.xyz: "true"
+    - id: 8191100052
+      type: value.self
+      position: [3230, 3460]
+    - id: 8191100053
+      type: var.get
+      position: [3230, 3580]
+      values:
+        variable: x
+    - id: 8191100054
+      type: var.get
+      position: [3230, 3700]
+      values:
+        variable: y
+    - id: 8191100055
+      type: var.get
+      position: [3230, 3820]
+      values:
+        variable: z
+    - id: 8191100056
+      type: call.transform.set_rotation
+      position: [3740, 3300]
+      values:
+        split.rotation: "true"
+        rx: "0"
+        ry: "0"
+    - id: 8191100057
+      type: value.self
+      position: [3570, 3460]
+    - id: 8191100058
+      type: var.get
+      position: [3570, 3580]
+      values:
+        variable: yaw
+    - id: 8191100059
+      type: call.sound.play
+      position: [4080, 3300]
+      values:
+        asset_path: sounds/game/elevator.wav
+    - id: 8191100060
+      type: call.ui.show_subtitle
+      position: [4420, 3300]
+      values:
+        text: "[The elevator hums and climbs]"
+        seconds: "2.5"
+    - id: 8191100061
+      type: call.settings.get
+      position: [4760, 3300]
+      values:
+        key: reduced_motion
+        default: "false"
+    - id: 8191100062
+      type: var.set
+      position: [5100, 3300]
+      values:
+        variable: reduced
+    - id: 8191100063
+      type: call.sequence.play
+      position: [5440, 3300]
+    - id: 8191100064
+      type: value.self
+      position: [5270, 3460]
+    - id: 8191100065
+      type: var.get
+      position: [5270, 3580]
+      values:
+        variable: reduced
+    - id: 8191100066
+      type: var.get
+      position: [5270, 3700]
+      values:
+        variable: turn_seconds
+    - id: 8191100067
+      type: logic.select
+      position: [5270, 3820]
+      values:
+        "False": "0"
+    - id: 8191100068
+      type: flow.branch
+      position: [5780, 3300]
+    - id: 8191100069
+      type: func.call
+      position: [6120, 3300]
+      values:
+        function: leave
+    - id: 8191100070
+      type: var.get
+      position: [5950, 3460]
+      values:
+        variable: reduced
+    - id: 8191100071
+      type: flow.branch
+      position: [6460, 3300]
+    - id: 8191100072
+      type: func.call
+      position: [6800, 3300]
+      values:
+        function: on_ride_turned
+    - id: 8191100073
+      type: event.on_update
+      position: [340, 4200]
+    - id: 8191100074
+      type: var.get
+      position: [170, 4360]
+      values:
+        variable: leaving
+    - id: 8191100075
+      type: flow.branch
+      position: [680, 4200]
+    - id: 8191100076
+      type: var.get
+      position: [510, 4360]
+      values:
+        variable: riding
+    - id: 8191100077
+      type: logic.not
+      position: [510, 4480]
+    - id: 8191100078
+      type: flow.branch
+      position: [1020, 4200]
+    - id: 8191100079
+      type: call.gamestate.get
+      position: [1360, 4200]
+      values:
+        key: wolf_ride
+        default: "0"
+    - id: 8191100080
+      type: compare.equal
+      position: [1190, 4360]
+      values:
+        B: "1"
+    - id: 8191100081
+      type: flow.branch
+      position: [1700, 4200]
+    - id: 8191100082
+      type: func.call
+      position: [2040, 4200]
+      values:
+        function: start
+    - id: 8191100083
+      type: var.get
+      position: [1870, 4360]
+      values:
+        variable: ride_time
+    - id: 8191100084
+      type: math.add
+      position: [1870, 4480]
+    - id: 8191100085
+      type: var.set
+      position: [2380, 4200]
+      values:
+        variable: ride_time
+    - id: 8191100086
+      type: var.get
+      position: [2210, 4360]
+      values:
+        variable: ride_time
+    - id: 8191100087
+      type: var.get
+      position: [2210, 4480]
+      values:
+        variable: skip_after
+    - id: 8191100088
+      type: compare.greater_equal
+      position: [2210, 4600]
+    - id: 8191100089
+      type: call.input.is_action_just_pressed
+      position: [2210, 4720]
+      values:
+        action: interact
+    - id: 8191100090
+      type: call.input.is_action_just_pressed
+      position: [2210, 4840]
+      values:
+        action: ui_accept
+    - id: 8191100091
+      type: logic.or
+      position: [2210, 4960]
+    - id: 8191100092
+      type: call.input.is_action_just_pressed
+      position: [2210, 5080]
+      values:
+        action: pause
+    - id: 8191100093
+      type: logic.or
+      position: [2210, 5200]
+    - id: 8191100094
+      type: logic.and
+      position: [2210, 5320]
+    - id: 8191100095
+      type: flow.branch
+      position: [2720, 4200]
+    - id: 8191100096
+      type: call.gamestate.set
+      position: [3060, 4200]
+      values:
+        key: wolf_ride_skipped
+        value: "1"
+    - id: 8191100097
+      type: call.sequence.stop
+      position: [3400, 4200]
+    - id: 8191100098
+      type: value.self
+      position: [3230, 4360]
+    - id: 8191100099
+      type: flow.branch
+      position: [3740, 4200]
+    - id: 8191100100
+      type: func.call
+      position: [4080, 4200]
+      values:
+        function: leave
+    - id: 8191100101
+      type: logic.select
+      position: [5270, 3940]
+      values:
+        Condition: "true"
+    - id: 8191100102
+      type: logic.select
+      position: [6290, 3460]
+      values:
+        Condition: "true"
+  links:
+    - {from: 8191100002, fromPin: entity_id, to: 8191100003, toPin: Value}
+    - {from: 8191100001, fromPin: Then, to: 8191100003, toPin: Exec}
+    - {from: 8191100004, fromPin: entity_id, to: 8191100005, toPin: Value}
+    - {from: 8191100003, fromPin: Then, to: 8191100005, toPin: Exec}
+    - {from: 8191100005, fromPin: Then, to: 8191100006, toPin: Exec}
+    - {from: 8191100008, fromPin: Value, to: 8191100009, toPin: Condition}
+    - {from: 8191100007, fromPin: Then, to: 8191100009, toPin: Exec}
+    - {from: 8191100009, fromPin: "True", to: 8191100010, toPin: Exec}
+    - {from: 8191100009, fromPin: "False", to: 8191100011, toPin: Exec}
+    - {from: 8191100011, fromPin: Then, to: 8191100012, toPin: Exec}
+    - {from: 8191100014, fromPin: Value, to: 8191100013, toPin: scene_path}
+    - {from: 8191100015, fromPin: Value, to: 8191100013, toPin: duration}
+    - {from: 8191100016, fromPin: Value, to: 8191100017, toPin: Value}
+    - {from: 8191100017, fromPin: R, to: 8191100013, toPin: r}
+    - {from: 8191100018, fromPin: Value, to: 8191100019, toPin: Value}
+    - {from: 8191100019, fromPin: G, to: 8191100013, toPin: g}
+    - {from: 8191100020, fromPin: Value, to: 8191100021, toPin: Value}
+    - {from: 8191100021, fromPin: B, to: 8191100013, toPin: b}
+    - {from: 8191100012, fromPin: Then, to: 8191100013, toPin: Exec}
+    - {from: 8191100023, fromPin: Value, to: 8191100024, toPin: A}
+    - {from: 8191100026, fromPin: Value, to: 8191100025, toPin: entity_id}
+    - {from: 8191100025, fromPin: state, to: 8191100027, toPin: A}
+    - {from: 8191100024, fromPin: Result, to: 8191100028, toPin: A}
+    - {from: 8191100027, fromPin: Result, to: 8191100028, toPin: B}
+    - {from: 8191100028, fromPin: Result, to: 8191100029, toPin: Condition}
+    - {from: 8191100022, fromPin: Then, to: 8191100029, toPin: Exec}
+    - {from: 8191100031, fromPin: Value, to: 8191100030, toPin: entity_id}
+    - {from: 8191100029, fromPin: "True", to: 8191100030, toPin: Exec}
+    - {from: 8191100032, fromPin: Then, to: 8191100033, toPin: Exec}
+    - {from: 8191100034, fromPin: Then, to: 8191100035, toPin: Exec}
+    - {from: 8191100036, fromPin: Then, to: 8191100037, toPin: Exec}
+    - {from: 8191100037, fromPin: Then, to: 8191100038, toPin: Exec}
+    - {from: 8191100038, fromPin: Then, to: 8191100039, toPin: Exec}
+    - {from: 8191100040, fromPin: Value, to: 8191100041, toPin: A}
+    - {from: 8191100041, fromPin: Result, to: 8191100042, toPin: Condition}
+    - {from: 8191100039, fromPin: Then, to: 8191100042, toPin: Exec}
+    - {from: 8191100044, fromPin: Value, to: 8191100043, toPin: entity_id}
+    - {from: 8191100043, fromPin: x, to: 8191100045, toPin: Value}
+    - {from: 8191100042, fromPin: "True", to: 8191100045, toPin: Exec}
+    - {from: 8191100043, fromPin: y, to: 8191100046, toPin: Value}
+    - {from: 8191100045, fromPin: Then, to: 8191100046, toPin: Exec}
+    - {from: 8191100043, fromPin: z, to: 8191100047, toPin: Value}
+    - {from: 8191100046, fromPin: Then, to: 8191100047, toPin: Exec}
+    - {from: 8191100049, fromPin: Value, to: 8191100048, toPin: entity_id}
+    - {from: 8191100048, fromPin: rz, to: 8191100050, toPin: Value}
+    - {from: 8191100047, fromPin: Then, to: 8191100050, toPin: Exec}
+    - {from: 8191100052, fromPin: Result, to: 8191100051, toPin: entity_id}
+    - {from: 8191100053, fromPin: Value, to: 8191100051, toPin: x}
+    - {from: 8191100054, fromPin: Value, to: 8191100051, toPin: y}
+    - {from: 8191100055, fromPin: Value, to: 8191100051, toPin: z}
+    - {from: 8191100050, fromPin: Then, to: 8191100051, toPin: Exec}
+    - {from: 8191100057, fromPin: Result, to: 8191100056, toPin: entity_id}
+    - {from: 8191100058, fromPin: Value, to: 8191100056, toPin: rz}
+    - {from: 8191100051, fromPin: Then, to: 8191100056, toPin: Exec}
+    - {from: 8191100056, fromPin: Then, to: 8191100059, toPin: Exec}
+    - {from: 8191100042, fromPin: "False", to: 8191100059, toPin: Exec}
+    - {from: 8191100059, fromPin: Then, to: 8191100060, toPin: Exec}
+    - {from: 8191100060, fromPin: Then, to: 8191100061, toPin: Exec}
+    - {from: 8191100061, fromPin: value, to: 8191100062, toPin: Value}
+    - {from: 8191100061, fromPin: Then, to: 8191100062, toPin: Exec}
+    - {from: 8191100064, fromPin: Result, to: 8191100063, toPin: entity_id}
+    - {from: 8191100065, fromPin: Value, to: 8191100101, toPin: "True"}
+    - {from: 8191100101, fromPin: Result, to: 8191100067, toPin: Condition}
+    - {from: 8191100066, fromPin: Value, to: 8191100067, toPin: "True"}
+    - {from: 8191100067, fromPin: Result, to: 8191100063, toPin: from}
+    - {from: 8191100062, fromPin: Then, to: 8191100063, toPin: Exec}
+    - {from: 8191100063, fromPin: done, to: 8191100068, toPin: Condition}
+    - {from: 8191100063, fromPin: Then, to: 8191100068, toPin: Exec}
+    - {from: 8191100068, fromPin: "False", to: 8191100069, toPin: Exec}
+    - {from: 8191100070, fromPin: Value, to: 8191100102, toPin: "True"}
+    - {from: 8191100102, fromPin: Result, to: 8191100071, toPin: Condition}
+    - {from: 8191100068, fromPin: "True", to: 8191100071, toPin: Exec}
+    - {from: 8191100071, fromPin: "True", to: 8191100072, toPin: Exec}
+    - {from: 8191100074, fromPin: Value, to: 8191100075, toPin: Condition}
+    - {from: 8191100073, fromPin: Then, to: 8191100075, toPin: Exec}
+    - {from: 8191100076, fromPin: Value, to: 8191100077, toPin: A}
+    - {from: 8191100077, fromPin: Result, to: 8191100078, toPin: Condition}
+    - {from: 8191100075, fromPin: "False", to: 8191100078, toPin: Exec}
+    - {from: 8191100078, fromPin: "True", to: 8191100079, toPin: Exec}
+    - {from: 8191100079, fromPin: value, to: 8191100080, toPin: A}
+    - {from: 8191100080, fromPin: Result, to: 8191100081, toPin: Condition}
+    - {from: 8191100079, fromPin: Then, to: 8191100081, toPin: Exec}
+    - {from: 8191100081, fromPin: "True", to: 8191100082, toPin: Exec}
+    - {from: 8191100083, fromPin: Value, to: 8191100084, toPin: A}
+    - {from: 8191100073, fromPin: dt, to: 8191100084, toPin: B}
+    - {from: 8191100084, fromPin: Result, to: 8191100085, toPin: Value}
+    - {from: 8191100078, fromPin: "False", to: 8191100085, toPin: Exec}
+    - {from: 8191100086, fromPin: Value, to: 8191100088, toPin: A}
+    - {from: 8191100087, fromPin: Value, to: 8191100088, toPin: B}
+    - {from: 8191100089, fromPin: pressed, to: 8191100091, toPin: A}
+    - {from: 8191100090, fromPin: pressed, to: 8191100091, toPin: B}
+    - {from: 8191100091, fromPin: Result, to: 8191100093, toPin: A}
+    - {from: 8191100092, fromPin: pressed, to: 8191100093, toPin: B}
+    - {from: 8191100088, fromPin: Result, to: 8191100094, toPin: A}
+    - {from: 8191100093, fromPin: Result, to: 8191100094, toPin: B}
+    - {from: 8191100094, fromPin: Result, to: 8191100095, toPin: Condition}
+    - {from: 8191100085, fromPin: Then, to: 8191100095, toPin: Exec}
+    - {from: 8191100095, fromPin: "True", to: 8191100096, toPin: Exec}
+    - {from: 8191100098, fromPin: Result, to: 8191100097, toPin: entity_id}
+    - {from: 8191100096, fromPin: Then, to: 8191100097, toPin: Exec}
+    - {from: 8191100097, fromPin: done, to: 8191100099, toPin: Condition}
+    - {from: 8191100097, fromPin: Then, to: 8191100099, toPin: Exec}
+    - {from: 8191100099, fromPin: "False", to: 8191100100, toPin: Exec}
+  groups:
+    - {id: 8191190000, title: on_create, position: [146, -52], size: [1510, 360], color: Red}
+    - {id: 8191190001, title: leave, position: [146, 368], size: [2190, 1200], color: Teal}
+    - {id: 8191190002, title: on_ride_turned, position: [146, 1628], size: [1170, 960], color: Red}
+    - {id: 8191190003, title: on_ride_fade, position: [316, 2648], size: [660, 200], color: Red}
+    - {id: 8191190004, title: on_ride_finished, position: [316, 2948], size: [660, 200], color: Red}
+    - {id: 8191190005, title: start, position: [316, 3248], size: [6780, 840], color: Teal}
+    - {id: 8191190006, title: on_update, position: [146, 4148], size: [4230, 1320], color: Red}

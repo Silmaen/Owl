@@ -1,0 +1,8 @@
+# Lunar Lander, third landing: a long approach, higher and faster than the second one, the target pad far ahead.
+scene: ../../../samples/lunar_lander/scenes/landing_3.owl
+steps:
+  - frames: 30
+  - expect: {gamestate: lander_landing, equals: 3}
+  - expect: {gamestate: lander_alt, greater: 80}
+  - expect: {gamestate: lander_hs, greater: 7}
+  - expect: {gamestate: lander_state, equals: fly}

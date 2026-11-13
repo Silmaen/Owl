@@ -62,7 +62,7 @@ Entities:
       gameVisible: true
     Hierarchy: {}
     LuaScript:
-      scriptPath: gid:f8c55a7c027a7f22:scripts/ui/neon_bricks.lua
+      scriptPath: gid:f8c55a7c027a7f22:scripts/ui/neon_bricks.owlvs
   - Entity: 7220000000000000005
     Tag:
       tag: MenuBrick
@@ -439,7 +439,7 @@ Entities:
       referenceResolution: [1280, 720]
       scaleMode: ScaleWithHeight
     LuaScript:
-      scriptPath: gid:bd6f3bba43909f0e:scripts/ui/settings.lua
+      scriptPath: gid:bd6f3bba43909f0e:scripts/ui/settings.owlvs
   - Entity: 7220000000000000030
     Tag:
       tag: SettingsList
@@ -455,15 +455,27 @@ Entities:
       anchorMin: [0.5, 0]
       anchorMax: [0.5, 0]
       pivot: [0.5, 0]
-      size: [0.9, 0.86]
+      size: [0.96, 0.9]
       sizeUnit: [ScreenHeight, ScreenHeight]
-      offset: [0, 0.08]
+      offset: [0, 0.06]
       offsetUnit: [ScreenHeight, ScreenHeight]
+    UiPanel:
+      backgroundColor: [0.03, 0.01, 0.08, 0.92]
+      borderColor: [0.55, 0.45, 0.3, 0.6]
+      borderWidth: 1
+      clipChildren: false
+      Box:
+        cornerRadius: 26
+        borderColor: [0.3, 0.8, 1, 0.8]
+        borderWidth: 2
+        shadowColor: [0.3, 0.8, 1, 0.35]
+        shadowOffset: [0, 0]
+        shadowBlur: 20
     UiLayout:
       arrangement: Column
       crossAlign: Center
       spacing: 6
-      padding: 4
+      padding: 14
       columns: 1
       cellSize: [0, 0]
   - Entity: 7220000000000000031
@@ -485,17 +497,24 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.07, 0.02, 0.14, 1]
-      hoverColor: [0.32, 0.05, 0.42, 1]
-      pressedColor: [0.55, 0.1, 0.6, 1]
+      normalColor: [0.05, 0.01, 0.12, 0.55]
+      hoverColor: [0.78, 0.12, 0.66, 1]
+      pressedColor: [1, 0.45, 0.9, 1]
       disabledColor: [0.06, 0.04, 0.08, 0.6]
       onClickCallback: go_back
+      Box:
+        cornerRadius: 100
+        borderColor: [0.6, 0.97, 1, 1]
+        borderWidth: 2.5
+        shadowColor: [1, 0.2, 0.75, 0.75]
+        shadowOffset: [0, 0]
+        shadowBlur: 14
     UiText:
       outlineWidth: 2
       outlineColor: [0.25, 0.02, 0.3, 1]
       text: 'BACK'
-      color: [0.6, 0.97, 1, 1]
-      fontSize: 30
+      color: [0.9, 0.99, 1, 1]
+      fontSize: 22
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -503,35 +522,14 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBoldItalic
+      font: PressStart2P-Regular
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: ''
-      highlightColor: [1, 0.3, 0.8, 1]
-      highlightThickness: 3
+      highlightColor: [1, 0.88, 0.3, 1]
+      highlightThickness: 2
   - Entity: 7220000000000000032
-    Tag:
-      tag: BackButtonFrame
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7220000000000000031
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:a1d187b64ee5d0ed:textures/ui/button_frame.png
-  - Entity: 7220000000000000033
     Tag:
       tag: ResetButton
     Transform:
@@ -550,17 +548,24 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.07, 0.02, 0.14, 1]
-      hoverColor: [0.32, 0.05, 0.42, 1]
-      pressedColor: [0.55, 0.1, 0.6, 1]
+      normalColor: [0.05, 0.01, 0.12, 0.55]
+      hoverColor: [0.78, 0.12, 0.66, 1]
+      pressedColor: [1, 0.45, 0.9, 1]
       disabledColor: [0.06, 0.04, 0.08, 0.6]
       onClickCallback: on_reset_clicked
+      Box:
+        cornerRadius: 100
+        borderColor: [0.6, 0.97, 1, 1]
+        borderWidth: 2.5
+        shadowColor: [1, 0.2, 0.75, 0.75]
+        shadowOffset: [0, 0]
+        shadowBlur: 14
     UiText:
       outlineWidth: 2
       outlineColor: [0.25, 0.02, 0.3, 1]
       text: 'RESET DEFAULTS'
-      color: [0.6, 0.97, 1, 1]
-      fontSize: 30
+      color: [0.9, 0.99, 1, 1]
+      fontSize: 22
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -568,35 +573,14 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBoldItalic
+      font: PressStart2P-Regular
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: ''
-      highlightColor: [1, 0.3, 0.8, 1]
-      highlightThickness: 3
-  - Entity: 7220000000000000034
-    Tag:
-      tag: ResetButtonFrame
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7220000000000000033
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:a1d187b64ee5d0ed:textures/ui/button_frame.png
-  - Entity: 7220000000000000035
+      highlightColor: [1, 0.88, 0.3, 1]
+      highlightThickness: 2
+  - Entity: 7220000000000000033
     Tag:
       tag: UiScaleSlider
     Transform:
@@ -622,13 +606,17 @@ Entities:
       fillColor: [1, 0.3, 0.8, 1]
       handleColor: [0.6, 0.97, 1, 1]
       onValueChangedCallback: on_ui_scale_changed
+      Box:
+        cornerRadius: 100
+        borderColor: [0.6, 0.97, 1, 1]
+        borderWidth: 1.5
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: 'on_slider_focused'
-      highlightColor: [1, 0.3, 0.8, 1]
-      highlightThickness: 3
-  - Entity: 7220000000000000036
+      highlightColor: [1, 0.88, 0.3, 1]
+      highlightThickness: 2
+  - Entity: 7220000000000000034
     Tag:
       tag: UiScaleLabel
     Transform:
@@ -651,7 +639,7 @@ Entities:
       outlineColor: [0.25, 0.02, 0.3, 1]
       text: 'Interface Size: 100%'
       color: [0.8, 0.78, 0.95, 0.9]
-      fontSize: 28
+      fontSize: 20
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -659,8 +647,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBoldItalic
-  - Entity: 7220000000000000037
+      font: PressStart2P-Regular
+  - Entity: 7220000000000000035
     Tag:
       tag: MouseSpeedSlider
     Transform:
@@ -686,13 +674,17 @@ Entities:
       fillColor: [1, 0.3, 0.8, 1]
       handleColor: [0.6, 0.97, 1, 1]
       onValueChangedCallback: on_mouse_speed_changed
+      Box:
+        cornerRadius: 100
+        borderColor: [0.6, 0.97, 1, 1]
+        borderWidth: 1.5
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: 'on_slider_focused'
-      highlightColor: [1, 0.3, 0.8, 1]
-      highlightThickness: 3
-  - Entity: 7220000000000000038
+      highlightColor: [1, 0.88, 0.3, 1]
+      highlightThickness: 2
+  - Entity: 7220000000000000036
     Tag:
       tag: MouseSpeedLabel
     Transform:
@@ -715,7 +707,7 @@ Entities:
       outlineColor: [0.25, 0.02, 0.3, 1]
       text: 'Mouse Speed: 100%'
       color: [0.8, 0.78, 0.95, 0.9]
-      fontSize: 28
+      fontSize: 20
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -723,8 +715,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBoldItalic
-  - Entity: 7220000000000000044
+      font: PressStart2P-Regular
+  - Entity: 7220000000000000037
     Tag:
       tag: SfxVolSlider
     Transform:
@@ -750,13 +742,17 @@ Entities:
       fillColor: [1, 0.3, 0.8, 1]
       handleColor: [0.6, 0.97, 1, 1]
       onValueChangedCallback: on_sfx_vol_changed
+      Box:
+        cornerRadius: 100
+        borderColor: [0.6, 0.97, 1, 1]
+        borderWidth: 1.5
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: 'on_slider_focused'
-      highlightColor: [1, 0.3, 0.8, 1]
-      highlightThickness: 3
-  - Entity: 7220000000000000045
+      highlightColor: [1, 0.88, 0.3, 1]
+      highlightThickness: 2
+  - Entity: 7220000000000000038
     Tag:
       tag: SfxVolLabel
     Transform:
@@ -779,7 +775,7 @@ Entities:
       outlineColor: [0.25, 0.02, 0.3, 1]
       text: 'Effects: 100%'
       color: [0.8, 0.78, 0.95, 0.9]
-      fontSize: 28
+      fontSize: 20
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -787,8 +783,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBoldItalic
-  - Entity: 7220000000000000042
+      font: PressStart2P-Regular
+  - Entity: 7220000000000000039
     Tag:
       tag: MusicVolSlider
     Transform:
@@ -814,13 +810,17 @@ Entities:
       fillColor: [1, 0.3, 0.8, 1]
       handleColor: [0.6, 0.97, 1, 1]
       onValueChangedCallback: on_music_vol_changed
+      Box:
+        cornerRadius: 100
+        borderColor: [0.6, 0.97, 1, 1]
+        borderWidth: 1.5
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: 'on_slider_focused'
-      highlightColor: [1, 0.3, 0.8, 1]
-      highlightThickness: 3
-  - Entity: 7220000000000000043
+      highlightColor: [1, 0.88, 0.3, 1]
+      highlightThickness: 2
+  - Entity: 7220000000000000040
     Tag:
       tag: MusicVolLabel
     Transform:
@@ -843,7 +843,7 @@ Entities:
       outlineColor: [0.25, 0.02, 0.3, 1]
       text: 'Music: 80%'
       color: [0.8, 0.78, 0.95, 0.9]
-      fontSize: 28
+      fontSize: 20
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -851,8 +851,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBoldItalic
-  - Entity: 7220000000000000039
+      font: PressStart2P-Regular
+  - Entity: 7220000000000000041
     Tag:
       tag: MasterVolSlider
     Transform:
@@ -878,13 +878,17 @@ Entities:
       fillColor: [1, 0.3, 0.8, 1]
       handleColor: [0.6, 0.97, 1, 1]
       onValueChangedCallback: on_master_vol_changed
+      Box:
+        cornerRadius: 100
+        borderColor: [0.6, 0.97, 1, 1]
+        borderWidth: 1.5
     UiFocus:
       focusable: true
       initial: true
       onFocusCallback: 'on_slider_focused'
-      highlightColor: [1, 0.3, 0.8, 1]
-      highlightThickness: 3
-  - Entity: 7220000000000000040
+      highlightColor: [1, 0.88, 0.3, 1]
+      highlightThickness: 2
+  - Entity: 7220000000000000042
     Tag:
       tag: MasterVolLabel
     Transform:
@@ -907,7 +911,7 @@ Entities:
       outlineColor: [0.25, 0.02, 0.3, 1]
       text: 'Master Volume: 100%'
       color: [0.8, 0.78, 0.95, 0.9]
-      fontSize: 28
+      fontSize: 20
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -915,8 +919,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBoldItalic
-  - Entity: 7220000000000000041
+      font: PressStart2P-Regular
+  - Entity: 7220000000000000043
     Tag:
       tag: TitleText
     Transform:
@@ -935,11 +939,11 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.25, 0.02, 0.3, 1]
+      outlineWidth: 1
+      outlineColor: [1, 0.85, 0.97, 0.55]
       text: 'SETTINGS'
       color: [1, 0.3, 0.8, 1]
-      fontSize: 60
+      fontSize: 64
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -947,4 +951,4 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBoldItalic
+      font: Monoton-Regular

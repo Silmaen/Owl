@@ -13,11 +13,35 @@
 #include "renderer/RendererIsometric.h"
 #include "scene/Entity.h"
 
+#include <optional>
 #include <string_view>
 
 namespace owl::scene {
 
 class Scene;
+
+/**
+ * @brief
+ *  A ray in world space.
+ */
+struct OWL_API ViewRay {
+	/// Start of the ray, in the plane of the eye.
+	math::vec3 origin;
+	/// Unit direction of the ray.
+	math::vec3 direction;
+};
+
+/**
+ * @brief
+ *  Ray of the primary camera of a scene through a viewport pixel (aiming, picking in 3D).
+ *
+ * Uses the projection of the camera and the size of the scene's viewport (1280x720 when it has none); the ray starts
+ * in the plane of the eye, so a distance of 0 or more along it is in front of the camera.
+ * @param[in] iScene The scene.
+ * @param[in] iPixel The pixel, in viewport pixels from the top left.
+ * @return The ray, or nothing without a primary camera or with a degenerate projection.
+ */
+[[nodiscard]] OWL_API auto getViewRay(const Scene& iScene, const math::vec2& iPixel) -> std::optional<ViewRay>;
 
 /**
  * @brief

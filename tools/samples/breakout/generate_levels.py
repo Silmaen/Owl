@@ -245,7 +245,7 @@ def brick_script(brick: Brick) -> str:
     """The script block of a brick."""
     r, g, b = brick.colour
     return script(
-        "scripts/game/brick.lua",
+        "scripts/game/brick.owlvs",
         [
             ("hits", "int", brick.hits),
             ("points", "int", POINTS[brick.hits]),
@@ -309,7 +309,7 @@ def level_scene(level: int) -> str:
     ]
     entities.add(
         "Paddle",
-        [sprite("paddle.png"), body("Kinematic"), script("scripts/game/paddle.lua", paddle_props)],
+        [sprite("paddle.png"), body("Kinematic"), script("scripts/game/paddle.owlvs", paddle_props)],
         position=(0, PADDLE_Y, 0),
         scale=(2.4, 0.36, 1),
     )
@@ -323,13 +323,13 @@ def level_scene(level: int) -> str:
     ]
     entities.add(
         "Ball",
-        [sprite("ball.png"), body("Dynamic", restitution=1.0), script("scripts/game/ball.lua", ball_props)],
+        [sprite("ball.png"), body("Dynamic", restitution=1.0), script("scripts/game/ball.owlvs", ball_props)],
         position=(0, PADDLE_Y + 0.36, 0.1),
         scale=(0.3, 0.3, 1),
     )
     next_scene = f"scenes/level_{level + 2}.owl" if level + 1 < len(LEVELS) else "scenes/victory.owl"
     entities.add(
-        "Game", [script("scripts/game/game.lua", [("level", "int", level + 1), ("next_scene", "string", next_scene)])]
+        "Game", [script("scripts/game/game.owlvs", [("level", "int", level + 1), ("next_scene", "string", next_scene)])]
     )
     entities.add(
         "Music",

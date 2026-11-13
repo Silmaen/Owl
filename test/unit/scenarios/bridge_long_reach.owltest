@@ -1,0 +1,11 @@
+# Bridge Builder, Long Reach: the level opens on the plan, its budget and its anchors read (fourteen metres between the cliffs),
+# the cursor on the top of the left cliff.
+scene: ../../../samples/bridge_builder/scenes/level_3.owl
+steps:
+  - frames: 10
+  - expect: {gamestate: bridge_level, equals: 3}
+  - expect: {gamestate: bridge_budget, equals: 4800}
+  - expect: {gamestate: bridge_anchors, equals: 4}
+  - expect: {gamestate: bridge_cursor_x, equals: 0}
+  - expect: {gamestate: bridge_cursor_y, equals: 0}
+  - expect: {gamestate: bridge_state, equals: build}

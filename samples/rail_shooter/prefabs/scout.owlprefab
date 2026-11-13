@@ -1,0 +1,140 @@
+Prefab: Scout
+Version: 1
+Entities:
+  - Entity: 7712004000000000001
+    Tag:
+      tag: Scout
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    HudMarker:
+      enabled: true
+      icon: nam:textures/hud/target.png
+      color: [1, 0.85, 0.4, 0.8]
+      size: [26, 26]
+      offset: [0, 0, 0]
+      label: ''
+      labelColor: [1, 0.85, 0.85, 1]
+      fontSize: 16
+      showDistance: false
+      maxDistance: 0
+      offscreenIndicator: false
+      edgeMargin: 40
+    RendererTag:
+      Name: mesh_world
+    MeshRenderer:
+      mesh: gid:0a3254d67b5129dc:models/fighter.glb
+      color: [0.62, 1, 0.72, 1]
+      transparent: false
+    SteeringAgent:
+      enabled: false
+      plane: Space
+      maxSpeed: 40
+      maxAcceleration: 70
+      radius: 1.2
+      turn: false
+      target: 0
+      targetPoint: [0, 0, 0]
+      weights: {seek: 0, flee: 0, arrive: 0, pursue: 0, evade: 0, wander: 0, separation: 0, alignment: 0, cohesion: 0, avoidance: 1, formation: 1}
+      slowRadius: 3
+      panicDistance: 0
+      prediction: 0.5
+      wander: {radius: 0.6, distance: 1, jitter: 3}
+      flock: squadron
+      neighbourRadius: 6
+      separationDistance: 2
+      lookAhead: 0.5
+      leader: 0
+      slot: [0, 0, 0]
+  - Entity: 7712004000000000002
+    Tag:
+      tag: ScoutEngine
+    Transform:
+      translation: [-0.35, 0.1, 1]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7712004000000000001
+    Trail:
+      enabled: true
+      lifetime: 0.3
+      minDistance: 0.15
+      maxPoints: 48
+      width: 0.3
+      color: [0.4, 1, 0.6, 0.8]
+      emissive: 5000
+      blend: Additive
+    ParticleEmitter:
+      playOnStart: true
+      maxParticles: 48
+      rate: 110
+      burst: 0
+      duration: 0
+      loop: true
+      lifetimeMin: 0.08
+      lifetimeMax: 0.16
+      shape: Point
+      shapeSize: [0, 0, 0]
+      speedMin: 0
+      speedMax: 0.45
+      velocity: [0, 0, 7.5]
+      gravity: [0, 0, 0]
+      drag: 0
+      sizeMin: 0.315
+      sizeMax: 0.45
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.25]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 1, 0.97, 0.85, 1], [0.35, 0.4, 1, 0.6, 0.9], [1, 0.2, 0.5, 0.3, 0]]
+      emissive: 6000
+      blend: Additive
+      space: Local
+  - Entity: 7712004000000000003
+    Tag:
+      tag: ScoutEngine
+    Transform:
+      translation: [0.35, 0.1, 1]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7712004000000000001
+    Trail:
+      enabled: true
+      lifetime: 0.3
+      minDistance: 0.15
+      maxPoints: 48
+      width: 0.3
+      color: [0.4, 1, 0.6, 0.8]
+      emissive: 5000
+      blend: Additive
+    ParticleEmitter:
+      playOnStart: true
+      maxParticles: 48
+      rate: 110
+      burst: 0
+      duration: 0
+      loop: true
+      lifetimeMin: 0.08
+      lifetimeMax: 0.16
+      shape: Point
+      shapeSize: [0, 0, 0]
+      speedMin: 0
+      speedMax: 0.45
+      velocity: [0, 0, 7.5]
+      gravity: [0, 0, 0]
+      drag: 0
+      sizeMin: 0.315
+      sizeMax: 0.45
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.25]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 1, 0.97, 0.85, 1], [0.35, 0.4, 1, 0.6, 0.9], [1, 0.2, 0.5, 0.3, 0]]
+      emissive: 6000
+      blend: Additive
+      space: Local

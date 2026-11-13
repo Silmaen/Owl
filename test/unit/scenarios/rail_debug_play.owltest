@@ -1,0 +1,13 @@
+# Ring Runner started directly with the visual scripts built as Play in Owl Nest builds them (probes of the wire
+# values): rail.owlvs starts without a script error, the squadrons spawn in formation and the wingmen fire at them.
+scene: ../../../samples/rail_shooter/scenes/level.owl
+timestep_ms: 33.333
+debug_scripts: true
+steps:
+  - frames: 5
+  - input: {mouse: Left, frames: 2}
+  - frames: 3
+  - expect: {gamestate: rail_phase, equals: play}
+  - frames: 450
+  - expect: {gamestate: rail_formed, greater: 1}
+  - expect: {gamestate: rail_wing_shots, greater: 0}

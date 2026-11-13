@@ -8,7 +8,7 @@ a stretched slab under the raised ones), the road tiles turned after their neigh
 decor, the ``Pad`` entities the towers are built on, the ``Road`` spline the enemies walk from the ``Gate`` to the
 ``Keep`` (Kenney Castle Kit, ``models/castle/``) in one of its lanes, the sun, the sky and its day-night cycle, the
 torches lit at night, the minimap camera, the hidden sprites of the build ring, the pooled particle emitters of the
-effects, the music and the ``Game`` entity running ``scripts/game/defence.lua``. Every one of them is edited in Owl
+effects, the music and the ``Game`` entity running ``scripts/game/defence.owlvs``. Every one of them is edited in Owl
 Nest afterwards. The waves of a level are its data table (``tables/waves_NN.owltable``), its briefing a dialogue
 (``dialogues/briefing_NN.owldlg``).
 
@@ -32,6 +32,7 @@ import shutil
 from pathlib import Path
 
 from tools.samples import scene_yaml as y
+from tools.samples.tower_defence import generate_materials as materials
 from tools.samples.tower_defence import generate_menus as menus
 from tools.samples.tower_defence import maps as mp
 from tools.samples.tower_defence.creatures import CELL, CREATURES, DIRECTIONS, FRAMES, PPU
@@ -89,8 +90,11 @@ def orient(base: int, wanted: int) -> int | None:
 
 
 def mesh(path: str, colour: y.Colour = (1, 1, 1, 1)) -> str:
-    """A ``MeshRenderer`` of a model of the project, routed to the mesh layer."""
-    return f"MeshRenderer:\n  mesh: {path}\n  color: {y.vec(*colour)}\n  transparent: false\n" + MESH
+    """A ``MeshRenderer`` of a model of the project, routed to the mesh layer; a tile takes its terrain material."""
+    out = f"MeshRenderer:\n  mesh: {path}\n  color: {y.vec(*colour)}\n  transparent: false\n"
+    if (terrain := materials.material_of(path)) is not None:
+        out += f"  materials:\n    - material: {terrain}\n"
+    return out + MESH
 
 
 THEMES: dict[str, tuple[str, y.Colour, y.Colour]] = {
@@ -523,7 +527,7 @@ def level_scene(level: mp.LevelData) -> str:
         listed = "".join(f"\n        - {y.quote(key)}" for key in level.modifiers)
         modifiers_block = f"    - name: modifiers\n      type: strings\n      value:{listed}\n"
     properties = (
-        "LuaScript:\n  scriptPath: scripts/game/defence.lua\n  properties:\n"
+        "LuaScript:\n  scriptPath: scripts/game/defence.owlvs\n  properties:\n"
         f"    - name: level_number\n      type: int\n      value: {level.number}\n"
         f"    - name: level_name\n      type: string\n      value: {y.quote(level.name)}\n"
         f"    - name: scene_path\n      type: string\n      value: scenes/{name}.owl\n"
@@ -826,6 +830,18 @@ def tower_prefab(key: str) -> str:
     return prefab(f"Tower_{key}", entities)
 
 
+STEERING = (
+    "SteeringAgent:\n  enabled: true\n  plane: Ground\n  maxSpeed: 2.4\n  maxAcceleration: 14\n  radius: 0.26\n"
+    "  turn: false\n  target: 0\n  targetPoint: [0, 0, 0]\n"
+    "  weights: {seek: 0, flee: 0, arrive: 1, pursue: 0, evade: 0, wander: 0, separation: 0.9, alignment: 0.25, "
+    "cohesion: 0, avoidance: 1, formation: 0}\n"
+    "  slowRadius: 0.35\n  panicDistance: 0\n  prediction: 0.5\n  wander: {radius: 0.6, distance: 1, jitter: 3}\n"
+    "  flock: horde\n  neighbourRadius: 1.1\n  separationDistance: 0.42\n  lookAhead: 0.6\n  leader: 0\n"
+    "  slot: [0, 0, 0]\n"
+)
+"""The Horde walks its lanes on steering: it arrives at its lane point, keeps its distances and steps around the
+others (``enemies.lua`` moves the lane point)."""
+
 ENEMIES = tuple(CREATURES)
 ENEMY_SCALE = {"chieftain": 1.35}
 """Enemies drawn bigger than the others (the boss)."""
@@ -839,7 +855,7 @@ def prefabs() -> dict[str, str]:
         sheet = y.frames(f"textures/enemies/{kind}.png", DIRECTIONS, FRAMES, 0) + SPRITES
         size = SPRITE_SIZE * ENEMY_SCALE.get(kind, 1.0)
         name = "Enemy" + kind.title().replace("_", "")
-        out[f"enemy_{kind}"] = single(name, "Enemy", [sheet], (size, size, 1))
+        out[f"enemy_{kind}"] = single(name, "Enemy", [sheet, STEERING], (size, size, 1))
     for key in TOWER_PARTS:
         out[f"tower_{key}"] = tower_prefab(key)
     for index, kind in enumerate(("arrow", "ball", "fireball", "shard")):
@@ -1083,7 +1099,7 @@ SETTINGS = """GameSettings:
 
 ACTIONS = """FormatVersion: 1
 # Actions of Tower defence, on top of the built-in ones (`primary` / `secondary` are the mouse buttons, the `ui_*`
-# actions drive the menus). Read by scripts/game/defence.lua.
+# actions drive the menus). Read by scripts/game/defence.owlvs.
 actions:
   - name: pan
     type: vector

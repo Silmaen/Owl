@@ -1,0 +1,12 @@
+# Tower defence, the first level started directly with the visual scripts built as Play in Owl Nest builds them
+# (probes of the wire values): no script error while a wave is called and walks at double speed.
+scene: ../../../samples/tower_defence/scenes/level_01.owl
+debug_scripts: true
+steps:
+  - frames: 2
+  - input: {key: Backspace, frames: 2}
+  - frames: 31
+  - input: {key: Space, frames: 2}
+  - input: {key: F, frames: 2}
+  - frames: 400
+  - expect: {gamestate: tower_spawned, greater: 2}

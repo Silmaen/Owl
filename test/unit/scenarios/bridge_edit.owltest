@@ -1,0 +1,80 @@
+# Bridge Builder editing: two roads laid, undo takes the last one back, a road longer than a road may be is refused,
+# the eraser removes the part under the cursor, a wooden part costs less than a road of the same length.
+scene: ../../../samples/bridge_builder/scenes/level_1.owl
+steps:
+  - frames: 10
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: X, frames: 1}
+  - frames: 1
+  - expect: {gamestate: bridge_parts, equals: 2}
+  - expect: {gamestate: bridge_cost, equals: 500}
+  - input: {key: Z, frames: 1}
+  - frames: 2
+  - expect: {gamestate: bridge_parts, equals: 1}
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - expect: {gamestate: bridge_message, equals: TOO LONG FOR THIS KIND}
+  - input: {key: X, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: X, frames: 1}
+  - frames: 1
+  - expect: {gamestate: bridge_parts, equals: 0}
+  - input: {key: D2, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: X, frames: 1}
+  - frames: 1
+  - expect: {gamestate: bridge_kind, equals: wood}
+  - expect: {gamestate: bridge_cost, equals: 180}

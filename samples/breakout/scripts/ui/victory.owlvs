@@ -1,0 +1,469 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: wipe_color, type: color, default: "0.45, 0.05, 0.55, 1"}
+    - {name: count_time, type: float, default: "1.2", min: 0.01}
+    - {name: score, type: float, default: "0", exposed: false}
+    - {name: shown, type: float, default: "-1", exposed: false}
+    - {name: clock, type: float, default: "0", exposed: false}
+    - {name: score_id, type: entity, default: "0", exposed: false}
+    - {name: leaving, type: bool, default: "false", exposed: false}
+    - {name: best, type: float, default: "0", exposed: false}
+    - {name: best_text, type: string, default: "", exposed: false}
+    - {name: best_id, type: entity, default: "0", exposed: false}
+    - {name: value, type: int, default: "0", exposed: false}
+  functions:
+    - name: leave
+      inputs: [{name: path, type: any}]
+      outputs: []
+  nodes:
+    - id: 2284400001
+      type: event.on_create
+      position: [340, 0]
+    - id: 2284400002
+      type: call.ui.is_transition_active
+      position: [170, 160]
+    - id: 2284400003
+      type: logic.not
+      position: [170, 280]
+    - id: 2284400004
+      type: flow.branch
+      position: [680, 0]
+    - id: 2284400005
+      type: call.ui.transition_play
+      position: [1020, 0]
+      values:
+        split.rgba: "true"
+        kind: wipe_up
+        duration: "0.4"
+    - id: 2284400006
+      type: var.get
+      position: [850, 160]
+      values:
+        variable: wipe_color
+    - id: 2284400007
+      type: math.break_color
+      position: [850, 280]
+    - id: 2284400008
+      type: var.get
+      position: [850, 400]
+      values:
+        variable: wipe_color
+    - id: 2284400009
+      type: math.break_color
+      position: [850, 520]
+    - id: 2284400010
+      type: var.get
+      position: [850, 640]
+      values:
+        variable: wipe_color
+    - id: 2284400011
+      type: math.break_color
+      position: [850, 760]
+    - id: 2284400012
+      type: call.sound.play
+      position: [1360, 0]
+      values:
+        asset_path: sounds/ui/victory.wav
+    - id: 2284400013
+      type: call.gamestate.get
+      position: [1700, 0]
+      values:
+        key: breakout_score
+        default: "0"
+    - id: 2284400014
+      type: var.set
+      position: [2040, 0]
+      values:
+        variable: score
+    - id: 2284400015
+      type: call.settings.get
+      position: [2380, 0]
+      values:
+        key: breakout_best
+        default: "0"
+    - id: 2284400016
+      type: var.set
+      position: [2720, 0]
+      values:
+        variable: best
+    - id: 2284400017
+      type: var.get
+      position: [2550, 160]
+      values:
+        variable: best
+    - id: 2284400018
+      type: text.format
+      position: [2550, 280]
+      values:
+        Format: "HI-SCORE %06d"
+    - id: 2284400019
+      type: var.set
+      position: [3060, 0]
+      values:
+        variable: best_text
+    - id: 2284400020
+      type: var.get
+      position: [2890, 160]
+      values:
+        variable: score
+    - id: 2284400021
+      type: var.get
+      position: [2890, 280]
+      values:
+        variable: best
+    - id: 2284400022
+      type: compare.greater
+      position: [2890, 400]
+    - id: 2284400023
+      type: flow.branch
+      position: [3400, 0]
+    - id: 2284400024
+      type: call.settings.set
+      position: [3740, 0]
+      values:
+        key: breakout_best
+    - id: 2284400025
+      type: var.get
+      position: [3570, 160]
+      values:
+        variable: score
+    - id: 2284400026
+      type: call.settings.save
+      position: [4080, 0]
+    - id: 2284400027
+      type: var.set
+      position: [4420, 0]
+      values:
+        variable: best_text
+        Value: "NEW HI-SCORE!"
+    - id: 2284400028
+      type: call.scene.find_entity
+      position: [4250, 160]
+      values:
+        name: ScoreLabel
+    - id: 2284400029
+      type: var.set
+      position: [4760, 0]
+      values:
+        variable: score_id
+    - id: 2284400030
+      type: call.scene.find_entity
+      position: [4590, 160]
+      values:
+        name: BestLabel
+    - id: 2284400031
+      type: var.set
+      position: [5100, 0]
+      values:
+        variable: best_id
+    - id: 2284400032
+      type: var.get
+      position: [4930, 160]
+      values:
+        variable: best_id
+    - id: 2284400033
+      type: compare.not_equal
+      position: [4930, 280]
+      values:
+        B: "0"
+    - id: 2284400034
+      type: flow.branch
+      position: [5440, 0]
+    - id: 2284400035
+      type: call.ui.set_text
+      position: [5780, 0]
+    - id: 2284400036
+      type: var.get
+      position: [5610, 160]
+      values:
+        variable: best_id
+    - id: 2284400037
+      type: var.get
+      position: [5610, 280]
+      values:
+        variable: best_text
+    - id: 2284400038
+      type: event.on_update
+      position: [340, 1020]
+    - id: 2284400039
+      type: var.get
+      position: [170, 1180]
+      values:
+        variable: count_time
+    - id: 2284400040
+      type: var.get
+      position: [170, 1300]
+      values:
+        variable: clock
+    - id: 2284400041
+      type: math.add
+      position: [170, 1420]
+    - id: 2284400042
+      type: math.min
+      position: [170, 1540]
+    - id: 2284400043
+      type: var.set
+      position: [680, 1020]
+      values:
+        variable: clock
+    - id: 2284400044
+      type: var.get
+      position: [510, 1180]
+      values:
+        variable: score
+    - id: 2284400045
+      type: var.get
+      position: [510, 1300]
+      values:
+        variable: clock
+    - id: 2284400046
+      type: math.multiply
+      position: [510, 1420]
+    - id: 2284400047
+      type: var.get
+      position: [510, 1540]
+      values:
+        variable: count_time
+    - id: 2284400048
+      type: math.divide
+      position: [510, 1660]
+    - id: 2284400049
+      type: math.add
+      position: [510, 1780]
+      values:
+        B: "0.5"
+    - id: 2284400050
+      type: math.floor
+      position: [510, 1900]
+    - id: 2284400051
+      type: var.set
+      position: [1020, 1020]
+      values:
+        variable: value
+    - id: 2284400052
+      type: var.get
+      position: [850, 1180]
+      values:
+        variable: value
+    - id: 2284400053
+      type: var.get
+      position: [850, 1300]
+      values:
+        variable: shown
+    - id: 2284400054
+      type: compare.not_equal
+      position: [850, 1420]
+    - id: 2284400055
+      type: var.get
+      position: [850, 1540]
+      values:
+        variable: score_id
+    - id: 2284400056
+      type: compare.not_equal
+      position: [850, 1660]
+      values:
+        B: "0"
+    - id: 2284400057
+      type: logic.and
+      position: [850, 1780]
+    - id: 2284400058
+      type: flow.branch
+      position: [1360, 1020]
+    - id: 2284400059
+      type: var.get
+      position: [1190, 1180]
+      values:
+        variable: value
+    - id: 2284400060
+      type: var.set
+      position: [1700, 1020]
+      values:
+        variable: shown
+    - id: 2284400061
+      type: call.ui.set_text
+      position: [2040, 1020]
+    - id: 2284400062
+      type: var.get
+      position: [1870, 1180]
+      values:
+        variable: score_id
+    - id: 2284400063
+      type: var.get
+      position: [1870, 1300]
+      values:
+        variable: value
+    - id: 2284400064
+      type: text.format
+      position: [1870, 1420]
+      values:
+        Format: "SCORE %06d"
+    - id: 2284400065
+      type: func.entry
+      position: [340, 2160]
+      values:
+        function: leave
+    - id: 2284400066
+      type: var.get
+      position: [170, 2320]
+      values:
+        variable: leaving
+    - id: 2284400067
+      type: flow.branch
+      position: [680, 2160]
+    - id: 2284400068
+      type: func.return
+      position: [1020, 2160]
+      values:
+        function: leave
+    - id: 2284400069
+      type: var.set
+      position: [1360, 2160]
+      values:
+        variable: leaving
+        Value: "true"
+    - id: 2284400070
+      type: call.gamestate.clear
+      position: [1700, 2160]
+    - id: 2284400071
+      type: call.scene.transition_to
+      position: [2040, 2160]
+      values:
+        split.rgba: "true"
+        kind: wipe_up
+        duration: "0.3"
+    - id: 2284400072
+      type: var.get
+      position: [1870, 2320]
+      values:
+        variable: wipe_color
+    - id: 2284400073
+      type: math.break_color
+      position: [1870, 2440]
+    - id: 2284400074
+      type: var.get
+      position: [1870, 2560]
+      values:
+        variable: wipe_color
+    - id: 2284400075
+      type: math.break_color
+      position: [1870, 2680]
+    - id: 2284400076
+      type: var.get
+      position: [1870, 2800]
+      values:
+        variable: wipe_color
+    - id: 2284400077
+      type: math.break_color
+      position: [1870, 2920]
+    - id: 2284400078
+      type: event.custom
+      position: [340, 3180]
+      values:
+        function: on_levels_clicked
+    - id: 2284400079
+      type: func.call
+      position: [680, 3180]
+      values:
+        function: leave
+        path: scenes/level_select.owl
+    - id: 2284400080
+      type: event.custom
+      position: [340, 3480]
+      values:
+        function: on_menu_clicked
+    - id: 2284400081
+      type: func.call
+      position: [680, 3480]
+      values:
+        function: leave
+        path: scenes/title.owl
+  links:
+    - {from: 2284400002, fromPin: active, to: 2284400003, toPin: A}
+    - {from: 2284400003, fromPin: Result, to: 2284400004, toPin: Condition}
+    - {from: 2284400001, fromPin: Then, to: 2284400004, toPin: Exec}
+    - {from: 2284400006, fromPin: Value, to: 2284400007, toPin: Value}
+    - {from: 2284400007, fromPin: R, to: 2284400005, toPin: r}
+    - {from: 2284400008, fromPin: Value, to: 2284400009, toPin: Value}
+    - {from: 2284400009, fromPin: G, to: 2284400005, toPin: g}
+    - {from: 2284400010, fromPin: Value, to: 2284400011, toPin: Value}
+    - {from: 2284400011, fromPin: B, to: 2284400005, toPin: b}
+    - {from: 2284400004, fromPin: "True", to: 2284400005, toPin: Exec}
+    - {from: 2284400005, fromPin: Then, to: 2284400012, toPin: Exec}
+    - {from: 2284400004, fromPin: "False", to: 2284400012, toPin: Exec}
+    - {from: 2284400012, fromPin: Then, to: 2284400013, toPin: Exec}
+    - {from: 2284400013, fromPin: value, to: 2284400014, toPin: Value}
+    - {from: 2284400013, fromPin: Then, to: 2284400014, toPin: Exec}
+    - {from: 2284400014, fromPin: Then, to: 2284400015, toPin: Exec}
+    - {from: 2284400015, fromPin: value, to: 2284400016, toPin: Value}
+    - {from: 2284400015, fromPin: Then, to: 2284400016, toPin: Exec}
+    - {from: 2284400017, fromPin: Value, to: 2284400018, toPin: A}
+    - {from: 2284400018, fromPin: Result, to: 2284400019, toPin: Value}
+    - {from: 2284400016, fromPin: Then, to: 2284400019, toPin: Exec}
+    - {from: 2284400020, fromPin: Value, to: 2284400022, toPin: A}
+    - {from: 2284400021, fromPin: Value, to: 2284400022, toPin: B}
+    - {from: 2284400022, fromPin: Result, to: 2284400023, toPin: Condition}
+    - {from: 2284400019, fromPin: Then, to: 2284400023, toPin: Exec}
+    - {from: 2284400025, fromPin: Value, to: 2284400024, toPin: value}
+    - {from: 2284400023, fromPin: "True", to: 2284400024, toPin: Exec}
+    - {from: 2284400024, fromPin: Then, to: 2284400026, toPin: Exec}
+    - {from: 2284400026, fromPin: Then, to: 2284400027, toPin: Exec}
+    - {from: 2284400028, fromPin: entity_id, to: 2284400029, toPin: Value}
+    - {from: 2284400027, fromPin: Then, to: 2284400029, toPin: Exec}
+    - {from: 2284400023, fromPin: "False", to: 2284400029, toPin: Exec}
+    - {from: 2284400030, fromPin: entity_id, to: 2284400031, toPin: Value}
+    - {from: 2284400029, fromPin: Then, to: 2284400031, toPin: Exec}
+    - {from: 2284400032, fromPin: Value, to: 2284400033, toPin: A}
+    - {from: 2284400033, fromPin: Result, to: 2284400034, toPin: Condition}
+    - {from: 2284400031, fromPin: Then, to: 2284400034, toPin: Exec}
+    - {from: 2284400036, fromPin: Value, to: 2284400035, toPin: entity_id}
+    - {from: 2284400037, fromPin: Value, to: 2284400035, toPin: text}
+    - {from: 2284400034, fromPin: "True", to: 2284400035, toPin: Exec}
+    - {from: 2284400040, fromPin: Value, to: 2284400041, toPin: A}
+    - {from: 2284400038, fromPin: dt, to: 2284400041, toPin: B}
+    - {from: 2284400039, fromPin: Value, to: 2284400042, toPin: A}
+    - {from: 2284400041, fromPin: Result, to: 2284400042, toPin: B}
+    - {from: 2284400042, fromPin: Result, to: 2284400043, toPin: Value}
+    - {from: 2284400038, fromPin: Then, to: 2284400043, toPin: Exec}
+    - {from: 2284400044, fromPin: Value, to: 2284400046, toPin: A}
+    - {from: 2284400045, fromPin: Value, to: 2284400046, toPin: B}
+    - {from: 2284400046, fromPin: Result, to: 2284400048, toPin: A}
+    - {from: 2284400047, fromPin: Value, to: 2284400048, toPin: B}
+    - {from: 2284400048, fromPin: Result, to: 2284400049, toPin: A}
+    - {from: 2284400049, fromPin: Result, to: 2284400050, toPin: A}
+    - {from: 2284400050, fromPin: Result, to: 2284400051, toPin: Value}
+    - {from: 2284400043, fromPin: Then, to: 2284400051, toPin: Exec}
+    - {from: 2284400052, fromPin: Value, to: 2284400054, toPin: A}
+    - {from: 2284400053, fromPin: Value, to: 2284400054, toPin: B}
+    - {from: 2284400055, fromPin: Value, to: 2284400056, toPin: A}
+    - {from: 2284400054, fromPin: Result, to: 2284400057, toPin: A}
+    - {from: 2284400056, fromPin: Result, to: 2284400057, toPin: B}
+    - {from: 2284400057, fromPin: Result, to: 2284400058, toPin: Condition}
+    - {from: 2284400051, fromPin: Then, to: 2284400058, toPin: Exec}
+    - {from: 2284400059, fromPin: Value, to: 2284400060, toPin: Value}
+    - {from: 2284400058, fromPin: "True", to: 2284400060, toPin: Exec}
+    - {from: 2284400062, fromPin: Value, to: 2284400061, toPin: entity_id}
+    - {from: 2284400063, fromPin: Value, to: 2284400064, toPin: A}
+    - {from: 2284400064, fromPin: Result, to: 2284400061, toPin: text}
+    - {from: 2284400060, fromPin: Then, to: 2284400061, toPin: Exec}
+    - {from: 2284400066, fromPin: Value, to: 2284400067, toPin: Condition}
+    - {from: 2284400065, fromPin: Then, to: 2284400067, toPin: Exec}
+    - {from: 2284400067, fromPin: "True", to: 2284400068, toPin: Exec}
+    - {from: 2284400067, fromPin: "False", to: 2284400069, toPin: Exec}
+    - {from: 2284400069, fromPin: Then, to: 2284400070, toPin: Exec}
+    - {from: 2284400065, fromPin: path, to: 2284400071, toPin: scene_path}
+    - {from: 2284400072, fromPin: Value, to: 2284400073, toPin: Value}
+    - {from: 2284400073, fromPin: R, to: 2284400071, toPin: r}
+    - {from: 2284400074, fromPin: Value, to: 2284400075, toPin: Value}
+    - {from: 2284400075, fromPin: G, to: 2284400071, toPin: g}
+    - {from: 2284400076, fromPin: Value, to: 2284400077, toPin: Value}
+    - {from: 2284400077, fromPin: B, to: 2284400071, toPin: b}
+    - {from: 2284400070, fromPin: Then, to: 2284400071, toPin: Exec}
+    - {from: 2284400078, fromPin: Then, to: 2284400079, toPin: Exec}
+    - {from: 2284400080, fromPin: Then, to: 2284400081, toPin: Exec}
+  groups:
+    - {id: 2284490000, title: on_create, position: [146, -52], size: [5930, 960], color: Red}
+    - {id: 2284490001, title: on_update, position: [146, 968], size: [2190, 1080], color: Red}
+    - {id: 2284490002, title: leave, position: [146, 2108], size: [2190, 960], color: Teal}
+    - {id: 2284490003, title: on_levels_clicked, position: [316, 3128], size: [660, 200], color: Red}
+    - {id: 2284490004, title: on_menu_clicked, position: [316, 3428], size: [660, 200], color: Red}

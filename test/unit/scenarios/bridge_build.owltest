@@ -1,0 +1,113 @@
+# Bridge Builder, first gap: a road of three parts laid with the keyboard cursor from anchor to anchor, a wooden truss
+# under it, then the test run: the bridge becomes bodies hinged at their nodes, the car drives across, the level is
+# won with its stars, the design and the best results are kept in the settings.
+scene: ../../../samples/bridge_builder/scenes/level_1.owl
+steps:
+  - frames: 10
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: X, frames: 1}
+  - frames: 1
+  - input: {key: D2, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Up, frames: 1}
+  - frames: 1
+  - input: {key: Up, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Up, frames: 1}
+  - frames: 1
+  - input: {key: Up, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Left, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Down, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Right, frames: 1}
+  - frames: 1
+  - input: {key: Space, frames: 1}
+  - frames: 1
+  - input: {key: X, frames: 1}
+  - frames: 1
+  - expect: {gamestate: bridge_parts, equals: 9}
+  - expect: {gamestate: bridge_cost, less: 2600}
+  - input: {key: R, frames: 1}
+  - frames: 60
+  - expect: {gamestate: bridge_state, equals: run}
+  - expect: {gamestate: bridge_breaks, equals: 0}
+  - frames: 840
+  - expect: {gamestate: bridge_state, equals: won}
+  - expect: {gamestate: bridge_arrived, equals: 1}
+  - expect: {gamestate: bridge_stars, greater: 0}
+  - expect: {setting: bridge_done_1, equals: true}

@@ -41,42 +41,7 @@ auto viewportOf(const Scene& iScene) -> math::vec2ui {
 	return viewport.x() == 0 || viewport.y() == 0 ? g_fallbackViewport : viewport;
 }
 
-struct Ray {
-	math::vec3 origin;
-	math::vec3 direction;
-};
-
-// The ray of the primary camera through a viewport pixel, in world space.
-auto makeCameraRay(const Scene& iScene, const math::vec2& iPixel) -> std::optional<Ray> {
-	const Entity camera = iScene.getPrimaryCamera();
-	if (!camera)
-		return std::nullopt;
-	const math::mat4 world = iScene.getWorldTransform(camera)();
-	math::mat4 projection = camera.getComponent<component::Camera>().camera.getProjection();
-	if (renderer::getActiveClipSpace() == renderer::ClipSpace::Vulkan)
-		projection = renderer::toClipSpace(projection, renderer::ClipSpace::Vulkan);
-	const math::mat4 unproject = math::inverse(projection * math::inverse(world));
-	const auto viewport = viewportOf(iScene);
-	const float ndcX = 2.f * iPixel.x() / static_cast<float>(viewport.x()) - 1.f;
-	const float ndcY = 1.f - 2.f * iPixel.y() / static_cast<float>(viewport.y());
-	const auto unprojectAt = [&](const float iDepth) -> math::vec3 {
-		const math::vec4 point = unproject * math::vec4{ndcX, ndcY, iDepth, 1.f};
-		return math::vec3{point.x(), point.y(), point.z()} * (1.f / point.w());
-	};
-	const math::vec3 first = unprojectAt(1.f);
-	math::vec3 direction = unprojectAt(0.5f) - first;
-	const math::vec3 eye{world(0, 3), world(1, 3), world(2, 3)};
-	const math::vec3 forward = math::vec3{-world(0, 2), -world(1, 2), -world(2, 2)};
-	if (direction * forward < 0.f)
-		direction = -1.f * direction;
-	const float length = direction.norm();
-	if (!std::isfinite(length) || length <= 0.f)
-		return std::nullopt;
-	direction *= 1.f / length;
-	// Start the ray in the plane of the eye, so that t >= 0 is in front of the camera.
-	const math::vec3 origin = first - direction * ((first - eye) * direction);
-	return Ray{.origin = origin, .direction = direction};
-}
+using Ray = ViewRay;
 
 enum struct Shape : uint8_t { Quad, Disc, Box };
 
@@ -182,6 +147,37 @@ const math::box3f g_unitBox{math::vec3{-0.5f, -0.5f, -0.5f}, math::vec3{0.5f, 0.
 
 }// namespace
 
+auto getViewRay(const Scene& iScene, const math::vec2& iPixel) -> std::optional<ViewRay> {
+	const Entity camera = iScene.getPrimaryCamera();
+	if (!camera)
+		return std::nullopt;
+	const math::mat4 world = iScene.getWorldTransform(camera)();
+	math::mat4 projection = camera.getComponent<component::Camera>().camera.getProjection();
+	if (renderer::getActiveClipSpace() == renderer::ClipSpace::Vulkan)
+		projection = renderer::toClipSpace(projection, renderer::ClipSpace::Vulkan);
+	const math::mat4 unproject = math::inverse(projection * math::inverse(world));
+	const auto viewport = viewportOf(iScene);
+	const float ndcX = 2.f * iPixel.x() / static_cast<float>(viewport.x()) - 1.f;
+	const float ndcY = 1.f - 2.f * iPixel.y() / static_cast<float>(viewport.y());
+	const auto unprojectAt = [&](const float iDepth) -> math::vec3 {
+		const math::vec4 point = unproject * math::vec4{ndcX, ndcY, iDepth, 1.f};
+		return math::vec3{point.x(), point.y(), point.z()} * (1.f / point.w());
+	};
+	const math::vec3 first = unprojectAt(1.f);
+	math::vec3 direction = unprojectAt(0.5f) - first;
+	const math::vec3 eye{world(0, 3), world(1, 3), world(2, 3)};
+	const math::vec3 forward = math::vec3{-world(0, 2), -world(1, 2), -world(2, 2)};
+	if (direction * forward < 0.f)
+		direction = -1.f * direction;
+	const float length = direction.norm();
+	if (!std::isfinite(length) || length <= 0.f)
+		return std::nullopt;
+	direction *= 1.f / length;
+	// Start the ray in the plane of the eye, so that t >= 0 is in front of the camera.
+	const math::vec3 origin = first - direction * ((first - eye) * direction);
+	return ViewRay{.origin = origin, .direction = direction};
+}
+
 auto makeRuntimeIsometricCamera(const Scene& iScene) -> renderer::IsometricCamera {
 	renderer::IsometricCamera camera;
 	for (const auto& layer: renderer::Renderer::getRenderStack().getLayers()) {
@@ -203,7 +199,7 @@ auto makeRuntimeIsometricCamera(const Scene& iScene) -> renderer::IsometricCamer
 auto pickEntity(Scene& ioScene, const math::vec2& iPixel, const std::string_view iTag) -> Entity {
 	OWL_PROFILE_FUNCTION()
 
-	const auto ray = makeCameraRay(ioScene, iPixel);
+	const auto ray = getViewRay(ioScene, iPixel);
 	std::optional<renderer::IsometricCamera> isoCamera;
 	std::optional<Hit> best;
 	const auto consider = [&](const entt::entity iHandle, const Shape iShape, const math::box3f& iBox,

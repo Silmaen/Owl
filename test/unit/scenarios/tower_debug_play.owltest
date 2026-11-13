@@ -1,0 +1,8 @@
+# Tower defence, the world map then the first level started directly with the visual scripts built as Play in Owl
+# Nest builds them (probes of the wire values): no script error while the map reveals its road and a wave walks.
+scene: ../../../samples/tower_defence/scenes/world_map.owl
+debug_scripts: true
+steps:
+  - frames: 180
+  - expect: {gamestate: tower_map, equals: true}
+  - expect: {gamestate: tower_map_open, greater: 0}

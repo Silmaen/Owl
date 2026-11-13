@@ -24,6 +24,11 @@ A first game to read from end to end: one rule script, a handful of prefabs and 
   bursts into sparks of its colour through a `ParticleEmitter`, see [Particles](particles.md).
 - **HUD and UI:** `huds/play.owlhud` shows the score, the level, the lives and the pause window; the menus are UI
   canvases with focus navigation (keyboard, mouse, gamepad) and wipes between screens (`ui.transition_play`).
+- **Menus:** an arcade cabinet: a lit marquee holds the neon title and the high score over the brick wall and the
+  attract ball; the buttons are hollow neon tubes (a `UiButton` box with round corners, a border and a glow) that fill
+  with magenta under the cursor, in the bundled pixel font `PressStart2P` with `Monoton` headings (`fonts/`).
+- **Visual scripts:** every script is a graph (`.owlvs`, see [Visual scripts](visual-scripts.md)); the reading of
+  the queue of brick events stays a Custom Lua node of `game.owlvs`.
 - **Sound and settings:** the volume sliders drive the mixer buses, see [Sound](sound.md); the best score and the
   levels cleared are kept in the settings.
 
@@ -32,8 +37,8 @@ A first game to read from end to end: one rule script, a handful of prefabs and 
 | Path               | Content                                                                             |
 |--------------------|-------------------------------------------------------------------------------------|
 | `scenes/`          | `title`, `level_select`, `level_1` to `level_5`, `settings`, `victory`, `game_over` |
-| `scripts/game/`    | `game.lua` (rules, power-ups, saves), `paddle.lua`, `ball.lua`, `brick.lua`         |
-| `scripts/ui/`      | The neon menus                                                                      |
+| `scripts/game/`    | `game.owlvs` (rules, power-ups, saves), `paddle.owlvs`, `ball.owlvs`, `brick.owlvs` |
+| `scripts/ui/`      | The arcade menus, graphs too                                                        |
 | `prefabs/`         | `brick`, `brick_burst` and the `power_*` capsules                                   |
 | `huds/play.owlhud` | Score, level, lives, messages, pause window                                         |
 

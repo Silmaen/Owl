@@ -1,0 +1,7 @@
+# Breakout, level_1 started directly with the visual scripts built as Play in Owl Nest builds them (probes of the
+# wire values): no script error while it plays.
+scene: ../../../samples/breakout/scenes/level_1.owl
+debug_scripts: true
+steps:
+  - frames: 120
+  - expect: {entity: MainCamera, exists: true}

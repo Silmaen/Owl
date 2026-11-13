@@ -1,0 +1,26 @@
+# The Sunken Shrine saves: opening the chest of the slime pit saves the quest; back on the title, Continue loads the
+# room with the key found.
+scene: ../../../samples/sunken_shrine/scenes/room_2.owl
+steps:
+  - frames: 5
+  - input: {key: A, frames: 27}
+  - input: {key: W, frames: 70}
+  - input: {key: D, frames: 12}
+  - input: {key: E, frames: 1}
+  - frames: 3
+  - expect: {gamestate: shrine_key, equals: true}
+  - input: {key: Escape, frames: 1}
+  - frames: 2
+  - input: {key: Down, frames: 1}
+  - frames: 2
+  - input: {key: Enter, frames: 1}
+  - frames: 60
+  - expect: {gamestate: shrine_has_save, equals: true}
+  - input: {key: Down, frames: 1}
+  - frames: 2
+  - input: {key: Down, frames: 1}
+  - frames: 2
+  - input: {key: Enter, frames: 1}
+  - frames: 60
+  - expect: {gamestate: shrine_room, equals: 2}
+  - expect: {gamestate: shrine_key, equals: true}

@@ -1,0 +1,12 @@
+# Bridge Builder level select: only the first gap is open on a fresh save; Enter on it starts the first level, its
+# budget and its anchors read.
+scene: ../../../samples/bridge_builder/scenes/level_select.owl
+steps:
+  - frames: 10
+  - expect: {gamestate: bridge_select, equals: true}
+  - input: {key: Enter, frames: 2}
+  - frames: 60
+  - expect: {gamestate: bridge_level, equals: 1}
+  - expect: {gamestate: bridge_budget, equals: 2600}
+  - expect: {gamestate: bridge_anchors, equals: 4}
+  - expect: {gamestate: bridge_state, equals: build}

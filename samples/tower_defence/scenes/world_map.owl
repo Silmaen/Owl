@@ -2463,7 +2463,7 @@ Entities:
       referenceResolution: [1280, 720]
       scaleMode: ScaleWithHeight
     LuaScript:
-      scriptPath: gid:a95c1296a1cb3ed3:scripts/ui/world_map.lua
+      scriptPath: gid:a95c1296a1cb3ed3:scripts/ui/world_map.owlvs
       properties:
         - name: levels
           type: strings

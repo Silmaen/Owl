@@ -1,0 +1,18 @@
+# The Sunken Shrine, the armoury started directly with the visual scripts built as Play in Owl Nest builds them
+# (probes of the wire values): the sword taken, strokes at the bats, no script error.
+scene: ../../../samples/sunken_shrine/scenes/room_3.owl
+debug_scripts: true
+steps:
+  - frames: 5
+  - input: {key: Space, frames: 1}
+  - frames: 20
+  - input: {key: W, frames: 30}
+  - input: {key: E, frames: 1}
+  - frames: 3
+  - expect: {gamestate: shrine_sword, equals: true}
+  - input: {key: Space, frames: 1}
+  - frames: 20
+  - input: {key: D, frames: 20}
+  - input: {key: Space, frames: 1}
+  - frames: 120
+  - expect: {gamestate: shrine_room, equals: 3}

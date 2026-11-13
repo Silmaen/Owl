@@ -1,0 +1,19 @@
+Prefab: Node
+Version: 1
+Entities:
+  - Entity: 7592000000000000001
+    Tag:
+      tag: Node
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7289fbd1e6591458:models/node.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world

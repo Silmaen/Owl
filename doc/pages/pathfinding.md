@@ -326,6 +326,16 @@ A `NavLink` goes from the entity origin to `end` (relative, world axes), one way
 `costScale` of at least 1 on its length (walking costs 1). Links are attached to the mesh when it is read, to every
 volume whose mesh is within reach of both ends: moving or adding a link needs no new bake.
 
+### Meshes of walk areas {#pathfinding-navmesh-walk}
+
+A 2D room has no geometry to voxelise: its floor is the `WalkArea`. A volume whose `sources` is `WalkAreas` bakes
+the triangles of the walk areas whose entity stands inside its box instead, no voxel step: each corner (x, y) of a
+floor is kept as (x, 0, y), the plane (x, z) of a navigation mesh (`NavMeshVolume::toMeshSpace`, `toWorldSpace`). Lua
+`nav.find_path` and `nav.get_closest_point` take and give the points of the plane (x, y), z 0, and the overlay draws
+the mesh over the room. The actors keep walking on their `WalkAgent` (scale, depth and masks), one corner after the
+other: the point-and-click sample game paths its hero that way (`RoomNav`, `scripts/game/adventure.lua`). A
+`NavAgent` does not walk such a mesh.
+
 ### Agents and avoidance
 
 `nav.go_to` gives a `NavAgent` a goal; the `owl.nav_agents` system (`PrePhysics`, fixed tick only) finds the path and

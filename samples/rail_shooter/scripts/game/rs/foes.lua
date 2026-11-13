@@ -3,8 +3,9 @@
 -- An enemy lives in the frame of the carrier (`dz` ahead of it, `x` across, `y` up) so that a squadron keeps pace with
 -- the ship; its rail distance is the carrier's plus `dz`. Patterns: `line` and `vee` close in head on, `swoop_left` and
 -- `swoop_right` cross the frame, `hover` holds ahead and strafes, `boss` holds ahead and weaves. Each kind has its hull,
--- its points and its rate of fire (a row of the `enemies` data table); their shots fly at the ship as it was when they
--- fired.
+-- its points, its rate of fire and its temper (a row of the `enemies` data table): `accuracy` (0 to 1) takes the
+-- wide offset off its shots and leads the ship by its motion, `pursuit` (0 to 1) draws its pattern across the frame
+-- towards the ship until it closes in. The other shots fly at the ship as it was when they fired.
 
 local rs = require("scripts.game.rs.core")
 local fx = require("scripts.game.rs.fx")
@@ -12,14 +13,16 @@ local S, C = rs.state, rs.cfg
 
 -- The explosion of each kind: its size (a fighter is 1) and the tint of its shards.
 local BLASTS = {
+    scout = { size = 0.9, r = 0.45, g = 0.85, b = 0.5 },
     fighter = { size = 1.0, r = 0.8, g = 0.25, b = 0.22 },
+    raider = { size = 1.1, r = 0.95, g = 0.15, b = 0.12 },
     interceptor = { size = 1.5, r = 0.9, g = 0.58, b = 0.2 },
     boss = { size = 4.0, r = 0.6, g = 0.16, b = 0.22 },
 }
 
 local E = {}
 
--- The kinds of enemies, rows of the `enemies` table by key: prefab, hp, radius, points, reload.
+-- The kinds of enemies, rows of the `enemies` table by key: prefab, hp, radius, points, reload, accuracy, pursuit.
 local KINDS = {}
 
 function E.load(table_path, kinds_path)
@@ -48,11 +51,39 @@ local function spawn(row, index)
         id = id, kind = row.kind, pattern = row.pattern, index = index, count = row.count, t = 0.0,
         hp = kind.hp, max_hp = kind.hp, radius = kind.radius, points = kind.points, reload = kind.reload,
         fire_clock = kind.reload * (0.6 + 0.25 * (index % 3)), base_x = row.x, base_y = row.y,
+        accuracy = kind.accuracy or 0, pursuit = kind.pursuit or 0, px = 0.0, py = 0.0,
         dz = 200, x = row.x, y = row.y, roll = 0.0, alive = true, knock = 0.0, kick = { 0, 0, 0 },
     }
     S.enemies[#S.enemies + 1] = foe
     S.foes = S.foes + 1
+    local key = "rail_spawned_" .. row.kind
+    gamestate.set(key, gamestate.get(key, 0) + 1)
     return foe
+end
+
+-- A squadron (`line`, `vee`): its middle fighter flies the pattern, the others hold their slots around it on their
+-- steering agents (formation), in the frame of the leader (its front faces the ship: behind it is -z, its +x is the
+-- -x of the rail).
+local function form_squadron(foes)
+    local n = #foes
+    if n < 2 then return end
+    local lead = foes[math.floor((n - 1) / 2 + 0.5) + 1]
+    for k, foe in ipairs(foes) do
+        if foe ~= lead then
+            local i = k - 1
+            local offset = i - lead.index
+            local sx, sy, sz = -offset * 4.5, 0.0, 0.0
+            if foe.pattern == "vee" then
+                sx, sy, sz = -offset * 3.5, math.abs(offset) * 0.8, -math.abs(offset) * 6
+            end
+            foe.leader = lead
+            entity.set_steering_enabled(foe.id, true)
+            if steer.set_leader(foe.id, lead.id, sx, sy, sz) then
+                S.formed = (S.formed or 0) + 1
+                gamestate.set("rail_formed", S.formed)
+            end
+        end
+    end
 end
 
 -- Spawn the waves the carrier reached; the boss row hands over to `rail.lua` through `on_boss`. A run started further
@@ -69,7 +100,11 @@ function E.spawn_due(on_boss)
             S.boss = spawn(row, 0)
             on_boss()
         else
-            for index = 0, row.count - 1 do spawn(row, index) end
+            local squadron = {}
+            for index = 0, row.count - 1 do squadron[#squadron + 1] = spawn(row, index) end
+            if (row.pattern == "line" or row.pattern == "vee") and #squadron == row.count then
+                form_squadron(squadron)
+            end
         end
     end
 end
@@ -107,10 +142,15 @@ local MISS = { { 0, 0 }, { 0.9, 0.3 }, { 0, 0 }, { -0.7, 0.8 }, { 0.4, -0.9 }, {
 local function shoot(foe, spread)
     S.shot_count = (S.shot_count or 0) + 1
     local miss = MISS[S.shot_count % #MISS + 1]
-    local dz, dx, dy = -foe.dz, S.ship_x + miss[1] - foe.x, S.ship_y + miss[2] - foe.y
+    local wide, speed = 1 - foe.accuracy, C.enemy_bolt_speed
+    -- An accurate shot leads the ship by its motion over the flight of the bolt.
+    local lead = foe.accuracy * foe.dz / speed
+    local dz = -foe.dz
+    local dx = S.ship_x + S.vx * lead + miss[1] * wide - foe.x
+    local dy = S.ship_y + S.vy * lead + miss[2] * wide - foe.y
     local n = math.sqrt(dz * dz + dx * dx + dy * dy)
     if n < 1 then return end
-    local speed = C.enemy_bolt_speed
+    if foe.accuracy > 0.5 then gamestate.set("rail_aimed_shots", gamestate.get("rail_aimed_shots", 0) + 1) end
     for k = -spread, spread do
         local ax = dx / n + k * 0.12
         local id = scene.spawn_prefab("prefabs/enemy_bolt.owlprefab", rs.to_scene(S.s + foe.dz, foe.x, foe.y))
@@ -160,6 +200,29 @@ function E.update(dt, may_fire)
         if foe.alive then
             foe.t = foe.t + dt
             local dz, x, y, roll, gone = fly(foe)
+            local steered = foe.leader ~= nil
+            if steered then
+                -- In formation: where its agent took it; a squadron that lost its leader scatters past the ship.
+                if not foe.leader.alive and not foe.scattered then
+                    foe.scattered = true
+                    steer.set_weight(foe.id, "formation", 0)
+                    steer.set_weight(foe.id, "seek", 1)
+                    gamestate.set("rail_scattered", (gamestate.get("rail_scattered", 0)) + 1)
+                end
+                if foe.scattered then
+                    steer.set_target_point(foe.id, rs.to_scene(S.s - 40, foe.x * 1.6, foe.y))
+                end
+                local fs, fx_, fy_ = rs.to_rail(transform.get_world_position(foe.id))
+                dz, x, y, roll, gone = fs - S.s, fx_, fy_, foe.roll, false
+            end
+            if not steered and foe.pursuit > 0 then
+                -- A pursuer draws its pattern towards the ship, letting go as it closes in.
+                local hold = math.max(0, math.min(1, (dz - 20) / 40))
+                local k = math.min(1, dt * 1.2)
+                foe.px = foe.px + ((S.ship_x - x) * foe.pursuit * hold - foe.px) * k
+                foe.py = foe.py + ((S.ship_y - y) * foe.pursuit * hold - foe.py) * k
+                x, y = x + foe.px, y + foe.py
+            end
             foe.dz, foe.x, foe.y, foe.roll = dz, x, y, roll
             if gone or dz < -12 then
                 E.destroy(foe, false)
@@ -172,10 +235,16 @@ function E.update(dt, may_fire)
                     ks, kx, ky = foe.kick[1] * k, foe.kick[2] * k, foe.kick[3] * k
                     jolt = math.sin(foe.knock * 90) * foe.knock * 0.8
                 end
-                rs.place(foe.id, S.s + dz + ks, x + kx, y + ky, -math.max(10, dz), S.ship_x - x, S.ship_y - y,
-                        roll + jolt)
+                if steered then
+                    if foe.leader.alive then
+                        transform.set_rotation(foe.id, transform.get_rotation(foe.leader.id))
+                    end
+                else
+                    rs.place(foe.id, S.s + dz + ks, x + kx, y + ky, -math.max(10, dz), S.ship_x - x, S.ship_y - y,
+                            roll + jolt)
+                end
                 foe.fire_clock = foe.fire_clock - dt
-                if may_fire and foe.fire_clock <= 0 and dz > 25 and dz < 115 then
+                if may_fire and foe.fire_clock <= 0 and dz > 25 and dz < 115 + 35 * foe.accuracy then
                     foe.fire_clock = foe.reload
                     shoot(foe, foe.kind == "boss" and (foe.t % 2 < 1 and 2 or 0) or 0)
                 end
@@ -223,7 +292,8 @@ function E.update_bolts(dt)
     S.enemy_bolts = kept
 end
 
--- Everything still flying goes away (the boss down, the run over).
+--- Everything still flying goes away (the boss down, the run over).
+---@return nil
 function E.clear()
     for _, foe in ipairs(S.enemies) do
         if foe.alive then E.destroy(foe, false) end

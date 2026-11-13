@@ -62,7 +62,7 @@ Entities:
       gameVisible: true
     Hierarchy: {}
     LuaScript:
-      scriptPath: gid:f8c55a7c027a7f22:scripts/ui/neon_bricks.lua
+      scriptPath: gid:f8c55a7c027a7f22:scripts/ui/neon_bricks.owlvs
   - Entity: 7230000000000000005
     Tag:
       tag: MenuBrick
@@ -1159,7 +1159,7 @@ Entities:
       referenceResolution: [1280, 720]
       scaleMode: ScaleWithHeight
     LuaScript:
-      scriptPath: gid:07cc642568a7bf9d:scripts/ui/victory.lua
+      scriptPath: gid:07cc642568a7bf9d:scripts/ui/victory.owlvs
   - Entity: 7230000000000000078
     Tag:
       tag: ResultGroup
@@ -1175,15 +1175,27 @@ Entities:
       anchorMin: [0.5, 0]
       anchorMax: [0.5, 0]
       pivot: [0.5, 0]
-      size: [1.1, 0.6]
+      size: [1.14, 0.62]
       sizeUnit: [ScreenHeight, ScreenHeight]
-      offset: [0, 0.33]
+      offset: [0, 0.32]
       offsetUnit: [ScreenHeight, ScreenHeight]
+    UiPanel:
+      backgroundColor: [0.03, 0.01, 0.08, 0.92]
+      borderColor: [0.55, 0.45, 0.3, 0.6]
+      borderWidth: 1
+      clipChildren: false
+      Box:
+        cornerRadius: 26
+        borderColor: [0.3, 0.8, 1, 0.8]
+        borderWidth: 2
+        shadowColor: [0.3, 0.8, 1, 0.35]
+        shadowOffset: [0, 0]
+        shadowBlur: 20
     UiLayout:
       arrangement: Column
       crossAlign: Center
       spacing: 10
-      padding: 0
+      padding: 14
       columns: 1
       cellSize: [0, 0]
   - Entity: 7230000000000000079
@@ -1201,7 +1213,7 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [1, 0.2]
+      size: [0.86, 0.17]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiLayout:
@@ -1230,17 +1242,24 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.07, 0.02, 0.14, 1]
-      hoverColor: [0.32, 0.05, 0.42, 1]
-      pressedColor: [0.55, 0.1, 0.6, 1]
+      normalColor: [0.05, 0.01, 0.12, 0.55]
+      hoverColor: [0.78, 0.12, 0.66, 1]
+      pressedColor: [1, 0.45, 0.9, 1]
       disabledColor: [0.06, 0.04, 0.08, 0.6]
       onClickCallback: on_menu_clicked
+      Box:
+        cornerRadius: 100
+        borderColor: [0.6, 0.97, 1, 1]
+        borderWidth: 2.5
+        shadowColor: [1, 0.2, 0.75, 0.75]
+        shadowOffset: [0, 0]
+        shadowBlur: 14
     UiText:
       outlineWidth: 2
       outlineColor: [0.25, 0.02, 0.3, 1]
       text: 'TITLE'
-      color: [0.6, 0.97, 1, 1]
-      fontSize: 30
+      color: [0.9, 0.99, 1, 1]
+      fontSize: 22
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -1248,35 +1267,14 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBoldItalic
+      font: PressStart2P-Regular
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: ''
-      highlightColor: [1, 0.3, 0.8, 1]
-      highlightThickness: 3
+      highlightColor: [1, 0.88, 0.3, 1]
+      highlightThickness: 2
   - Entity: 7230000000000000081
-    Tag:
-      tag: MenuButtonFrame
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7230000000000000080
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:a1d187b64ee5d0ed:textures/ui/button_frame.png
-  - Entity: 7230000000000000082
     Tag:
       tag: LevelsButton
     Transform:
@@ -1295,17 +1293,24 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.07, 0.02, 0.14, 1]
-      hoverColor: [0.32, 0.05, 0.42, 1]
-      pressedColor: [0.55, 0.1, 0.6, 1]
+      normalColor: [0.05, 0.01, 0.12, 0.55]
+      hoverColor: [0.78, 0.12, 0.66, 1]
+      pressedColor: [1, 0.45, 0.9, 1]
       disabledColor: [0.06, 0.04, 0.08, 0.6]
       onClickCallback: on_levels_clicked
+      Box:
+        cornerRadius: 100
+        borderColor: [0.6, 0.97, 1, 1]
+        borderWidth: 2.5
+        shadowColor: [1, 0.2, 0.75, 0.75]
+        shadowOffset: [0, 0]
+        shadowBlur: 14
     UiText:
       outlineWidth: 2
       outlineColor: [0.25, 0.02, 0.3, 1]
       text: 'LEVEL SELECT'
-      color: [0.6, 0.97, 1, 1]
-      fontSize: 30
+      color: [0.9, 0.99, 1, 1]
+      fontSize: 22
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -1313,35 +1318,14 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBoldItalic
+      font: PressStart2P-Regular
     UiFocus:
       focusable: true
       initial: true
       onFocusCallback: ''
-      highlightColor: [1, 0.3, 0.8, 1]
-      highlightThickness: 3
-  - Entity: 7230000000000000083
-    Tag:
-      tag: LevelsButtonFrame
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7230000000000000082
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:a1d187b64ee5d0ed:textures/ui/button_frame.png
-  - Entity: 7230000000000000084
+      highlightColor: [1, 0.88, 0.3, 1]
+      highlightThickness: 2
+  - Entity: 7230000000000000082
     Tag:
       tag: BestLabel
     Transform:
@@ -1356,7 +1340,7 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [1, 0.13]
+      size: [0.86, 0.1]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
@@ -1364,7 +1348,7 @@ Entities:
       outlineColor: [0.25, 0.02, 0.3, 1]
       text: ''
       color: [1, 0.88, 0.3, 1]
-      fontSize: 30
+      fontSize: 22
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -1372,8 +1356,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: JetBrainsMono-Regular
-  - Entity: 7230000000000000085
+      font: PressStart2P-Regular
+  - Entity: 7230000000000000083
     Tag:
       tag: ScoreLabel
     Transform:
@@ -1388,7 +1372,7 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [1, 0.15]
+      size: [0.86, 0.13]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
@@ -1396,7 +1380,7 @@ Entities:
       outlineColor: [0.25, 0.02, 0.3, 1]
       text: 'SCORE 000000'
       color: [1, 0.88, 0.3, 1]
-      fontSize: 40
+      fontSize: 32
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -1404,8 +1388,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: JetBrainsMono-Regular
-  - Entity: 7230000000000000086
+      font: PressStart2P-Regular
+  - Entity: 7230000000000000084
     Tag:
       tag: ResultTitle
     Transform:
@@ -1420,13 +1404,13 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [1, 0.34]
+      size: [0.86, 0.28]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 3
-      outlineColor: [1, 1, 1, 0.9]
-      text: 'YOU WIN!'
+      outlineWidth: 1
+      outlineColor: [1, 0.85, 0.97, 0.55]
+      text: 'YOU  WIN!'
       color: [0.3, 0.95, 1, 1]
       fontSize: 110
       horizontalAlignment: Center
@@ -1436,4 +1420,4 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBoldItalic
+      font: Monoton-Regular

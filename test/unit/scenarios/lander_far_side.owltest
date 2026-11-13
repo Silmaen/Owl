@@ -1,0 +1,12 @@
+# Lunar Lander, fifth landing: the descent from orbit to the pad at the bottom of the Daedalus crater, on the far
+# side; a burn against the motion (the lander tilted back, full thrust) brings the predicted path down to the ground.
+scene: ../../../samples/lunar_lander/scenes/landing_5.owl
+steps:
+  - frames: 30
+  - expect: {gamestate: lander_landing, equals: 5}
+  - expect: {gamestate: lander_impact, equals: false}
+  - actions: {attitude: [0, 1], frames: 75}
+  - input: {key: Space, frames: 240}
+  - frames: 10
+  - expect: {gamestate: lander_impact, equals: true}
+  - expect: {gamestate: lander_state, equals: fly}

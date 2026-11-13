@@ -1,0 +1,19 @@
+Prefab: Plan road
+Version: 1
+Entities:
+  - Entity: 7590000000000000001
+    Tag:
+      tag: Plan
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:2f091508dad725e4:models/road.glb
+      color: [0.85, 0.9, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world

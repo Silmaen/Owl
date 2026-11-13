@@ -1,0 +1,48 @@
+# Ring Runner: the tempers of the enemy table. Flown weaving with the lasers held through the first third of the
+# lane, the timid scouts and the reckless raiders come in their waves, and the raiders aim their shots ahead of the
+# ship.
+scene: ../../../samples/rail_shooter/scenes/level.owl
+timestep_ms: 33.333
+steps:
+  - frames: 2
+  - input: {key: Space, frames: 2}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, -0.3], fire: true, frames: 45}
+  - actions: {steer: [-0.7, 0.3], fire: true, frames: 45}
+  - actions: {steer: [0.7, -0.3], fire: true, frames: 45}
+  - expect: {gamestate: rail_spawned_scout, greater: 3}
+  - expect: {gamestate: rail_spawned_raider, greater: 2}
+  - expect: {gamestate: rail_aimed_shots, greater: 0}
+  - expect: {gamestate: rail_lost, equals: false}

@@ -1,0 +1,51 @@
+DataTable: ''
+FormatVersion: 1
+columns:
+  - {name: distance, type: Float}
+  - {name: count, type: Integer}
+  - {name: kind, type: Enum, choices: [fighter, interceptor]}
+  - {name: ahead, type: Float}
+  - {name: target, type: Enum, choices: [convoy, player]}
+rows:
+  - key: w1
+    distance: 40
+    count: 3
+    kind: fighter
+    ahead: 170
+    target: convoy
+  - key: w2
+    distance: 220
+    count: 3
+    kind: fighter
+    ahead: 160
+    target: convoy
+  - key: w3
+    distance: 220
+    count: 2
+    kind: fighter
+    ahead: 120
+    target: player
+  - key: w4
+    distance: 420
+    count: 4
+    kind: fighter
+    ahead: 170
+    target: convoy
+  - key: w5
+    distance: 420
+    count: 2
+    kind: interceptor
+    ahead: 150
+    target: player
+  - key: w6
+    distance: 640
+    count: 4
+    kind: interceptor
+    ahead: 170
+    target: convoy
+  - key: w7
+    distance: 640
+    count: 2
+    kind: fighter
+    ahead: 140
+    target: player

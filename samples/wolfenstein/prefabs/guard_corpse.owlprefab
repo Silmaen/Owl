@@ -1,0 +1,19 @@
+Prefab: GuardCorpse
+Version: 1
+Entities:
+  - Entity: 7100000000000000002
+    Tag:
+      tag: GuardCorpse
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/guard/corpse.png
+    RendererTag:
+      Name: raycast_world

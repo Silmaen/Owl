@@ -26,17 +26,18 @@ Design page for the Blueprints-style visual scripting, summarised in the [Roadma
 
 ### Status {#visual-scripting-status}
 
-| Part                                                                                     | Status  |
-|------------------------------------------------------------------------------------------|---------|
-| `.owlvs` graph, palette from the binding registry, compiler to Lua, `LuaScript` and pack | Done    |
-| Colour and vector values, grouped pins split into components                             | Done    |
-| Owl Nest editor: canvas, node library, inline values, variables, errors, Lua, undo       | Done    |
-| Debugging: live values on the wires, breakpoints on nodes                                | Done    |
-| Functions, macros and library graphs                                                     | Done    |
-| HUD graphs                                                                               | Done    |
-| Maths, text, table and list nodes, `For Each`, `Select`; list variables                  | Done    |
-| Internal variables, property bounds, exported functions (dialogue conditions)            | Done    |
-| Engine Demo gameplay scripts as graphs, the algorithms left in Lua                       | Done    |
+| Part                                                                                     | Status |
+|------------------------------------------------------------------------------------------|--------|
+| `.owlvs` graph, palette from the binding registry, compiler to Lua, `LuaScript` and pack | Done   |
+| Colour and vector values, grouped pins split into components                             | Done   |
+| Owl Nest editor: canvas, node library, inline values, variables, errors, Lua, undo       | Done   |
+| Debugging: live values on the wires, breakpoints on nodes                                | Done   |
+| Functions, macros and library graphs                                                     | Done   |
+| HUD graphs                                                                               | Done   |
+| Maths, text, table and list nodes, `For Each`, `Select`; list variables                  | Done   |
+| Internal variables, property bounds, exported functions (dialogue conditions)            | Done   |
+| Engine Demo gameplay scripts as graphs, the algorithms left in Lua                       | Done   |
+| Sample game scripts as graphs; `While Loop`, `For Each Pair`, `Break`, `Continue`, steps | Done   |
 
 User guide: [Visual scripts](../visual-scripts.md).
 
@@ -80,30 +81,30 @@ The compiler writes Lua a developer can read in the **Lua** view of Owl Nest:
 [Luau](https://luau.org) is the Lua dialect of Roblox (MIT), derived from Lua 5.1. It replaces Lua 5.5 in v0.7.0, before
 the mod API, so the scripting API freezes once at 1.0.
 
-| Gain     | What it brings to Owl                                                                                      |
-|----------|------------------------------------------------------------------------------------------------------------|
-| Types    | Gradual types (`--!strict` per file): typed pins of the custom nodes, completion and errors in the editor  |
-| Analysis | The type checker is an embeddable C++ library; type declarations generated from the binding registry       |
-| Sandbox  | Built for untrusted code: interrupt callback, memory per category, for the mods                            |
-| Speed    | Faster interpreter than Lua 5.x, optional native code on x64 and arm64; the interpreter alone on the Web   |
-| Syntax   | Compound assignment, `continue`, `if` expressions, string interpolation, a native `vector` type            |
+| Gain     | What it brings to Owl                                                                                     |
+|----------|-----------------------------------------------------------------------------------------------------------|
+| Types    | Gradual types (`--!strict` per file): typed pins of the custom nodes, completion and errors in the editor |
+| Analysis | The type checker is an embeddable C++ library; type declarations generated from the binding registry      |
+| Sandbox  | Built for untrusted code: interrupt callback, memory per category, for the mods                           |
+| Speed    | Faster interpreter than Lua 5.x, optional native code on x64 and arm64; the interpreter alone on the Web  |
+| Syntax   | Compound assignment, `continue`, `if` expressions, string interpolation, a native `vector` type           |
 
-| Change      | How Owl handles it                                                                                          |
-|-------------|-------------------------------------------------------------------------------------------------------------|
-| Numbers     | Doubles only: scripts hold entity handles (`EntityHandle.h`), whole numbers cross through `LuaValues.h`     |
-| Debugger    | No `lua_sethook`: breakpoints set per chunk with `lua_breakpoint`, hits on the `debugbreak` callback        |
-| Time quota  | The watchdog installs the `interrupt` callback on the overdue call, which raises the error at a safepoint   |
-| Language    | Lua 5.1 base: no `goto`, no bitwise operators (`bit32`), no `__gc`; chunks compiled by `luau_compile`       |
-| Errors      | Luau built with `LUA_USE_LONGJMP`: a Lua error unwinds like in the reference Lua, never as a C++ exception |
-| Releases    | Numbered 0.6xx to 0.7xx without semantic versioning, a local recipe pinned by `conan.lock`                  |
+| Change     | How Owl handles it                                                                                         |
+|------------|------------------------------------------------------------------------------------------------------------|
+| Numbers    | Doubles only: scripts hold entity handles (`EntityHandle.h`), whole numbers cross through `LuaValues.h`    |
+| Debugger   | No `lua_sethook`: breakpoints set per chunk with `lua_breakpoint`, hits on the `debugbreak` callback       |
+| Time quota | The watchdog installs the `interrupt` callback on the overdue call, which raises the error at a safepoint  |
+| Language   | Lua 5.1 base: no `goto`, no bitwise operators (`bit32`), no `__gc`; chunks compiled by `luau_compile`      |
+| Errors     | Luau built with `LUA_USE_LONGJMP`: a Lua error unwinds like in the reference Lua, never as a C++ exception |
+| Releases   | Numbered 0.6xx to 0.7xx without semantic versioning, a local recipe pinned by `conan.lock`                 |
 
-| Part                                                                              | Status  |
-|-----------------------------------------------------------------------------------|---------|
-| Entity handles in place of UUIDs                                                  | Done    |
-| VM, bindings, sandbox, `require`, quotas, debugger and console on Luau 0.746      | Done    |
-| Engine Demo and samples ported (bitwise masks, 64-bit generators)                 | Done    |
-| `script/*` benchmarks against the Lua 5.5 baseline                                | Planned |
-| Types checked in the Owl Nest code editor (Analysis library)                      | Done    |
+| Part                                                                         | Status  |
+|------------------------------------------------------------------------------|---------|
+| Entity handles in place of UUIDs                                             | Done    |
+| VM, bindings, sandbox, `require`, quotas, debugger and console on Luau 0.746 | Done    |
+| Engine Demo and samples ported (bitwise masks, 64-bit generators)            | Done    |
+| `script/*` benchmarks against the Lua 5.5 baseline                           | Planned |
+| Types checked in the Owl Nest code editor (Analysis library)                 | Done    |
 
 ## Node-graph link waypoints (v0.6.0)
 

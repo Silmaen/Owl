@@ -6,7 +6,7 @@ sample game into ``samples/sokoban/``, from the level texts of ``levels.py``.
 A level is one ``.owltilemap`` of three layers, in the binary layout Owl Nest saves: ``floor`` (floor and walls),
 ``goals`` (the goal marks) and ``boxes`` (the crates and the hero tile where the player starts). Each level scene points
 its ``Level`` entity at its tilemap (one scene per level, gap G14) and holds the player, the sliding crate, the camera,
-the music and the ``Game`` entity running ``scripts/game/sokoban.lua``; ``tables/levels.owltable`` lists the scene and
+the music and the ``Game`` entity running ``scripts/game/sokoban.owlvs``; ``tables/levels.owltable`` lists the scene and
 the name of each level, in play order. The levels are edited in the tilemap editor of
 Owl Nest afterwards; running this script again overwrites those edits.
 
@@ -129,7 +129,7 @@ def level_scene(index: int) -> str:
     )
     entities.add("MovingBox", [y.frames(sheet, COLUMNS, ROWS, TILES["box"])], position=(0, 0, 0.05), visible=False)
     entities.add("Music", [y.music("sounds/music/loop.wav", 0.3)])
-    entities.add("Game", [y.script("scripts/game/sokoban.lua", [("level", "int", number)])])
+    entities.add("Game", [y.script("scripts/game/sokoban.owlvs", [("level", "int", number)])])
     return y.scene(f"level_{number:02d}", entities, hud="huds/level.owlhud")
 
 

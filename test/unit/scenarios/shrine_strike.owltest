@@ -1,0 +1,89 @@
+# The Sunken Shrine, the armoury: with the sword taken from its stand, the hero strikes at the bats that swoop at it
+# until one of them is gone.
+scene: ../../../samples/sunken_shrine/scenes/room_3.owl
+steps:
+  - frames: 5
+  - input: {key: W, frames: 30}
+  - input: {key: E, frames: 1}
+  - frames: 3
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - input: {key: Space, frames: 1}
+  - frames: 14
+  - expect: {gamestate: shrine_kills, greater: 0}

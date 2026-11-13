@@ -1,0 +1,11 @@
+# Bridge Builder, Mill Creek: the level opens on the plan, its budget and its anchors read (the pillar in the middle of the creek is an anchor),
+# the cursor on the top of the left cliff.
+scene: ../../../samples/bridge_builder/scenes/level_2.owl
+steps:
+  - frames: 10
+  - expect: {gamestate: bridge_level, equals: 2}
+  - expect: {gamestate: bridge_budget, equals: 3000}
+  - expect: {gamestate: bridge_anchors, equals: 5}
+  - expect: {gamestate: bridge_cursor_x, equals: 0}
+  - expect: {gamestate: bridge_cursor_y, equals: 0}
+  - expect: {gamestate: bridge_state, equals: build}

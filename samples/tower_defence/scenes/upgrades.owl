@@ -175,7 +175,7 @@ Entities:
       gameVisible: true
     Hierarchy: {}
     LuaScript:
-      scriptPath: gid:83b62d131ad337a8:scripts/ui/parade.lua
+      scriptPath: gid:83b62d131ad337a8:scripts/ui/parade.owlvs
       properties:
         - name: fireworks
           type: bool
@@ -407,7 +407,7 @@ Entities:
       referenceResolution: [1280, 720]
       scaleMode: ScaleWithHeight
     LuaScript:
-      scriptPath: gid:13b8a57737595363:scripts/ui/upgrades.lua
+      scriptPath: gid:13b8a57737595363:scripts/ui/upgrades.owlvs
   - Entity: 7450000000000000024
     Tag:
       tag: UpgradesBoard

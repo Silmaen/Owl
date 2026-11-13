@@ -141,6 +141,39 @@ auto collectNavGeometry(const Scene& iScene, const Entity& iVolume) -> NavGeomet
 	return geometry;
 }
 
+auto collectWalkTriangles(const Scene& iScene, const Entity& iVolume, std::vector<math::vec3>& oVertices,
+						  std::vector<uint32_t>& oIndices) -> bool {
+	oVertices.clear();
+	oIndices.clear();
+	if (!iVolume || !iVolume.hasComponent<component::NavMeshVolume>())
+		return false;
+	math::vec3 boundsMin;
+	math::vec3 boundsMax;
+	getNavVolumeBounds(iScene, iVolume, boundsMin, boundsMax);
+	for (const auto& entity: sortedEntities<component::WalkArea>(iScene)) {
+		const math::mat4 world = iScene.getWorldTransform(entity)();
+		const math::vec2 origin{world(0, 3), world(1, 3)};
+		if (origin.x() < boundsMin.x() || origin.x() > boundsMax.x() || origin.y() < boundsMin.y() ||
+			origin.y() > boundsMax.y())
+			continue;
+		const auto& mesh = entity.getComponent<component::WalkArea>().getMesh();
+		const auto first = static_cast<uint32_t>(oVertices.size());
+		for (const auto& vertex: mesh.getVertices())
+			oVertices.emplace_back(vertex.x() + origin.x(), 0.f, vertex.y() + origin.y());
+		for (const auto& triangle: mesh.getTriangles()) {
+			auto corners = triangle.vertices;
+			// Counter-clockwise in the plane (x, z) seen from above, as the voxel bake writes them.
+			const auto& a = oVertices[first + corners[0]];
+			const auto& b = oVertices[first + corners[1]];
+			const auto& c = oVertices[first + corners[2]];
+			if ((b.z() - a.z()) * (c.x() - a.x()) - (b.x() - a.x()) * (c.z() - a.z()) > 0.f)
+				std::swap(corners[1], corners[2]);
+			for (const auto corner: corners) oIndices.push_back(first + corner);
+		}
+	}
+	return !oIndices.empty();
+}
+
 auto bakeNavMesh(Scene& ioScene, const Entity& iVolume) -> owl::expected<void, NavBuildError> {
 	OWL_PROFILE_FUNCTION()
 
@@ -152,6 +185,17 @@ auto bakeNavMesh(Scene& ioScene, const Entity& iVolume) -> owl::expected<void, N
 	math::vec3 boundsMax;
 	getNavVolumeBounds(ioScene, iVolume, boundsMin, boundsMax);
 	auto& volume = iVolume.getComponent<component::NavMeshVolume>();
+	if (volume.isWalkPlane()) {
+		std::vector<math::vec3> vertices;
+		std::vector<uint32_t> indices;
+		if (!collectWalkTriangles(ioScene, iVolume, vertices, indices))
+			return owl::unexpected{NavBuildError::NoGeometry};
+		volume.vertices = std::move(vertices);
+		volume.indices = std::move(indices);
+		OWL_CORE_INFO("NavMesh: '{}' baked from its walk areas, {} triangles.", iVolume.getName(),
+					  volume.indices.size() / 3)
+		return {};
+	}
 	NavMesh mesh;
 	if (auto built = mesh.build(collectNavGeometry(ioScene, iVolume), volume.settings, boundsMin, boundsMax); !built)
 		return owl::unexpected{built.error()};

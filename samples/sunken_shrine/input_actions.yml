@@ -1,0 +1,39 @@
+FormatVersion: 1
+# Actions of The Sunken Shrine, on top of the built-in ones (`move` walks; the `ui_*` actions drive the menus). Read
+# by scripts/game/player.owlvs and scripts/game/room.owlvs.
+actions:
+  - name: move
+    type: vector
+    bindings:
+      - {key: D, component: x}
+      - {key: A, component: x, scale: -1}
+      - {key: S, component: y}
+      - {key: W, component: y, scale: -1}
+      - {key: Right, component: x}
+      - {key: Left, component: x, scale: -1}
+      - {key: Down, component: y}
+      - {key: Up, component: y, scale: -1}
+      - {gamepad_stick: left}
+      - {gamepad_button: DpadRight, component: x}
+      - {gamepad_button: DpadLeft, component: x, scale: -1}
+      - {gamepad_button: DpadDown, component: y}
+      - {gamepad_button: DpadUp, component: y, scale: -1}
+  - name: attack
+    type: button
+    bindings:
+      - {key: Space}
+      - {mouse_button: Left}
+      - {gamepad_button: A}
+  - name: use
+    type: button
+    bindings:
+      - {key: E}
+      - {key: Enter}
+      - {mouse_button: Right}
+      - {gamepad_button: X}
+  - name: pause
+    type: button
+    bindings:
+      - {key: Escape}
+      - {key: P}
+      - {gamepad_button: Start}

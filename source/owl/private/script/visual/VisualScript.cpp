@@ -156,11 +156,50 @@ void addFlow(std::vector<NodeType>& ioTypes) {
 	ioTypes.push_back({.id = "flow.for",
 					   .title = "For Loop",
 					   .category = "Flow",
-					   .description = "Runs Body for each integer from First to Last, then Completed.",
+					   .description = "Runs Body for each integer from First to Last by Step, then Completed.",
 					   .kind = NodeKind::ForLoop,
 					   .lua = {},
-					   .inputs = {execIn(), pin("First", PinType::Integer, "1"), pin("Last", PinType::Integer, "1")},
+					   .inputs = {execIn(), pin("First", PinType::Integer, "1"), pin("Last", PinType::Integer, "1"),
+								  pin("Step", PinType::Number, "1")},
 					   .outputs = {execOut("Body"), pin("Index", PinType::Integer), execOut("Completed")},
+					   .pure = false});
+	ioTypes.push_back({.id = "flow.while",
+					   .title = "While Loop",
+					   .category = "Flow",
+					   .description = "Runs Body again while the condition holds, checked before each run, then "
+									  "Completed.",
+					   .kind = NodeKind::ForLoop,
+					   .lua = {},
+					   .inputs = {execIn(), pin("Condition", PinType::Boolean, "false")},
+					   .outputs = {execOut("Body"), execOut("Completed")},
+					   .pure = false});
+	ioTypes.push_back(
+			{.id = "flow.for_each_pair",
+			 .title = "For Each Pair",
+			 .category = "Flow",
+			 .description = "Runs Body for each key and value of a table, in no set order, then Completed.",
+			 .kind = NodeKind::ForEach,
+			 .lua = {},
+			 .inputs = {execIn(), pin("Table", PinType::Table)},
+			 .outputs = {execOut("Body"), pin("Key", PinType::Any), pin("Value", PinType::Any), execOut("Completed")},
+			 .pure = false});
+	ioTypes.push_back({.id = "flow.break",
+					   .title = "Break",
+					   .category = "Flow",
+					   .description = "Leaves the loop it runs in: the loop goes on by Completed.",
+					   .kind = NodeKind::Statement,
+					   .lua = "break",
+					   .inputs = {execIn()},
+					   .outputs = {},
+					   .pure = false});
+	ioTypes.push_back({.id = "flow.continue",
+					   .title = "Continue",
+					   .category = "Flow",
+					   .description = "Ends this run of the loop body: the loop goes on with its next run.",
+					   .kind = NodeKind::Statement,
+					   .lua = "continue",
+					   .inputs = {execIn()},
+					   .outputs = {},
 					   .pure = false});
 	ioTypes.push_back({.id = "flow.for_each",
 					   .title = "For Each",
@@ -187,6 +226,16 @@ void addValues(std::vector<NodeType>& ioTypes) {
 							 PinType::Entity));
 	ioTypes.push_back(
 			pureOp("value.nil", "Nil", "Constant", "No value: clears a variable or a field.", "nil", {}, PinType::Any));
+	NodeType widget = pureOp("value.widget", "Widget Values", "ui",
+							 "What the widget calling a handler gives it: the value of a slider, the row of a list "
+							 "to fill, the row selected (from 1), the list, the button clicked and the widget focused.",
+							 "_slider_value, _row_index, _selected_index, _list_entity, _clicked_entity, "
+							 "_focused_entity",
+							 {}, PinType::Number);
+	widget.outputs = {pin("slider_value", PinType::Number),    pin("row_index", PinType::Integer),
+					  pin("selected_index", PinType::Integer), pin("list_entity", PinType::Entity),
+					  pin("clicked_entity", PinType::Entity),  pin("focused_entity", PinType::Entity)};
+	ioTypes.push_back(std::move(widget));
 	ioTypes.push_back(constant("value.number", "Number", "A number.", PinType::Number, "0"));
 	ioTypes.push_back(constant("value.integer", "Integer", "An integer.", PinType::Integer, "0"));
 	ioTypes.push_back(constant("value.boolean", "Boolean", "A boolean.", PinType::Boolean, "false"));
@@ -524,8 +573,12 @@ struct PinGroup {
 
 // Name of the grouped pin of a prefix: `vx, vy` is the velocity, `cell_x, cell_y` the cell.
 auto groupName(const std::string_view iPrefix, const std::string_view iLetters) -> std::string {
-	static constexpr std::array<std::pair<std::string_view, std::string_view>, 5> named{
-			{{"v", "velocity"}, {"s", "scale"}, {"r", "rotation"}, {"f", "force"}, {"d", "delta"}}};
+	static constexpr std::array<std::pair<std::string_view, std::string_view>, 6> named{{{"v", "velocity"},
+																						 {"s", "scale"},
+																						 {"r", "rotation"},
+																						 {"f", "force"},
+																						 {"d", "delta"},
+																						 {"w", "angular_velocity"}}};
 	if (iPrefix.empty())
 		return std::string{iLetters};
 	for (const auto& [prefix, name]: named)

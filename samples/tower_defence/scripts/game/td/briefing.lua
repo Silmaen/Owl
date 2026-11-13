@@ -30,8 +30,9 @@ function Brief.modifier_lines()
     return out
 end
 
--- The legend of the pause window: the day and night effects of the towers and of the Horde of this level, then the
--- modifiers of the level.
+--- The legend of the pause window: the day and night effects of the towers and of the Horde of this level, then the
+--- modifiers of the level.
+---@return any result
 function Brief.effects_legend()
     local lines = { (Fx.night and "Now night." or "Now day.") .. " Day and night change the fight:" }
     for _, kind in ipairs(C.KINDS) do lines[#lines + 1] = C.NAMES[kind] .. ": " .. Fx.time_text(kind) end
@@ -94,8 +95,9 @@ function Brief.show_dialogue()
     gamestate.set("tower_briefing_answers", #Brief.answers)
 end
 
--- An answer of the briefing: 1 starts the level, 2 skips the tutorial too (the dialogue calls `skip_tutorial`); the
--- conversation ends and the card closes.
+--- An answer of the briefing: 1 starts the level, 2 skips the tutorial too (the dialogue calls `skip_tutorial`); the
+--- conversation ends and the card closes.
+---@param index any
 function Brief.answer(index)
     if not Brief.open then return end
     if Brief.conversation ~= nil and dialogue.is_running(Brief.conversation) then
@@ -108,8 +110,9 @@ function Brief.answer(index)
     Brief.close_briefing()
 end
 
--- The briefing card, a modal window: the level, the words of the captain, its nights, its modifiers and the enemies
--- it brings first, a row each.
+--- The briefing card, a modal window: the level, the words of the captain, its nights, its modifiers and the enemies
+--- it brings first, a row each.
+---@return nil
 function Brief.open_briefing()
     if S.hud.briefing == 0 then return end
     Brief.conversation = dialogue.start(briefing_dialogue)
@@ -140,8 +143,9 @@ function Brief.open_briefing()
     gamestate.set("tower_tutorial_offered", td.tutorial.offered())
 end
 
--- The card fits its lines: once laid out, its height and the height of its body follow the bottom of the buttons,
--- whatever the resolution and the interface size (the sizes are in screen heights, the layout in pixels).
+--- The card fits its lines: once laid out, its height and the height of its body follow the bottom of the buttons,
+--- whatever the resolution and the interface size (the sizes are in screen heights, the layout in pixels).
+---@return nil
 function Brief.fit()
     if not Brief.open or Brief.size == nil then return end
     local _, card_y, _, card_h = ui.get_rect(S.hud.briefing)
@@ -163,6 +167,7 @@ function Brief.fit()
     ui.set_size(S.hud.briefing, 1.16, Brief.size.card)
 end
 
+---@return nil
 function Brief.close_briefing()
     if not Brief.open then return end
     Brief.open = false

@@ -4,6 +4,7 @@ local td = require("scripts.game.td.core")
 local S, C = td.state, td.data
 local UI, Eco, Cam, Fx, Towers, Wheel = td.ui, td.economy, td.camera, td.effects, td.towers, td.wheel
 
+---@return nil
 function Wheel.close_ring()
     S.ring = nil
     S.hover = 0

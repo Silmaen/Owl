@@ -13,6 +13,7 @@ function Cam.update_basis()
     S.basis.toward = { sy, cy }       -- toward the camera on the ground plane
 end
 
+---@return nil
 function Cam.place_camera()
     if S.camera_id == 0 then return end
     Cam.update_basis()
@@ -60,6 +61,7 @@ function Cam.screen_offset(x, y, z, px, py, unit, behind)
             z + (r[3] * px + u[3] * py) * unit + f[3] * behind
 end
 
+---@param real_dt any
 function Cam.update_camera(real_dt)
     if S.camera_id == 0 then return end
     local right, down = input.get_action_vector("pan")

@@ -1,0 +1,356 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: first_scene, type: string, default: scenes/landing_1.owl}
+    - {name: best_key, type: string, default: lander_best}
+    - {name: sweep, type: color, default: '0, 0, 0.02, 1'}
+    - {name: leaving, type: bool, default: false, exposed: false}
+    - {name: how_to, type: bool, default: false, exposed: false}
+  functions:
+    - name: close_how_to
+      inputs: []
+      outputs: []
+  nodes:
+    - id: 6100000030968000001
+      type: event.on_create
+      position: [0, 0]
+    - id: 6100000030968000002
+      type: call.ui.is_transition_active
+      position: [-60, 300]
+    - id: 6100000030968000003
+      type: logic.not
+      position: [100, 150]
+    - id: 6100000030968000004
+      type: flow.branch
+      position: [300, 0]
+    - id: 6100000030968000005
+      type: var.get
+      position: [440, 150]
+      values:
+        variable: sweep
+    - id: 6100000030968000006
+      type: call.ui.transition_play
+      position: [600, 0]
+      values:
+        duration: 0.5
+        kind: fade
+    - id: 6100000030968000007
+      type: flow.sequence
+      position: [900, 0]
+    - id: 6100000030968000008
+      type: var.get
+      position: [1040, 150]
+      values:
+        variable: best_key
+    - id: 6100000030968000009
+      type: call.settings.get
+      position: [1200, 0]
+      values:
+        default: 0
+    - id: 6100000030968000010
+      type: compare.greater
+      position: [1140, 300]
+      values:
+        B: 0
+    - id: 6100000030968000011
+      type: text.format
+      position: [1140, 380]
+      values:
+        Format: 'BEST SCORE %d'
+    - id: 6100000030968000012
+      type: logic.select
+      position: [1300, 150]
+      values:
+        False: NO SCORE YET
+    - id: 6100000030968000013
+      type: call.scene.find_entity
+      position: [1340, 230]
+      values:
+        name: BestText
+    - id: 6100000030968000014
+      type: call.ui.set_text
+      position: [1500, 0]
+    - id: 6100000030968000015
+      type: call.gamestate.set
+      position: [1800, 0]
+      values:
+        key: lander_how_to
+        value: false
+    - id: 6100000030968000016
+      type: call.gamestate.set
+      position: [2100, 0]
+      values:
+        key: lander_title_best
+    - id: 6100000030968000017
+      type: event.on_update
+      position: [0, 420]
+    - id: 6100000030968000018
+      type: var.get
+      position: [-60, 720]
+      values:
+        variable: how_to
+    - id: 6100000030968000019
+      type: call.input.is_action_just_pressed
+      position: [-60, 800]
+      values:
+        action: ui_cancel
+    - id: 6100000030968000020
+      type: logic.and
+      position: [100, 570]
+    - id: 6100000030968000021
+      type: flow.branch
+      position: [300, 420]
+    - id: 6100000030968000022
+      type: func.call
+      position: [600, 420]
+      values:
+        function: close_how_to
+    - id: 6100000030968000023
+      type: event.custom
+      position: [0, 840]
+      values:
+        function: on_play_clicked
+    - id: 6100000030968000024
+      type: call.gamestate.clear
+      position: [300, 840]
+    - id: 6100000030968000025
+      type: var.get
+      position: [1340, 990]
+      values:
+        variable: first_scene
+    - id: 6100000030968000026
+      type: var.get
+      position: [440, 990]
+      values:
+        variable: leaving
+    - id: 6100000030968000027
+      type: flow.branch
+      position: [600, 840]
+    - id: 6100000030968000028
+      type: var.set
+      position: [900, 840]
+      values:
+        Value: true
+        variable: leaving
+    - id: 6100000030968000029
+      type: call.sound.play
+      position: [1200, 840]
+      values:
+        asset_path: sounds/ui/start.wav
+    - id: 6100000030968000030
+      type: var.get
+      position: [1340, 1070]
+      values:
+        variable: sweep
+    - id: 6100000030968000031
+      type: call.scene.transition_to
+      position: [1500, 840]
+      values:
+        duration: 0.45
+        kind: fade
+    - id: 6100000030968000032
+      type: event.custom
+      position: [0, 1260]
+      values:
+        function: on_how_to_clicked
+    - id: 6100000030968000033
+      type: call.scene.find_entity
+      position: [440, 1410]
+      values:
+        name: HowToWindow
+    - id: 6100000030968000034
+      type: var.get
+      position: [140, 1410]
+      values:
+        variable: leaving
+    - id: 6100000030968000035
+      type: flow.branch
+      position: [300, 1260]
+    - id: 6100000030968000036
+      type: call.ui.set_visible
+      position: [600, 1260]
+      values:
+        visible: true
+    - id: 6100000030968000037
+      type: call.scene.find_entity
+      position: [740, 1410]
+      values:
+        name: HowToWindow
+    - id: 6100000030968000038
+      type: call.ui.raise_window
+      position: [900, 1260]
+    - id: 6100000030968000039
+      type: call.scene.find_entity
+      position: [1040, 1410]
+      values:
+        name: HowToBackButton
+    - id: 6100000030968000040
+      type: call.ui.set_focus
+      position: [1200, 1260]
+    - id: 6100000030968000041
+      type: var.set
+      position: [1500, 1260]
+      values:
+        Value: true
+        variable: how_to
+    - id: 6100000030968000042
+      type: call.gamestate.set
+      position: [1800, 1260]
+      values:
+        key: lander_how_to
+        value: true
+    - id: 6100000030968000043
+      type: event.custom
+      position: [0, 1680]
+      values:
+        function: on_how_to_closed
+    - id: 6100000030968000044
+      type: func.call
+      position: [300, 1680]
+      values:
+        function: close_how_to
+    - id: 6100000030968000045
+      type: func.entry
+      position: [0, 2100]
+      values:
+        function: close_how_to
+    - id: 6100000030968000046
+      type: call.scene.find_entity
+      position: [140, 2250]
+      values:
+        name: HowToWindow
+    - id: 6100000030968000047
+      type: call.ui.set_visible
+      position: [300, 2100]
+      values:
+        visible: false
+    - id: 6100000030968000048
+      type: call.scene.find_entity
+      position: [440, 2250]
+      values:
+        name: HowToButton
+    - id: 6100000030968000049
+      type: call.ui.set_focus
+      position: [600, 2100]
+    - id: 6100000030968000050
+      type: var.set
+      position: [900, 2100]
+      values:
+        Value: false
+        variable: how_to
+    - id: 6100000030968000051
+      type: call.gamestate.set
+      position: [1200, 2100]
+      values:
+        key: lander_how_to
+        value: false
+    - id: 6100000030968000052
+      type: func.return
+      position: [1500, 2100]
+      values:
+        function: close_how_to
+    - id: 6100000030968000053
+      type: event.custom
+      position: [0, 2520]
+      values:
+        function: on_settings_clicked
+    - id: 6100000030968000054
+      type: var.get
+      position: [140, 2670]
+      values:
+        variable: leaving
+    - id: 6100000030968000055
+      type: flow.branch
+      position: [300, 2520]
+    - id: 6100000030968000056
+      type: var.set
+      position: [600, 2520]
+      values:
+        Value: true
+        variable: leaving
+    - id: 6100000030968000057
+      type: var.get
+      position: [740, 2670]
+      values:
+        variable: sweep
+    - id: 6100000030968000058
+      type: call.scene.transition_to
+      position: [900, 2520]
+      values:
+        duration: 0.45
+        kind: fade
+        scene_path: scenes/settings.owl
+    - id: 6100000030968000059
+      type: event.custom
+      position: [0, 2940]
+      values:
+        function: on_quit_clicked
+    - id: 6100000030968000060
+      type: call.scene.quit
+      position: [300, 2940]
+  links:
+    - {from: 6100000030968000002, fromPin: active, to: 6100000030968000003, toPin: A}
+    - {from: 6100000030968000003, fromPin: Result, to: 6100000030968000004, toPin: Condition}
+    - {from: 6100000030968000001, fromPin: Then, to: 6100000030968000004, toPin: Exec}
+    - {from: 6100000030968000005, fromPin: Value, to: 6100000030968000006, toPin: rgba}
+    - {from: 6100000030968000004, fromPin: True, to: 6100000030968000006, toPin: Exec}
+    - {from: 6100000030968000004, fromPin: False, to: 6100000030968000007, toPin: Exec}
+    - {from: 6100000030968000006, fromPin: Then, to: 6100000030968000007, toPin: Exec}
+    - {from: 6100000030968000008, fromPin: Value, to: 6100000030968000009, toPin: key}
+    - {from: 6100000030968000009, fromPin: value, to: 6100000030968000010, toPin: A}
+    - {from: 6100000030968000009, fromPin: value, to: 6100000030968000011, toPin: A}
+    - {from: 6100000030968000010, fromPin: Result, to: 6100000030968000012, toPin: Condition}
+    - {from: 6100000030968000011, fromPin: Result, to: 6100000030968000012, toPin: True}
+    - {from: 6100000030968000013, fromPin: entity_id, to: 6100000030968000014, toPin: entity_id}
+    - {from: 6100000030968000012, fromPin: Result, to: 6100000030968000014, toPin: text}
+    - {from: 6100000030968000009, fromPin: value, to: 6100000030968000016, toPin: value}
+    - {from: 6100000030968000007, fromPin: Then 1, to: 6100000030968000009, toPin: Exec}
+    - {from: 6100000030968000009, fromPin: Then, to: 6100000030968000014, toPin: Exec}
+    - {from: 6100000030968000014, fromPin: Then, to: 6100000030968000015, toPin: Exec}
+    - {from: 6100000030968000015, fromPin: Then, to: 6100000030968000016, toPin: Exec}
+    - {from: 6100000030968000018, fromPin: Value, to: 6100000030968000020, toPin: A}
+    - {from: 6100000030968000019, fromPin: pressed, to: 6100000030968000020, toPin: B}
+    - {from: 6100000030968000020, fromPin: Result, to: 6100000030968000021, toPin: Condition}
+    - {from: 6100000030968000017, fromPin: Then, to: 6100000030968000021, toPin: Exec}
+    - {from: 6100000030968000021, fromPin: True, to: 6100000030968000022, toPin: Exec}
+    - {from: 6100000030968000023, fromPin: Then, to: 6100000030968000024, toPin: Exec}
+    - {from: 6100000030968000026, fromPin: Value, to: 6100000030968000027, toPin: Condition}
+    - {from: 6100000030968000024, fromPin: Then, to: 6100000030968000027, toPin: Exec}
+    - {from: 6100000030968000025, fromPin: Value, to: 6100000030968000031, toPin: scene_path}
+    - {from: 6100000030968000030, fromPin: Value, to: 6100000030968000031, toPin: rgba}
+    - {from: 6100000030968000027, fromPin: False, to: 6100000030968000028, toPin: Exec}
+    - {from: 6100000030968000028, fromPin: Then, to: 6100000030968000029, toPin: Exec}
+    - {from: 6100000030968000029, fromPin: Then, to: 6100000030968000031, toPin: Exec}
+    - {from: 6100000030968000034, fromPin: Value, to: 6100000030968000035, toPin: Condition}
+    - {from: 6100000030968000032, fromPin: Then, to: 6100000030968000035, toPin: Exec}
+    - {from: 6100000030968000033, fromPin: entity_id, to: 6100000030968000036, toPin: entity_id}
+    - {from: 6100000030968000037, fromPin: entity_id, to: 6100000030968000038, toPin: entity_id}
+    - {from: 6100000030968000039, fromPin: entity_id, to: 6100000030968000040, toPin: entity_id}
+    - {from: 6100000030968000035, fromPin: False, to: 6100000030968000036, toPin: Exec}
+    - {from: 6100000030968000036, fromPin: Then, to: 6100000030968000038, toPin: Exec}
+    - {from: 6100000030968000038, fromPin: Then, to: 6100000030968000040, toPin: Exec}
+    - {from: 6100000030968000040, fromPin: Then, to: 6100000030968000041, toPin: Exec}
+    - {from: 6100000030968000041, fromPin: Then, to: 6100000030968000042, toPin: Exec}
+    - {from: 6100000030968000043, fromPin: Then, to: 6100000030968000044, toPin: Exec}
+    - {from: 6100000030968000046, fromPin: entity_id, to: 6100000030968000047, toPin: entity_id}
+    - {from: 6100000030968000048, fromPin: entity_id, to: 6100000030968000049, toPin: entity_id}
+    - {from: 6100000030968000045, fromPin: Then, to: 6100000030968000047, toPin: Exec}
+    - {from: 6100000030968000047, fromPin: Then, to: 6100000030968000049, toPin: Exec}
+    - {from: 6100000030968000049, fromPin: Then, to: 6100000030968000050, toPin: Exec}
+    - {from: 6100000030968000050, fromPin: Then, to: 6100000030968000051, toPin: Exec}
+    - {from: 6100000030968000051, fromPin: Then, to: 6100000030968000052, toPin: Exec}
+    - {from: 6100000030968000054, fromPin: Value, to: 6100000030968000055, toPin: Condition}
+    - {from: 6100000030968000053, fromPin: Then, to: 6100000030968000055, toPin: Exec}
+    - {from: 6100000030968000057, fromPin: Value, to: 6100000030968000058, toPin: rgba}
+    - {from: 6100000030968000055, fromPin: False, to: 6100000030968000056, toPin: Exec}
+    - {from: 6100000030968000056, fromPin: Then, to: 6100000030968000058, toPin: Exec}
+    - {from: 6100000030968000059, fromPin: Then, to: 6100000030968000060, toPin: Exec}
+  groups:
+    - {id: 6100000030968000061, title: on_create, position: [-100, -60], size: [2500, 580], color: Red}
+    - {id: 6100000030968000062, title: on_update, position: [-100, 360], size: [1000, 580], color: Red}
+    - {id: 6100000030968000063, title: on_play_clicked, position: [-40, 780], size: [1840, 430], color: Red}
+    - {id: 6100000030968000064, title: on_how_to_clicked, position: [-40, 1200], size: [2140, 350], color: Red}
+    - {id: 6100000030968000065, title: on_how_to_closed, position: [-40, 1620], size: [640, 200], color: Red}
+    - {id: 6100000030968000066, title: close_how_to, position: [-40, 2040], size: [1840, 350], color: Red}
+    - {id: 6100000030968000067, title: on_settings_clicked, position: [-40, 2460], size: [1240, 350], color: Red}
+    - {id: 6100000030968000068, title: on_quit_clicked, position: [-40, 2880], size: [640, 200], color: Red}

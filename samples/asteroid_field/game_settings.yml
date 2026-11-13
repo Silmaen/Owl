@@ -1,0 +1,16 @@
+GameSettings:
+  - {key: resolution_width, type: int, value: 1280}
+  - {key: resolution_height, type: int, value: 720}
+  - {key: fullscreen, type: bool, value: false}
+  - {key: resizable, type: bool, value: true}
+  - {key: volume_master, type: float, value: 1.0}
+  - {key: volume_music, type: float, value: 0.8}
+  - {key: volume_sfx, type: float, value: 1.0}
+  - {key: ui_scale, type: float, value: 1.0}
+  - {key: color_blind_mode, type: string, value: none}
+  - {key: reduced_motion, type: bool, value: false}
+  - {key: subtitles, type: bool, value: true}
+  - {key: field_easy, type: bool, value: false}
+  - {key: field_invert_y, type: bool, value: false}
+  - {key: field_no_assist, type: bool, value: false}
+  - {key: field_best, type: int, value: 0}

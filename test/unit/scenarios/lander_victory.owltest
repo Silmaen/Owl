@@ -1,0 +1,10 @@
+# Lunar Lander victory: the tally of the run comes line by line, the best score is kept; Play again starts the first
+# landing.
+scene: ../../../samples/lunar_lander/scenes/victory.owl
+steps:
+  - frames: 10
+  - expect: {entity: ScoreLabel, exists: true}
+  - expect: {gamestate: lander_tally, equals: true}
+  - input: {key: Enter, frames: 2}
+  - frames: 60
+  - expect: {gamestate: lander_landing, equals: 1}

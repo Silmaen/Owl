@@ -1,0 +1,16 @@
+# Lunar Lander lost: a lander that never fires its engine falls on the first pad too fast, a leg snaps or the hull
+# hits the ground, the landing is lost and the game over screen follows; Retry (Enter) starts the landing again.
+scene: ../../../samples/lunar_lander/scenes/landing_1.owl
+steps:
+  - frames: 30
+  - expect: {gamestate: lander_state, equals: fly}
+  - expect: {gamestate: lander_alt, greater: 20}
+  - frames: 600
+  - expect: {gamestate: lander_state, equals: lost}
+  - frames: 240
+  - expect: {entity: ScoreLabel, exists: true}
+  - expect: {entity: RetryButton, exists: true}
+  - input: {key: Enter, frames: 2}
+  - frames: 60
+  - expect: {entity: Lander, exists: true}
+  - expect: {gamestate: lander_state, equals: fly}

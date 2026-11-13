@@ -54,6 +54,10 @@ Groups:
       - doc/pages/sample_tower_defence.md
       - doc/pages/sample_rail_shooter.md
       - doc/pages/sample_point_and_click.md
+      - doc/pages/sample_lunar_lander.md
+      - doc/pages/sample_bridge_builder.md
+      - doc/pages/sample_asteroid_field.md
+      - doc/pages/sample_sunken_shrine.md
   - title: Scripting
     pages:
       - doc/pages/scripting.md

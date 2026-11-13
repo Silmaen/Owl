@@ -1,0 +1,321 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: wipe_color, type: color, default: "0.1, 0.14, 0.24, 1"}
+    - {name: leaving, type: bool, default: "false", exposed: false}
+    - {name: id, type: entity, default: "0", exposed: false}
+  functions:
+    - name: set
+      inputs: [{name: name, type: any}, {name: text, type: any}]
+      outputs: []
+    - name: leave
+      inputs: [{name: path, type: any}]
+      outputs: []
+  nodes:
+    - id: 9059800001
+      type: func.entry
+      position: [340, 0]
+      values:
+        function: set
+    - id: 9059800002
+      type: call.scene.find_entity
+      position: [170, 160]
+    - id: 9059800003
+      type: var.set
+      position: [680, 0]
+      values:
+        variable: id
+    - id: 9059800004
+      type: var.get
+      position: [510, 160]
+      values:
+        variable: id
+    - id: 9059800005
+      type: compare.not_equal
+      position: [510, 280]
+      values:
+        B: "0"
+    - id: 9059800006
+      type: flow.branch
+      position: [1020, 0]
+    - id: 9059800007
+      type: call.ui.set_text
+      position: [1360, 0]
+    - id: 9059800008
+      type: var.get
+      position: [1190, 160]
+      values:
+        variable: id
+    - id: 9059800009
+      type: event.on_create
+      position: [340, 540]
+    - id: 9059800010
+      type: call.ui.is_transition_active
+      position: [170, 700]
+    - id: 9059800011
+      type: logic.not
+      position: [170, 820]
+    - id: 9059800012
+      type: flow.branch
+      position: [680, 540]
+    - id: 9059800013
+      type: call.ui.transition_play
+      position: [1020, 540]
+      values:
+        split.rgba: "true"
+        kind: wipe_down
+        duration: "0.5"
+    - id: 9059800014
+      type: var.get
+      position: [850, 700]
+      values:
+        variable: wipe_color
+    - id: 9059800015
+      type: math.break_color
+      position: [850, 820]
+    - id: 9059800016
+      type: var.get
+      position: [850, 940]
+      values:
+        variable: wipe_color
+    - id: 9059800017
+      type: math.break_color
+      position: [850, 1060]
+    - id: 9059800018
+      type: var.get
+      position: [850, 1180]
+      values:
+        variable: wipe_color
+    - id: 9059800019
+      type: math.break_color
+      position: [850, 1300]
+    - id: 9059800020
+      type: func.call
+      position: [1360, 540]
+      values:
+        function: set
+        name: StatLine1
+    - id: 9059800021
+      type: call.gamestate.get
+      position: [1700, 540]
+      values:
+        key: tower_result_wave
+        default: "0"
+    - id: 9059800022
+      type: call.gamestate.get
+      position: [2040, 540]
+      values:
+        key: tower_result_waves
+        default: "8"
+    - id: 9059800023
+      type: text.concat
+      position: [1870, 700]
+    - id: 9059800024
+      type: value.string
+      position: [1870, 820]
+      values:
+        Value: " / "
+    - id: 9059800025
+      type: text.concat
+      position: [1870, 940]
+    - id: 9059800026
+      type: text.join
+      position: [1870, 1060]
+      values:
+        A: "Wave reached    "
+    - id: 9059800027
+      type: func.call
+      position: [2380, 540]
+      values:
+        function: set
+        name: StatLine2
+    - id: 9059800028
+      type: call.gamestate.get
+      position: [2720, 540]
+      values:
+        key: tower_result_kills
+        default: "0"
+    - id: 9059800029
+      type: text.concat
+      position: [2550, 700]
+    - id: 9059800030
+      type: value.string
+      position: [2550, 820]
+      values:
+        Value: "Enemies stopped "
+    - id: 9059800031
+      type: func.call
+      position: [3060, 540]
+      values:
+        function: set
+        name: StatLine3
+    - id: 9059800032
+      type: call.gamestate.get
+      position: [3400, 540]
+      values:
+        key: tower_result_towers
+        default: "0"
+    - id: 9059800033
+      type: text.concat
+      position: [3230, 700]
+    - id: 9059800034
+      type: value.string
+      position: [3230, 820]
+      values:
+        Value: "Towers built    "
+    - id: 9059800035
+      type: func.call
+      position: [3740, 540]
+      values:
+        function: set
+        name: StatLine4
+        text: "Try the frost tower at a bend, or call waves later."
+    - id: 9059800036
+      type: event.on_update
+      position: [340, 1560]
+    - id: 9059800037
+      type: func.entry
+      position: [340, 1860]
+      values:
+        function: leave
+    - id: 9059800038
+      type: var.get
+      position: [170, 2020]
+      values:
+        variable: leaving
+    - id: 9059800039
+      type: flow.branch
+      position: [680, 1860]
+    - id: 9059800040
+      type: func.return
+      position: [1020, 1860]
+      values:
+        function: leave
+    - id: 9059800041
+      type: var.set
+      position: [1360, 1860]
+      values:
+        variable: leaving
+        Value: "true"
+    - id: 9059800042
+      type: call.scene.transition_to
+      position: [1700, 1860]
+      values:
+        split.rgba: "true"
+        kind: wipe_down
+        duration: "0.35"
+    - id: 9059800043
+      type: var.get
+      position: [1530, 2020]
+      values:
+        variable: wipe_color
+    - id: 9059800044
+      type: math.break_color
+      position: [1530, 2140]
+    - id: 9059800045
+      type: var.get
+      position: [1530, 2260]
+      values:
+        variable: wipe_color
+    - id: 9059800046
+      type: math.break_color
+      position: [1530, 2380]
+    - id: 9059800047
+      type: var.get
+      position: [1530, 2500]
+      values:
+        variable: wipe_color
+    - id: 9059800048
+      type: math.break_color
+      position: [1530, 2620]
+    - id: 9059800049
+      type: event.custom
+      position: [340, 2880]
+      values:
+        function: on_again_clicked
+    - id: 9059800050
+      type: func.call
+      position: [680, 2880]
+      values:
+        function: leave
+    - id: 9059800051
+      type: call.gamestate.get
+      position: [1020, 2880]
+      values:
+        key: tower_scene
+        default: scenes/level_01.owl
+    - id: 9059800052
+      type: event.custom
+      position: [340, 3180]
+      values:
+        function: on_title_clicked
+    - id: 9059800053
+      type: func.call
+      position: [680, 3180]
+      values:
+        function: leave
+        path: scenes/world_map.owl
+  links:
+    - {from: 9059800001, fromPin: name, to: 9059800002, toPin: name}
+    - {from: 9059800002, fromPin: entity_id, to: 9059800003, toPin: Value}
+    - {from: 9059800001, fromPin: Then, to: 9059800003, toPin: Exec}
+    - {from: 9059800004, fromPin: Value, to: 9059800005, toPin: A}
+    - {from: 9059800005, fromPin: Result, to: 9059800006, toPin: Condition}
+    - {from: 9059800003, fromPin: Then, to: 9059800006, toPin: Exec}
+    - {from: 9059800008, fromPin: Value, to: 9059800007, toPin: entity_id}
+    - {from: 9059800001, fromPin: text, to: 9059800007, toPin: text}
+    - {from: 9059800006, fromPin: "True", to: 9059800007, toPin: Exec}
+    - {from: 9059800010, fromPin: active, to: 9059800011, toPin: A}
+    - {from: 9059800011, fromPin: Result, to: 9059800012, toPin: Condition}
+    - {from: 9059800009, fromPin: Then, to: 9059800012, toPin: Exec}
+    - {from: 9059800014, fromPin: Value, to: 9059800015, toPin: Value}
+    - {from: 9059800015, fromPin: R, to: 9059800013, toPin: r}
+    - {from: 9059800016, fromPin: Value, to: 9059800017, toPin: Value}
+    - {from: 9059800017, fromPin: G, to: 9059800013, toPin: g}
+    - {from: 9059800018, fromPin: Value, to: 9059800019, toPin: Value}
+    - {from: 9059800019, fromPin: B, to: 9059800013, toPin: b}
+    - {from: 9059800012, fromPin: "True", to: 9059800013, toPin: Exec}
+    - {from: 9059800013, fromPin: Then, to: 9059800021, toPin: Exec}
+    - {from: 9059800012, fromPin: "False", to: 9059800021, toPin: Exec}
+    - {from: 9059800021, fromPin: Then, to: 9059800022, toPin: Exec}
+    - {from: 9059800024, fromPin: Result, to: 9059800023, toPin: A}
+    - {from: 9059800022, fromPin: value, to: 9059800023, toPin: B}
+    - {from: 9059800021, fromPin: value, to: 9059800025, toPin: A}
+    - {from: 9059800023, fromPin: Result, to: 9059800025, toPin: B}
+    - {from: 9059800025, fromPin: Result, to: 9059800026, toPin: B}
+    - {from: 9059800026, fromPin: Result, to: 9059800020, toPin: text}
+    - {from: 9059800022, fromPin: Then, to: 9059800020, toPin: Exec}
+    - {from: 9059800020, fromPin: Then, to: 9059800028, toPin: Exec}
+    - {from: 9059800030, fromPin: Result, to: 9059800029, toPin: A}
+    - {from: 9059800028, fromPin: value, to: 9059800029, toPin: B}
+    - {from: 9059800029, fromPin: Result, to: 9059800027, toPin: text}
+    - {from: 9059800028, fromPin: Then, to: 9059800027, toPin: Exec}
+    - {from: 9059800027, fromPin: Then, to: 9059800032, toPin: Exec}
+    - {from: 9059800034, fromPin: Result, to: 9059800033, toPin: A}
+    - {from: 9059800032, fromPin: value, to: 9059800033, toPin: B}
+    - {from: 9059800033, fromPin: Result, to: 9059800031, toPin: text}
+    - {from: 9059800032, fromPin: Then, to: 9059800031, toPin: Exec}
+    - {from: 9059800031, fromPin: Then, to: 9059800035, toPin: Exec}
+    - {from: 9059800038, fromPin: Value, to: 9059800039, toPin: Condition}
+    - {from: 9059800037, fromPin: Then, to: 9059800039, toPin: Exec}
+    - {from: 9059800039, fromPin: "True", to: 9059800040, toPin: Exec}
+    - {from: 9059800039, fromPin: "False", to: 9059800041, toPin: Exec}
+    - {from: 9059800037, fromPin: path, to: 9059800042, toPin: scene_path}
+    - {from: 9059800043, fromPin: Value, to: 9059800044, toPin: Value}
+    - {from: 9059800044, fromPin: R, to: 9059800042, toPin: r}
+    - {from: 9059800045, fromPin: Value, to: 9059800046, toPin: Value}
+    - {from: 9059800046, fromPin: G, to: 9059800042, toPin: g}
+    - {from: 9059800047, fromPin: Value, to: 9059800048, toPin: Value}
+    - {from: 9059800048, fromPin: B, to: 9059800042, toPin: b}
+    - {from: 9059800041, fromPin: Then, to: 9059800042, toPin: Exec}
+    - {from: 9059800049, fromPin: Then, to: 9059800051, toPin: Exec}
+    - {from: 9059800051, fromPin: value, to: 9059800050, toPin: path}
+    - {from: 9059800051, fromPin: Then, to: 9059800050, toPin: Exec}
+    - {from: 9059800052, fromPin: Then, to: 9059800053, toPin: Exec}
+  groups:
+    - {id: 9059890000, title: set, position: [146, -52], size: [1510, 480], color: Teal}
+    - {id: 9059890001, title: on_create, position: [146, 488], size: [3890, 960], color: Red}
+    - {id: 9059890002, title: on_update, position: [316, 1508], size: [320, 200], color: Red}
+    - {id: 9059890003, title: leave, position: [146, 1808], size: [1850, 960], color: Teal}
+    - {id: 9059890004, title: on_again_clicked, position: [316, 2828], size: [1000, 200], color: Red}
+    - {id: 9059890005, title: on_title_clicked, position: [316, 3128], size: [660, 200], color: Red}

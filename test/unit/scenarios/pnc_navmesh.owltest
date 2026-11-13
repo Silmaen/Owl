@@ -1,0 +1,13 @@
+# The Moon Lantern: the cottage bakes its navigation mesh from its walk area when it starts (`RoomNav`, a
+# `NavMeshVolume` of the walk areas); the hero walks to the jar on the corners of a path on that mesh, one leg after
+# the other on its walk agent (adventure.lua), and picks the jar at the end.
+scene: ../../../samples/point_and_click/scenes/cottage.owl
+steps:
+  - frames: 10
+  - expect: {gamestate: room, equals: cottage}
+  - input: {mouse: Left, mouse_pos: [288, 235], frames: 2}
+  - frames: 20
+  - expect: {gamestate: nav_routes, equals: 1}
+  - frames: 280
+  - expect: {gamestate: nav_legs, greater: 0}
+  - expect: {gamestate: flag_jar_taken, equals: true}

@@ -4,7 +4,8 @@ local td = require("scripts.game.td.core")
 local S, C = td.state, td.data
 local World = td.world
 
--- The pads, numbered row by row from the north-west (the numbers of `start_towers` and of the scenarios).
+--- The pads, numbered row by row from the north-west (the numbers of `start_towers` and of the scenarios).
+---@return any result
 function World.find_pads()
     for _, id in ipairs(scene.find_entities("Pad")) do
         local x, y, z = transform.get_position(id)
@@ -29,6 +30,7 @@ function World.read_road(tag)
     return { id = id, total = total, points = spline.get_point_count(id) or 0 }
 end
 
+---@return nil
 function World.find_route()
     S.routes[1] = World.read_road("Road")
     S.routes[2] = World.read_road("Road B")
@@ -52,7 +54,8 @@ function World.along(distance, road, lane)
     return x, y, z, dx, dz
 end
 
--- The banners of the keep and of the gate wave in the wind.
+--- The banners of the keep and of the gate wave in the wind.
+---@return nil
 function World.wave_banners()
     if S.still then return end
     for index, banner in ipairs(S.banner_ids) do

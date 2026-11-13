@@ -1,0 +1,108 @@
+FormatVersion: 1
+# Actions of Bridge Builder, on top of the built-in ones (the `ui_*` actions drive the menus). Read by
+# scripts/game/level.owlvs.
+actions:
+  - name: cursor_left
+    type: button
+    bindings:
+      - {key: Left}
+      - {key: A}
+      - {gamepad_button: DpadLeft}
+  - name: cursor_right
+    type: button
+    bindings:
+      - {key: Right}
+      - {key: D}
+      - {gamepad_button: DpadRight}
+  - name: cursor_up
+    type: button
+    bindings:
+      - {key: Up}
+      - {key: W}
+      - {gamepad_button: DpadUp}
+  - name: cursor_down
+    type: button
+    bindings:
+      - {key: Down}
+      - {key: S}
+      - {gamepad_button: DpadDown}
+  - name: cursor_stick
+    type: vector
+    bindings:
+      - {gamepad_stick: left}
+  - name: place
+    type: button
+    bindings:
+      - {key: Space}
+      - {gamepad_button: A}
+  - name: click
+    type: button
+    bindings:
+      - {mouse_button: Left}
+  - name: erase
+    type: button
+    bindings:
+      - {key: X}
+      - {key: Delete}
+      - {gamepad_button: X}
+  - name: click_erase
+    type: button
+    bindings:
+      - {mouse_button: Right}
+  - name: undo
+    type: button
+    bindings:
+      - {key: Z}
+      - {key: Backspace}
+      - {gamepad_button: B}
+  - name: kind_next
+    type: button
+    bindings:
+      - {key: Tab}
+      - {gamepad_button: LeftBumper}
+      - {gamepad_button: RightBumper}
+  - name: kind_road
+    type: button
+    bindings:
+      - {key: D1}
+  - name: kind_wood
+    type: button
+    bindings:
+      - {key: D2}
+  - name: kind_steel
+    type: button
+    bindings:
+      - {key: D3}
+  - name: run
+    type: button
+    bindings:
+      - {key: R}
+      - {gamepad_button: Y}
+  - name: pause
+    type: button
+    bindings:
+      - {key: Escape}
+      - {key: P}
+      - {gamepad_button: Start}
+  - name: view_zoom
+    type: axis
+    bindings:
+      - {key: E}
+      - {key: Q, scale: -1}
+      - {key: PageUp}
+      - {key: PageDown, scale: -1}
+      - {gamepad_axis: right_trigger}
+      - {gamepad_axis: left_trigger, scale: -1}
+  - name: view_pan
+    type: vector
+    bindings:
+      - {gamepad_stick: right}
+  - name: view_drag
+    type: button
+    bindings:
+      - {mouse_button: Middle}
+  - name: grid
+    type: button
+    bindings:
+      - {key: G}
+      - {gamepad_button: Back}

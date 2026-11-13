@@ -35,7 +35,7 @@ Entities:
     BackgroundTexture:
       mode: 0
       type: 0
-      color: [0.035, 0.035, 0.04, 1]
+      color: [0.4, 0, 0, 1]
       topColor: [0.8, 0.9, 1, 1]
   - Entity: 3310000000000000003
     Tag:
@@ -53,7 +53,7 @@ Entities:
       referenceResolution: [1280, 720]
       scaleMode: ScaleWithHeight
     LuaScript:
-      scriptPath: gid:199499423f681f10:scripts/ui/settings.lua
+      scriptPath: gid:199499423f681f10:scripts/ui/settings.owlvs
   - Entity: 3310000000000000004
     Tag:
       tag: MenuMusic
@@ -93,10 +93,16 @@ Entities:
       sizeUnit: [ScreenWidth, ScreenHeight]
       offset: [0, 0]
     UiPanel:
-      backgroundColor: [0.05, 0.05, 0.06, 0.88]
-      borderColor: [0.45, 0.46, 0.46, 0.9]
-      borderWidth: 2
+      backgroundColor: [0.24, 0, 0, 0.97]
+      borderColor: [0.55, 0.45, 0.3, 0.6]
+      borderWidth: 1
       clipChildren: false
+      Box:
+        borderColor: [0.68, 0.06, 0.04, 1]
+        borderWidth: 3
+        shadowColor: [0, 0, 0, 0.9]
+        shadowOffset: [8, 8]
+        shadowBlur: 0
     UiLayout:
       arrangement: Column
       crossAlign: Center
@@ -119,7 +125,7 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.9, 0.11]
+      size: [0.9, 0.0775]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiLayout:
@@ -148,17 +154,20 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.2, 0.21, 0.22, 1]
-      hoverColor: [0.62, 0.1, 0.07, 1]
-      pressedColor: [0.35, 0.05, 0.04, 1]
-      disabledColor: [0.06, 0.06, 0.07, 1]
+      normalColor: [1, 1, 1, 0]
+      hoverColor: [1, 1, 1, 1]
+      pressedColor: [0.7, 0.7, 0.7, 1]
+      disabledColor: [1, 1, 1, 0]
       onClickCallback: go_back
+      Box:
+        texture: gid:8149caad6d299ada:textures/ui/dos_select.png
+        sliceInsets: [48, 0, 8, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.04, 0.04, 0.05, 1]
-      text: 'BACK'
-      color: [0.86, 0.87, 0.84, 1]
-      fontSize: 28
+      outlineWidth: 1
+      outlineColor: [0, 0, 0, 1]
+      text: 'Back'
+      color: [0.72, 0.72, 0.72, 1]
+      fontSize: 40
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -166,37 +175,16 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBold
+      font: Jersey10-Regular
     UiFocus:
       focusable: true
       initial: false
-      up: 3310000000000000022
-      left: 3310000000000000009
+      up: 3310000000000000020
+      left: 3310000000000000008
       onFocusCallback: ''
-      highlightColor: [0.82, 0.16, 0.12, 1]
-      highlightThickness: 3
+      highlightColor: [0, 0, 0, 0]
+      highlightThickness: 1
   - Entity: 3310000000000000008
-    Tag:
-      tag: BackButtonPlate
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 3310000000000000007
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:0bcddcb325526f99:textures/ui/plate.png
-  - Entity: 3310000000000000009
     Tag:
       tag: ResetButton
     Transform:
@@ -215,17 +203,20 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.2, 0.21, 0.22, 1]
-      hoverColor: [0.62, 0.1, 0.07, 1]
-      pressedColor: [0.35, 0.05, 0.04, 1]
-      disabledColor: [0.06, 0.06, 0.07, 1]
+      normalColor: [1, 1, 1, 0]
+      hoverColor: [1, 1, 1, 1]
+      pressedColor: [0.7, 0.7, 0.7, 1]
+      disabledColor: [1, 1, 1, 0]
       onClickCallback: on_reset_clicked
+      Box:
+        texture: gid:8149caad6d299ada:textures/ui/dos_select.png
+        sliceInsets: [48, 0, 8, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.04, 0.04, 0.05, 1]
-      text: 'RESET DEFAULTS'
-      color: [0.86, 0.87, 0.84, 1]
-      fontSize: 28
+      outlineWidth: 1
+      outlineColor: [0, 0, 0, 1]
+      text: 'Reset defaults'
+      color: [0.72, 0.72, 0.72, 1]
+      fontSize: 40
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -233,37 +224,16 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBold
+      font: Jersey10-Regular
     UiFocus:
       focusable: true
       initial: false
-      up: 3310000000000000014
+      up: 3310000000000000012
       right: 3310000000000000007
       onFocusCallback: ''
-      highlightColor: [0.82, 0.16, 0.12, 1]
-      highlightThickness: 3
-  - Entity: 3310000000000000010
-    Tag:
-      tag: ResetButtonPlate
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 3310000000000000009
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:0bcddcb325526f99:textures/ui/plate.png
-  - Entity: 3310000000000000011
+      highlightColor: [0, 0, 0, 0]
+      highlightThickness: 1
+  - Entity: 3310000000000000009
     Tag:
       tag: SettingsColumns
     Transform:
@@ -288,7 +258,7 @@ Entities:
       padding: 0
       columns: 1
       cellSize: [0, 0]
-  - Entity: 3310000000000000012
+  - Entity: 3310000000000000010
     Tag:
       tag: DisplayColumn
     Transform:
@@ -298,7 +268,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 3310000000000000011
+      parentId: 3310000000000000009
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -313,7 +283,7 @@ Entities:
       padding: 0
       columns: 1
       cellSize: [0, 0]
-  - Entity: 3310000000000000013
+  - Entity: 3310000000000000011
     Tag:
       tag: SoundColumn
     Transform:
@@ -323,7 +293,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 3310000000000000011
+      parentId: 3310000000000000009
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -338,7 +308,7 @@ Entities:
       padding: 0
       columns: 1
       cellSize: [0, 0]
-  - Entity: 3310000000000000014
+  - Entity: 3310000000000000012
     Tag:
       tag: MouseSlider
     Transform:
@@ -348,29 +318,32 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 3310000000000000013
+      parentId: 3310000000000000011
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.9, 0.07]
+      size: [0.9, 0.06]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiSlider:
       value: 0.27
       minValue: 0
       maxValue: 1
-      trackColor: [0.12, 0.12, 0.13, 1]
-      fillColor: [0.82, 0.16, 0.12, 1]
-      handleColor: [0.86, 0.87, 0.84, 1]
+      trackColor: [0.05, 0, 0, 1]
+      fillColor: [0.85, 0.1, 0.06, 1]
+      handleColor: [0.72, 0.72, 0.72, 1]
       onValueChangedCallback: on_mouse_changed
+      Box:
+        borderColor: [0.72, 0.72, 0.72, 1]
+        borderWidth: 1
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: ''
-      highlightColor: [0.82, 0.16, 0.12, 1]
-      highlightThickness: 3
-  - Entity: 3310000000000000015
+      highlightColor: [1, 0.86, 0.2, 1]
+      highlightThickness: 2
+  - Entity: 3310000000000000013
     Tag:
       tag: MouseLabel
     Transform:
@@ -380,7 +353,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 3310000000000000013
+      parentId: 3310000000000000011
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -389,11 +362,11 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.04, 0.04, 0.05, 1]
+      outlineWidth: 1
+      outlineColor: [0, 0, 0, 1]
       text: 'Mouse turn: 1.00'
-      color: [0.68, 0.7, 0.68, 0.95]
-      fontSize: 26
+      color: [0.72, 0.72, 0.72, 1]
+      fontSize: 30
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -401,7 +374,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-  - Entity: 3310000000000000016
+      font: Jersey10-Regular
+  - Entity: 3310000000000000014
     Tag:
       tag: SfxVolSlider
     Transform:
@@ -411,29 +385,32 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 3310000000000000013
+      parentId: 3310000000000000011
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.9, 0.07]
+      size: [0.9, 0.06]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiSlider:
       value: 1
       minValue: 0
       maxValue: 1
-      trackColor: [0.12, 0.12, 0.13, 1]
-      fillColor: [0.82, 0.16, 0.12, 1]
-      handleColor: [0.86, 0.87, 0.84, 1]
+      trackColor: [0.05, 0, 0, 1]
+      fillColor: [0.85, 0.1, 0.06, 1]
+      handleColor: [0.72, 0.72, 0.72, 1]
       onValueChangedCallback: on_sfx_vol_changed
+      Box:
+        borderColor: [0.72, 0.72, 0.72, 1]
+        borderWidth: 1
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: ''
-      highlightColor: [0.82, 0.16, 0.12, 1]
-      highlightThickness: 3
-  - Entity: 3310000000000000017
+      highlightColor: [1, 0.86, 0.2, 1]
+      highlightThickness: 2
+  - Entity: 3310000000000000015
     Tag:
       tag: SfxVolLabel
     Transform:
@@ -443,7 +420,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 3310000000000000013
+      parentId: 3310000000000000011
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -452,11 +429,11 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.04, 0.04, 0.05, 1]
+      outlineWidth: 1
+      outlineColor: [0, 0, 0, 1]
       text: 'Effects: 100%'
-      color: [0.68, 0.7, 0.68, 0.95]
-      fontSize: 26
+      color: [0.72, 0.72, 0.72, 1]
+      fontSize: 30
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -464,7 +441,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-  - Entity: 3310000000000000018
+      font: Jersey10-Regular
+  - Entity: 3310000000000000016
     Tag:
       tag: MusicVolSlider
     Transform:
@@ -474,29 +452,32 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 3310000000000000013
+      parentId: 3310000000000000011
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.9, 0.07]
+      size: [0.9, 0.06]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiSlider:
       value: 0.8
       minValue: 0
       maxValue: 1
-      trackColor: [0.12, 0.12, 0.13, 1]
-      fillColor: [0.82, 0.16, 0.12, 1]
-      handleColor: [0.86, 0.87, 0.84, 1]
+      trackColor: [0.05, 0, 0, 1]
+      fillColor: [0.85, 0.1, 0.06, 1]
+      handleColor: [0.72, 0.72, 0.72, 1]
       onValueChangedCallback: on_music_vol_changed
+      Box:
+        borderColor: [0.72, 0.72, 0.72, 1]
+        borderWidth: 1
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: ''
-      highlightColor: [0.82, 0.16, 0.12, 1]
-      highlightThickness: 3
-  - Entity: 3310000000000000019
+      highlightColor: [1, 0.86, 0.2, 1]
+      highlightThickness: 2
+  - Entity: 3310000000000000017
     Tag:
       tag: MusicVolLabel
     Transform:
@@ -506,7 +487,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 3310000000000000013
+      parentId: 3310000000000000011
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -515,11 +496,11 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.04, 0.04, 0.05, 1]
+      outlineWidth: 1
+      outlineColor: [0, 0, 0, 1]
       text: 'Music: 80%'
-      color: [0.68, 0.7, 0.68, 0.95]
-      fontSize: 26
+      color: [0.72, 0.72, 0.72, 1]
+      fontSize: 30
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -527,7 +508,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-  - Entity: 3310000000000000020
+      font: Jersey10-Regular
+  - Entity: 3310000000000000018
     Tag:
       tag: MasterVolSlider
     Transform:
@@ -537,29 +519,32 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 3310000000000000013
+      parentId: 3310000000000000011
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.9, 0.07]
+      size: [0.9, 0.06]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiSlider:
       value: 1
       minValue: 0
       maxValue: 1
-      trackColor: [0.12, 0.12, 0.13, 1]
-      fillColor: [0.82, 0.16, 0.12, 1]
-      handleColor: [0.86, 0.87, 0.84, 1]
+      trackColor: [0.05, 0, 0, 1]
+      fillColor: [0.85, 0.1, 0.06, 1]
+      handleColor: [0.72, 0.72, 0.72, 1]
       onValueChangedCallback: on_master_vol_changed
+      Box:
+        borderColor: [0.72, 0.72, 0.72, 1]
+        borderWidth: 1
     UiFocus:
       focusable: true
       initial: true
       onFocusCallback: ''
-      highlightColor: [0.82, 0.16, 0.12, 1]
-      highlightThickness: 3
-  - Entity: 3310000000000000021
+      highlightColor: [1, 0.86, 0.2, 1]
+      highlightThickness: 2
+  - Entity: 3310000000000000019
     Tag:
       tag: MasterVolLabel
     Transform:
@@ -569,7 +554,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 3310000000000000013
+      parentId: 3310000000000000011
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -578,11 +563,11 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.04, 0.04, 0.05, 1]
+      outlineWidth: 1
+      outlineColor: [0, 0, 0, 1]
       text: 'Master volume: 100%'
-      color: [0.68, 0.7, 0.68, 0.95]
-      fontSize: 26
+      color: [0.72, 0.72, 0.72, 1]
+      fontSize: 30
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -590,7 +575,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-  - Entity: 3310000000000000022
+      font: Jersey10-Regular
+  - Entity: 3310000000000000020
     Tag:
       tag: SubtitlesButton
     Transform:
@@ -600,26 +586,29 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 3310000000000000012
+      parentId: 3310000000000000010
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.9, 0.15]
+      size: [0.96, 0.1175]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.2, 0.21, 0.22, 1]
-      hoverColor: [0.62, 0.1, 0.07, 1]
-      pressedColor: [0.35, 0.05, 0.04, 1]
-      disabledColor: [0.06, 0.06, 0.07, 1]
+      normalColor: [1, 1, 1, 0]
+      hoverColor: [1, 1, 1, 1]
+      pressedColor: [0.7, 0.7, 0.7, 1]
+      disabledColor: [1, 1, 1, 0]
       onClickCallback: on_subtitles_clicked
+      Box:
+        texture: gid:8149caad6d299ada:textures/ui/dos_select.png
+        sliceInsets: [48, 0, 8, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.04, 0.04, 0.05, 1]
-      text: 'SUBTITLES: ON'
-      color: [0.86, 0.87, 0.84, 1]
-      fontSize: 28
+      outlineWidth: 1
+      outlineColor: [0, 0, 0, 1]
+      text: 'Subtitles: on'
+      color: [0.72, 0.72, 0.72, 1]
+      fontSize: 40
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -627,36 +616,15 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBold
+      font: Jersey10-Regular
     UiFocus:
       focusable: true
       initial: false
       down: 3310000000000000007
       onFocusCallback: ''
-      highlightColor: [0.82, 0.16, 0.12, 1]
-      highlightThickness: 3
-  - Entity: 3310000000000000023
-    Tag:
-      tag: SubtitlesButtonPlate
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 3310000000000000022
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:0bcddcb325526f99:textures/ui/plate.png
-  - Entity: 3310000000000000024
+      highlightColor: [0, 0, 0, 0]
+      highlightThickness: 1
+  - Entity: 3310000000000000021
     Tag:
       tag: ReducedMotionButton
     Transform:
@@ -666,26 +634,29 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 3310000000000000012
+      parentId: 3310000000000000010
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.9, 0.15]
+      size: [0.96, 0.1175]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.2, 0.21, 0.22, 1]
-      hoverColor: [0.62, 0.1, 0.07, 1]
-      pressedColor: [0.35, 0.05, 0.04, 1]
-      disabledColor: [0.06, 0.06, 0.07, 1]
+      normalColor: [1, 1, 1, 0]
+      hoverColor: [1, 1, 1, 1]
+      pressedColor: [0.7, 0.7, 0.7, 1]
+      disabledColor: [1, 1, 1, 0]
       onClickCallback: on_reduced_motion_clicked
+      Box:
+        texture: gid:8149caad6d299ada:textures/ui/dos_select.png
+        sliceInsets: [48, 0, 8, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.04, 0.04, 0.05, 1]
-      text: 'REDUCED MOTION: OFF'
-      color: [0.86, 0.87, 0.84, 1]
-      fontSize: 28
+      outlineWidth: 1
+      outlineColor: [0, 0, 0, 1]
+      text: 'Reduced motion: off'
+      color: [0.72, 0.72, 0.72, 1]
+      fontSize: 40
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -693,35 +664,14 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBold
+      font: Jersey10-Regular
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: ''
-      highlightColor: [0.82, 0.16, 0.12, 1]
-      highlightThickness: 3
-  - Entity: 3310000000000000025
-    Tag:
-      tag: ReducedMotionButtonPlate
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 3310000000000000024
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:0bcddcb325526f99:textures/ui/plate.png
-  - Entity: 3310000000000000026
+      highlightColor: [0, 0, 0, 0]
+      highlightThickness: 1
+  - Entity: 3310000000000000022
     Tag:
       tag: ColorBlindButton
     Transform:
@@ -731,26 +681,29 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 3310000000000000012
+      parentId: 3310000000000000010
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.9, 0.15]
+      size: [0.96, 0.1175]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.2, 0.21, 0.22, 1]
-      hoverColor: [0.62, 0.1, 0.07, 1]
-      pressedColor: [0.35, 0.05, 0.04, 1]
-      disabledColor: [0.06, 0.06, 0.07, 1]
+      normalColor: [1, 1, 1, 0]
+      hoverColor: [1, 1, 1, 1]
+      pressedColor: [0.7, 0.7, 0.7, 1]
+      disabledColor: [1, 1, 1, 0]
       onClickCallback: on_color_blind_clicked
+      Box:
+        texture: gid:8149caad6d299ada:textures/ui/dos_select.png
+        sliceInsets: [48, 0, 8, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.04, 0.04, 0.05, 1]
-      text: 'COLOUR VISION: STANDARD'
-      color: [0.86, 0.87, 0.84, 1]
-      fontSize: 28
+      outlineWidth: 1
+      outlineColor: [0, 0, 0, 1]
+      text: 'Colour vision: standard'
+      color: [0.72, 0.72, 0.72, 1]
+      fontSize: 40
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -758,35 +711,14 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBold
+      font: Jersey10-Regular
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: ''
-      highlightColor: [0.82, 0.16, 0.12, 1]
-      highlightThickness: 3
-  - Entity: 3310000000000000027
-    Tag:
-      tag: ColorBlindButtonPlate
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 3310000000000000026
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:0bcddcb325526f99:textures/ui/plate.png
-  - Entity: 3310000000000000028
+      highlightColor: [0, 0, 0, 0]
+      highlightThickness: 1
+  - Entity: 3310000000000000023
     Tag:
       tag: UiScaleSlider
     Transform:
@@ -796,29 +728,32 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 3310000000000000012
+      parentId: 3310000000000000010
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.9, 0.07]
+      size: [0.9, 0.06]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiSlider:
       value: 0.2
       minValue: 0
       maxValue: 1
-      trackColor: [0.12, 0.12, 0.13, 1]
-      fillColor: [0.82, 0.16, 0.12, 1]
-      handleColor: [0.86, 0.87, 0.84, 1]
+      trackColor: [0.05, 0, 0, 1]
+      fillColor: [0.85, 0.1, 0.06, 1]
+      handleColor: [0.72, 0.72, 0.72, 1]
       onValueChangedCallback: on_ui_scale_changed
+      Box:
+        borderColor: [0.72, 0.72, 0.72, 1]
+        borderWidth: 1
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: ''
-      highlightColor: [0.82, 0.16, 0.12, 1]
-      highlightThickness: 3
-  - Entity: 3310000000000000029
+      highlightColor: [1, 0.86, 0.2, 1]
+      highlightThickness: 2
+  - Entity: 3310000000000000024
     Tag:
       tag: UiScaleLabel
     Transform:
@@ -828,7 +763,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 3310000000000000012
+      parentId: 3310000000000000010
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -837,11 +772,11 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.04, 0.04, 0.05, 1]
+      outlineWidth: 1
+      outlineColor: [0, 0, 0, 1]
       text: 'Interface size: 100%'
-      color: [0.68, 0.7, 0.68, 0.95]
-      fontSize: 26
+      color: [0.72, 0.72, 0.72, 1]
+      fontSize: 30
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -849,7 +784,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-  - Entity: 3310000000000000030
+      font: Jersey10-Regular
+  - Entity: 3310000000000000025
     Tag:
       tag: TitleText
     Transform:
@@ -868,11 +804,11 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.04, 0.04, 0.05, 1]
+      outlineWidth: 1
+      outlineColor: [0, 0, 0, 1]
       text: 'SETTINGS'
-      color: [0.82, 0.16, 0.12, 1]
-      fontSize: 52
+      color: [0.95, 0.95, 0.9, 1]
+      fontSize: 60
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -880,4 +816,4 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBold
+      font: Jersey10-Regular

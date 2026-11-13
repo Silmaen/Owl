@@ -1,0 +1,111 @@
+Prefab: Interceptor
+Version: 1
+Entities:
+  - Entity: 7690000000000000101
+    Tag:
+      tag: Enemy
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SteeringAgent:
+      enabled: true
+      plane: Space
+      maxSpeed: 30
+      maxAcceleration: 28
+      radius: 2.5
+      turn: true
+      target: 0
+      targetPoint: [0, 0, 0]
+      weights: {seek: 0, flee: 0, arrive: 0, pursue: 1, evade: 0, wander: 0, separation: 1, alignment: 0, cohesion: 0, avoidance: 1, formation: 0}
+      slowRadius: 6
+      panicDistance: 0
+      prediction: 1
+      wander: {radius: 2, distance: 6, jitter: 2}
+      flock: ''
+      neighbourRadius: 12
+      separationDistance: 5
+      lookAhead: 1.5
+      leader: 0
+      slot: [0, 0, -2]
+    BehaviourTreeAgent:
+      enabled: true
+      tree: scripts/game/enemy.owlbt
+      overrides: []
+    HudMarker:
+      enabled: true
+      icon: nam:textures/hud/target.png
+      color: [1, 0.65, 0.25, 1]
+      size: [30, 30]
+      offset: [0, 0, 0]
+      label: ''
+      labelColor: [1, 0.85, 0.85, 1]
+      fontSize: 16
+      showDistance: false
+      maxDistance: 0
+      offscreenIndicator: true
+      edgeMargin: 40
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7690000000000000102
+    Tag:
+      tag: EnemyModel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 3.1416, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7690000000000000101
+    MeshRenderer:
+      mesh: gid:afa6afbbfc4c9e17:models/interceptor.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7690000000000000103
+    Tag:
+      tag: EnemyTrail
+    Transform:
+      translation: [0, 0, -1.2]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7690000000000000101
+    Trail:
+      enabled: true
+      lifetime: 0.25
+      minDistance: 0.15
+      maxPoints: 48
+      width: 0.2
+      color: [1, 0.5, 0.3, 0.9]
+      emissive: 4000
+      blend: Additive
+  - Entity: 7690000000000000104
+    Tag:
+      tag: EnemyEngine
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7690000000000000101
+    SoundSource:
+      soundAsset: gid:a35aa6d6e3b44152:sounds/game/engine_hum.wav
+      category: SFX
+      volume: 0.7
+      pitch: 1
+      loop: true
+      spatial: true
+      playOnStart: true
+      maxDistance: 90
+      rolloff: 1
+      doppler: true

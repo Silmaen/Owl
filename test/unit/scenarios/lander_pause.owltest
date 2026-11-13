@@ -1,0 +1,16 @@
+# Lunar Lander paused: Escape opens the pause window and the lander hangs where it is while the scene clock stands
+# still; Escape again closes it and the lander falls on.
+scene: ../../../samples/lunar_lander/scenes/landing_1.owl
+steps:
+  - frames: 20
+  - input: {key: Escape, frames: 2}
+  - frames: 2
+  - expect: {gamestate: lander_paused, equals: true}
+  - frames: 120
+  - expect: {gamestate: lander_alt, greater: 26.4}
+  - input: {key: Escape, frames: 2}
+  - frames: 2
+  - expect: {gamestate: lander_paused, equals: false}
+  - frames: 200
+  - expect: {gamestate: lander_alt, less: 25}
+  - expect: {gamestate: lander_state, equals: fly}

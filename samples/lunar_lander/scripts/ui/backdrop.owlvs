@@ -1,0 +1,44 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: speed, type: float, default: 0.03}
+  nodes:
+    - id: 6420000000000000001
+      type: event.on_update
+      position: [0, 0]
+    - id: 6420000000000000002
+      type: call.transform.get_rotation
+      position: [-580, 600]
+    - id: 6420000000000000003
+      type: math.break_vector3
+      position: [-420, 450]
+    - id: 6420000000000000004
+      type: var.get
+      position: [-580, 680]
+      values:
+        variable: speed
+    - id: 6420000000000000005
+      type: math.multiply
+      position: [-420, 530]
+    - id: 6420000000000000006
+      type: math.add
+      position: [-220, 300]
+    - id: 6420000000000000007
+      type: math.make_vector3
+      position: [20, 150]
+    - id: 6420000000000000008
+      type: call.transform.set_rotation
+      position: [300, 0]
+  links:
+    - {from: 6420000000000000002, fromPin: rotation, to: 6420000000000000003, toPin: Value}
+    - {from: 6420000000000000004, fromPin: Value, to: 6420000000000000005, toPin: A}
+    - {from: 6420000000000000001, fromPin: dt, to: 6420000000000000005, toPin: B}
+    - {from: 6420000000000000003, fromPin: Y, to: 6420000000000000006, toPin: A}
+    - {from: 6420000000000000005, fromPin: Result, to: 6420000000000000006, toPin: B}
+    - {from: 6420000000000000003, fromPin: X, to: 6420000000000000007, toPin: X}
+    - {from: 6420000000000000006, fromPin: Result, to: 6420000000000000007, toPin: Y}
+    - {from: 6420000000000000003, fromPin: Z, to: 6420000000000000007, toPin: Z}
+    - {from: 6420000000000000007, fromPin: Result, to: 6420000000000000008, toPin: rotation}
+    - {from: 6420000000000000001, fromPin: Then, to: 6420000000000000008, toPin: Exec}
+  groups:
+    - {id: 6420000000000000009, title: on_update, position: [-260, -60], size: [860, 500], color: Red}

@@ -1,0 +1,88 @@
+FormatVersion: 1
+VisualScript:
+  variables: []
+  nodes:
+    - id: 6410000000000000001
+      type: event.on_joint_break
+      position: [0, 0]
+    - id: 6410000000000000002
+      type: call.gamestate.get
+      position: [300, 0]
+      values:
+        default: none
+        key: lander_crash
+    - id: 6410000000000000003
+      type: compare.equal
+      position: [440, 150]
+      values:
+        B: none
+    - id: 6410000000000000004
+      type: flow.branch
+      position: [600, 0]
+    - id: 6410000000000000005
+      type: call.sound.play
+      position: [900, 0]
+      values:
+        asset_path: sounds/game/leg_break.wav
+    - id: 6410000000000000006
+      type: call.gamestate.set
+      position: [1200, 0]
+      values:
+        key: lander_crash
+        value: LEG BROKEN
+    - id: 6410000000000000007
+      type: event.on_collision
+      position: [0, 420]
+    - id: 6410000000000000008
+      type: call.gamestate.get
+      position: [300, 420]
+      values:
+        default: fly
+        key: lander_state
+    - id: 6410000000000000009
+      type: call.gamestate.get
+      position: [600, 420]
+      values:
+        default: none
+        key: lander_crash
+    - id: 6410000000000000010
+      type: compare.equal
+      position: [540, 720]
+      values:
+        B: none
+    - id: 6410000000000000011
+      type: compare.equal
+      position: [540, 800]
+      values:
+        B: fly
+    - id: 6410000000000000012
+      type: logic.and
+      position: [700, 570]
+    - id: 6410000000000000013
+      type: flow.branch
+      position: [900, 420]
+    - id: 6410000000000000014
+      type: call.gamestate.set
+      position: [1200, 420]
+      values:
+        key: lander_crash
+        value: HULL CRASHED
+  links:
+    - {from: 6410000000000000002, fromPin: value, to: 6410000000000000003, toPin: A}
+    - {from: 6410000000000000003, fromPin: Result, to: 6410000000000000004, toPin: Condition}
+    - {from: 6410000000000000001, fromPin: Then, to: 6410000000000000002, toPin: Exec}
+    - {from: 6410000000000000002, fromPin: Then, to: 6410000000000000004, toPin: Exec}
+    - {from: 6410000000000000004, fromPin: True, to: 6410000000000000005, toPin: Exec}
+    - {from: 6410000000000000005, fromPin: Then, to: 6410000000000000006, toPin: Exec}
+    - {from: 6410000000000000009, fromPin: value, to: 6410000000000000010, toPin: A}
+    - {from: 6410000000000000008, fromPin: value, to: 6410000000000000011, toPin: A}
+    - {from: 6410000000000000010, fromPin: Result, to: 6410000000000000012, toPin: A}
+    - {from: 6410000000000000011, fromPin: Result, to: 6410000000000000012, toPin: B}
+    - {from: 6410000000000000012, fromPin: Result, to: 6410000000000000013, toPin: Condition}
+    - {from: 6410000000000000007, fromPin: Then, to: 6410000000000000009, toPin: Exec}
+    - {from: 6410000000000000009, fromPin: Then, to: 6410000000000000008, toPin: Exec}
+    - {from: 6410000000000000008, fromPin: Then, to: 6410000000000000013, toPin: Exec}
+    - {from: 6410000000000000013, fromPin: True, to: 6410000000000000014, toPin: Exec}
+  groups:
+    - {id: 6410000000000000015, title: on_joint_break, position: [-40, -60], size: [1540, 350], color: Red}
+    - {id: 6410000000000000016, title: on_collision, position: [-40, 360], size: [1540, 580], color: Red}

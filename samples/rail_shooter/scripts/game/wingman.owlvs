@@ -1,0 +1,111 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: follow, type: string, default: RailCarrier}
+    - {name: carrier_id, type: entity, default: "0", exposed: false}
+    - {name: rx, type: float, default: "0", exposed: false}
+    - {name: ry, type: float, default: "0", exposed: false}
+    - {name: rz, type: float, default: "0", exposed: false}
+  nodes:
+    - id: 7201000001
+      type: event.on_create
+      position: [340, 0]
+    - id: 7201000002
+      type: call.scene.find_entity
+      position: [170, 160]
+    - id: 7201000003
+      type: var.get
+      position: [170, 280]
+      values:
+        variable: follow
+    - id: 7201000004
+      type: var.set
+      position: [680, 0]
+      values:
+        variable: carrier_id
+    - id: 7201000005
+      type: event.on_update
+      position: [340, 540]
+    - id: 7201000006
+      type: var.get
+      position: [170, 700]
+      values:
+        variable: carrier_id
+    - id: 7201000007
+      type: compare.not_equal
+      position: [170, 820]
+      values:
+        B: "0"
+    - id: 7201000008
+      type: flow.branch
+      position: [680, 540]
+    - id: 7201000009
+      type: call.transform.get_rotation
+      position: [510, 700]
+      values:
+        split.rotation: "true"
+    - id: 7201000010
+      type: var.get
+      position: [510, 820]
+      values:
+        variable: carrier_id
+    - id: 7201000011
+      type: var.set
+      position: [1020, 540]
+      values:
+        variable: rx
+    - id: 7201000012
+      type: var.set
+      position: [1360, 540]
+      values:
+        variable: ry
+    - id: 7201000013
+      type: var.set
+      position: [1700, 540]
+      values:
+        variable: rz
+    - id: 7201000014
+      type: call.transform.set_rotation
+      position: [2040, 540]
+      values:
+        split.rotation: "true"
+    - id: 7201000015
+      type: value.self
+      position: [1870, 700]
+    - id: 7201000016
+      type: var.get
+      position: [1870, 820]
+      values:
+        variable: rx
+    - id: 7201000017
+      type: var.get
+      position: [1870, 940]
+      values:
+        variable: ry
+    - id: 7201000018
+      type: var.get
+      position: [1870, 1060]
+      values:
+        variable: rz
+  links:
+    - {from: 7201000003, fromPin: Value, to: 7201000002, toPin: name}
+    - {from: 7201000002, fromPin: entity_id, to: 7201000004, toPin: Value}
+    - {from: 7201000001, fromPin: Then, to: 7201000004, toPin: Exec}
+    - {from: 7201000006, fromPin: Value, to: 7201000007, toPin: A}
+    - {from: 7201000007, fromPin: Result, to: 7201000008, toPin: Condition}
+    - {from: 7201000005, fromPin: Then, to: 7201000008, toPin: Exec}
+    - {from: 7201000010, fromPin: Value, to: 7201000009, toPin: entity_id}
+    - {from: 7201000009, fromPin: rx, to: 7201000011, toPin: Value}
+    - {from: 7201000008, fromPin: "True", to: 7201000011, toPin: Exec}
+    - {from: 7201000009, fromPin: ry, to: 7201000012, toPin: Value}
+    - {from: 7201000011, fromPin: Then, to: 7201000012, toPin: Exec}
+    - {from: 7201000009, fromPin: rz, to: 7201000013, toPin: Value}
+    - {from: 7201000012, fromPin: Then, to: 7201000013, toPin: Exec}
+    - {from: 7201000015, fromPin: Result, to: 7201000014, toPin: entity_id}
+    - {from: 7201000016, fromPin: Value, to: 7201000014, toPin: rx}
+    - {from: 7201000017, fromPin: Value, to: 7201000014, toPin: ry}
+    - {from: 7201000018, fromPin: Value, to: 7201000014, toPin: rz}
+    - {from: 7201000013, fromPin: Then, to: 7201000014, toPin: Exec}
+  groups:
+    - {id: 7201090000, title: on_create, position: [146, -52], size: [830, 480], color: Red}
+    - {id: 7201090001, title: on_update, position: [146, 488], size: [2190, 720], color: Red}

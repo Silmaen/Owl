@@ -1,0 +1,14 @@
+# The Sunken Shrine, the guardian's den: a hero without the sword is caught by the guardian and falls with no heart
+# left: the game over screen tallies the fall, Retry wakes the hero at the door of the room with full hearts.
+scene: ../../../samples/sunken_shrine/scenes/room_6.owl
+steps:
+  - frames: 100
+  - expect: {gamestate: shrine_hearts, less: 5}
+  - frames: 400
+  - expect: {gamestate: shrine_deaths, greater: 0}
+  - expect: {entity: RetryButton, exists: true}
+  - expect: {gamestate: shrine_tally, equals: true}
+  - input: {key: Enter, frames: 2}
+  - frames: 60
+  - expect: {gamestate: shrine_room, equals: 6}
+  - expect: {gamestate: shrine_hearts, equals: 5}

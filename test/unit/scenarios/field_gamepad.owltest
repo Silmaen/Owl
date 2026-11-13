@@ -1,0 +1,12 @@
+# Asteroid Field on a gamepad: the right trigger pushes the throttle (the ShipController flies on), A fires, Y orders
+# the wings to attack.
+scene: ../../../samples/asteroid_field/scenes/mission.owl
+steps:
+  - frames: 5
+  - input: {gamepad: {right_trigger: 1.0}, frames: 60}
+  - expect: {gamestate: field_speed, greater: 5}
+  - input: {gamepad: {button: A}, frames: 30}
+  - expect: {gamestate: field_shots, greater: 3}
+  - input: {gamepad: {button: Y}, frames: 1}
+  - frames: 2
+  - expect: {gamestate: field_order, equals: attack}

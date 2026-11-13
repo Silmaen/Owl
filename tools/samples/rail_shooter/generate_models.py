@@ -85,9 +85,7 @@ CONVERSIONS = [
     ),
     Conversion("meteorFull", "asteroid_a", 2.0, {"rock": (0.6, 0.5, 0.43)}),
     Conversion("meteorFullRound", "asteroid_b", 2.0, {"rock": (0.55, 0.52, 0.5)}),
-    Conversion(
-        "meteorHalf", "asteroid_c", 2.0, {"rock": (0.62, 0.55, 0.48), "_defaultMat": (0.45, 0.42, 0.4)}
-    ),
+    Conversion("meteorHalf", "asteroid_c", 2.0, {"rock": (0.62, 0.55, 0.48), "_defaultMat": (0.45, 0.42, 0.4)}),
 ]
 """The models taken from the Space Kit; ``tints`` replace the colour of a material (sRGB)."""
 

@@ -23,7 +23,7 @@ Entities:
       restitution: 1
       friction: 0
     LuaScript:
-      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.lua
+      scriptPath: gid:73fc5b0f010c5891:scripts/game/brick.owlvs
       properties:
         - name: hits
           type: int

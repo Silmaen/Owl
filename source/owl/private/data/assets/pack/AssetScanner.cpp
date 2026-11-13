@@ -111,6 +111,8 @@ void scanTileset(const std::string& iTilesetPath, const std::string& iSceneName,
 void scanHud(const std::string& iHudPath, const std::string& iSource, std::set<std::string>& ioVisitedScenes,
 			 std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings);
 
+void followPrefab(const std::string& iName, const std::string& iSource, std::set<std::string>& ioVisitedScenes,
+				  std::vector<AssetReference>& ioAssets, std::vector<std::string>* ioWarnings);
 void scanHudTheme(const std::string& iThemePath, const std::string& iSource, std::vector<AssetReference>& ioAssets,
 				  std::vector<std::string>* ioWarnings);
 
@@ -447,6 +449,10 @@ void scanLuaScript(const std::filesystem::path& iScriptPath,// NOLINT(misc-no-re
 	static const std::regex dialoguePattern(R"(["']([^"'\s]+\.owldlg)["'])");
 	for (auto it = std::sregex_iterator(scriptContent.begin(), scriptContent.end(), dialoguePattern); it != end; ++it)
 		followDialogue((*it)[1].str(), source, ioAssets, ioWarnings);
+	// A prefab `scene.spawn_prefab` spawns, with what its entities use.
+	static const std::regex prefabPattern(R"(["']([^"'\s]+\.owlprefab)["'])");
+	for (auto it = std::sregex_iterator(scriptContent.begin(), scriptContent.end(), prefabPattern); it != end; ++it)
+		followPrefab((*it)[1].str(), source, ioVisitedScenes, ioAssets, ioWarnings);
 	// The modules it requires (`require("scripts.game.towers")` reads `scripts/game/towers.lua`), scanned in turn.
 	static const std::regex requirePattern(R"(\brequire\s*\(?\s*["']([A-Za-z0-9_.]+)["'])");
 	for (auto it = std::sregex_iterator(scriptContent.begin(), scriptContent.end(), requirePattern); it != end; ++it) {
@@ -495,6 +501,8 @@ void scanScriptProperties(const YAML::Node& iProperties,// NOLINT(misc-no-recurs
 				followDataTable(text, source, ioVisitedScenes, ioAssets, ioWarnings);
 			else if (isDialogueFile(text))
 				followDialogue(text, source, ioAssets, ioWarnings);
+			else if (std::filesystem::path(text).extension() == ".owlprefab")
+				followPrefab(text, source, ioVisitedScenes, ioAssets, ioWarnings);
 		}
 	}
 }
@@ -924,6 +932,30 @@ void scanHud(const std::string& iHudPath, const std::string& iSource, std::set<s
 		scanEntity(holder, hudName, ioVisitedScenes, ioAssets, ioWarnings);
 	}
 	for (auto entity: entities) scanEntity(entity, hudName, ioVisitedScenes, ioAssets, ioWarnings);
+}
+
+// A prefab spawned by a script goes in the pack with the assets of its entities (meshes, scripts, sounds...).
+void followPrefab(const std::string& iName, const std::string& iSource,// NOLINT(misc-no-recursion)
+				  std::set<std::string>& ioVisitedScenes, std::vector<AssetReference>& ioAssets,
+				  std::vector<std::string>* ioWarnings) {
+	const auto ref = resolveDataAsset(iName);
+	if (!ref) {
+		pushWarning(ioWarnings, "Prefab", iName, iSource);
+		return;
+	}
+	if (hasAsset(ioAssets, ref->packPath))
+		return;
+	ioAssets.push_back(*ref);
+	YAML::Node data;
+	try {
+		data = YAML::LoadFile(ref->diskPath.string());
+	} catch (...) {
+		pushWarning(ioWarnings, "Prefab", iName, iSource);
+		return;
+	}
+	const auto prefabName = ref->diskPath.filename().string();
+	if (const auto entities = data["Entities"]; entities && entities.IsSequence())
+		for (auto entity: entities) scanEntity(entity, prefabName, ioVisitedScenes, ioAssets, ioWarnings);
 }
 
 // A theme carries the nine-slice textures and the fonts of its styles.

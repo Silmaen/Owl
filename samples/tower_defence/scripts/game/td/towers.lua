@@ -70,6 +70,7 @@ function Towers.fire(tower, foe)
     end
 end
 
+---@param dt any
 function Towers.update_towers(dt)
     for _, foe in ipairs(S.enemies) do foe.vulnerable = false end
     for _, tower in ipairs(S.towers) do
@@ -146,6 +147,7 @@ function Towers.land(shot)
     end
 end
 
+---@param dt any
 function Towers.update_projectiles(dt)
     local index = 1
     while index <= #S.projectiles do
@@ -291,7 +293,8 @@ function Towers.sell(pad)
     Wheel.close_ring()
 end
 
--- The towers standing when the level starts (`start_towers`: "pad kind level [power]", pads counted from 1).
+--- The towers standing when the level starts (`start_towers`: "pad kind level [power]", pads counted from 1).
+---@return nil
 function Towers.raise_start_towers()
     for _, text in ipairs(start_towers or {}) do
         local index, kind, level, power = string.match(text, "^%s*(%d+)%s+(%a+)%s+(%d)%s*(%a*)%s*$")

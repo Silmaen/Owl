@@ -1,0 +1,21 @@
+# Lunar Lander title: the How to play window opens from its button (Down, Enter) and closes with Escape, then Play
+# (Up, Enter) plays the jingle and starts the first landing.
+scene: ../../../samples/lunar_lander/scenes/title.owl
+steps:
+  - frames: 10
+  - expect: {entity: TitleArt, exists: true}
+  - expect: {gamestate: lander_how_to, equals: false}
+  - input: {key: Down, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 2
+  - expect: {gamestate: lander_how_to, equals: true}
+  - input: {key: Escape, frames: 2}
+  - frames: 2
+  - expect: {gamestate: lander_how_to, equals: false}
+  - input: {key: Up, frames: 2}
+  - frames: 1
+  - input: {key: Enter, frames: 2}
+  - frames: 90
+  - expect: {entity: Lander, exists: true}
+  - expect: {gamestate: lander_state, equals: fly}

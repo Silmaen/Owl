@@ -1,0 +1,55 @@
+Prefab: Steel
+Version: 1
+Entities:
+  - Entity: 7591000000000000201
+    Tag:
+      tag: Part
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:980d0d4eec6ca762:models/steel.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    PhysicBody:
+      type: Dynamic
+      shape: Box
+      fixedRotation: false
+      colliderSize: [1, 0.18, 1]
+      density: 40
+      restitution: 0
+      friction: 0.9
+      layer: 2
+      mask: 1
+    LuaScript:
+      scriptPath: gid:c94b12056f3ea2cf:scripts/game/part.owlvs
+  - Entity: 7591000000000000202
+    Tag:
+      tag: Tail
+    Transform:
+      translation: [0.5, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7591000000000000201
+    PhysicBody:
+      type: Dynamic
+      shape: Sphere
+      fixedRotation: false
+      colliderSize: [0.05, 0.05, 0.05]
+      density: 40
+      restitution: 0
+      friction: 0.9
+      layer: 2
+      mask: 1
+      part: true
+    LuaScript:
+      scriptPath: gid:c94b12056f3ea2cf:scripts/game/part.owlvs

@@ -17,30 +17,30 @@ under it glows. The hero walks to the spot and does it; the right button looks. 
 one to take it in hand (it becomes the cursor, the bag stays open), then click another object of the bag to combine
 them (the result appears in the bag), or something of the room to use it there (a click on the room closes the bag).
 
-| Action                   | Mouse                      | Keyboard                | Gamepad          |
-|--------------------------|----------------------------|-------------------------|------------------|
-| Move the cursor          | Move                       | Arrows                  | Left stick       |
-| Next / previous hotspot  |                            | Tab or E / Q            | RB / LB          |
-| Do what the cursor shows | Left button                | Enter, Space            | A                |
-| Look                     | Right button               | L                       | X                |
-| Open the bag             | Bag button                 | I                       | Y                |
-| Put the object back      | Right button               | Escape                  | Start            |
-| Close the bag            | Click the room, Bag button | I, Escape               | Y                |
-| Pause (save, title)      |                            | Escape, P               | Start            |
+| Action                   | Mouse                      | Keyboard     | Gamepad    |
+|--------------------------|----------------------------|--------------|------------|
+| Move the cursor          | Move                       | Arrows       | Left stick |
+| Next / previous hotspot  |                            | Tab or E / Q | RB / LB    |
+| Do what the cursor shows | Left button                | Enter, Space | A          |
+| Look                     | Right button               | L            | X          |
+| Open the bag             | Bag button                 | I            | Y          |
+| Put the object back      | Right button               | Escape       | Start      |
+| Close the bag            | Click the room, Bag button | I, Escape    | Y          |
+| Pause (save, title)      |                            | Escape, P    | Start      |
 
 The game is saved in its slot when the hero enters a room and from the pause window; **Continue** on the title screen
 loads it. The settings hold the volumes, the language (English or French) and the subtitles of the sounds.
 
 ## Rooms
 
-| Scene          | What is there                                                                                       |
-|----------------|-----------------------------------------------------------------------------------------------------|
-| `title.owl`    | The glade at night, the hero waving, New game, Continue, Settings, Quit                             |
-| `cottage.owl`  | Barnaby (a dialogue with choices), the jar on the shelf, the pie crust on the table, the lantern    |
-| `glade.owl`    | The berry bush, the fireflies over the pond, a fairy ring, the old oak the hero walks behind        |
-| `bridge.owl`   | The troll sitting on the moonstone (a dialogue, a toll), the stream, the parapet in front           |
-| `settings.owl` | Master, music and effects volumes, language, subtitles                                              |
-| `ending.owl`   | The lantern lit: a sequence closes in while the end is told, then Barnaby dances                    |
+| Scene          | What is there                                                                                    |
+|----------------|--------------------------------------------------------------------------------------------------|
+| `title.owl`    | The glade at night, the hero waving, New game, Continue, Settings, Quit                          |
+| `cottage.owl`  | Barnaby (a dialogue with choices), the jar on the shelf, the pie crust on the table, the lantern |
+| `glade.owl`    | The berry bush, the fireflies over the pond, a fairy ring, the old oak the hero walks behind     |
+| `bridge.owl`   | The troll sitting on the moonstone (a dialogue, a toll), the stream, the parapet in front        |
+| `settings.owl` | Master, music and effects volumes, language, subtitles                                           |
+| `ending.owl`   | The lantern lit: a sequence closes in while the end is told, then Barnaby dances                 |
 
 The solution: the jar and the crust in the cottage, the berries in the glade, the jar on the fireflies, the berries
 with the crust make a pie, the pie on the troll, the moonstone where he sat, then the moonstone and the fireflies in
@@ -52,11 +52,12 @@ the lantern.
 |---------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Renderer stack      | `actors` (`RendererMesh` as pixel art, 180 texels high), `world` (2D, `DepthTest`: backdrop, props, masks), `cursor` (screen)                                   |
 | Floor of a room     | The `Floor` entity, a `WalkArea` with its holes (the table, Barnaby), scaled and sorted by depth                                                                |
+| Navigation mesh     | `RoomNav`, a `NavMeshVolume` of the walk areas, baked when the room starts: the hero walks the corners of its paths                                             |
 | Actors              | `WalkAgent`s with an `Animator` (idle, walk, reach out, wave), toon shaded: the hero, Barnaby, the troll                                                        |
 | Walk-behind masks   | `Mask_<name>` sprites with a `WalkBehind`: the table, the oak, the parapet                                                                                      |
 | Hotspots            | `Hotspot_<id>` entities (their rectangle) with a `Stand_<id>` child, listed in the `hotspots` property; the `Prop_<id>` sprite glows under the cursor           |
 | Cursor              | The action sprites of the `cursor` layer; the object in hand a `UiToolCursor` of the HUD (`Held_<item>`); the system cursor hidden (`input.set_cursor_visible`) |
-| Rules               | `scripts/game/adventure.lua` (cursor, verbs, bag, dialogues, pause) and one script per room in `scripts/rooms/`                                                 |
+| Rules               | `scripts/game/adventure.lua` (cursor, verbs, bag, dialogues, pause) and one visual script per room in `scripts/rooms/`                                          |
 | Texts               | `localisation.yml`: English and French, the `menu`, `hud`, `items`, `rooms`, `remarks` and `dialogue` tables                                                    |
 | Dialogues, cutscene | `dialogues/barnaby.owldlg`, `dialogues/troll.owldlg`, `sequences/ending.owlseq`                                                                                 |
 | Generators          | `tools/samples/point_and_click/`: the backdrops, props, icons and sounds, the scenes and the data                                                               |

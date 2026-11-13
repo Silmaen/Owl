@@ -1,0 +1,1045 @@
+Scene: level_4
+FormatVersion: 7
+Hud: gid:47ff3cdefc520204:huds/play.owlhud
+SceneScript:
+  scriptPath: gid:2547c68f5840d29b:scripts/game/level.owlvs
+  properties:
+    - name: level
+      type: int
+      value: 4
+    - name: level_name
+      type: string
+      value: DEEP GORGE
+    - name: this_scene
+      type: string
+      value: scenes/level_4.owl
+    - name: next_scene
+      type: string
+      value: scenes/level_5.owl
+    - name: budget
+      type: int
+      value: 5800
+    - name: star_budget
+      type: int
+      value: 4600
+    - name: vehicles
+      type: int
+      value: 1
+    - name: grid_min_x
+      type: int
+      value: -2
+    - name: grid_min_y
+      type: int
+      value: -8
+    - name: grid_max_x
+      type: int
+      value: 18
+    - name: grid_max_y
+      type: int
+      value: 6
+EnabledRenderers:
+  - {Name: world, Enabled: false}
+  - {Name: mesh_world, Enabled: true}
+  - {Name: ui, Enabled: false}
+Physics:
+  solverSubSteps: 4
+  velocitySteps: 24
+  positionSteps: 6
+  interpolate: true
+  workerCount: 0
+  gravity: [0, -9.81, 0]
+Entities:
+  - Entity: 7500000000000040001
+    Tag:
+      tag: Sun
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [-0.75, -0.55, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Light: {type: Directional, enabled: true, color: [1, 0.95, 0.85], intensity: 100000, castShadows: true, shadowDistance: 60, cascadeCount: 2, shadowResolution: 2048, shadowBias: 1.5}
+  - Entity: 7500000000000040002
+    Tag:
+      tag: Sky
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Environment: {hdri: '', ambient: [1, 1, 1], intensity: 9000, rotation: 0, showSky: true}
+    ProceduralSky: {enabled: true, sunDirection: [-0.4, 0.6, 0.7], turbidity: 3, groundColor: [0.32, 0.36, 0.26], nightColor: [0.42, 0.48, 0.66], nightBrightness: 0.02, stars: 0, discSize: 2.5, resolution: 256}
+  - Entity: 7500000000000040003
+    Tag:
+      tag: River
+    Transform:
+      translation: [8, -11.5, -20]
+      rotation: [0, 0, 0]
+      scale: [96, 1, 60]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:e33fd9616e61b57a:models/water.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040004
+    Tag:
+      tag: Mountain
+    Transform:
+      translation: [-99.1674, -12, -106.8817]
+      rotation: [0, 0, 0]
+      scale: [41.7998, 29.857, 29.857]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:f84f03231e2876f1:models/mountain.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040005
+    Tag:
+      tag: Mountain
+    Transform:
+      translation: [-74.1403, -12, -107.0477]
+      rotation: [0, 0, 0]
+      scale: [40.8762, 29.1973, 29.1973]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:f84f03231e2876f1:models/mountain.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040006
+    Tag:
+      tag: Mountain
+    Transform:
+      translation: [-38.9845, -12, -117.9549]
+      rotation: [0, 0, 0]
+      scale: [59.3714, 42.4081, 42.4081]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:f84f03231e2876f1:models/mountain.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040007
+    Tag:
+      tag: Mountain
+    Transform:
+      translation: [-21.3369, -12, -103.3005]
+      rotation: [0, 0, 0]
+      scale: [52.7243, 37.6602, 37.6602]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:f84f03231e2876f1:models/mountain.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040008
+    Tag:
+      tag: Mountain
+    Transform:
+      translation: [4.072, -12, -101.432]
+      rotation: [0, 0, 0]
+      scale: [41.8758, 29.9113, 29.9113]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:f84f03231e2876f1:models/mountain.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040009
+    Tag:
+      tag: Mountain
+    Transform:
+      translation: [39.1297, -12, -119.1996]
+      rotation: [0, 0, 0]
+      scale: [60.0888, 42.9206, 42.9206]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:f84f03231e2876f1:models/mountain.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040010
+    Tag:
+      tag: Mountain
+    Transform:
+      translation: [63.6054, -12, -104.2955]
+      rotation: [0, 0, 0]
+      scale: [44.0746, 31.4818, 31.4818]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:f84f03231e2876f1:models/mountain.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040011
+    Tag:
+      tag: Mountain
+    Transform:
+      translation: [87.5237, -12, -120.6395]
+      rotation: [0, 0, 0]
+      scale: [57.6437, 41.1741, 41.1741]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:f84f03231e2876f1:models/mountain.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040012
+    Tag:
+      tag: Mountain
+    Transform:
+      translation: [116.5606, -12, -113.1756]
+      rotation: [0, 0, 0]
+      scale: [41.3853, 29.5609, 29.5609]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:f84f03231e2876f1:models/mountain.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040013
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [30.1429, 0, -12.5246]
+      rotation: [0, 0, 0]
+      scale: [2.8556, 2.8556, 2.8556]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040014
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [-24.6699, 0, -20.9597]
+      rotation: [0, 0, 0]
+      scale: [4.1358, 4.1358, 4.1358]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040015
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [18.1731, 0, -16.6883]
+      rotation: [0, 0, 0]
+      scale: [3.0839, 3.0839, 3.0839]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040016
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [38.3531, 0, -11.451]
+      rotation: [0, 0, 0]
+      scale: [3.5167, 3.5167, 3.5167]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040017
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [28.345, 0, -9.492]
+      rotation: [0, 0, 0]
+      scale: [2.8226, 2.8226, 2.8226]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040018
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [-3.9458, 0, -21.9545]
+      rotation: [0, 0, 0]
+      scale: [3.4253, 3.4253, 3.4253]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040019
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [34.8211, 0, -16.128]
+      rotation: [0, 0, 0]
+      scale: [2.7901, 2.7901, 2.7901]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040020
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [-11.9071, 0, -15.388]
+      rotation: [0, 0, 0]
+      scale: [2.9053, 2.9053, 2.9053]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040021
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [22.4089, 0, -14.5978]
+      rotation: [0, 0, 0]
+      scale: [3.3718, 3.3718, 3.3718]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040022
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [-23.7036, 0, -5.109]
+      rotation: [0, 0, 0]
+      scale: [2.702, 2.702, 2.702]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040023
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [-8.6595, 0, -19.5178]
+      rotation: [0, 0, 0]
+      scale: [3.6644, 3.6644, 3.6644]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040024
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [-9.9456, 0, -12.2623]
+      rotation: [0, 0, 0]
+      scale: [2.8551, 2.8551, 2.8551]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040025
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [-10.57, 0, -21.3605]
+      rotation: [0, 0, 0]
+      scale: [2.6652, 2.6652, 2.6652]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040026
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [35.6371, 0, -4.3274]
+      rotation: [0, 0, 0]
+      scale: [4.4197, 4.4197, 4.4197]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040027
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [25.7202, 0, -15.7346]
+      rotation: [0, 0, 0]
+      scale: [2.8058, 2.8058, 2.8058]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040028
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [-9.0418, 0, -11.9946]
+      rotation: [0, 0, 0]
+      scale: [2.8828, 2.8828, 2.8828]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040029
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [-8.0011, 0, -6.8603]
+      rotation: [0, 0, 0]
+      scale: [3.6976, 3.6976, 3.6976]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040030
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [-10.7198, 0, -10.5734]
+      rotation: [0, 0, 0]
+      scale: [3.4096, 3.4096, 3.4096]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040031
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [41.9324, 0, -11.9079]
+      rotation: [0, 0, 0]
+      scale: [3.6429, 3.6429, 3.6429]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040032
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [-12.1749, 0, -5.0681]
+      rotation: [0, 0, 0]
+      scale: [2.9158, 2.9158, 2.9158]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040033
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [-19.6909, 0, -21.4711]
+      rotation: [0, 0, 0]
+      scale: [3.6911, 3.6911, 3.6911]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040034
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [-15.1095, 0, -9.7858]
+      rotation: [0, 0, 0]
+      scale: [3.6653, 3.6653, 3.6653]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040035
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [-4.9346, 0, -17.9283]
+      rotation: [0, 0, 0]
+      scale: [3.5585, 3.5585, 3.5585]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040036
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [33.6387, 0, -7.6319]
+      rotation: [0, 0, 0]
+      scale: [2.9005, 2.9005, 2.9005]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040037
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [27.8549, 0, -11.582]
+      rotation: [0, 0, 0]
+      scale: [2.5737, 2.5737, 2.5737]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040038
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [-17.5385, 0, -7.883]
+      rotation: [0, 0, 0]
+      scale: [3.3557, 3.3557, 3.3557]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040039
+    Tag:
+      tag: CliffLeft
+    Transform:
+      translation: [-20, -9.925, -7]
+      rotation: [0, 0, 0]
+      scale: [40, 20.15, 17]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1a7f8771258d2426:models/cliff.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    PhysicBody:
+      type: Static
+      shape: Box
+      fixedRotation: false
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.8
+  - Entity: 7500000000000040040
+    Tag:
+      tag: CliffRight
+    Transform:
+      translation: [36, -9.925, -7]
+      rotation: [0, 0, 0]
+      scale: [40, 20.15, 17]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1a7f8771258d2426:models/cliff.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    PhysicBody:
+      type: Static
+      shape: Box
+      fixedRotation: false
+      colliderSize: [1, 1, 1]
+      density: 1
+      restitution: 0
+      friction: 0.8
+  - Entity: 7500000000000040041
+    Tag:
+      tag: Tower
+    Transform:
+      translation: [-1, 2.4, -1.8]
+      rotation: [0, 0, 0]
+      scale: [2, 4.8, 1.6]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1a7f8771258d2426:models/cliff.glb
+      color: [0.8, 0.78, 0.75, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040042
+    Tag:
+      tag: Tower
+    Transform:
+      translation: [17, 2.4, -1.8]
+      rotation: [0, 0, 0]
+      scale: [2, 4.8, 1.6]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1a7f8771258d2426:models/cliff.glb
+      color: [0.8, 0.78, 0.75, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040043
+    Tag:
+      tag: Anchor
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:b4908d29008bf72d:models/anchor.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    PhysicBody:
+      type: Static
+      shape: Sphere
+      fixedRotation: false
+      colliderSize: [0.4, 0.4, 0.4]
+      density: 1
+      restitution: 0
+      friction: 0.8
+      layer: 4
+      mask: 0
+  - Entity: 7500000000000040044
+    Tag:
+      tag: Anchor
+    Transform:
+      translation: [16, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:b4908d29008bf72d:models/anchor.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    PhysicBody:
+      type: Static
+      shape: Sphere
+      fixedRotation: false
+      colliderSize: [0.4, 0.4, 0.4]
+      density: 1
+      restitution: 0
+      friction: 0.8
+      layer: 4
+      mask: 0
+  - Entity: 7500000000000040045
+    Tag:
+      tag: Anchor
+    Transform:
+      translation: [0, -4, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:b4908d29008bf72d:models/anchor.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    PhysicBody:
+      type: Static
+      shape: Sphere
+      fixedRotation: false
+      colliderSize: [0.4, 0.4, 0.4]
+      density: 1
+      restitution: 0
+      friction: 0.8
+      layer: 4
+      mask: 0
+  - Entity: 7500000000000040046
+    Tag:
+      tag: Anchor
+    Transform:
+      translation: [16, -4, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:b4908d29008bf72d:models/anchor.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    PhysicBody:
+      type: Static
+      shape: Sphere
+      fixedRotation: false
+      colliderSize: [0.4, 0.4, 0.4]
+      density: 1
+      restitution: 0
+      friction: 0.8
+      layer: 4
+      mask: 0
+  - Entity: 7500000000000040047
+    Tag:
+      tag: Anchor
+    Transform:
+      translation: [0, 4, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:b4908d29008bf72d:models/anchor.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    PhysicBody:
+      type: Static
+      shape: Sphere
+      fixedRotation: false
+      colliderSize: [0.4, 0.4, 0.4]
+      density: 1
+      restitution: 0
+      friction: 0.8
+      layer: 4
+      mask: 0
+  - Entity: 7500000000000040048
+    Tag:
+      tag: Anchor
+    Transform:
+      translation: [16, 4, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:b4908d29008bf72d:models/anchor.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    PhysicBody:
+      type: Static
+      shape: Sphere
+      fixedRotation: false
+      colliderSize: [0.4, 0.4, 0.4]
+      density: 1
+      restitution: 0
+      friction: 0.8
+      layer: 4
+      mask: 0
+  - Entity: 7500000000000040049
+    Tag:
+      tag: Vehicle1
+    Transform:
+      translation: [-4.8, 1, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:90f8702d80b1179f:models/truck.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+    PhysicBody:
+      type: Dynamic
+      shape: Box
+      fixedRotation: false
+      colliderSize: [3.24, 0.72, 1]
+      density: 70
+      restitution: 0
+      friction: 0.2
+      layer: 3
+      mask: 3
+    LuaScript:
+      scriptPath: gid:58f328b18b9ba797:scripts/game/vehicle.owlvs
+      properties:
+        - name: finish_x
+          type: float
+          value: 21.0
+        - name: fall_y
+          type: float
+          value: -7.0
+        - name: speed
+          type: float
+          value: 4.5
+  - Entity: 7500000000000040050
+    Tag:
+      tag: Vehicle1WheelBack
+    Transform:
+      translation: [-1.188, -0.4, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000000040049
+    PhysicBody:
+      type: Dynamic
+      shape: Sphere
+      fixedRotation: false
+      colliderSize: [0.7, 0.7, 0.7]
+      density: 70
+      restitution: 0
+      friction: 0.15
+      layer: 3
+      mask: 3
+      part: true
+  - Entity: 7500000000000040051
+    Tag:
+      tag: Vehicle1WheelFront
+    Transform:
+      translation: [1.188, -0.4, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7500000000000040049
+    PhysicBody:
+      type: Dynamic
+      shape: Sphere
+      fixedRotation: false
+      colliderSize: [0.7, 0.7, 0.7]
+      density: 70
+      restitution: 0
+      friction: 0.15
+      layer: 3
+      mask: 3
+      part: true
+  - Entity: 7500000000000040052
+    Tag:
+      tag: LevelCamera
+    Transform:
+      translation: [8, -1.5, 29.6]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Camera:
+      camera:
+        projectionType: Perspective
+        perspectiveFOV: 0.85
+        perspectiveNear: 0.3
+        perspectiveFar: 800
+        orthographicSize: 8
+        orthographicNear: -1
+        orthographicFar: 10
+        toneMapping: Aces
+        postProcess: {ev100: 14, exposure: 0, autoExposure: false, bloom: true, bloomThreshold: 1, bloomKnee: 0.5, bloomIntensity: 0.05, bloomScatter: 0.7, vignette: true, vignetteIntensity: 0.25, vignetteSmoothness: 0.5, vignetteColor: [0, 0, 0]}
+      primary: true
+      fixedAspectRatio: false
+  - Entity: 7500000000000040053
+    Tag:
+      tag: Cursor
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:baef4ee2fdbfa9ce:models/cursor.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 40000}}
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040054
+    Tag:
+      tag: Preview
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7d2bdd4be0d7723f:models/wood.glb
+      color: [0.4, 1, 0.5, 0.8]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7500000000000040055
+    Tag:
+      tag: BuildMusic
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SoundSource:
+      soundAsset: gid:266e236ff8eb8e51:sounds/music/build.wav
+      category: Music
+      volume: 0.45
+      pitch: 1
+      loop: true
+      spatial: false
+      playOnStart: true
+      maxDistance: 50
+      rolloff: 1

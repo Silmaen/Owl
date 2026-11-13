@@ -1,0 +1,18 @@
+# Asteroid Field: the briefing shows at the start and goes at the first shot; hands off, the fighter keeps its heading
+# for ten seconds, a slight drift of both sticks included; a roll left alone comes back level with the flight assist.
+scene: ../../../samples/asteroid_field/scenes/mission.owl
+steps:
+  - frames: 10
+  - expect: {gamestate: field_briefing, equals: true}
+  - input: {key: Space, frames: 1}
+  - frames: 2
+  - expect: {gamestate: field_briefing, equals: false}
+  - frames: 300
+  - input: {gamepad: {left_x: 0.12, left_y: -0.1, right_x: 0.1, right_y: 0.08}, frames: 300}
+  - expect: {entity: Player, rotation.x: {equals: 0, tolerance: 0.01}}
+  - expect: {entity: Player, rotation.y: {equals: 0, tolerance: 0.01}}
+  - expect: {entity: Player, rotation.z: {equals: 0, tolerance: 0.01}}
+  - input: {key: E, frames: 40}
+  - expect: {entity: Player, rotation.z: {less: -0.3}}
+  - frames: 300
+  - expect: {entity: Player, rotation.z: {equals: 0, tolerance: 0.03}}

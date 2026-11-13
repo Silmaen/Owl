@@ -13,6 +13,7 @@
 #include "math/vectors.h"
 #include "scene/nav/NavMesh.h"
 
+#include <cstdint>
 #include <vector>
 
 namespace owl::scene {
@@ -54,6 +55,19 @@ OWL_API void getNavVolumeBounds(const Scene& iScene, const Entity& iVolume, math
  * @return Nothing on success (the volume holds the new triangles), the cause otherwise (the volume is left as it was).
  */
 OWL_API auto bakeNavMesh(Scene& ioScene, const Entity& iVolume) -> owl::expected<void, NavBuildError>;
+
+/**
+ * @brief
+ *  Read the triangles of the `WalkArea`s whose entity stands inside a volume (the `WalkAreas` sources), each corner
+ *  (x, y) of a floor written (x, 0, y), counter-clockwise in the plane (x, z).
+ * @param[in] iScene The scene.
+ * @param[in] iVolume The entity of the `NavMeshVolume`.
+ * @param[out] oVertices The corners.
+ * @param[out] oIndices Three indices in `oVertices` per triangle.
+ * @return True when a walk area gave triangles.
+ */
+OWL_API auto collectWalkTriangles(const Scene& iScene, const Entity& iVolume, std::vector<math::vec3>& oVertices,
+								  std::vector<uint32_t>& oIndices) -> bool;
 
 /**
  * @brief

@@ -1,0 +1,43 @@
+# The Sunken Shrine settings: the music slider turned down with the D-pad, then across to the game and accessibility
+# rows: the brighter dark room on, the reduced motion on, the colour vision correction cycled; Back with pad B saves
+# and returns to the title.
+scene: ../../../samples/sunken_shrine/scenes/settings.owl
+steps:
+  - frames: 10
+  - expect: {setting: color_blind_mode, equals: none}
+  - input: {gamepad: {button: DpadDown}, frames: 2}
+  - frames: 1
+  - input: {gamepad: {button: DpadLeft}, frames: 2}
+  - frames: 1
+  - input: {gamepad: {button: DpadLeft}, frames: 2}
+  - frames: 1
+  - expect: {setting: volume_music, less: 0.8}
+  - input: {gamepad: {button: DpadDown}, frames: 2}
+  - frames: 1
+  - input: {gamepad: {button: DpadDown}, frames: 2}
+  - frames: 1
+  - input: {gamepad: {button: DpadDown}, frames: 2}
+  - frames: 1
+  - input: {gamepad: {button: DpadRight}, frames: 2}
+  - frames: 1
+  - expect: {gamestate: shrine_focus, equals: ToggleButton2}
+  - input: {gamepad: {button: A}, frames: 2}
+  - frames: 1
+  - expect: {setting: shrine_bright, equals: true}
+  - input: {gamepad: {button: DpadUp}, frames: 2}
+  - frames: 1
+  - input: {gamepad: {button: DpadUp}, frames: 2}
+  - frames: 1
+  - input: {gamepad: {button: DpadUp}, frames: 2}
+  - frames: 1
+  - input: {gamepad: {button: A}, frames: 2}
+  - frames: 1
+  - expect: {setting: reduced_motion, equals: true}
+  - input: {gamepad: {button: DpadUp}, frames: 2}
+  - frames: 1
+  - input: {gamepad: {button: A}, frames: 2}
+  - frames: 1
+  - expect: {setting: color_blind_mode, equals: protanopia}
+  - input: {gamepad: {button: B}, frames: 2}
+  - frames: 60
+  - expect: {entity: TitleArt, exists: true}

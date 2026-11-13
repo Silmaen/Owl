@@ -1,0 +1,11 @@
+# Lunar Lander, fourth landing: the lander starts in a low circular orbit; left alone it stays up, no impact on its
+# predicted path, its height held for seconds while it circles the moon.
+scene: ../../../samples/lunar_lander/scenes/landing_4.owl
+steps:
+  - frames: 30
+  - expect: {gamestate: lander_landing, equals: 4}
+  - expect: {gamestate: lander_hs, greater: 14}
+  - expect: {gamestate: lander_impact, equals: false}
+  - frames: 600
+  - expect: {gamestate: lander_alt, greater: 35}
+  - expect: {gamestate: lander_state, equals: fly}

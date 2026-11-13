@@ -1,0 +1,20 @@
+# Wolfenstein combat, the hits seen on screen (status.owlvs): the player turns to the north, the guard of the start room
+# east of it on its right; a pistol shot alerts it and its first hit flashes the view red and glows on the right edge
+# of the view, the side the shot came from (recorded by guard.owlvs); the guard then comes round in front.
+scene: ../../../samples/wolfenstein/scenes/level_1.owl
+project: ../../../samples/wolfenstein
+steps:
+  - frames: 40
+  - expect: {gamestate: wolf_flashes, equals: 0}
+  - expect: {gamestate: wolf_low_health, equals: 0}
+  # Healthy, looking ahead: the frame of the face is in its first row.
+  - expect: {gamestate: wolf_face, less: 5}
+  - actions: {turn: 1, frames: 60}
+  - actions: {fire: true, frames: 1}
+  - frames: 120
+  - expect: {gamestate: wolf_hurts, equals: 1}
+  - expect: {gamestate: wolf_flashes, equals: 1}
+  - expect: {gamestate: wolf_hit_side, equals: 1}
+  - frames: 60
+  - expect: {gamestate: wolf_flashes, equals: 2}
+  - expect: {gamestate: wolf_hit_side, equals: 0}

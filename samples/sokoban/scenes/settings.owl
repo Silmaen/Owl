@@ -48,7 +48,7 @@ Entities:
       gameVisible: true
     Hierarchy: {}
     LuaScript:
-      scriptPath: gid:539d0a97cc5de522:scripts/ui/warehouse.lua
+      scriptPath: gid:539d0a97cc5de522:scripts/ui/warehouse.owlvs
   - Entity: 7320000000000000004
     Tag:
       tag: CorridorWall
@@ -1225,7 +1225,7 @@ Entities:
       referenceResolution: [1280, 720]
       scaleMode: ScaleWithHeight
     LuaScript:
-      scriptPath: gid:f57d1cebf8918f17:scripts/ui/settings.lua
+      scriptPath: gid:f57d1cebf8918f17:scripts/ui/settings.owlvs
   - Entity: 7320000000000000063
     Tag:
       tag: SettingsList
@@ -1241,23 +1241,47 @@ Entities:
       anchorMin: [0.5, 0]
       anchorMax: [0.5, 0]
       pivot: [0.5, 0]
-      size: [0.95, 0.88]
+      size: [0.95, 0.9]
       sizeUnit: [ScreenHeight, ScreenHeight]
-      offset: [0, 0.03]
+      offset: [0, 0.01]
       offsetUnit: [ScreenHeight, ScreenHeight]
     UiPanel:
-      backgroundColor: [0.16, 0.1, 0.05, 0.92]
-      borderColor: [0.62, 0.42, 0.22, 1]
-      borderWidth: 3
+      backgroundColor: [1, 1, 1, 1]
+      borderColor: [0.55, 0.45, 0.3, 0.6]
+      borderWidth: 1
       clipChildren: false
+      Box:
+        shadowColor: [0, 0, 0, 0.5]
+        shadowOffset: [6, 8]
+        shadowBlur: 10
+        texture: gid:5c0b9e883a268c52:textures/ui/clipboard.png
+        sliceInsets: [40, 70, 40, 30]
     UiLayout:
       arrangement: Column
       crossAlign: Center
-      spacing: 6
-      padding: 10
+      spacing: 5
+      padding: 0
       columns: 1
       cellSize: [0, 0]
   - Entity: 7320000000000000064
+    Tag:
+      tag: SettingsFoot
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7320000000000000063
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.86, 0.01]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+  - Entity: 7320000000000000065
     Tag:
       tag: BackButton
     Transform:
@@ -1272,56 +1296,40 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.6, 0.074]
+      size: [0.5, 0.074]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.35, 0.22, 0.1, 1]
-      hoverColor: [0.85, 0.58, 0.22, 1]
-      pressedColor: [0.22, 0.13, 0.05, 1]
-      disabledColor: [0.04, 0.03, 0.02, 1]
+      normalColor: [0.7, 0.56, 0.42, 1]
+      hoverColor: [1, 0.93, 0.72, 1]
+      pressedColor: [0.5, 0.38, 0.27, 1]
+      disabledColor: [0.3, 0.27, 0.24, 1]
       onClickCallback: go_back
+      Box:
+        shadowColor: [0, 0, 0, 0.55]
+        shadowOffset: [4, 6]
+        shadowBlur: 6
+        texture: gid:0a5dae67673cadfd:textures/ui/crate_face.png
+        sliceInsets: [22, 22, 22, 22]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.24, 0.13, 0.05, 1]
-      text: 'Back'
-      color: [1, 0.93, 0.78, 1]
-      fontSize: 30
+      outlineWidth: 0
+      text: 'BACK'
+      color: [0.13, 0.07, 0.03, 1]
+      fontSize: 28
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
       lineSpacing: 0
-      wrap: false
+      wrap: true
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-Bold
+      font: BlackOpsOne-Regular
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: ''
       highlightColor: [1, 0.72, 0.2, 1]
       highlightThickness: 3
-  - Entity: 7320000000000000065
-    Tag:
-      tag: BackButtonPlank
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7320000000000000064
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:2a9b340c4719670c:textures/ui/plank.png
   - Entity: 7320000000000000066
     Tag:
       tag: ResetButton
@@ -1337,29 +1345,34 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.6, 0.074]
+      size: [0.5, 0.074]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.35, 0.22, 0.1, 1]
-      hoverColor: [0.85, 0.58, 0.22, 1]
-      pressedColor: [0.22, 0.13, 0.05, 1]
-      disabledColor: [0.04, 0.03, 0.02, 1]
+      normalColor: [0.7, 0.56, 0.42, 1]
+      hoverColor: [1, 0.93, 0.72, 1]
+      pressedColor: [0.5, 0.38, 0.27, 1]
+      disabledColor: [0.3, 0.27, 0.24, 1]
       onClickCallback: on_reset_clicked
+      Box:
+        shadowColor: [0, 0, 0, 0.55]
+        shadowOffset: [4, 6]
+        shadowBlur: 6
+        texture: gid:0a5dae67673cadfd:textures/ui/crate_face.png
+        sliceInsets: [22, 22, 22, 22]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.24, 0.13, 0.05, 1]
-      text: 'Reset defaults'
-      color: [1, 0.93, 0.78, 1]
-      fontSize: 30
+      outlineWidth: 0
+      text: 'RESET DEFAULTS'
+      color: [0.13, 0.07, 0.03, 1]
+      fontSize: 28
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
       lineSpacing: 0
-      wrap: false
+      wrap: true
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-Bold
+      font: BlackOpsOne-Regular
     UiFocus:
       focusable: true
       initial: false
@@ -1367,27 +1380,6 @@ Entities:
       highlightColor: [1, 0.72, 0.2, 1]
       highlightThickness: 3
   - Entity: 7320000000000000067
-    Tag:
-      tag: ResetButtonPlank
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7320000000000000066
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:2a9b340c4719670c:textures/ui/plank.png
-  - Entity: 7320000000000000068
     Tag:
       tag: ResetProgressButton
     Transform:
@@ -1402,57 +1394,41 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.6, 0.074]
+      size: [0.5, 0.074]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.35, 0.22, 0.1, 1]
-      hoverColor: [0.85, 0.58, 0.22, 1]
-      pressedColor: [0.22, 0.13, 0.05, 1]
-      disabledColor: [0.04, 0.03, 0.02, 1]
+      normalColor: [0.7, 0.56, 0.42, 1]
+      hoverColor: [1, 0.93, 0.72, 1]
+      pressedColor: [0.5, 0.38, 0.27, 1]
+      disabledColor: [0.3, 0.27, 0.24, 1]
       onClickCallback: on_reset_progress_clicked
+      Box:
+        shadowColor: [0, 0, 0, 0.55]
+        shadowOffset: [4, 6]
+        shadowBlur: 6
+        texture: gid:0a5dae67673cadfd:textures/ui/crate_face.png
+        sliceInsets: [22, 22, 22, 22]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.24, 0.13, 0.05, 1]
-      text: 'Reset progress'
-      color: [1, 0.93, 0.78, 1]
-      fontSize: 30
+      outlineWidth: 0
+      text: 'RESET PROGRESS'
+      color: [0.13, 0.07, 0.03, 1]
+      fontSize: 28
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
       lineSpacing: 0
-      wrap: false
+      wrap: true
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-Bold
+      font: BlackOpsOne-Regular
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: ''
       highlightColor: [1, 0.72, 0.2, 1]
       highlightThickness: 3
-  - Entity: 7320000000000000069
-    Tag:
-      tag: ResetProgressButtonPlank
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7320000000000000068
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:2a9b340c4719670c:textures/ui/plank.png
-  - Entity: 7320000000000000070
+  - Entity: 7320000000000000068
     Tag:
       tag: ProgressLabel
     Transform:
@@ -1467,15 +1443,14 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.9, 0.052]
+      size: [0.86, 0.05]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.24, 0.13, 0.05, 1]
+      outlineWidth: 0
       text: 'Levels done: 0 / 10'
-      color: [1, 0.93, 0.78, 1]
-      fontSize: 28
+      color: [0.66, 0.13, 0.08, 1]
+      fontSize: 24
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -1483,8 +1458,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-Bold
-  - Entity: 7320000000000000071
+      font: JetBrainsMono-Regular
+  - Entity: 7320000000000000069
     Tag:
       tag: UiScaleSlider
     Transform:
@@ -1499,24 +1474,27 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.86, 0.034]
+      size: [0.8, 0.032]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiSlider:
       value: 0.2
       minValue: 0
       maxValue: 1
-      trackColor: [0.1, 0.06, 0.03, 1]
-      fillColor: [0.95, 0.7, 0.25, 1]
-      handleColor: [1, 0.93, 0.78, 1]
+      trackColor: [0.8, 0.76, 0.66, 1]
+      fillColor: [0.66, 0.13, 0.08, 1]
+      handleColor: [0.17, 0.15, 0.2, 1]
       onValueChangedCallback: on_ui_scale_changed
+      Box:
+        borderColor: [0.17, 0.15, 0.2, 1]
+        borderWidth: 1.5
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: 'on_slider_focused'
       highlightColor: [1, 0.72, 0.2, 1]
       highlightThickness: 3
-  - Entity: 7320000000000000072
+  - Entity: 7320000000000000070
     Tag:
       tag: UiScaleLabel
     Transform:
@@ -1531,15 +1509,14 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.9, 0.052]
+      size: [0.86, 0.05]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.24, 0.13, 0.05, 1]
+      outlineWidth: 0
       text: 'Interface Size: 100%'
-      color: [0.9, 0.82, 0.68, 0.95]
-      fontSize: 28
+      color: [0.17, 0.15, 0.2, 1]
+      fontSize: 24
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -1547,8 +1524,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-Bold
-  - Entity: 7320000000000000078
+      font: JetBrainsMono-Regular
+  - Entity: 7320000000000000071
     Tag:
       tag: SfxVolSlider
     Transform:
@@ -1563,24 +1540,27 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.86, 0.034]
+      size: [0.8, 0.032]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiSlider:
       value: 1
       minValue: 0
       maxValue: 1
-      trackColor: [0.1, 0.06, 0.03, 1]
-      fillColor: [0.95, 0.7, 0.25, 1]
-      handleColor: [1, 0.93, 0.78, 1]
+      trackColor: [0.8, 0.76, 0.66, 1]
+      fillColor: [0.66, 0.13, 0.08, 1]
+      handleColor: [0.17, 0.15, 0.2, 1]
       onValueChangedCallback: on_sfx_vol_changed
+      Box:
+        borderColor: [0.17, 0.15, 0.2, 1]
+        borderWidth: 1.5
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: 'on_slider_focused'
       highlightColor: [1, 0.72, 0.2, 1]
       highlightThickness: 3
-  - Entity: 7320000000000000079
+  - Entity: 7320000000000000072
     Tag:
       tag: SfxVolLabel
     Transform:
@@ -1595,15 +1575,14 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.9, 0.052]
+      size: [0.86, 0.05]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.24, 0.13, 0.05, 1]
+      outlineWidth: 0
       text: 'Effects: 100%'
-      color: [0.9, 0.82, 0.68, 0.95]
-      fontSize: 28
+      color: [0.17, 0.15, 0.2, 1]
+      fontSize: 24
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -1611,8 +1590,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-Bold
-  - Entity: 7320000000000000076
+      font: JetBrainsMono-Regular
+  - Entity: 7320000000000000073
     Tag:
       tag: MusicVolSlider
     Transform:
@@ -1627,24 +1606,27 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.86, 0.034]
+      size: [0.8, 0.032]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiSlider:
       value: 0.8
       minValue: 0
       maxValue: 1
-      trackColor: [0.1, 0.06, 0.03, 1]
-      fillColor: [0.95, 0.7, 0.25, 1]
-      handleColor: [1, 0.93, 0.78, 1]
+      trackColor: [0.8, 0.76, 0.66, 1]
+      fillColor: [0.66, 0.13, 0.08, 1]
+      handleColor: [0.17, 0.15, 0.2, 1]
       onValueChangedCallback: on_music_vol_changed
+      Box:
+        borderColor: [0.17, 0.15, 0.2, 1]
+        borderWidth: 1.5
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: 'on_slider_focused'
       highlightColor: [1, 0.72, 0.2, 1]
       highlightThickness: 3
-  - Entity: 7320000000000000077
+  - Entity: 7320000000000000074
     Tag:
       tag: MusicVolLabel
     Transform:
@@ -1659,15 +1641,14 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.9, 0.052]
+      size: [0.86, 0.05]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.24, 0.13, 0.05, 1]
+      outlineWidth: 0
       text: 'Music: 80%'
-      color: [0.9, 0.82, 0.68, 0.95]
-      fontSize: 28
+      color: [0.17, 0.15, 0.2, 1]
+      fontSize: 24
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -1675,8 +1656,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-Bold
-  - Entity: 7320000000000000073
+      font: JetBrainsMono-Regular
+  - Entity: 7320000000000000075
     Tag:
       tag: MasterVolSlider
     Transform:
@@ -1691,24 +1672,27 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.86, 0.034]
+      size: [0.8, 0.032]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiSlider:
       value: 1
       minValue: 0
       maxValue: 1
-      trackColor: [0.1, 0.06, 0.03, 1]
-      fillColor: [0.95, 0.7, 0.25, 1]
-      handleColor: [1, 0.93, 0.78, 1]
+      trackColor: [0.8, 0.76, 0.66, 1]
+      fillColor: [0.66, 0.13, 0.08, 1]
+      handleColor: [0.17, 0.15, 0.2, 1]
       onValueChangedCallback: on_master_vol_changed
+      Box:
+        borderColor: [0.17, 0.15, 0.2, 1]
+        borderWidth: 1.5
     UiFocus:
       focusable: true
       initial: true
       onFocusCallback: 'on_slider_focused'
       highlightColor: [1, 0.72, 0.2, 1]
       highlightThickness: 3
-  - Entity: 7320000000000000074
+  - Entity: 7320000000000000076
     Tag:
       tag: MasterVolLabel
     Transform:
@@ -1723,15 +1707,14 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.9, 0.052]
+      size: [0.86, 0.05]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.24, 0.13, 0.05, 1]
+      outlineWidth: 0
       text: 'Master Volume: 100%'
-      color: [0.9, 0.82, 0.68, 0.95]
-      fontSize: 28
+      color: [0.17, 0.15, 0.2, 1]
+      fontSize: 24
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -1739,8 +1722,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-Bold
-  - Entity: 7320000000000000075
+      font: JetBrainsMono-Regular
+  - Entity: 7320000000000000077
     Tag:
       tag: TitleText
     Transform:
@@ -1755,15 +1738,14 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.9, 0.11]
+      size: [0.86, 0.09]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.24, 0.13, 0.05, 1]
-      text: 'Settings'
-      color: [1, 0.72, 0.2, 1]
-      fontSize: 56
+      outlineWidth: 0
+      text: 'SETTINGS'
+      color: [0.66, 0.13, 0.08, 1]
+      fontSize: 46
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -1771,4 +1753,22 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBold
+      font: BlackOpsOne-Regular
+  - Entity: 7320000000000000078
+    Tag:
+      tag: SettingsClip
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7320000000000000063
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.86, 0.07]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]

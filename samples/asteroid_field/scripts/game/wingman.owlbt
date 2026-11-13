@@ -1,0 +1,80 @@
+FormatVersion: 1
+BehaviourTree:
+  blackboard:
+    - name: order
+      type: String
+      value: escort
+      description: 'The order of the player: attack or escort.'
+    - name: target
+      type: Entity
+      value: 0
+      description: 'The enemy it goes for.'
+  nodes:
+    - id: 3961000000000000001
+      type: root
+      position: [0, 96]
+    - id: 3961000000000000002
+      type: composite.selector
+      position: [220, 192]
+      values:
+        reactive: true
+      comment: 'The order decides, checked at every tick.'
+    - id: 3961000000000000003
+      type: composite.sequence
+      position: [440, 288]
+      comment: 'Attack: the nearest enemy.'
+    - id: 3961000000000000004
+      type: condition.compare
+      position: [660, 384]
+      values:
+        key: order
+        op: '=='
+        value: attack
+    - id: 3961000000000000005
+      type: action.lua
+      position: [660, 480]
+      values:
+        function: wingman_pick
+      comment: 'Exported by mission.owlvs.'
+    - id: 3961000000000000006
+      type: action.steer
+      position: [660, 576]
+      values:
+        behaviour: pursue
+        key: target
+        weight: 1
+    - id: 3961000000000000007
+      type: decorator.cooldown
+      position: [660, 672]
+      values:
+        seconds: 0.6
+    - id: 3961000000000000008
+      type: action.lua
+      position: [880, 768]
+      values:
+        function: wingman_fire
+    - id: 3961000000000000009
+      type: composite.sequence
+      position: [440, 864]
+      comment: 'Escort: back in the slot on the player.'
+    - id: 3961000000000000010
+      type: action.lua
+      position: [660, 960]
+      values:
+        function: wingman_escort
+    - id: 3961000000000000011
+      type: action.wait
+      position: [660, 1056]
+      values:
+        seconds: 0.5
+  links:
+    - {parent: 3961000000000000001, child: 3961000000000000002}
+    - {parent: 3961000000000000002, child: 3961000000000000003}
+    - {parent: 3961000000000000003, child: 3961000000000000004}
+    - {parent: 3961000000000000003, child: 3961000000000000005}
+    - {parent: 3961000000000000003, child: 3961000000000000006}
+    - {parent: 3961000000000000003, child: 3961000000000000007}
+    - {parent: 3961000000000000007, child: 3961000000000000008}
+    - {parent: 3961000000000000002, child: 3961000000000000009}
+    - {parent: 3961000000000000009, child: 3961000000000000010}
+    - {parent: 3961000000000000009, child: 3961000000000000011}

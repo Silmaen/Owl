@@ -1,0 +1,8 @@
+# Asteroid Field: the fighters sent at the convoy make passes at the freighters instead of flying into one and staying
+# there: none hugs a hull for long, and the freighters survive the first waves while the player waits.
+scene: ../../../samples/asteroid_field/scenes/mission.owl
+timestep_ms: 33.333
+steps:
+  - frames: 1500
+  - expect: {gamestate: field_wave, greater: 0}
+  - expect: {gamestate: field_hug_time, less: 6}

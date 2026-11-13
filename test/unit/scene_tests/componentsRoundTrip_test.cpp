@@ -658,7 +658,14 @@ TEST(ComponentRoundTrip, ShipController) {
 				ship.assistDamping = 0.75f;
 				ship.flightAssist = false;
 				ship.captureCursor = false;
+				ship.mouseSteer = false;
+				ship.invertPitch = true;
+				ship.levelRate = 1.5f;
+				ship.maxPitch = 1.1f;
+				ship.throttleRate = 0.6f;
+				ship.minThrottle = -0.4f;
 				ship.m_velocity = {1.f, 2.f, 3.f};
+				ship.m_throttle = 0.5f;
 			},
 			[](const scene::Entity& iEnt) -> void {
 				ASSERT_TRUE(iEnt.hasComponent<scene::component::ShipController>());
@@ -674,7 +681,27 @@ TEST(ComponentRoundTrip, ShipController) {
 				EXPECT_FLOAT_EQ(ship.assistDamping, 0.75f);
 				EXPECT_FALSE(ship.flightAssist);
 				EXPECT_FALSE(ship.captureCursor);
+				EXPECT_FALSE(ship.mouseSteer);
+				EXPECT_TRUE(ship.invertPitch);
+				EXPECT_FLOAT_EQ(ship.levelRate, 1.5f);
+				EXPECT_FLOAT_EQ(ship.maxPitch, 1.1f);
+				EXPECT_FLOAT_EQ(ship.throttleRate, 0.6f);
+				EXPECT_FLOAT_EQ(ship.minThrottle, -0.4f);
 				EXPECT_FLOAT_EQ(ship.getSpeed(), 0.f);
+				EXPECT_FLOAT_EQ(ship.m_throttle, 0.f);
+			});
+}
+
+TEST(ComponentRoundTrip, ShipControllerWithoutRotationalInertia) {
+	roundTrip(
+			"ShipController",
+			[](scene::Entity& iEnt) -> void {
+				iEnt.addComponent<scene::component::ShipController>().angularResponse = 0.f;
+			},
+			[](const scene::Entity& iEnt) -> void {
+				const auto& ship = iEnt.getComponent<scene::component::ShipController>();
+				EXPECT_FLOAT_EQ(ship.angularResponse, 0.f);
+				EXPECT_TRUE(ship.mouseSteer);
 			});
 }
 

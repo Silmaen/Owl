@@ -1,0 +1,41 @@
+Prefab: bolt
+Version: 1
+Entities:
+  - Entity: 7691000000000000001
+    Tag:
+      tag: Bolt
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:70cece7c7fa439cd:models/bolt.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 30000}}
+    RendererTag:
+      Name: mesh_world
+    Trail:
+      enabled: true
+      lifetime: 0.1
+      minDistance: 0.15
+      maxPoints: 48
+      width: 0.2
+      color: [0.5, 1, 0.7, 1]
+      emissive: 12000
+      blend: Additive
+    SoundSource:
+      soundAsset: gid:4706134010800e5e:sounds/game/bolt_hiss.wav
+      category: SFX
+      volume: 0.6
+      pitch: 1
+      loop: true
+      spatial: true
+      playOnStart: true
+      maxDistance: 40
+      rolloff: 1
+      doppler: true

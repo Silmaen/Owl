@@ -65,6 +65,8 @@ local function store(list)
     gamestate.set("inventory_count", #list)
 end
 
+---@param item any
+---@return any result
 function A.has(item)
     for _, owned in ipairs(inventory()) do
         if owned == item then return true end
@@ -81,6 +83,7 @@ function A.give(item)
     A.refresh_inventory()
 end
 
+---@param item any
 function A.take(item)
     local list = inventory()
     for index, owned in ipairs(list) do
@@ -94,10 +97,14 @@ function A.take(item)
     A.refresh_inventory()
 end
 
+---@param name any
+---@return any result
 function A.flag(name)
     return gamestate.get("flag_" .. name, false)
 end
 
+---@param name any
+---@param value any
 function A.set_flag(name, value)
     gamestate.set("flag_" .. name, value ~= false)
 end
@@ -319,6 +326,8 @@ local function parse(lines)
     return out
 end
 
+---@param id any
+---@param enabled any
 function A.set_hotspot_enabled(id, enabled)
     for _, hotspot in ipairs(hotspots) do
         if hotspot.id == id then hotspot.enabled = enabled end
@@ -512,6 +521,47 @@ local function perform(action)
     end
 end
 
+-- The hero walks the corners of a path on the navigation mesh of the room (`RoomNav`, baked from its walk area when
+-- the room starts), one leg after the other on its walk agent, which keeps the scale by depth and the masks; without
+-- a mesh, or for a point the mesh does not reach, the walk agent finds the way alone.
+local route = {}
+
+local function walk_to(x, y)
+    route = {}
+    local nav_id = ids.RoomNav or 0
+    if nav_id ~= 0 then
+        local hx, hy = transform.get_world_position(ids.Hero)
+        local points = nav.find_path(nav_id, hx, hy, 0, x, y, 0)
+        if points ~= nil and #points >= 6 then
+            for index = 4, #points - 2, 3 do
+                route[#route + 1] = { points[index], points[index + 1] }
+            end
+            gamestate.set("nav_routes", gamestate.get("nav_routes", 0) + 1)
+            local first = table.remove(route, 1)
+            if walk.go_to(ids.Hero, first[1], first[2]) then
+                return true
+            end
+            route = {}
+        end
+    end
+    return walk.go_to(ids.Hero, x, y)
+end
+
+-- Whether the hero still walks: the next leg starts when the last one is done.
+local function walking()
+    if walk.is_moving(ids.Hero) then
+        return true
+    end
+    while #route > 0 do
+        local corner = table.remove(route, 1)
+        gamestate.set("nav_legs", gamestate.get("nav_legs", 0) + 1)
+        if walk.go_to(ids.Hero, corner[1], corner[2]) and walk.is_moving(ids.Hero) then
+            return true
+        end
+    end
+    return false
+end
+
 local function start_action(hotspot, verb)
     hush()
     local item = held
@@ -521,7 +571,7 @@ local function start_action(hotspot, verb)
     if verb == "look" then item = nil end
     local tx, ty = transform.get_world_position(hotspot.stand ~= 0 and hotspot.stand or hotspot.entity)
     pending = { hotspot = hotspot, verb = (item ~= nil) and "use" or verb, item = item, x = tx, y = ty }
-    if not walk.go_to(ids.Hero, tx, ty) then
+    if not walk_to(tx, ty) then
         perform(pending)
         pending = nil
     end
@@ -537,7 +587,7 @@ local function click(look)
         end
         local wx, wy = to_world(cursor_px, cursor_py)
         pending = nil
-        walk.go_to(ids.Hero, wx, wy)
+        walk_to(wx, wy)
         hush()
         return
     end
@@ -608,8 +658,10 @@ local function read_input(dt)
     end
 end
 
+---@param dt any
 function A.update(dt)
     read_input(dt)
+    walking()
     update_cursor(0)
     if speech_timer > 0 then
         speech_timer = speech_timer - dt
@@ -623,7 +675,7 @@ function A.update(dt)
             run()
         end
     end
-    if pending ~= nil and not walk.is_moving(ids.Hero) then
+    if pending ~= nil and not walking() then
         local action = pending
         pending = nil
         local hx, hy = transform.get_world_position(ids.Hero)
@@ -649,7 +701,8 @@ function A.start(config)
     A.leaving = false
     for _, name in ipairs({ "Hero", "Floor", "MainCamera", "Cursor", "ItemCursor", "Pointer", "HoverLabel",
                             "SpeechPanel", "SpeechText", "InventoryPanel", "BagButton", "DialoguePanel",
-                            "DialogueSpeaker", "DialogueText", "DialogueNext", "PauseWindow", "PauseResume" }) do
+                            "DialogueSpeaker", "DialogueText", "DialogueNext", "PauseWindow", "PauseResume",
+                            "RoomNav" }) do
         ids[name] = ui.find(name)
         if ids[name] == 0 then ids[name] = scene.find_entity(name) end
     end
@@ -658,6 +711,10 @@ function A.start(config)
     end
     glow.entity = 0
     cursor_hidden = false
+    route = {}
+    if ids.RoomNav ~= 0 then
+        nav.bake(ids.RoomNav)
+    end
     for slot = 1, SLOTS do
         ids["Slot" .. slot] = ui.find("Slot" .. slot)
         ids["SlotIcon" .. slot] = ui.find("SlotIcon" .. slot)

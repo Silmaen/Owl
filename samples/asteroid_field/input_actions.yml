@@ -1,0 +1,90 @@
+FormatVersion: 1
+# Actions of Asteroid Field, on top of the built-in ones (the `ui_*` actions drive the menus); the `ship_*` actions
+# and `look` fly the player's ShipController (the keys and the sticks turn it, `ship_thrust` moves its persistent
+# throttle; the mouse moves the aim circle, `steer` held turns the fighter toward it, the wheel moves the lock). Read by
+# scripts/game/mission.owlvs and scripts/game/combat.lua.
+actions:
+  - name: look
+    type: vector
+    bindings:
+      - {key: Right, component: x}
+      - {key: Left, component: x, scale: -1}
+      - {key: D, component: x}
+      - {key: A, component: x, scale: -1}
+      - {key: Down, component: y}
+      - {key: Up, component: y, scale: -1}
+      - {gamepad_stick: left, dead_zone: 0.2}
+  - name: ship_thrust
+    type: axis
+    bindings:
+      - {key: W}
+      - {key: S, scale: -1}
+      - {gamepad_axis: right_trigger}
+      - {gamepad_axis: left_trigger, scale: -1}
+  - name: ship_roll
+    type: axis
+    bindings:
+      - {key: E}
+      - {key: Q, scale: -1}
+      - {gamepad_button: RightBumper}
+      - {gamepad_button: LeftBumper, scale: -1}
+  - name: ship_strafe
+    type: vector
+    bindings:
+      - {key: C, component: x}
+      - {key: X, component: x, scale: -1}
+      - {key: R, component: y}
+      - {key: V, component: y, scale: -1}
+      - {gamepad_stick: right, dead_zone: 0.2}
+  - name: throttle_zero
+    type: button
+    bindings:
+      - {key: Backspace}
+      - {gamepad_button: LeftThumb}
+  - name: steer
+    type: button
+    bindings:
+      - {mouse_button: Right}
+  - name: ship_assist
+    type: button
+    bindings:
+      - {key: Z}
+      - {gamepad_button: RightThumb}
+  - name: fire
+    type: button
+    bindings:
+      - {key: Space}
+      - {mouse_button: Left}
+      - {gamepad_button: A}
+  - name: lock
+    type: button
+    bindings:
+      - {key: F}
+      - {mouse_button: Middle}
+      - {gamepad_button: X}
+  - name: lock_next
+    type: button
+    bindings:
+      - {key: T}
+      - {gamepad_button: DpadRight}
+  - name: lock_previous
+    type: button
+    bindings:
+      - {key: G}
+      - {gamepad_button: DpadLeft}
+  - name: wings_attack
+    type: button
+    bindings:
+      - {key: D1}
+      - {gamepad_button: Y}
+  - name: wings_escort
+    type: button
+    bindings:
+      - {key: D2}
+      - {gamepad_button: B}
+  - name: pause
+    type: button
+    bindings:
+      - {key: Escape}
+      - {key: P}
+      - {gamepad_button: Start}

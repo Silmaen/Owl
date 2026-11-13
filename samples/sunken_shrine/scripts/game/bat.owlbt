@@ -1,0 +1,115 @@
+FormatVersion: 1
+BehaviourTree:
+  blackboard:
+    - name: player
+      type: Entity
+      value: 0
+      description: 'The hero, written by creature.owlvs.'
+    - name: hurt
+      type: Bool
+      value: false
+      description: 'Set when it is hit: it backs off.'
+  nodes:
+    - id: 3970000000000001001
+      type: root
+      position: [0, 96]
+    - id: 3970000000000001002
+      type: composite.selector
+      position: [220, 192]
+      values:
+        reactive: true
+      comment: 'The first branch that holds wins, checked at every tick.'
+    - id: 3970000000000001003
+      type: composite.sequence
+      position: [440, 288]
+      comment: 'Hit: back off for a moment.'
+    - id: 3970000000000001004
+      type: condition.compare
+      position: [660, 384]
+      values:
+        key: hurt
+        op: '=='
+        value: true
+    - id: 3970000000000001005
+      type: action.steer
+      position: [660, 480]
+      values:
+        behaviour: flee
+        key: player
+        weight: 1
+    - id: 3970000000000001006
+      type: action.wait
+      position: [660, 576]
+      values:
+        seconds: 1.4
+    - id: 3970000000000001007
+      type: action.set
+      position: [660, 672]
+      values:
+        key: hurt
+        value: false
+    - id: 3970000000000001008
+      type: composite.sequence
+      position: [440, 768]
+      comment: 'Close: go for the hero.'
+    - id: 3970000000000001009
+      type: condition.distance
+      position: [660, 864]
+      values:
+        distance: 6
+        key: player
+        op: closer than
+        space: plane
+    - id: 3970000000000001010
+      type: decorator.cooldown
+      position: [660, 960]
+      values:
+        seconds: 2.5
+      comment: 'A swoop, then a rest.'
+    - id: 3970000000000001011
+      type: composite.sequence
+      position: [880, 1056]
+    - id: 3970000000000001012
+      type: action.steer
+      position: [1100, 1152]
+      values:
+        behaviour: pursue
+        key: player
+        weight: 1
+    - id: 3970000000000001013
+      type: action.wait
+      position: [1100, 1248]
+      values:
+        seconds: 1.2
+    - id: 3970000000000001014
+      type: composite.sequence
+      position: [440, 1344]
+      comment: 'Alone: wander.'
+    - id: 3970000000000001015
+      type: action.steer
+      position: [660, 1440]
+      values:
+        behaviour: wander
+        weight: 1
+    - id: 3970000000000001016
+      type: action.wait
+      position: [660, 1536]
+      values:
+        seconds: 1
+        spread: 1
+  links:
+    - {parent: 3970000000000001001, child: 3970000000000001002}
+    - {parent: 3970000000000001002, child: 3970000000000001003}
+    - {parent: 3970000000000001003, child: 3970000000000001004}
+    - {parent: 3970000000000001003, child: 3970000000000001005}
+    - {parent: 3970000000000001003, child: 3970000000000001006}
+    - {parent: 3970000000000001003, child: 3970000000000001007}
+    - {parent: 3970000000000001002, child: 3970000000000001008}
+    - {parent: 3970000000000001008, child: 3970000000000001009}
+    - {parent: 3970000000000001008, child: 3970000000000001010}
+    - {parent: 3970000000000001010, child: 3970000000000001011}
+    - {parent: 3970000000000001011, child: 3970000000000001012}
+    - {parent: 3970000000000001011, child: 3970000000000001013}
+    - {parent: 3970000000000001002, child: 3970000000000001014}
+    - {parent: 3970000000000001014, child: 3970000000000001015}
+    - {parent: 3970000000000001014, child: 3970000000000001016}

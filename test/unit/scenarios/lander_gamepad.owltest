@@ -1,0 +1,14 @@
+# Lunar Lander on a gamepad: pad A fires the main engine (the lander climbs and burns fuel), the left stick tilts it
+# off the vertical, released it holds its attitude.
+scene: ../../../samples/lunar_lander/scenes/landing_1.owl
+steps:
+  - frames: 5
+  - input: {gamepad: {button: A}, frames: 120}
+  - expect: {gamestate: lander_vs, greater: 0.5}
+  - expect: {gamestate: lander_fuel, less: 45}
+  - input: {gamepad: {left_x: 1.0}, frames: 30}
+  - frames: 2
+  - expect: {gamestate: lander_upright, less: 0.95}
+  - frames: 30
+  - expect: {gamestate: lander_upright, less: 0.95}
+  - expect: {gamestate: lander_state, equals: fly}

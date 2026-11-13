@@ -716,6 +716,63 @@ auto luaPhysicsGetJointPosition(lua_State* iState) -> int {
 	return 1;
 }
 
+auto luaPhysicsGetJointLoad(lua_State* iState) -> int {
+	const auto entity = findEntity(iState);
+	const auto [force, torque] = entity ? physics::PhysicCommand::getJointLoad(*entity) : std::pair{0.f, 0.f};
+	lua_pushnumber(iState, static_cast<lua_Number>(force));
+	lua_pushnumber(iState, static_cast<lua_Number>(torque));
+	return 2;
+}
+
+auto parseJointType(const std::string_view iKind) -> std::optional<scene::SceneJoint::Type> {
+	using Type = scene::SceneJoint::Type;
+	static constexpr std::array<std::pair<std::string_view, Type>, 4> kinds{
+			{{"fixed", Type::Fixed}, {"distance", Type::Distance}, {"hinge", Type::Hinge}, {"slider", Type::Slider}}};
+	const auto* found = std::ranges::find(kinds, iKind, &std::pair<std::string_view, Type>::first);
+	if (found == kinds.end())
+		return std::nullopt;
+	return found->second;
+}
+
+// A joint made in Play replaces the entity's one; it is built at the next physics step, like an authored joint.
+auto luaPhysicsAddJoint(lua_State* iState) -> int {
+	const auto entity = findEntity(iState);
+	const auto kind = parseJointType(luaL_checkstring(iState, 3));
+	if (!entity || !kind || !entity->hasComponent<scene::component::PhysicBody>()) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	const auto other = lua_isnoneornil(iState, 2) ? std::nullopt : entityAt(iState, 2);
+	scene::SceneJoint joint;
+	joint.type = *kind;
+	joint.connected = other ? other->getUUID() : core::UUID{0};
+	joint.anchor = {luaArg(iState, 4), luaArg(iState, 5), luaArg(iState, 6)};
+	joint.breakForce = lua_isnoneornil(iState, 7) ? 0.f : std::max(luaArg(iState, 7), 0.f);
+	joint.breakTorque = lua_isnoneornil(iState, 8) ? 0.f : std::max(luaArg(iState, 8), 0.f);
+	scene::Entity target = *entity;
+	if (target.hasComponent<scene::component::PhysicJoint>())
+		target.removeComponent<scene::component::PhysicJoint>();
+	target.addComponent<scene::component::PhysicJoint>().joint = joint;
+	lua_pushboolean(iState, 1);
+	return 1;
+}
+
+auto luaPhysicsGetAngularVelocity(lua_State* iState) -> int {
+	const auto entity = findEntity(iState);
+	const auto velocity = entity ? physics::PhysicCommand::getAngularVelocity3D(*entity) : math::vec3f{0.f, 0.f, 0.f};
+	lua_pushnumber(iState, static_cast<lua_Number>(velocity.x()));
+	lua_pushnumber(iState, static_cast<lua_Number>(velocity.y()));
+	lua_pushnumber(iState, static_cast<lua_Number>(velocity.z()));
+	return 3;
+}
+
+auto luaPhysicsSetAngularVelocity(lua_State* iState) -> int {
+	if (const auto entity = findEntity(iState))
+		physics::PhysicCommand::setAngularVelocity3D(*entity,
+													 {luaArg(iState, 2), luaArg(iState, 3), luaArg(iState, 4)});
+	return 0;
+}
+
 auto luaPhysicsAddForce(lua_State* iState) -> int {
 	if (const auto entity = findEntity(iState))
 		physics::PhysicCommand::addForce(
@@ -1246,6 +1303,21 @@ auto luaSceneGetViewportSize(lua_State* iState) -> int {
 	return 2;
 }
 
+auto luaSceneGetViewRay(lua_State* iState) -> int {
+	const auto* activeScene = getBoundScene(iState);
+	const auto pointX = static_cast<float>(luaL_checknumber(iState, 1));
+	const auto pointY = static_cast<float>(luaL_checknumber(iState, 2));
+	if (activeScene == nullptr)
+		return 0;
+	const auto ray = scene::getViewRay(*activeScene, {pointX, pointY});
+	if (!ray)
+		return 0;
+	for (const float value: {ray->origin.x(), ray->origin.y(), ray->origin.z(), ray->direction.x(), ray->direction.y(),
+							 ray->direction.z()})
+		lua_pushnumber(iState, static_cast<lua_Number>(value));
+	return 6;
+}
+
 auto luaSceneGetViewportMouse(lua_State* iState) -> int {
 	auto* activeScene = getBoundScene(iState);
 	// The viewport mouse of the last HUD update, as `scene.pick_entity` reads it (Owl Nest draws the game in a panel).
@@ -1746,6 +1818,20 @@ auto luaEntityGetShipVelocity(lua_State* iState) -> int {
 	return 3;
 }
 
+auto luaEntitySetShipVelocity(lua_State* iState) -> int {
+	const math::vec3 velocity{static_cast<float>(luaL_checknumber(iState, 2)),
+							  static_cast<float>(luaL_checknumber(iState, 3)),
+							  static_cast<float>(luaL_checknumber(iState, 4))};
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::ShipController>()) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	entity->getComponent<scene::component::ShipController>().m_velocity = velocity;
+	lua_pushboolean(iState, 1);
+	return 1;
+}
+
 auto luaEntityGetShipSpeed(lua_State* iState) -> int {
 	const auto entity = findEntity(iState);
 	if (!entity || !entity->hasComponent<scene::component::ShipController>())
@@ -1764,6 +1850,32 @@ auto luaEntityGetShipThrottle(lua_State* iState) -> int {
 	return 1;
 }
 
+auto luaEntitySetShipThrottle(lua_State* iState) -> int {
+	const auto throttle = static_cast<float>(luaL_checknumber(iState, 2));
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::ShipController>()) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	auto& ship = entity->getComponent<scene::component::ShipController>();
+	ship.m_throttle = std::clamp(throttle, ship.throttleRate > 0.f ? ship.minThrottle : -1.f, 1.f);
+	lua_pushboolean(iState, 1);
+	return 1;
+}
+
+auto luaEntitySetShipTurn(lua_State* iState) -> int {
+	const math::vec2 turn{std::clamp(static_cast<float>(luaL_checknumber(iState, 2)), -1.f, 1.f),
+						  std::clamp(static_cast<float>(luaL_checknumber(iState, 3)), -1.f, 1.f)};
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::ShipController>()) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	entity->getComponent<scene::component::ShipController>().m_turnInput = turn;
+	lua_pushboolean(iState, 1);
+	return 1;
+}
+
 auto luaEntitySetShipAssist(lua_State* iState) -> int {
 	const bool assist = lua_toboolean(iState, 2) != 0;
 	const auto entity = findEntity(iState);
@@ -1772,6 +1884,18 @@ auto luaEntitySetShipAssist(lua_State* iState) -> int {
 		return 1;
 	}
 	entity->getComponent<scene::component::ShipController>().flightAssist = assist;
+	lua_pushboolean(iState, 1);
+	return 1;
+}
+
+auto luaEntitySetShipInvertPitch(lua_State* iState) -> int {
+	const bool invert = lua_toboolean(iState, 2) != 0;
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::ShipController>()) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	entity->getComponent<scene::component::ShipController>().invertPitch = invert;
 	lua_pushboolean(iState, 1);
 	return 1;
 }
@@ -1986,6 +2110,19 @@ auto luaUiSetSize(lua_State* iState) -> int {
 		return 1;
 	}
 	entity->getComponent<scene::component::UiRect>().size = {std::max(0.f, width), std::max(0.f, height)};
+	lua_pushboolean(iState, 1);
+	return 1;
+}
+
+auto luaUiSetOffset(lua_State* iState) -> int {
+	const auto offsetX = static_cast<float>(luaL_checknumber(iState, 2));
+	const auto offsetY = static_cast<float>(luaL_checknumber(iState, 3));
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::UiRect>()) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	entity->getComponent<scene::component::UiRect>().anchorOffset = {offsetX, offsetY};
 	lua_pushboolean(iState, 1);
 	return 1;
 }
@@ -3234,15 +3371,21 @@ auto luaNavFindPath(lua_State* iState) -> int {
 	const auto to = readPoint3(iState, 5);
 	const auto volume = entityWith<scene::component::NavMeshVolume>(iState);
 	std::vector<scene::nav::NavPathPoint> path;
-	if (!volume || !volume->getComponent<scene::component::NavMeshVolume>().getMesh().findPath(from, to, path)) {
+	if (!volume) {
+		lua_pushnil(iState);
+		return 1;
+	}
+	const auto& component = volume->getComponent<scene::component::NavMeshVolume>();
+	if (!component.getMesh().findPath(component.toMeshSpace(from), component.toMeshSpace(to), path)) {
 		lua_pushnil(iState);
 		return 1;
 	}
 	lua_createtable(iState, static_cast<int>(path.size() * 3), 0);
 	lua_Integer index = 1;
 	for (const auto& point: path) {
+		const auto position = component.toWorldSpace(point.position);
 		for (size_t axis = 0; axis < 3; ++axis) {
-			lua_pushnumber(iState, static_cast<lua_Number>(point.position[axis]));
+			lua_pushnumber(iState, static_cast<lua_Number>(position[axis]));
 			lua_rawseti(iState, -2, index++);
 		}
 	}
@@ -3254,8 +3397,9 @@ auto luaNavGetClosestPoint(lua_State* iState) -> int {
 	const auto volume = entityWith<scene::component::NavMeshVolume>(iState);
 	if (!volume)
 		return 0;
-	const auto nearest = volume->getComponent<scene::component::NavMeshVolume>().getMesh().findNearest(point);
-	return nearest.has_value() ? pushPoint3(iState, nearest->position) : 0;
+	const auto& component = volume->getComponent<scene::component::NavMeshVolume>();
+	const auto nearest = component.getMesh().findNearest(component.toMeshSpace(point));
+	return nearest.has_value() ? pushPoint3(iState, component.toWorldSpace(nearest->position)) : 0;
 }
 
 auto luaNavBake(lua_State* iState) -> int {
@@ -4142,6 +4286,31 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "physics", .name = "get_joint_position", .function = guarded<luaPhysicsGetJointPosition>,
 		 .description = "Angle of the entity's hinge joint (radians) or position of its slider; 0 otherwise.",
 		 .params = {entityId}, .returns = {{"position", Number}}},
+		{.table = "physics", .name = "get_joint_load", .function = guarded<luaPhysicsGetJointLoad>,
+		 .description = "Load the entity's joint held in the last physics step, as its break force and torque measure "
+						"it; zeros without a joint.",
+		 .params = {entityId}, .returns = {{"force", Number}, {"torque", Number}}},
+		{.table = "physics", .name = "add_joint", .function = guarded<luaPhysicsAddJoint>,
+		 .description = "Join the entity's body to another body (nil: the world) in Play: kind `fixed`, `distance`, "
+						"`hinge` or `slider`, anchored at (x, y, z) in the entity's frame, breaking beyond the force "
+						"and the torque given (0: never); it replaces the entity's joint and is built at the next step.",
+		 .params = {entityId,
+					{"other_id", Entity, true},
+					{"kind", String},
+					{"x", Number},
+					{"y", Number},
+					{"z", Number},
+					{"break_force", Number, true},
+					{"break_torque", Number, true}},
+		 .returns = {{"done", Boolean}}},
+		{.table = "physics", .name = "get_angular_velocity", .function = guarded<luaPhysicsGetAngularVelocity>,
+		 .description = "Angular velocity of the body, radians per second around the world axes (only wz for a 2D "
+						"body); zeros without a body.",
+		 .params = {entityId}, .returns = {{"wx", Number}, {"wy", Number}, {"wz", Number}}},
+		{.table = "physics", .name = "set_angular_velocity", .function = guarded<luaPhysicsSetAngularVelocity>,
+		 .description = "Set the angular velocity of the body, radians per second around the world axes; a 2D body "
+						"takes wz only.",
+		 .params = {entityId, {"wx", Number}, {"wy", Number}, {"wz", Number}}},
 		{.table = "physics", .name = "add_force", .function = guarded<luaPhysicsAddForce>,
 		 .description = "Push the body with a force (newtons) over the next step, at its centre of mass or at a part; "
 						"call it in `on_tick` for a steady thrust; fz for a 3D body.",
@@ -4382,6 +4551,11 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .description = "Size of the viewport the scene is drawn into, in pixels (the window, or the game panel of "
 						"Owl Nest); zeros before the first frame.",
 		 .returns = {{"width", Integer}, {"height", Integer}}},
+		{.table = "scene", .name = "get_view_ray", .function = guarded<luaSceneGetViewRay>,
+		 .description = "Ray of the primary camera through a viewport pixel, in world space: its origin in the plane of "
+						"the eye and its unit direction (a gun aimed at a point of the screen); nothing without a camera.",
+		 .params = {{"x", Number}, {"y", Number}},
+		 .returns = {{"ox", Number}, {"oy", Number}, {"oz", Number}, {"dx", Number}, {"dy", Number}, {"dz", Number}}},
 		{.table = "scene", .name = "get_viewport_mouse", .function = guarded<luaSceneGetViewportMouse>,
 		 .description = "Mouse position in the viewport, in pixels from its top left (the pixel `scene.pick_entity` "
 						"reads by default).",
@@ -4663,16 +4837,33 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .description = "Velocity of the entity's `ShipController` in world space, in metres per second; nothing when "
 						"it has none.",
 		 .params = {entityId}, .returns = {{"x", Number}, {"y", Number}, {"z", Number}}},
+		{.table = "entity", .name = "set_ship_velocity", .function = guarded<luaEntitySetShipVelocity>,
+		 .description = "Set the velocity of the entity's `ShipController` in world space, in metres per second (a "
+						"rebound, a knock); false when it has none.",
+		 .params = {entityId, {"x", Number}, {"y", Number}, {"z", Number}}, .returns = {{"done", Boolean}}},
 		{.table = "entity", .name = "get_ship_speed", .function = guarded<luaEntityGetShipSpeed>,
 		 .description = "Speed of the entity's `ShipController`, in metres per second; nothing when it has none.",
 		 .params = {entityId}, .returns = {{"speed", Number}}},
 		{.table = "entity", .name = "get_ship_throttle", .function = guarded<luaEntityGetShipThrottle>,
-		 .description = "Thrust input of the entity's `ShipController` this frame, from -1 (reverse) to 1 (full ahead); "
-						"nothing when it has none.",
+		 .description = "Throttle of the entity's `ShipController`, from -1 (reverse) to 1 (full ahead): the thrust "
+						"input of the frame, or the persistent throttle with a `throttleRate`; nothing when it has none.",
 		 .params = {entityId}, .returns = {{"throttle", Number}}},
+		{.table = "entity", .name = "set_ship_throttle", .function = guarded<luaEntitySetShipThrottle>,
+		 .description = "Set the persistent throttle of the entity's `ShipController` (cut to 0, full ahead), from its "
+						"`minThrottle` to 1; false when it has none.",
+		 .params = {entityId, {"throttle", Number}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "set_ship_turn", .function = guarded<luaEntitySetShipTurn>,
+		 .description = "Turn the entity's `ShipController` next frame on top of the `look` action, as shares of its "
+						"turn rate from -1 to 1: `x` turns right, `y` lowers the nose (screen directions, never "
+						"inverted); call it every frame of the turn. False when it has none.",
+		 .params = {entityId, {"x", Number}, {"y", Number}}, .returns = {{"done", Boolean}}},
 		{.table = "entity", .name = "set_ship_assist", .function = guarded<luaEntitySetShipAssist>,
 		 .description = "Switch the flight assist of the entity's `ShipController` on or off; false when it has none.",
 		 .params = {entityId, {"assist", Boolean}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "set_ship_invert_pitch", .function = guarded<luaEntitySetShipInvertPitch>,
+		 .description = "Invert the pitch of the entity's `ShipController` (stick or mouse forward raises the nose); "
+						"false when it has none.",
+		 .params = {entityId, {"invert", Boolean}}, .returns = {{"done", Boolean}}},
 		{.table = "entity", .name = "is_ship_assist_on", .function = guarded<luaEntityIsShipAssistOn>,
 		 .description = "Whether the flight assist of the entity's `ShipController` stabilises it; nothing when it has "
 						"none.",
@@ -4702,6 +4893,12 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .description = "Resize the `UiRect` of a widget, in the units of its size (screen heights, shares of its parent, "
 						"pixels): a card fitted to its lines; false when the entity has no `UiRect`.",
 		 .params = {entityId, {"width", Number}, {"height", Number}}, .returns = {{"done", Boolean}}},
+		{.table = "ui", .name = "set_offset", .function = guarded<luaUiSetOffset>,
+		 .description = "Move the `UiRect` of a widget: the offset of its pivot from its anchor, in the units of its "
+						"offset (screen heights, shares of its parent, pixels; Y down), a sight following the mouse; "
+						"false when the entity has no `UiRect`.",
+		 .params = {entityId, {"x", Number}, {"y", Number}},
+		 .returns = {{"done", Boolean}}},
 		{.table = "ui", .name = "get_rect", .function = guarded<luaUiGetRect>,
 		 .description = "Rectangle of a widget as the HUD lays it out, in pixels of the viewport from its top left (an "
 						"arrow aimed at a button at any interface size); nil when it is hidden or has no `UiRect`.",
@@ -4973,7 +5170,7 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .description = "Put a `WalkAgent` on the `WalkArea` of another entity (it stops); false when that entity has no area.",
 		 .params = {entityId, {"area", Integer}}, .returns = {{"done", Boolean}}},
 		{.table = "nav", .name = "find_path", .function = guarded<luaNavFindPath>,
-		 .description = "Shortest path on the `NavMeshVolume` of an entity between two world points (each moved onto the mesh), links included: the corners as `{x1, y1, z1, x2, y2, z2, ...}`, start and goal included; nothing when a point is off the mesh or no path joins them.",
+		 .description = "Shortest path on the `NavMeshVolume` of an entity between two world points (each moved onto the mesh), links included: the corners as `{x1, y1, z1, x2, y2, z2, ...}`, start and goal included; nothing when a point is off the mesh or no path joins them. On a mesh of walk areas the points are (x, y) of the plane, z 0.",
 		 .params = {entityId, {"from_x", Number}, {"from_y", Number}, {"from_z", Number}, {"to_x", Number}, {"to_y", Number}, {"to_z", Number}},
 		 .returns = {{"points", Table}}},
 		{.table = "nav", .name = "get_closest_point", .function = guarded<luaNavGetClosestPoint>,

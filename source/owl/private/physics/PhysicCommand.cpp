@@ -1547,6 +1547,26 @@ void PhysicCommand::setVelocity3D(const scene::Entity& iEntity, const math::vec3
 									  isInSpace(iEntity) ? iVelocity : math::vec3f{iVelocity.x(), iVelocity.y(), 0.f});
 }
 
+auto PhysicCommand::getAngularVelocity3D(const scene::Entity& iEntity) -> math::vec3f {
+	const auto* const world = runningWorld(iEntity, "getAngularVelocity3D");
+	if (world == nullptr)
+		return {0.f, 0.f, 0.f};
+	const auto body = movingBody(*world, iEntity);
+	if (!body)
+		return {0.f, 0.f, 0.f};
+	const auto velocity = world->jolt->getSpaceAngularVelocity(*body);
+	return isInSpace(iEntity) ? velocity : math::vec3f{0.f, 0.f, velocity.z()};
+}
+
+void PhysicCommand::setAngularVelocity3D(const scene::Entity& iEntity, const math::vec3f& iVelocity) {
+	const auto* const world = runningWorld(iEntity, "setAngularVelocity3D");
+	if (world == nullptr)
+		return;
+	if (const auto body = movingBody(*world, iEntity); body)
+		world->jolt->setSpaceAngularVelocity(*body,
+											 isInSpace(iEntity) ? iVelocity : math::vec3f{0.f, 0.f, iVelocity.z()});
+}
+
 void PhysicCommand::setTransform3D(const scene::Entity& iEntity, const math::vec3f& iPosition,
 								   const math::vec3f& iRotation) {
 	if (!isInSpace(iEntity)) {
@@ -1786,6 +1806,15 @@ void PhysicCommand::setJointMotor(const scene::Entity& iEntity, const bool iEnab
 auto PhysicCommand::getJointPosition(const scene::Entity& iEntity) -> float {
 	const auto joint = jointOf(iEntity, "getJointPosition");
 	return joint ? joint->first->jolt->getJointPosition(joint->second) : 0.f;
+}
+
+auto PhysicCommand::getJointLoad(const scene::Entity& iEntity) -> std::pair<float, float> {
+	const auto joint = jointOf(iEntity, "getJointLoad");
+	if (!joint || iEntity.getScene() == nullptr)
+		return {0.f, 0.f};
+	const double stepSeconds = iEntity.getScene()->getSimulationClock().getStepSeconds();
+	const auto subSteps = static_cast<float>(std::max(joint->first->settings.solverSubSteps, 1u));
+	return joint->first->jolt->getJointLoad(joint->second, static_cast<float>(stepSeconds) / subSteps);
 }
 
 

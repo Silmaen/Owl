@@ -31,7 +31,8 @@ local function setting()
     return settings.get("tower_tutorial", "")
 end
 
--- Whether the tutorial is offered on this level: the first one, while it was neither finished nor skipped.
+--- Whether the tutorial is offered on this level: the first one, while it was neither finished nor skipped.
+---@return any result
 function Tut.offered()
     return tutorial and setting() == ""
 end
@@ -97,6 +98,7 @@ function Tut.start()
     enter("build")
 end
 
+---@return nil
 function Tut.skip()
     if Tut.step == "off" and not Tut.offered() then return end
     finish("skipped")
@@ -186,6 +188,7 @@ local function reached()
     return false
 end
 
+---@param real_dt any
 function Tut.update(real_dt)
     if Tut.step == "off" then return end
     Tut.clock = Tut.clock + real_dt

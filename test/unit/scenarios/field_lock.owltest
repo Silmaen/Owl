@@ -1,0 +1,22 @@
+# Asteroid Field target lock: once the first wave comes out of the field ahead, F locks the fighter nearest the aim circle
+# (at the centre of the view) and the lasers fire on; the middle button with the circle moved to a corner of the view,
+# away from every enemy, drops the lock.
+scene: ../../../samples/asteroid_field/scenes/mission.owl
+timestep_ms: 33.333
+steps:
+  - frames: 150
+  - expect: {gamestate: field_enemies, greater: 0}
+  - input: {key: F, frames: 1}
+  - frames: 2
+  - expect: {gamestate: field_locked, equals: true}
+  - input: {key: Space, frames: 60}
+  - expect: {gamestate: field_shots, greater: 5}
+  - input: {mouse_pos: [640, 360], frames: 2}
+  - input: {mouse_pos: [500, 250], frames: 1}
+  - input: {mouse_pos: [360, 140], frames: 1}
+  - input: {mouse_pos: [220, 30], frames: 1}
+  - input: {mouse_pos: [80, 0], frames: 1}
+  - input: {mouse: Middle, frames: 1}
+  - frames: 2
+  - expect: {gamestate: field_locked, equals: false}
+  - expect: {gamestate: field_lead, equals: false}

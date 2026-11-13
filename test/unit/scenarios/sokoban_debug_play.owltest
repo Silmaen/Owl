@@ -1,0 +1,7 @@
+# Sokoban, level_01 started directly with the visual scripts built as Play in Owl Nest builds them (probes of the
+# wire values): no script error while it plays.
+scene: ../../../samples/sokoban/scenes/level_01.owl
+debug_scripts: true
+steps:
+  - frames: 120
+  - expect: {entity: MainCamera, exists: true}

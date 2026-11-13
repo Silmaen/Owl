@@ -48,7 +48,7 @@ Entities:
       gameVisible: true
     Hierarchy: {}
     LuaScript:
-      scriptPath: gid:539d0a97cc5de522:scripts/ui/warehouse.lua
+      scriptPath: gid:539d0a97cc5de522:scripts/ui/warehouse.owlvs
   - Entity: 7330000000000000004
     Tag:
       tag: CorridorWall
@@ -1225,7 +1225,7 @@ Entities:
       referenceResolution: [1280, 720]
       scaleMode: ScaleWithHeight
     LuaScript:
-      scriptPath: gid:3193f030c995eecc:scripts/ui/victory.lua
+      scriptPath: gid:3193f030c995eecc:scripts/ui/victory.owlvs
   - Entity: 7330000000000000063
     Tag:
       tag: ResultGroup
@@ -1241,23 +1241,47 @@ Entities:
       anchorMin: [0.5, 0]
       anchorMax: [0.5, 0]
       pivot: [0.5, 0]
-      size: [1.1, 0.7]
+      size: [1, 0.72]
       sizeUnit: [ScreenHeight, ScreenHeight]
-      offset: [0, 0.06]
+      offset: [0, 0.04]
       offsetUnit: [ScreenHeight, ScreenHeight]
     UiPanel:
-      backgroundColor: [0.16, 0.1, 0.05, 0.92]
-      borderColor: [0.62, 0.42, 0.22, 1]
-      borderWidth: 3
+      backgroundColor: [1, 1, 1, 1]
+      borderColor: [0.55, 0.45, 0.3, 0.6]
+      borderWidth: 1
       clipChildren: false
+      Box:
+        shadowColor: [0, 0, 0, 0.5]
+        shadowOffset: [6, 8]
+        shadowBlur: 10
+        texture: gid:5c0b9e883a268c52:textures/ui/clipboard.png
+        sliceInsets: [40, 70, 40, 30]
     UiLayout:
       arrangement: Column
       crossAlign: Center
       spacing: 8
-      padding: 12
+      padding: 0
       columns: 1
       cellSize: [0, 0]
   - Entity: 7330000000000000064
+    Tag:
+      tag: ResultFoot
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7330000000000000063
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.86, 0.02]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+  - Entity: 7330000000000000065
     Tag:
       tag: ButtonRow
     Transform:
@@ -1272,7 +1296,7 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.95, 0.16]
+      size: [0.86, 0.15]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiLayout:
@@ -1282,53 +1306,9 @@ Entities:
       padding: 0
       columns: 1
       cellSize: [0, 0]
-  - Entity: 7330000000000000065
-    Tag:
-      tag: TitleButton
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7330000000000000064
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [0.44, 0.85]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiButton:
-      normalColor: [0.35, 0.22, 0.1, 1]
-      hoverColor: [0.85, 0.58, 0.22, 1]
-      pressedColor: [0.22, 0.13, 0.05, 1]
-      disabledColor: [0.04, 0.03, 0.02, 1]
-      onClickCallback: on_title_clicked
-    UiText:
-      outlineWidth: 2
-      outlineColor: [0.24, 0.13, 0.05, 1]
-      text: 'Title'
-      color: [1, 0.93, 0.78, 1]
-      fontSize: 30
-      horizontalAlignment: Center
-      verticalAlignment: Middle
-      kerning: 0
-      lineSpacing: 0
-      wrap: false
-      fit: Shrink
-      minFontSize: 12
-      font: OpenSans-Bold
-    UiFocus:
-      focusable: true
-      initial: false
-      onFocusCallback: ''
-      highlightColor: [1, 0.72, 0.2, 1]
-      highlightThickness: 3
   - Entity: 7330000000000000066
     Tag:
-      tag: TitleButtonPlank
+      tag: TitleButton
     Transform:
       translation: [0, 0, 0]
       rotation: [0, 0, 0]
@@ -1341,12 +1321,40 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [1, 1]
+      size: [0.44, 0.85]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:2a9b340c4719670c:textures/ui/plank.png
+    UiButton:
+      normalColor: [0.7, 0.56, 0.42, 1]
+      hoverColor: [1, 0.93, 0.72, 1]
+      pressedColor: [0.5, 0.38, 0.27, 1]
+      disabledColor: [0.3, 0.27, 0.24, 1]
+      onClickCallback: on_title_clicked
+      Box:
+        shadowColor: [0, 0, 0, 0.55]
+        shadowOffset: [4, 6]
+        shadowBlur: 6
+        texture: gid:0a5dae67673cadfd:textures/ui/crate_face.png
+        sliceInsets: [22, 22, 22, 22]
+    UiText:
+      outlineWidth: 0
+      text: 'TITLE'
+      color: [0.13, 0.07, 0.03, 1]
+      fontSize: 28
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: true
+      fit: Shrink
+      minFontSize: 12
+      font: BlackOpsOne-Regular
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [1, 0.72, 0.2, 1]
+      highlightThickness: 3
   - Entity: 7330000000000000067
     Tag:
       tag: LevelsButton
@@ -1357,7 +1365,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7330000000000000064
+      parentId: 7330000000000000065
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1366,25 +1374,30 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.35, 0.22, 0.1, 1]
-      hoverColor: [0.85, 0.58, 0.22, 1]
-      pressedColor: [0.22, 0.13, 0.05, 1]
-      disabledColor: [0.04, 0.03, 0.02, 1]
+      normalColor: [0.7, 0.56, 0.42, 1]
+      hoverColor: [1, 0.93, 0.72, 1]
+      pressedColor: [0.5, 0.38, 0.27, 1]
+      disabledColor: [0.3, 0.27, 0.24, 1]
       onClickCallback: on_levels_clicked
+      Box:
+        shadowColor: [0, 0, 0, 0.55]
+        shadowOffset: [4, 6]
+        shadowBlur: 6
+        texture: gid:0a5dae67673cadfd:textures/ui/crate_face.png
+        sliceInsets: [22, 22, 22, 22]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.24, 0.13, 0.05, 1]
-      text: 'Level select'
-      color: [1, 0.93, 0.78, 1]
-      fontSize: 30
+      outlineWidth: 0
+      text: 'LEVEL SELECT'
+      color: [0.13, 0.07, 0.03, 1]
+      fontSize: 28
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
       lineSpacing: 0
-      wrap: false
+      wrap: true
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-Bold
+      font: BlackOpsOne-Regular
     UiFocus:
       focusable: true
       initial: true
@@ -1392,27 +1405,6 @@ Entities:
       highlightColor: [1, 0.72, 0.2, 1]
       highlightThickness: 3
   - Entity: 7330000000000000068
-    Tag:
-      tag: LevelsButtonPlank
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7330000000000000067
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:2a9b340c4719670c:textures/ui/plank.png
-  - Entity: 7330000000000000069
     Tag:
       tag: ScoreLabel
     Transform:
@@ -1427,15 +1419,14 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.95, 0.3]
+      size: [0.86, 0.26]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.24, 0.13, 0.05, 1]
+      outlineWidth: 0
       text: 'Levels done: 10 / 10'
-      color: [0.9, 0.82, 0.68, 0.95]
-      fontSize: 32
+      color: [0.17, 0.15, 0.2, 1]
+      fontSize: 28
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -1443,8 +1434,8 @@ Entities:
       wrap: true
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-Bold
-  - Entity: 7330000000000000070
+      font: JetBrainsMono-Regular
+  - Entity: 7330000000000000069
     Tag:
       tag: VictoryTitle
     Transform:
@@ -1459,15 +1450,14 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.95, 0.3]
+      size: [0.86, 0.24]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.24, 0.13, 0.05, 1]
-      text: 'Warehouse cleared!'
-      color: [1, 0.72, 0.2, 1]
-      fontSize: 76
+      outlineWidth: 0
+      text: 'WAREHOUSE CLEARED'
+      color: [0.66, 0.13, 0.08, 1]
+      fontSize: 64
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -1475,4 +1465,22 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBold
+      font: BlackOpsOne-Regular
+  - Entity: 7330000000000000070
+    Tag:
+      tag: ResultClip
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7330000000000000063
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.86, 0.12]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]

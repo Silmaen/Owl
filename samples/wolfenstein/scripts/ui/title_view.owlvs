@@ -1,0 +1,122 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: turn_speed, type: float, default: "0.12"}
+    - {name: yaw, type: float, default: "0", exposed: false}
+    - {name: start_yaw, type: float, default: "0", exposed: false}
+  nodes:
+    - id: 8413100001
+      type: event.on_create
+      position: [340, 0]
+    - id: 8413100002
+      type: call.transform.get_rotation
+      position: [170, 160]
+      values:
+        split.rotation: "true"
+    - id: 8413100003
+      type: value.self
+      position: [170, 280]
+    - id: 8413100004
+      type: var.set
+      position: [680, 0]
+      values:
+        variable: start_yaw
+    - id: 8413100005
+      type: var.get
+      position: [510, 160]
+      values:
+        variable: start_yaw
+    - id: 8413100006
+      type: var.set
+      position: [1020, 0]
+      values:
+        variable: yaw
+    - id: 8413100007
+      type: event.on_update
+      position: [340, 540]
+    - id: 8413100008
+      type: call.settings.get
+      position: [680, 540]
+      values:
+        key: reduced_motion
+        default: "false"
+    - id: 8413100009
+      type: flow.branch
+      position: [1020, 540]
+    - id: 8413100010
+      type: var.get
+      position: [850, 700]
+      values:
+        variable: yaw
+    - id: 8413100011
+      type: var.get
+      position: [850, 820]
+      values:
+        variable: turn_speed
+    - id: 8413100012
+      type: logic.default
+      position: [850, 940]
+      values:
+        Default: "0.12"
+    - id: 8413100013
+      type: math.multiply
+      position: [850, 1060]
+    - id: 8413100014
+      type: math.add
+      position: [850, 1180]
+    - id: 8413100015
+      type: math.pi
+      position: [850, 1300]
+    - id: 8413100016
+      type: math.multiply
+      position: [850, 1420]
+      values:
+        A: "2"
+    - id: 8413100017
+      type: math.modulo
+      position: [850, 1540]
+    - id: 8413100018
+      type: var.set
+      position: [1360, 540]
+      values:
+        variable: yaw
+    - id: 8413100019
+      type: call.transform.set_rotation
+      position: [1700, 540]
+      values:
+        split.rotation: "true"
+        rx: "0"
+        ry: "0"
+    - id: 8413100020
+      type: value.self
+      position: [1530, 700]
+    - id: 8413100021
+      type: var.get
+      position: [1530, 820]
+      values:
+        variable: yaw
+  links:
+    - {from: 8413100003, fromPin: Result, to: 8413100002, toPin: entity_id}
+    - {from: 8413100002, fromPin: rz, to: 8413100004, toPin: Value}
+    - {from: 8413100001, fromPin: Then, to: 8413100004, toPin: Exec}
+    - {from: 8413100005, fromPin: Value, to: 8413100006, toPin: Value}
+    - {from: 8413100004, fromPin: Then, to: 8413100006, toPin: Exec}
+    - {from: 8413100007, fromPin: Then, to: 8413100008, toPin: Exec}
+    - {from: 8413100008, fromPin: value, to: 8413100009, toPin: Condition}
+    - {from: 8413100008, fromPin: Then, to: 8413100009, toPin: Exec}
+    - {from: 8413100011, fromPin: Value, to: 8413100012, toPin: Value}
+    - {from: 8413100012, fromPin: Result, to: 8413100013, toPin: A}
+    - {from: 8413100007, fromPin: dt, to: 8413100013, toPin: B}
+    - {from: 8413100010, fromPin: Value, to: 8413100014, toPin: A}
+    - {from: 8413100013, fromPin: Result, to: 8413100014, toPin: B}
+    - {from: 8413100015, fromPin: Result, to: 8413100016, toPin: B}
+    - {from: 8413100014, fromPin: Result, to: 8413100017, toPin: A}
+    - {from: 8413100016, fromPin: Result, to: 8413100017, toPin: B}
+    - {from: 8413100017, fromPin: Result, to: 8413100018, toPin: Value}
+    - {from: 8413100009, fromPin: "False", to: 8413100018, toPin: Exec}
+    - {from: 8413100020, fromPin: Result, to: 8413100019, toPin: entity_id}
+    - {from: 8413100021, fromPin: Value, to: 8413100019, toPin: rz}
+    - {from: 8413100018, fromPin: Then, to: 8413100019, toPin: Exec}
+  groups:
+    - {id: 8413190000, title: on_create, position: [146, -52], size: [1170, 480], color: Red}
+    - {id: 8413190001, title: on_update, position: [316, 488], size: [1680, 1200], color: Red}

@@ -1,0 +1,15 @@
+# Asteroid Field lost: a fighter that neither flies nor fires is shot down by the fighters that come for it, the
+# mission is lost and the game over screen tallies it; Retry (Enter) flies the mission again.
+scene: ../../../samples/asteroid_field/scenes/mission.owl
+timestep_ms: 33.333
+steps:
+  - frames: 600
+  - expect: {gamestate: field_enemy_shots, greater: 0}
+  - frames: 1500
+  - expect: {gamestate: field_state, equals: lost}
+  - frames: 150
+  - expect: {entity: ScoreLabel, exists: true}
+  - expect: {gamestate: field_tally, equals: true}
+  - input: {key: Enter, frames: 2}
+  - frames: 60
+  - expect: {gamestate: field_state, equals: fly}

@@ -1,0 +1,28 @@
+# Wolfenstein combat: the guard of the start room of floor 1 stands with its back turned (guard.owlbt, guard.owlvs).
+# The first pistol shot hits and alerts it, the second one kills it: a kill of the floor, its corpse and the ammo clip it
+# drops, which the player picks up (pickup.owlvs) for four rounds.
+scene: ../../../samples/wolfenstein/scenes/level_1.owl
+project: ../../../samples/wolfenstein
+steps:
+  - frames: 40
+  - expect: {gamestate: wolf_health, equals: 100}
+  - expect: {gamestate: wolf_ammo, equals: 8}
+  - expect: {gamestate: wolf_kills_total, equals: 7}
+  - expect: {gamestate: wolf_alerts, equals: 0}
+  # The guard stands two cells north and three east of the start: the player turns left to face it.
+  - actions: {turn: 1, frames: 20}
+  - actions: {fire: true, frames: 1}
+  - frames: 10
+  - expect: {gamestate: wolf_hits, equals: 1}
+  - expect: {gamestate: wolf_alerts, equals: 1}
+  - expect: {gamestate: wolf_ammo, equals: 7}
+  - frames: 20
+  - actions: {fire: true, frames: 1}
+  - frames: 60
+  - expect: {gamestate: wolf_kills, equals: 1}
+  - expect: {entity: GuardCorpse, exists: true}
+  - expect: {entity: Clip, exists: true}
+  - actions: {walk: 1.0, frames: 72}
+  - frames: 10
+  - expect: {gamestate: wolf_ammo, equals: 10}
+  - expect: {entity: Clip, exists: false}

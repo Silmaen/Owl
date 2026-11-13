@@ -1,0 +1,7 @@
+# The Moon Lantern, cottage started directly with the visual scripts built as Play in Owl Nest builds them (probes of the
+# wire values): no script error while it plays.
+scene: ../../../samples/point_and_click/scenes/cottage.owl
+debug_scripts: true
+steps:
+  - frames: 120
+  - expect: {entity: MainCamera, exists: true}

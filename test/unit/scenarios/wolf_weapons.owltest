@@ -1,0 +1,23 @@
+# Wolfenstein combat: the machine gun of floor 1 (brought next to the start) is picked up with six rounds and taken in
+# hand, the face of the status bar grinning (status.owlvs); held down it fires again and again, 2 and 1 take the pistol
+# and the knife back, the knife costs no ammo.
+scene: ../../../samples/wolfenstein/scenes/level_1.owl
+project: ../../../samples/wolfenstein
+steps:
+  - frames: 30
+  - expect: {gamestate: wolf_weapon, equals: 2}
+  - expect: {gamestate: wolf_has_3, equals: 0}
+  - {command: entity.set_transform, args: {entity: MachineGun, translation: [-12.5, -11.5, 0]}}
+  - actions: {walk: 1, frames: 20}
+  - frames: 5
+  - expect: {gamestate: wolf_has_3, equals: 1}
+  - expect: {gamestate: wolf_weapon, equals: 3}
+  - expect: {gamestate: wolf_ammo, equals: 14}
+  - expect: {gamestate: wolf_face, equals: 4}
+  - actions: {fire: true, frames: 40}
+  - expect: {gamestate: wolf_shots, greater: 3}
+  - expect: {gamestate: wolf_ammo, less: 11}
+  - input: {key: D2, frames: 2}
+  - expect: {gamestate: wolf_weapon, equals: 2}
+  - input: {key: D1, frames: 2}
+  - expect: {gamestate: wolf_weapon, equals: 1}

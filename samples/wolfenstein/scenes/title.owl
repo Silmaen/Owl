@@ -34,7 +34,7 @@ Entities:
       primary: true
       fixedAspectRatio: false
     LuaScript:
-      scriptPath: gid:17bea809a98c911c:scripts/ui/title_view.lua
+      scriptPath: gid:17bea809a98c911c:scripts/ui/title_view.owlvs
       properties:
         - name: turn_speed
           type: float
@@ -572,7 +572,7 @@ Entities:
       referenceResolution: [1280, 720]
       scaleMode: ScaleWithHeight
     LuaScript:
-      scriptPath: gid:956c92a3ae4c2827:scripts/ui/title.lua
+      scriptPath: gid:956c92a3ae4c2827:scripts/ui/title.owlvs
   - Entity: 3300000000000000034
     Tag:
       tag: TitleArt
@@ -614,11 +614,22 @@ Entities:
       sizeUnit: [ScreenHeight, ScreenHeight]
       offset: [0.06, 0.36]
       offsetUnit: [ScreenHeight, ScreenHeight]
+    UiPanel:
+      backgroundColor: [0.24, 0, 0, 0.97]
+      borderColor: [0.55, 0.45, 0.3, 0.6]
+      borderWidth: 1
+      clipChildren: false
+      Box:
+        borderColor: [0.68, 0.06, 0.04, 1]
+        borderWidth: 3
+        shadowColor: [0, 0, 0, 0.9]
+        shadowOffset: [8, 8]
+        shadowBlur: 0
     UiLayout:
       arrangement: Column
       crossAlign: Center
-      spacing: 8
-      padding: 0
+      spacing: 4
+      padding: 16
       columns: 1
       cellSize: [0, 0]
   - Entity: 3300000000000000036
@@ -636,21 +647,24 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.95, 0.16]
+      size: [0.82, 0.1333]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.2, 0.21, 0.22, 1]
-      hoverColor: [0.62, 0.1, 0.07, 1]
-      pressedColor: [0.35, 0.05, 0.04, 1]
-      disabledColor: [0.06, 0.06, 0.07, 1]
+      normalColor: [1, 1, 1, 0]
+      hoverColor: [1, 1, 1, 1]
+      pressedColor: [0.7, 0.7, 0.7, 1]
+      disabledColor: [1, 1, 1, 0]
       onClickCallback: on_quit_clicked
+      Box:
+        texture: gid:8149caad6d299ada:textures/ui/dos_select.png
+        sliceInsets: [48, 0, 8, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.04, 0.04, 0.05, 1]
-      text: 'QUIT'
-      color: [0.86, 0.87, 0.84, 1]
-      fontSize: 28
+      outlineWidth: 1
+      outlineColor: [0, 0, 0, 1]
+      text: 'Quit'
+      color: [0.72, 0.72, 0.72, 1]
+      fontSize: 40
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -658,35 +672,14 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBold
+      font: Jersey10-Regular
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: ''
-      highlightColor: [0.82, 0.16, 0.12, 1]
-      highlightThickness: 3
+      highlightColor: [0, 0, 0, 0]
+      highlightThickness: 1
   - Entity: 3300000000000000037
-    Tag:
-      tag: QuitButtonPlate
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 3300000000000000036
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:0bcddcb325526f99:textures/ui/plate.png
-  - Entity: 3300000000000000038
     Tag:
       tag: SettingsButton
     Transform:
@@ -701,21 +694,24 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.95, 0.16]
+      size: [0.82, 0.1333]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.2, 0.21, 0.22, 1]
-      hoverColor: [0.62, 0.1, 0.07, 1]
-      pressedColor: [0.35, 0.05, 0.04, 1]
-      disabledColor: [0.06, 0.06, 0.07, 1]
+      normalColor: [1, 1, 1, 0]
+      hoverColor: [1, 1, 1, 1]
+      pressedColor: [0.7, 0.7, 0.7, 1]
+      disabledColor: [1, 1, 1, 0]
       onClickCallback: on_settings_clicked
+      Box:
+        texture: gid:8149caad6d299ada:textures/ui/dos_select.png
+        sliceInsets: [48, 0, 8, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.04, 0.04, 0.05, 1]
-      text: 'SETTINGS'
-      color: [0.86, 0.87, 0.84, 1]
-      fontSize: 28
+      outlineWidth: 1
+      outlineColor: [0, 0, 0, 1]
+      text: 'Settings'
+      color: [0.72, 0.72, 0.72, 1]
+      fontSize: 40
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -723,35 +719,14 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBold
+      font: Jersey10-Regular
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: ''
-      highlightColor: [0.82, 0.16, 0.12, 1]
-      highlightThickness: 3
-  - Entity: 3300000000000000039
-    Tag:
-      tag: SettingsButtonPlate
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 3300000000000000038
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:0bcddcb325526f99:textures/ui/plate.png
-  - Entity: 3300000000000000040
+      highlightColor: [0, 0, 0, 0]
+      highlightThickness: 1
+  - Entity: 3300000000000000038
     Tag:
       tag: HowToButton
     Transform:
@@ -766,21 +741,24 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.95, 0.16]
+      size: [0.82, 0.1333]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.2, 0.21, 0.22, 1]
-      hoverColor: [0.62, 0.1, 0.07, 1]
-      pressedColor: [0.35, 0.05, 0.04, 1]
-      disabledColor: [0.06, 0.06, 0.07, 1]
+      normalColor: [1, 1, 1, 0]
+      hoverColor: [1, 1, 1, 1]
+      pressedColor: [0.7, 0.7, 0.7, 1]
+      disabledColor: [1, 1, 1, 0]
       onClickCallback: on_how_to_clicked
+      Box:
+        texture: gid:8149caad6d299ada:textures/ui/dos_select.png
+        sliceInsets: [48, 0, 8, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.04, 0.04, 0.05, 1]
-      text: 'HOW TO PLAY'
-      color: [0.86, 0.87, 0.84, 1]
-      fontSize: 28
+      outlineWidth: 1
+      outlineColor: [0, 0, 0, 1]
+      text: 'How to play'
+      color: [0.72, 0.72, 0.72, 1]
+      fontSize: 40
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -788,35 +766,14 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBold
+      font: Jersey10-Regular
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: ''
-      highlightColor: [0.82, 0.16, 0.12, 1]
-      highlightThickness: 3
-  - Entity: 3300000000000000041
-    Tag:
-      tag: HowToButtonPlate
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 3300000000000000040
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:0bcddcb325526f99:textures/ui/plate.png
-  - Entity: 3300000000000000042
+      highlightColor: [0, 0, 0, 0]
+      highlightThickness: 1
+  - Entity: 3300000000000000039
     Tag:
       tag: ContinueButton
     Transform:
@@ -831,21 +788,24 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.95, 0.16]
+      size: [0.82, 0.1333]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.2, 0.21, 0.22, 1]
-      hoverColor: [0.62, 0.1, 0.07, 1]
-      pressedColor: [0.35, 0.05, 0.04, 1]
-      disabledColor: [0.06, 0.06, 0.07, 1]
+      normalColor: [1, 1, 1, 0]
+      hoverColor: [1, 1, 1, 1]
+      pressedColor: [0.7, 0.7, 0.7, 1]
+      disabledColor: [1, 1, 1, 0]
       onClickCallback: on_continue_clicked
+      Box:
+        texture: gid:8149caad6d299ada:textures/ui/dos_select.png
+        sliceInsets: [48, 0, 8, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.04, 0.04, 0.05, 1]
-      text: 'CONTINUE'
-      color: [0.86, 0.87, 0.84, 1]
-      fontSize: 28
+      outlineWidth: 1
+      outlineColor: [0, 0, 0, 1]
+      text: 'Continue'
+      color: [0.72, 0.72, 0.72, 1]
+      fontSize: 40
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -853,35 +813,14 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBold
+      font: Jersey10-Regular
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: ''
-      highlightColor: [0.82, 0.16, 0.12, 1]
-      highlightThickness: 3
-  - Entity: 3300000000000000043
-    Tag:
-      tag: ContinueButtonPlate
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 3300000000000000042
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:0bcddcb325526f99:textures/ui/plate.png
-  - Entity: 3300000000000000044
+      highlightColor: [0, 0, 0, 0]
+      highlightThickness: 1
+  - Entity: 3300000000000000040
     Tag:
       tag: NewGameButton
     Transform:
@@ -896,21 +835,24 @@ Entities:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.95, 0.16]
+      size: [0.82, 0.1333]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.2, 0.21, 0.22, 1]
-      hoverColor: [0.62, 0.1, 0.07, 1]
-      pressedColor: [0.35, 0.05, 0.04, 1]
-      disabledColor: [0.06, 0.06, 0.07, 1]
+      normalColor: [1, 1, 1, 0]
+      hoverColor: [1, 1, 1, 1]
+      pressedColor: [0.7, 0.7, 0.7, 1]
+      disabledColor: [1, 1, 1, 0]
       onClickCallback: on_new_game_clicked
+      Box:
+        texture: gid:8149caad6d299ada:textures/ui/dos_select.png
+        sliceInsets: [48, 0, 8, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.04, 0.04, 0.05, 1]
-      text: 'NEW GAME'
-      color: [0.86, 0.87, 0.84, 1]
-      fontSize: 28
+      outlineWidth: 1
+      outlineColor: [0, 0, 0, 1]
+      text: 'New game'
+      color: [0.72, 0.72, 0.72, 1]
+      fontSize: 40
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -918,35 +860,14 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBold
+      font: Jersey10-Regular
     UiFocus:
       focusable: true
       initial: true
       onFocusCallback: ''
-      highlightColor: [0.82, 0.16, 0.12, 1]
-      highlightThickness: 3
-  - Entity: 3300000000000000045
-    Tag:
-      tag: NewGameButtonPlate
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 3300000000000000044
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:0bcddcb325526f99:textures/ui/plate.png
-  - Entity: 3300000000000000046
+      highlightColor: [0, 0, 0, 0]
+      highlightThickness: 1
+  - Entity: 3300000000000000041
     Tag:
       tag: RecordBoard
     Transform:
@@ -966,18 +887,24 @@ Entities:
       offset: [-0.06, 0.36]
       offsetUnit: [ScreenHeight, ScreenHeight]
     UiPanel:
-      backgroundColor: [0.05, 0.05, 0.06, 0.88]
-      borderColor: [0.45, 0.46, 0.46, 0.9]
-      borderWidth: 2
+      backgroundColor: [0.24, 0, 0, 0.97]
+      borderColor: [0.55, 0.45, 0.3, 0.6]
+      borderWidth: 1
       clipChildren: false
+      Box:
+        borderColor: [0.68, 0.06, 0.04, 1]
+        borderWidth: 3
+        shadowColor: [0, 0, 0, 0.9]
+        shadowOffset: [8, 8]
+        shadowBlur: 0
     UiLayout:
       arrangement: Column
       crossAlign: Center
       spacing: 6
-      padding: 12
+      padding: 16
       columns: 1
       cellSize: [0, 0]
-  - Entity: 3300000000000000047
+  - Entity: 3300000000000000042
     Tag:
       tag: BestText
     Transform:
@@ -987,28 +914,28 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 3300000000000000046
+      parentId: 3300000000000000041
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.92, 0.66]
+      size: [0.92, 0.7]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
       outlineWidth: 2
       text: 'Best score 0'
-      color: [0.68, 0.7, 0.68, 0.95]
-      fontSize: 24
+      color: [1, 0.86, 0.2, 1]
+      fontSize: 26
       horizontalAlignment: Left
       verticalAlignment: Middle
       kerning: 0
-      lineSpacing: 0.35
+      lineSpacing: 0.2
       wrap: true
       fit: Shrink
       minFontSize: 12
-      font: JetBrainsMono-Regular
-  - Entity: 3300000000000000048
+      font: Jersey10-Regular
+  - Entity: 3300000000000000043
     Tag:
       tag: RecordTitle
     Transform:
@@ -1018,20 +945,20 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 3300000000000000046
+      parentId: 3300000000000000041
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.92, 0.18]
+      size: [0.92, 0.16]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.04, 0.04, 0.05, 1]
+      outlineWidth: 1
+      outlineColor: [0, 0, 0, 1]
       text: 'SERVICE RECORD'
-      color: [0.82, 0.16, 0.12, 1]
-      fontSize: 30
+      color: [0.95, 0.95, 0.9, 1]
+      fontSize: 36
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -1039,8 +966,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBold
-  - Entity: 3300000000000000049
+      font: Jersey10-Regular
+  - Entity: 3300000000000000044
     Tag:
       tag: HowToWindow
     Transform:
@@ -1061,10 +988,10 @@ Entities:
     UiWindow:
       title: 'HOW TO PLAY'
       titleBarHeight: 40
-      titleFontSize: 28
-      bodyColor: [0.07, 0.07, 0.08, 0.97]
-      titleColor: [0.42, 0.08, 0.06, 1]
-      titleTextColor: [0.86, 0.87, 0.84, 1]
+      titleFontSize: 30
+      bodyColor: [0.24, 0, 0, 0.97]
+      titleColor: [0.62, 0.05, 0.03, 1]
+      titleTextColor: [0.95, 0.95, 0.9, 1]
       draggable: false
       closable: false
       onCloseCallback: ''
@@ -1075,7 +1002,7 @@ Entities:
       padding: 10
       columns: 1
       cellSize: [0, 0]
-  - Entity: 3300000000000000050
+  - Entity: 3300000000000000045
     Tag:
       tag: HowToBackButton
     Transform:
@@ -1085,26 +1012,29 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 3300000000000000049
+      parentId: 3300000000000000044
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
       pivot: [0, 0]
-      size: [0.4, 0.12]
+      size: [0.4, 0.0794]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.2, 0.21, 0.22, 1]
-      hoverColor: [0.62, 0.1, 0.07, 1]
-      pressedColor: [0.35, 0.05, 0.04, 1]
-      disabledColor: [0.06, 0.06, 0.07, 1]
+      normalColor: [1, 1, 1, 0]
+      hoverColor: [1, 1, 1, 1]
+      pressedColor: [0.7, 0.7, 0.7, 1]
+      disabledColor: [1, 1, 1, 0]
       onClickCallback: on_how_to_closed
+      Box:
+        texture: gid:8149caad6d299ada:textures/ui/dos_select.png
+        sliceInsets: [48, 0, 8, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.04, 0.04, 0.05, 1]
-      text: 'BACK'
-      color: [0.86, 0.87, 0.84, 1]
-      fontSize: 28
+      outlineWidth: 1
+      outlineColor: [0, 0, 0, 1]
+      text: 'Back'
+      color: [0.72, 0.72, 0.72, 1]
+      fontSize: 40
       horizontalAlignment: Center
       verticalAlignment: Middle
       kerning: 0
@@ -1112,35 +1042,14 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBold
+      font: Jersey10-Regular
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: ''
-      highlightColor: [0.82, 0.16, 0.12, 1]
-      highlightThickness: 3
-  - Entity: 3300000000000000051
-    Tag:
-      tag: HowToBackButtonPlate
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 3300000000000000050
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:0bcddcb325526f99:textures/ui/plate.png
-  - Entity: 3300000000000000052
+      highlightColor: [0, 0, 0, 0]
+      highlightThickness: 1
+  - Entity: 3300000000000000046
     Tag:
       tag: HowToControls
     Transform:
@@ -1150,7 +1059,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 3300000000000000049
+      parentId: 3300000000000000044
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1160,8 +1069,8 @@ Entities:
       offset: [0, 0]
     UiText:
       outlineWidth: 2
-      text: "WALK        W / S, arrows, left stick, D-pad\nTURN        A / D, arrows, right stick, mouse with the right button\nRUN         Left Shift, stick click, right bumper\nUSE         E, Space, left click, pad A or X\nMAP         Tab, pad Y        SAVE / LOAD   F6 / F9\nPAUSE       Escape, pad Start"
-      color: [0.86, 0.87, 0.84, 1]
+      text: "WALK        W / S, arrows, left stick, D-pad\nTURN        A / D, arrows, right stick, mouse with the right button\nRUN         Left Shift, stick click, right bumper\nUSE         E, Space, left click, pad A or X\nFIRE        Ctrl, F, right trigger, pad B\nWEAPONS     1 to 4, left bumper\nMAP         Tab, pad Y        SAVE / LOAD   F6 / F9\nPAUSE       Escape, pad Start"
+      color: [1, 0.86, 0.2, 1]
       fontSize: 22
       horizontalAlignment: Left
       verticalAlignment: Middle
@@ -1171,7 +1080,7 @@ Entities:
       fit: Shrink
       minFontSize: 12
       font: JetBrainsMono-Regular
-  - Entity: 3300000000000000053
+  - Entity: 3300000000000000047
     Tag:
       tag: HowToRules
     Transform:
@@ -1181,7 +1090,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 3300000000000000049
+      parentId: 3300000000000000044
     UiRect:
       anchorMin: [0, 0]
       anchorMax: [0, 0]
@@ -1192,16 +1101,17 @@ Entities:
     UiText:
       outlineWidth: 2
       text: 'Explore three floors and find the switch of the exit elevator. Treasure and food add to the score; a gold or blue key opens the door of its colour. Some walls are secret: press them to slide them away. The tally of each floor counts the items, the secrets and the map explored, each percent worth 10 points.'
-      color: [0.68, 0.7, 0.68, 0.95]
-      fontSize: 24
+      color: [0.72, 0.72, 0.72, 1]
+      fontSize: 28
       horizontalAlignment: Left
       verticalAlignment: Middle
       kerning: 0
-      lineSpacing: 0.2
+      lineSpacing: 0.15
       wrap: true
       fit: Shrink
       minFontSize: 12
-  - Entity: 3300000000000000054
+      font: Jersey10-Regular
+  - Entity: 3300000000000000048
     Tag:
       tag: MenuMusic
     Transform:

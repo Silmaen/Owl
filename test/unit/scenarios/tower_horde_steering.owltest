@@ -1,0 +1,17 @@
+# slow
+# Tower defence: the Horde of the first wave walks its lanes on steering (`SteeringAgent` of each enemy prefab,
+# enemies.lua): the goblins arrive at their lane point while they keep apart and step around each other, so no two of
+# them ever stand on the same spot, and they still reach the keep.
+scene: ../../../samples/tower_defence/scenes/level_01.owl
+steps:
+  - frames: 2
+  - input: {key: Backspace, frames: 2}
+  - frames: 31
+  - input: {key: Space, frames: 2}
+  - input: {key: F, frames: 2}
+  - frames: 600
+  - expect: {gamestate: tower_spawned, greater: 3}
+  - expect: {gamestate: tower_spacing, greater: 0.2}
+  - frames: 600
+  - expect: {gamestate: tower_spacing, greater: 0.2}
+  - expect: {gamestate: tower_leaks, greater: 3}

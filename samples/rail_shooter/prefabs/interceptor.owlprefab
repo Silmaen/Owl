@@ -32,7 +32,7 @@ Entities:
       transparent: false
   - Entity: 7712001000000000002
     Tag:
-      tag: InterceptorTrail
+      tag: InterceptorEngine
     Transform:
       translation: [-0.35, 0.1, 1]
       rotation: [0, 0, 0]
@@ -47,12 +47,36 @@ Entities:
       minDistance: 0.15
       maxPoints: 48
       width: 0.3
-      color: [1, 0.45, 0.2, 0.8]
+      color: [1, 0.55, 0.2, 0.8]
       emissive: 5000
       blend: Additive
+    ParticleEmitter:
+      playOnStart: true
+      maxParticles: 48
+      rate: 110
+      burst: 0
+      duration: 0
+      loop: true
+      lifetimeMin: 0.08
+      lifetimeMax: 0.16
+      shape: Point
+      shapeSize: [0, 0, 0]
+      speedMin: 0
+      speedMax: 0.45
+      velocity: [0, 0, 7.5]
+      gravity: [0, 0, 0]
+      drag: 0
+      sizeMin: 0.315
+      sizeMax: 0.45
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.25]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 1, 0.97, 0.85, 1], [0.35, 1, 0.55, 0.2, 0.9], [1, 0.5, 0.275, 0.1, 0]]
+      emissive: 6000
+      blend: Additive
+      space: Local
   - Entity: 7712001000000000003
     Tag:
-      tag: InterceptorTrail
+      tag: InterceptorEngine
     Transform:
       translation: [0.35, 0.1, 1]
       rotation: [0, 0, 0]
@@ -67,6 +91,30 @@ Entities:
       minDistance: 0.15
       maxPoints: 48
       width: 0.3
-      color: [1, 0.45, 0.2, 0.8]
+      color: [1, 0.55, 0.2, 0.8]
       emissive: 5000
       blend: Additive
+    ParticleEmitter:
+      playOnStart: true
+      maxParticles: 48
+      rate: 110
+      burst: 0
+      duration: 0
+      loop: true
+      lifetimeMin: 0.08
+      lifetimeMax: 0.16
+      shape: Point
+      shapeSize: [0, 0, 0]
+      speedMin: 0
+      speedMax: 0.45
+      velocity: [0, 0, 7.5]
+      gravity: [0, 0, 0]
+      drag: 0
+      sizeMin: 0.315
+      sizeMax: 0.45
+      sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.25]]}
+      color: [1, 1, 1, 1]
+      colorOverLife: [[0, 1, 0.97, 0.85, 1], [0.35, 1, 0.55, 0.2, 0.9], [1, 0.5, 0.275, 0.1, 0]]
+      emissive: 6000
+      blend: Additive
+      space: Local

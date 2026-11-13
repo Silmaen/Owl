@@ -1,0 +1,11 @@
+# Bridge Builder, Deep Gorge: the level opens on the plan, its budget and its anchors read (anchors on towers above the deck as well as below it),
+# the cursor on the top of the left cliff.
+scene: ../../../samples/bridge_builder/scenes/level_4.owl
+steps:
+  - frames: 10
+  - expect: {gamestate: bridge_level, equals: 4}
+  - expect: {gamestate: bridge_budget, equals: 5800}
+  - expect: {gamestate: bridge_anchors, equals: 6}
+  - expect: {gamestate: bridge_cursor_x, equals: 0}
+  - expect: {gamestate: bridge_cursor_y, equals: 0}
+  - expect: {gamestate: bridge_state, equals: build}

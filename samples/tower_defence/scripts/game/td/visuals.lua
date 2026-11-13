@@ -32,6 +32,7 @@ Vis.KINDS = { "Blood", "Blast", "Dust", "Embers", "Splinters", "Frost", "Shield"
 
 Vis.pools, Vis.next = {}, {}
 
+---@return nil
 function Vis.find_pools()
     for _, kind in ipairs(Vis.KINDS) do
         local pool = {}
@@ -55,6 +56,7 @@ function Vis.burst(kind, x, y, z, count)
     S.bursts_fired = S.bursts_fired + 1
 end
 
+---@param dt any
 function Vis.update_effects(dt)
     local index = 1
     while index <= #S.bursts do

@@ -1075,3 +1075,49 @@ TEST_F(AssetScannerTest, ScanSceneFollowsTheTreeOfABehaviourTreeAgent) {
 									[](const std::string& iWarning) -> bool { return iWarning.contains(".owlbt"); }),
 			  1);
 }
+
+TEST_F(AssetScannerTest, ScanLuaScriptFollowsTheSpawnedPrefabs) {
+	// A prefab quoted in a script goes in the pack with the script of its entity; a prefab named in a script property
+	// too, and a missing one is reported.
+	const auto partScript = m_tempDir / "scripts" / "part.lua";
+	writeFile(partScript, "function on_create() end\n");
+	const auto prefabPath = m_tempDir / "prefabs" / "beam.owlprefab";
+	writeFile(prefabPath, "Prefab: Beam\nVersion: 1\nEntities:\n"
+						  "  - Entity: 7\n"
+						  "    LuaScript:\n"
+						  "      scriptPath: " +
+								  partScript.generic_string() + "\n");
+	const auto otherPrefab = m_tempDir / "prefabs" / "node.owlprefab";
+	writeFile(otherPrefab, "Prefab: Node\nVersion: 1\nEntities:\n  - Entity: 8\n");
+	const auto rules = m_tempDir / "scripts" / "rules.lua";
+	writeFile(rules, "function on_create() scene.spawn_prefab(\"" + prefabPath.generic_string() + "\", 0, 0, 0) end\n");
+	const auto scenePath = m_tempDir / "level.owl";
+	writeFile(scenePath, "Scene: level\nEntities:\n"
+						 "  - Entity: 1\n"
+						 "    LuaScript:\n"
+						 "      scriptPath: " +
+								 rules.generic_string() +
+								 "\n"
+								 "      properties:\n"
+								 "        - {name: node, type: string, value: " +
+								 otherPrefab.generic_string() +
+								 "}\n"
+								 "        - {name: gone, type: string, value: prefabs/gone.owlprefab}\n");
+	std::vector<std::string> warnings;
+	const auto assets = AssetScanner::scanScene(scenePath, &warnings);
+	bool beam = false;
+	bool node = false;
+	bool part = false;
+	for (const auto& ref: assets) {
+		beam = beam || ref.diskPath == prefabPath;
+		node = node || ref.diskPath == otherPrefab;
+		part = part || ref.diskPath == partScript;
+	}
+	EXPECT_TRUE(beam);
+	EXPECT_TRUE(node);
+	EXPECT_TRUE(part);
+	bool reported = false;
+	for (const auto& warning: warnings)
+		reported = reported || warning.find("prefabs/gone.owlprefab") != std::string::npos;
+	EXPECT_TRUE(reported);
+}

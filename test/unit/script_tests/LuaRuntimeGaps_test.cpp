@@ -199,6 +199,17 @@ TEST_F(LuaRuntimeGaps, uiSetSizeResizesTheRectOfAWidget) {
 	EXPECT_NEAR(card.getComponent<component::UiRect>().size.y(), 0.5f, 1e-6f);
 }
 
+TEST_F(LuaRuntimeGaps, uiSetOffsetMovesTheRectOfAWidget) {
+	auto sight = m_scene->createEntity("Sight");
+	sight.addComponent<component::UiRect>();
+	const auto instance = run(std::format("done = ui.set_offset({}, -0.2, 0.15)\nnone = ui.set_offset({}, 1, 1)",
+										  luaId(sight), luaId(m_scene->createEntity())));
+	EXPECT_TRUE(instance->getPropertyBool("done").value_or(false));
+	EXPECT_FALSE(instance->getPropertyBool("none").value_or(true));
+	EXPECT_NEAR(sight.getComponent<component::UiRect>().anchorOffset.x(), -0.2f, 1e-6f);
+	EXPECT_NEAR(sight.getComponent<component::UiRect>().anchorOffset.y(), 0.15f, 1e-6f);
+}
+
 TEST_F(LuaRuntimeGaps, uiGetRectGivesTheLaidOutRectangleInPixels) {
 	auto canvas = m_scene->createEntity("Canvas");
 	canvas.addComponent<component::Canvas>().scaleMode = component::Canvas::ScaleMode::ConstantPixels;
@@ -265,4 +276,63 @@ TEST_F(LuaRuntimeGaps, viewportSizeAndMouseAreInViewportPixels) {
 	EXPECT_EQ(instance->getPropertyInt("h").value_or(0), 600);
 	EXPECT_NEAR(instance->getPropertyFloat("mx").value_or(0.f), 120.f, 1e-6f);
 	EXPECT_NEAR(instance->getPropertyFloat("my").value_or(0.f), 45.f, 1e-6f);
+}
+
+TEST_F(LuaRuntimeGaps, viewRayGoesFromTheCameraThroughAPixel) {
+	// The camera sits at z = 5 looking down -Z: the centre of the viewport looks straight ahead, the right edge to +X.
+	for (const auto view = m_scene->registry.view<component::Camera>(); const auto entity: view)
+		view.get<component::Camera>(entity).camera.setPerspective(1.f, 0.1f, 100.f);
+	const auto instance = run("ox, oy, oz, dx, dy, dz = scene.get_view_ray(400, 300)\n"
+							  "_, _, _, rx, ry, rz = scene.get_view_ray(800, 300)\n"
+							  "_, _, _, ux, uy, uz = scene.get_view_ray(400, 0)");
+	EXPECT_NEAR(instance->getPropertyFloat("ox").value_or(9.f), 0.f, 1e-3f);
+	EXPECT_NEAR(instance->getPropertyFloat("oy").value_or(9.f), 0.f, 1e-3f);
+	EXPECT_NEAR(instance->getPropertyFloat("oz").value_or(0.f), 5.f, 1e-3f);
+	EXPECT_NEAR(instance->getPropertyFloat("dx").value_or(9.f), 0.f, 1e-4f);
+	EXPECT_NEAR(instance->getPropertyFloat("dy").value_or(9.f), 0.f, 1e-4f);
+	EXPECT_NEAR(instance->getPropertyFloat("dz").value_or(0.f), -1.f, 1e-4f);
+	EXPECT_GT(instance->getPropertyFloat("rx").value_or(0.f), 0.1f);
+	EXPECT_LT(instance->getPropertyFloat("rz").value_or(0.f), 0.f);
+	EXPECT_GT(instance->getPropertyFloat("uy").value_or(0.f), 0.1f);
+}
+
+TEST_F(LuaRuntimeGaps, viewRayIsNothingWithoutACamera) {
+	m_scene = mkShared<Scene>();
+	const auto instance = run("none = scene.get_view_ray(10, 10) == nil");
+	EXPECT_TRUE(instance->getPropertyBool("none").value_or(false));
+}
+
+TEST_F(LuaRuntimeGaps, setShipThrottleAndTurnDriveTheShip) {
+	auto ship = m_scene->createEntity("Ship");
+	auto& controller = ship.addComponent<component::ShipController>();
+	controller.throttleRate = 0.5f;
+	controller.minThrottle = -0.25f;
+	const auto instance = run(std::format("done = entity.set_ship_throttle({}, -1)\n"
+										  "throttle = entity.get_ship_throttle({})\n"
+										  "turned = entity.set_ship_turn({}, 2, -0.5)\n"
+										  "none = entity.set_ship_turn({}, 1, 1)",
+										  luaId(ship), luaId(ship), luaId(ship), luaId(m_scene->createEntity())));
+	EXPECT_TRUE(instance->getPropertyBool("done").value_or(false));
+	EXPECT_NEAR(instance->getPropertyFloat("throttle").value_or(0.f), -0.25f, 1e-6f);
+	EXPECT_TRUE(instance->getPropertyBool("turned").value_or(false));
+	EXPECT_FALSE(instance->getPropertyBool("none").value_or(true));
+	const auto& turn = ship.getComponent<component::ShipController>().m_turnInput;
+	EXPECT_NEAR(turn.x(), 1.f, 1e-6f);
+	EXPECT_NEAR(turn.y(), -0.5f, 1e-6f);
+}
+
+TEST_F(LuaRuntimeGaps, setShipVelocityKnocksTheShip) {
+	auto ship = m_scene->createEntity("Ship");
+	ship.addComponent<component::ShipController>();
+	const auto instance = run(std::format("done = entity.set_ship_velocity({}, 3, -4, 12)\n"
+										  "none = entity.set_ship_velocity({}, 1, 1, 1)\n"
+										  "vx, vy, vz = entity.get_ship_velocity({})",
+										  luaId(ship), luaId(m_scene->createEntity()), luaId(ship)));
+	EXPECT_TRUE(instance->getPropertyBool("done").value_or(false));
+	EXPECT_FALSE(instance->getPropertyBool("none").value_or(true));
+	const auto& velocity = ship.getComponent<component::ShipController>().m_velocity;
+	EXPECT_NEAR(velocity.x(), 3.f, 1e-6f);
+	EXPECT_NEAR(velocity.y(), -4.f, 1e-6f);
+	EXPECT_NEAR(velocity.z(), 12.f, 1e-6f);
+	EXPECT_NEAR(instance->getPropertyFloat("vz").value_or(0.f), 12.f, 1e-6f);
 }

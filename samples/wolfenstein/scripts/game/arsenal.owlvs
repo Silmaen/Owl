@@ -1,0 +1,1919 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: floor_scene, type: string, default: scenes/level_1.owl}
+    - {name: knife_range, type: float, default: "1.3", min: 0}
+    - {name: gun_range, type: float, default: "24", min: 0}
+    - {name: aim_cone, type: float, default: "0.1", min: 0}
+    - {name: start_health, type: int, default: "100", min: 1}
+    - {name: start_ammo, type: int, default: "8", min: 0}
+    - {name: max_ammo, type: int, default: "99", min: 1}
+    - {name: respawn_delay, type: float, default: "2.5", min: 0}
+    - {name: fade_color, type: color, default: "0.45, 0, 0, 1"}
+    - {name: tactics, type: numbers, default: "", exposed: false}
+    - {name: DAMAGE, type: numbers, default: "", exposed: false}
+    - {name: RATE, type: numbers, default: "", exposed: false}
+    - {name: AUTOMATIC, type: numbers, default: "", exposed: false}
+    - {name: SOUNDS, type: numbers, default: "", exposed: false}
+    - {name: NAMES, type: numbers, default: "", exposed: false}
+    - {name: AUTOSAVE_SLOT, type: float, default: "1", exposed: false}
+    - {name: player_id, type: entity, default: "0", exposed: false}
+    - {name: ids, type: numbers, default: "", exposed: false}
+    - {name: shown, type: numbers, default: "", exposed: false}
+    - {name: cooldown, type: float, default: "0", exposed: false}
+    - {name: swing, type: float, default: "0", exposed: false}
+    - {name: dead_clock, type: float, default: "0", exposed: false}
+    - {name: dead, type: bool, default: "false", exposed: false}
+    - {name: weapon, type: float, default: "0", exposed: false}
+    - {name: next_weapon, type: float, default: "0", exposed: false}
+    - {name: tmp_1, type: bool, default: "false", exposed: false}
+    - {name: px, type: float, default: "0", exposed: false}
+    - {name: py, type: float, default: "0", exposed: false}
+    - {name: yaw, type: float, default: "0", exposed: false}
+    - {name: range, type: float, default: "0", exposed: false}
+    - {name: target, type: entity, default: "0", exposed: false}
+    - {name: distance, type: float, default: "0", exposed: false}
+    - {name: phase, type: float, default: "0", exposed: false}
+    - {name: length, type: float, default: "0", exposed: false}
+    - {name: frame, type: float, default: "0", exposed: false}
+    - {name: health, type: float, default: "0", exposed: false}
+    - {name: on_update_weapon, type: float, default: "0", exposed: false}
+    - {name: damage, type: float, default: "0", exposed: false}
+    - {name: wants, type: bool, default: "false", exposed: false}
+  functions:
+    - name: set_text
+      inputs: [{name: name, type: any}, {name: text, type: any}]
+      outputs: []
+    - name: owns
+      inputs: [{name: weapon, type: any}]
+      outputs: [{name: result, type: any}]
+    - name: reset
+      inputs: []
+      outputs: []
+    - name: select_weapon
+      inputs: [{name: weapon, type: any}]
+      outputs: []
+    - name: cycle_weapon
+      inputs: []
+      outputs: []
+    - name: attack
+      inputs: [{name: weapon, type: any}]
+      outputs: []
+    - name: die
+      inputs: []
+      outputs: []
+    - name: update_view
+      inputs: [{name: weapon, type: any}, {name: dt, type: any}]
+      outputs: []
+  customNodes:
+    - name: init_state
+      title: Init State
+      inputs: []
+      outputs: []
+      code: |
+        tactics = require("scripts.game.tactics")
+        DAMAGE = { 35, 30, 22, 22 }
+        RATE = { 0.45, 0.4, 0.14, 0.08 }
+        AUTOMATIC = { false, false, true, true }
+        SOUNDS = { "sounds/combat/knife.wav", "sounds/combat/pistol.wav", "sounds/combat/machine_gun.wav",
+                         "sounds/combat/chain_gun.wav" }
+        NAMES = { "KNIFE", "PISTOL", "MACHINE GUN", "CHAIN GUN" }
+        ids = {}
+        shown = {}
+  nodes:
+    - id: 7102000001
+      type: func.entry
+      position: [340, 0]
+      values:
+        function: set_text
+    - id: 7102000002
+      type: var.get
+      position: [170, 160]
+      values:
+        variable: ids
+    - id: 7102000003
+      type: table.get
+      position: [170, 280]
+    - id: 7102000004
+      type: compare.not_equal
+      position: [170, 400]
+      values:
+        B: "0"
+    - id: 7102000005
+      type: var.get
+      position: [170, 520]
+      values:
+        variable: shown
+    - id: 7102000006
+      type: table.get
+      position: [170, 640]
+    - id: 7102000007
+      type: compare.not_equal
+      position: [170, 760]
+    - id: 7102000008
+      type: logic.and
+      position: [170, 880]
+    - id: 7102000009
+      type: flow.branch
+      position: [680, 0]
+    - id: 7102000010
+      type: var.get
+      position: [510, 160]
+      values:
+        variable: shown
+    - id: 7102000011
+      type: table.set
+      position: [1020, 0]
+    - id: 7102000012
+      type: call.ui.set_text
+      position: [1360, 0]
+    - id: 7102000013
+      type: var.get
+      position: [1190, 160]
+      values:
+        variable: ids
+    - id: 7102000014
+      type: table.get
+      position: [1190, 280]
+    - id: 7102000015
+      type: func.entry
+      position: [340, 1140]
+      values:
+        function: owns
+    - id: 7102000016
+      type: call.gamestate.get
+      position: [680, 1140]
+      values:
+        default: "0"
+    - id: 7102000017
+      type: text.concat
+      position: [510, 1300]
+      values:
+        A: wolf_has_
+    - id: 7102000018
+      type: compare.equal
+      position: [510, 1420]
+      values:
+        B: "1"
+    - id: 7102000019
+      type: func.return
+      position: [1020, 1140]
+      values:
+        function: owns
+    - id: 7102000020
+      type: func.entry
+      position: [340, 1680]
+      values:
+        function: reset
+    - id: 7102000021
+      type: call.gamestate.set
+      position: [680, 1680]
+      values:
+        key: wolf_health
+    - id: 7102000022
+      type: var.get
+      position: [510, 1840]
+      values:
+        variable: start_health
+    - id: 7102000023
+      type: call.gamestate.set
+      position: [1020, 1680]
+      values:
+        key: wolf_ammo
+    - id: 7102000024
+      type: var.get
+      position: [850, 1840]
+      values:
+        variable: start_ammo
+    - id: 7102000025
+      type: call.gamestate.set
+      position: [1360, 1680]
+      values:
+        key: wolf_weapon
+        value: "2"
+    - id: 7102000026
+      type: call.gamestate.set
+      position: [1700, 1680]
+      values:
+        key: wolf_has_1
+        value: "1"
+    - id: 7102000027
+      type: call.gamestate.set
+      position: [2040, 1680]
+      values:
+        key: wolf_has_2
+        value: "1"
+    - id: 7102000028
+      type: call.gamestate.set
+      position: [2380, 1680]
+      values:
+        key: wolf_has_3
+        value: "0"
+    - id: 7102000029
+      type: call.gamestate.set
+      position: [2720, 1680]
+      values:
+        key: wolf_has_4
+        value: "0"
+    - id: 7102000030
+      type: event.on_create
+      position: [340, 2100]
+    - id: 7102000031
+      type: call.scene.find_entity
+      position: [170, 2260]
+      values:
+        name: Player
+    - id: 7102000032
+      type: var.set
+      position: [680, 2100]
+      values:
+        variable: player_id
+    - id: 7102000033
+      type: value.table
+      position: [510, 2260]
+      values:
+        Value: "HealthText, AmmoText, WeaponText, WeaponView"
+    - id: 7102000034
+      type: flow.for_each
+      position: [1020, 2100]
+    - id: 7102000035
+      type: call.ui.find
+      position: [850, 2260]
+    - id: 7102000036
+      type: var.get
+      position: [850, 2380]
+      values:
+        variable: ids
+    - id: 7102000037
+      type: table.set
+      position: [1360, 2100]
+    - id: 7102000038
+      type: call.gamestate.get
+      position: [1700, 2100]
+      values:
+        key: wolf_health
+    - id: 7102000039
+      type: value.nil
+      position: [1530, 2260]
+    - id: 7102000040
+      type: compare.equal
+      position: [1530, 2380]
+    - id: 7102000041
+      type: value.nil
+      position: [1530, 2500]
+    - id: 7102000042
+      type: flow.branch
+      position: [2040, 2100]
+    - id: 7102000043
+      type: func.call
+      position: [2380, 2100]
+      values:
+        function: reset
+    - id: 7102000044
+      type: call.settings.get
+      position: [2720, 2100]
+      values:
+        key: wolf_respawn
+        default: "false"
+    - id: 7102000045
+      type: flow.branch
+      position: [3060, 2100]
+    - id: 7102000046
+      type: call.settings.set
+      position: [3400, 2100]
+      values:
+        key: wolf_respawn
+        value: "false"
+    - id: 7102000047
+      type: func.call
+      position: [3740, 2100]
+      values:
+        function: reset
+    - id: 7102000048
+      type: call.gamestate.set
+      position: [4080, 2100]
+      values:
+        key: wolf_restarts
+    - id: 7102000049
+      type: call.gamestate.get
+      position: [4420, 2100]
+      values:
+        key: wolf_restarts
+        default: "0"
+    - id: 7102000050
+      type: math.add
+      position: [4250, 2260]
+      values:
+        B: "1"
+    - id: 7102000051
+      type: call.gamestate.set
+      position: [4760, 2100]
+      values:
+        key: wolf_dead
+        value: "0"
+    - id: 7102000052
+      type: call.gamestate.set
+      position: [5100, 2100]
+      values:
+        key: wolf_damage
+        value: "0"
+    - id: 7102000053
+      type: func.entry
+      position: [340, 2760]
+      values:
+        function: select_weapon
+    - id: 7102000054
+      type: call.gamestate.get
+      position: [680, 2760]
+      values:
+        key: wolf_weapon
+        default: "2"
+    - id: 7102000055
+      type: compare.not_equal
+      position: [510, 2920]
+    - id: 7102000056
+      type: flow.branch
+      position: [1020, 2760]
+    - id: 7102000057
+      type: func.call
+      position: [1360, 2760]
+      values:
+        function: owns
+    - id: 7102000058
+      type: flow.branch
+      position: [1700, 2760]
+    - id: 7102000059
+      type: call.gamestate.set
+      position: [2040, 2760]
+      values:
+        key: wolf_weapon
+    - id: 7102000060
+      type: func.entry
+      position: [340, 3180]
+      values:
+        function: cycle_weapon
+    - id: 7102000061
+      type: call.gamestate.get
+      position: [680, 3180]
+      values:
+        key: wolf_weapon
+        default: "2"
+    - id: 7102000062
+      type: var.set
+      position: [1020, 3180]
+      values:
+        variable: weapon
+    - id: 7102000063
+      type: flow.for
+      position: [1360, 3180]
+      values:
+        First: "1"
+        Last: "4"
+    - id: 7102000064
+      type: var.get
+      position: [1190, 3340]
+      values:
+        variable: weapon
+    - id: 7102000065
+      type: math.add
+      position: [1190, 3460]
+    - id: 7102000066
+      type: math.subtract
+      position: [1190, 3580]
+      values:
+        B: "1"
+    - id: 7102000067
+      type: math.modulo
+      position: [1190, 3700]
+      values:
+        B: "4"
+    - id: 7102000068
+      type: math.add
+      position: [1190, 3820]
+      values:
+        B: "1"
+    - id: 7102000069
+      type: var.set
+      position: [1700, 3180]
+      values:
+        variable: next_weapon
+    - id: 7102000070
+      type: func.call
+      position: [2040, 3180]
+      values:
+        function: owns
+    - id: 7102000071
+      type: var.get
+      position: [1870, 3340]
+      values:
+        variable: next_weapon
+    - id: 7102000072
+      type: flow.branch
+      position: [2380, 3180]
+    - id: 7102000073
+      type: var.get
+      position: [2210, 3340]
+      values:
+        variable: next_weapon
+    - id: 7102000074
+      type: compare.equal
+      position: [2210, 3460]
+      values:
+        B: "1"
+    - id: 7102000075
+      type: var.set
+      position: [2720, 3180]
+      values:
+        variable: tmp_1
+    - id: 7102000076
+      type: flow.branch
+      position: [3060, 3180]
+    - id: 7102000077
+      type: var.get
+      position: [2890, 3340]
+      values:
+        variable: tmp_1
+    - id: 7102000078
+      type: call.gamestate.get
+      position: [3400, 3180]
+      values:
+        key: wolf_ammo
+        default: "0"
+    - id: 7102000079
+      type: compare.greater
+      position: [3230, 3340]
+      values:
+        B: "0"
+    - id: 7102000080
+      type: var.set
+      position: [3740, 3180]
+      values:
+        variable: tmp_1
+    - id: 7102000081
+      type: var.get
+      position: [3570, 3340]
+      values:
+        variable: tmp_1
+    - id: 7102000082
+      type: flow.branch
+      position: [4080, 3180]
+    - id: 7102000083
+      type: func.call
+      position: [4420, 3180]
+      values:
+        function: select_weapon
+    - id: 7102000084
+      type: var.get
+      position: [4250, 3340]
+      values:
+        variable: next_weapon
+    - id: 7102000085
+      type: func.return
+      position: [4760, 3180]
+      values:
+        function: cycle_weapon
+    - id: 7102000086
+      type: func.entry
+      position: [340, 4080]
+      values:
+        function: attack
+    - id: 7102000087
+      type: var.get
+      position: [170, 4240]
+      values:
+        variable: RATE
+    - id: 7102000088
+      type: table.get
+      position: [170, 4360]
+    - id: 7102000089
+      type: var.set
+      position: [680, 4080]
+      values:
+        variable: cooldown
+    - id: 7102000090
+      type: var.get
+      position: [510, 4240]
+      values:
+        variable: RATE
+    - id: 7102000091
+      type: table.get
+      position: [510, 4360]
+    - id: 7102000092
+      type: math.min
+      position: [510, 4480]
+      values:
+        A: "0.32"
+    - id: 7102000093
+      type: var.set
+      position: [1020, 4080]
+      values:
+        variable: swing
+    - id: 7102000094
+      type: call.sound.play
+      position: [1360, 4080]
+    - id: 7102000095
+      type: var.get
+      position: [1190, 4240]
+      values:
+        variable: SOUNDS
+    - id: 7102000096
+      type: table.get
+      position: [1190, 4360]
+    - id: 7102000097
+      type: call.gamestate.set
+      position: [1700, 4080]
+      values:
+        key: wolf_shots
+    - id: 7102000098
+      type: call.gamestate.get
+      position: [2040, 4080]
+      values:
+        key: wolf_shots
+        default: "0"
+    - id: 7102000099
+      type: math.add
+      position: [1870, 4240]
+      values:
+        B: "1"
+    - id: 7102000100
+      type: call.transform.get_position
+      position: [1870, 4360]
+      values:
+        split.xyz: "true"
+    - id: 7102000101
+      type: var.get
+      position: [1870, 4480]
+      values:
+        variable: player_id
+    - id: 7102000102
+      type: var.set
+      position: [2380, 4080]
+      values:
+        variable: px
+    - id: 7102000103
+      type: var.set
+      position: [2720, 4080]
+      values:
+        variable: py
+    - id: 7102000104
+      type: compare.greater
+      position: [2550, 4240]
+      values:
+        B: "1"
+    - id: 7102000105
+      type: flow.branch
+      position: [3060, 4080]
+    - id: 7102000106
+      type: call.gamestate.set
+      position: [3400, 4080]
+      values:
+        key: wolf_ammo
+    - id: 7102000107
+      type: call.gamestate.get
+      position: [3740, 4080]
+      values:
+        key: wolf_ammo
+        default: "0"
+    - id: 7102000108
+      type: math.subtract
+      position: [3570, 4240]
+      values:
+        B: "1"
+    - id: 7102000109
+      type: call.gamestate.set
+      position: [4080, 4080]
+      values:
+        key: wolf_noise
+    - id: 7102000110
+      type: call.gamestate.get
+      position: [4420, 4080]
+      values:
+        key: wolf_noise
+        default: "0"
+    - id: 7102000111
+      type: math.add
+      position: [4250, 4240]
+      values:
+        B: "1"
+    - id: 7102000112
+      type: call.gamestate.set
+      position: [4760, 4080]
+      values:
+        key: wolf_noise_x
+    - id: 7102000113
+      type: var.get
+      position: [4590, 4240]
+      values:
+        variable: px
+    - id: 7102000114
+      type: call.gamestate.set
+      position: [5100, 4080]
+      values:
+        key: wolf_noise_y
+    - id: 7102000115
+      type: var.get
+      position: [4930, 4240]
+      values:
+        variable: py
+    - id: 7102000116
+      type: call.transform.get_rotation
+      position: [4930, 4360]
+      values:
+        split.rotation: "true"
+    - id: 7102000117
+      type: var.get
+      position: [4930, 4480]
+      values:
+        variable: player_id
+    - id: 7102000118
+      type: var.set
+      position: [5440, 4080]
+      values:
+        variable: yaw
+    - id: 7102000119
+      type: compare.equal
+      position: [5270, 4240]
+      values:
+        B: "1"
+    - id: 7102000120
+      type: var.get
+      position: [5270, 4360]
+      values:
+        variable: knife_range
+    - id: 7102000121
+      type: var.get
+      position: [5270, 4480]
+      values:
+        variable: gun_range
+    - id: 7102000122
+      type: logic.select
+      position: [5270, 4600]
+    - id: 7102000123
+      type: var.set
+      position: [5780, 4080]
+      values:
+        variable: range
+    - id: 7102000124
+      type: lua.call
+      position: [6120, 4080]
+      values:
+        module: scripts.game.tactics
+        function: aimed_guard
+    - id: 7102000125
+      type: var.get
+      position: [5950, 4240]
+      values:
+        variable: player_id
+    - id: 7102000126
+      type: var.get
+      position: [5950, 4360]
+      values:
+        variable: yaw
+    - id: 7102000127
+      type: var.get
+      position: [5950, 4480]
+      values:
+        variable: range
+    - id: 7102000128
+      type: var.get
+      position: [5950, 4600]
+      values:
+        variable: aim_cone
+    - id: 7102000129
+      type: var.set
+      position: [6460, 4080]
+      values:
+        variable: target
+    - id: 7102000130
+      type: var.set
+      position: [6800, 4080]
+      values:
+        variable: distance
+    - id: 7102000131
+      type: var.get
+      position: [6630, 4240]
+      values:
+        variable: target
+    - id: 7102000132
+      type: compare.not_equal
+      position: [6630, 4360]
+      values:
+        B: "0"
+    - id: 7102000133
+      type: flow.branch
+      position: [7140, 4080]
+    - id: 7102000134
+      type: call.bt.set_value
+      position: [7480, 4080]
+      values:
+        key: damage
+    - id: 7102000135
+      type: var.get
+      position: [7310, 4240]
+      values:
+        variable: target
+    - id: 7102000136
+      type: call.bt.get_value
+      position: [7310, 4360]
+      values:
+        key: damage
+    - id: 7102000137
+      type: var.get
+      position: [7310, 4480]
+      values:
+        variable: target
+    - id: 7102000138
+      type: logic.default
+      position: [7310, 4600]
+      values:
+        Default: "0"
+    - id: 7102000139
+      type: var.get
+      position: [7310, 4720]
+      values:
+        variable: DAMAGE
+    - id: 7102000140
+      type: table.get
+      position: [7310, 4840]
+    - id: 7102000141
+      type: math.add
+      position: [7310, 4960]
+    - id: 7102000142
+      type: call.gamestate.set
+      position: [7820, 4080]
+      values:
+        key: wolf_hits
+    - id: 7102000143
+      type: call.gamestate.get
+      position: [8160, 4080]
+      values:
+        key: wolf_hits
+        default: "0"
+    - id: 7102000144
+      type: math.add
+      position: [7990, 4240]
+      values:
+        B: "1"
+    - id: 7102000145
+      type: func.entry
+      position: [340, 5220]
+      values:
+        function: die
+    - id: 7102000146
+      type: var.set
+      position: [680, 5220]
+      values:
+        variable: dead
+        Value: "true"
+    - id: 7102000147
+      type: var.get
+      position: [510, 5380]
+      values:
+        variable: respawn_delay
+    - id: 7102000148
+      type: var.set
+      position: [1020, 5220]
+      values:
+        variable: dead_clock
+    - id: 7102000149
+      type: call.gamestate.set
+      position: [1360, 5220]
+      values:
+        key: wolf_dead
+        value: "1"
+    - id: 7102000150
+      type: call.gamestate.set
+      position: [1700, 5220]
+      values:
+        key: wolf_leaving
+        value: "1"
+    - id: 7102000151
+      type: call.physics.set_velocity
+      position: [2040, 5220]
+      values:
+        split.velocity: "true"
+        vx: "0"
+        vy: "0"
+    - id: 7102000152
+      type: var.get
+      position: [1870, 5380]
+      values:
+        variable: player_id
+    - id: 7102000153
+      type: call.sound.play
+      position: [2380, 5220]
+      values:
+        asset_path: sounds/combat/player_death.wav
+    - id: 7102000154
+      type: call.gamestate.set
+      position: [2720, 5220]
+      values:
+        key: wolf_toast
+        value: "You are dead: the floor starts again"
+    - id: 7102000155
+      type: func.entry
+      position: [340, 5640]
+      values:
+        function: update_view
+    - id: 7102000156
+      type: var.set
+      position: [680, 5640]
+      values:
+        variable: phase
+        Value: "0"
+    - id: 7102000157
+      type: var.get
+      position: [510, 5800]
+      values:
+        variable: swing
+    - id: 7102000158
+      type: compare.greater
+      position: [510, 5920]
+      values:
+        B: "0"
+    - id: 7102000159
+      type: flow.branch
+      position: [1020, 5640]
+    - id: 7102000160
+      type: var.get
+      position: [850, 5800]
+      values:
+        variable: RATE
+    - id: 7102000161
+      type: table.get
+      position: [850, 5920]
+    - id: 7102000162
+      type: math.min
+      position: [850, 6040]
+      values:
+        A: "0.32"
+    - id: 7102000163
+      type: var.set
+      position: [1360, 5640]
+      values:
+        variable: length
+    - id: 7102000164
+      type: var.get
+      position: [1190, 5800]
+      values:
+        variable: swing
+    - id: 7102000165
+      type: var.get
+      position: [1190, 5920]
+      values:
+        variable: length
+    - id: 7102000166
+      type: math.divide
+      position: [1190, 6040]
+    - id: 7102000167
+      type: math.subtract
+      position: [1190, 6160]
+      values:
+        A: "1"
+    - id: 7102000168
+      type: math.multiply
+      position: [1190, 6280]
+      values:
+        B: "4"
+    - id: 7102000169
+      type: math.floor
+      position: [1190, 6400]
+    - id: 7102000170
+      type: math.min
+      position: [1190, 6520]
+      values:
+        A: "3"
+    - id: 7102000171
+      type: math.add
+      position: [1190, 6640]
+      values:
+        A: "1"
+    - id: 7102000172
+      type: var.set
+      position: [1700, 5640]
+      values:
+        variable: phase
+    - id: 7102000173
+      type: math.subtract
+      position: [1530, 5800]
+      values:
+        B: "1"
+    - id: 7102000174
+      type: math.multiply
+      position: [1530, 5920]
+      values:
+        B: "5"
+    - id: 7102000175
+      type: var.get
+      position: [1530, 6040]
+      values:
+        variable: phase
+    - id: 7102000176
+      type: math.add
+      position: [1530, 6160]
+    - id: 7102000177
+      type: var.set
+      position: [2040, 5640]
+      values:
+        variable: frame
+    - id: 7102000178
+      type: var.get
+      position: [1870, 5800]
+      values:
+        variable: ids
+    - id: 7102000179
+      type: table.get
+      position: [1870, 5920]
+      values:
+        Key: WeaponView
+    - id: 7102000180
+      type: compare.not_equal
+      position: [1870, 6040]
+      values:
+        B: "0"
+    - id: 7102000181
+      type: var.get
+      position: [1870, 6160]
+      values:
+        variable: shown
+    - id: 7102000182
+      type: table.get
+      position: [1870, 6280]
+      values:
+        Key: frame
+    - id: 7102000183
+      type: var.get
+      position: [1870, 6400]
+      values:
+        variable: frame
+    - id: 7102000184
+      type: compare.not_equal
+      position: [1870, 6520]
+    - id: 7102000185
+      type: logic.and
+      position: [1870, 6640]
+    - id: 7102000186
+      type: flow.branch
+      position: [2380, 5640]
+    - id: 7102000187
+      type: var.get
+      position: [2210, 5800]
+      values:
+        variable: frame
+    - id: 7102000188
+      type: var.get
+      position: [2210, 5920]
+      values:
+        variable: shown
+    - id: 7102000189
+      type: table.set
+      position: [2720, 5640]
+      values:
+        Key: frame
+    - id: 7102000190
+      type: call.ui.set_image_frame
+      position: [3060, 5640]
+    - id: 7102000191
+      type: var.get
+      position: [2890, 5800]
+      values:
+        variable: ids
+    - id: 7102000192
+      type: table.get
+      position: [2890, 5920]
+      values:
+        Key: WeaponView
+    - id: 7102000193
+      type: var.get
+      position: [2890, 6040]
+      values:
+        variable: frame
+    - id: 7102000194
+      type: math.floor
+      position: [2890, 6160]
+    - id: 7102000195
+      type: event.on_update
+      position: [340, 6900]
+    - id: 7102000196
+      type: call.gamestate.get
+      position: [680, 6900]
+      values:
+        key: wolf_health
+    - id: 7102000197
+      type: var.get
+      position: [510, 7060]
+      values:
+        variable: start_health
+    - id: 7102000198
+      type: var.set
+      position: [1020, 6900]
+      values:
+        variable: health
+    - id: 7102000199
+      type: call.gamestate.get
+      position: [1360, 6900]
+      values:
+        key: wolf_weapon
+        default: "2"
+    - id: 7102000200
+      type: var.set
+      position: [1700, 6900]
+      values:
+        variable: on_update_weapon
+    - id: 7102000201
+      type: func.call
+      position: [2040, 6900]
+      values:
+        function: set_text
+        name: HealthText
+    - id: 7102000202
+      type: var.get
+      position: [1870, 7060]
+      values:
+        variable: health
+    - id: 7102000203
+      type: math.max
+      position: [1870, 7180]
+      values:
+        A: "0"
+    - id: 7102000204
+      type: text.concat
+      position: [1870, 7300]
+      values:
+        B: "%"
+    - id: 7102000205
+      type: text.join
+      position: [1870, 7420]
+      values:
+        A: ""
+    - id: 7102000206
+      type: func.call
+      position: [2380, 6900]
+      values:
+        function: set_text
+        name: AmmoText
+    - id: 7102000207
+      type: call.gamestate.get
+      position: [2720, 6900]
+      values:
+        key: wolf_ammo
+        default: "0"
+    - id: 7102000208
+      type: text.concat
+      position: [2550, 7060]
+    - id: 7102000209
+      type: value.string
+      position: [2550, 7180]
+      values:
+        Value: ""
+    - id: 7102000210
+      type: func.call
+      position: [3060, 6900]
+      values:
+        function: set_text
+        name: WeaponText
+    - id: 7102000211
+      type: var.get
+      position: [2890, 7060]
+      values:
+        variable: NAMES
+    - id: 7102000212
+      type: var.get
+      position: [2890, 7180]
+      values:
+        variable: on_update_weapon
+    - id: 7102000213
+      type: table.get
+      position: [2890, 7300]
+    - id: 7102000214
+      type: var.get
+      position: [2890, 7420]
+      values:
+        variable: dead
+    - id: 7102000215
+      type: flow.branch
+      position: [3400, 6900]
+    - id: 7102000216
+      type: var.get
+      position: [3230, 7060]
+      values:
+        variable: dead_clock
+    - id: 7102000217
+      type: math.subtract
+      position: [3230, 7180]
+    - id: 7102000218
+      type: var.set
+      position: [3740, 6900]
+      values:
+        variable: dead_clock
+    - id: 7102000219
+      type: var.get
+      position: [3570, 7060]
+      values:
+        variable: dead_clock
+    - id: 7102000220
+      type: compare.less_equal
+      position: [3570, 7180]
+      values:
+        B: "0"
+    - id: 7102000221
+      type: flow.branch
+      position: [4080, 6900]
+    - id: 7102000222
+      type: var.set
+      position: [4420, 6900]
+      values:
+        variable: dead
+        Value: "false"
+    - id: 7102000223
+      type: call.settings.set
+      position: [4760, 6900]
+      values:
+        key: wolf_respawn
+        value: "true"
+    - id: 7102000224
+      type: call.save.has_save
+      position: [4590, 7060]
+    - id: 7102000225
+      type: var.get
+      position: [4590, 7180]
+      values:
+        variable: AUTOSAVE_SLOT
+    - id: 7102000226
+      type: math.floor
+      position: [4590, 7300]
+    - id: 7102000227
+      type: flow.branch
+      position: [5100, 6900]
+    - id: 7102000228
+      type: call.save.load_game
+      position: [5440, 6900]
+    - id: 7102000229
+      type: var.get
+      position: [5270, 7060]
+      values:
+        variable: AUTOSAVE_SLOT
+    - id: 7102000230
+      type: math.floor
+      position: [5270, 7180]
+    - id: 7102000231
+      type: call.gamestate.set
+      position: [5780, 6900]
+      values:
+        key: wolf_leaving
+        value: "0"
+    - id: 7102000232
+      type: call.gamestate.set
+      position: [6120, 6900]
+      values:
+        key: wolf_floor_started
+        value: "0"
+    - id: 7102000233
+      type: call.scene.transition_to
+      position: [6460, 6900]
+      values:
+        split.rgba: "true"
+        kind: fade_out
+        duration: "0.5"
+    - id: 7102000234
+      type: var.get
+      position: [6290, 7060]
+      values:
+        variable: floor_scene
+    - id: 7102000235
+      type: var.get
+      position: [6290, 7180]
+      values:
+        variable: fade_color
+    - id: 7102000236
+      type: math.break_color
+      position: [6290, 7300]
+    - id: 7102000237
+      type: var.get
+      position: [6290, 7420]
+      values:
+        variable: fade_color
+    - id: 7102000238
+      type: math.break_color
+      position: [6290, 7540]
+    - id: 7102000239
+      type: var.get
+      position: [6290, 7660]
+      values:
+        variable: fade_color
+    - id: 7102000240
+      type: math.break_color
+      position: [6290, 7780]
+    - id: 7102000241
+      type: call.gamestate.get
+      position: [6800, 6900]
+      values:
+        key: wolf_damage
+        default: "0"
+    - id: 7102000242
+      type: var.set
+      position: [7140, 6900]
+      values:
+        variable: damage
+    - id: 7102000243
+      type: var.get
+      position: [6970, 7060]
+      values:
+        variable: damage
+    - id: 7102000244
+      type: compare.greater
+      position: [6970, 7180]
+      values:
+        B: "0"
+    - id: 7102000245
+      type: flow.branch
+      position: [7480, 6900]
+    - id: 7102000246
+      type: call.gamestate.set
+      position: [7820, 6900]
+      values:
+        key: wolf_damage
+        value: "0"
+    - id: 7102000247
+      type: var.get
+      position: [7650, 7060]
+      values:
+        variable: health
+    - id: 7102000248
+      type: var.get
+      position: [7650, 7180]
+      values:
+        variable: damage
+    - id: 7102000249
+      type: math.subtract
+      position: [7650, 7300]
+    - id: 7102000250
+      type: math.max
+      position: [7650, 7420]
+      values:
+        A: "0"
+    - id: 7102000251
+      type: var.set
+      position: [8160, 6900]
+      values:
+        variable: health
+    - id: 7102000252
+      type: call.gamestate.set
+      position: [8500, 6900]
+      values:
+        key: wolf_health
+    - id: 7102000253
+      type: var.get
+      position: [8330, 7060]
+      values:
+        variable: health
+    - id: 7102000254
+      type: call.gamestate.set
+      position: [8840, 6900]
+      values:
+        key: wolf_hurts
+    - id: 7102000255
+      type: call.gamestate.get
+      position: [9180, 6900]
+      values:
+        key: wolf_hurts
+        default: "0"
+    - id: 7102000256
+      type: math.add
+      position: [9010, 7060]
+      values:
+        B: "1"
+    - id: 7102000257
+      type: call.sound.play
+      position: [9520, 6900]
+      values:
+        asset_path: sounds/combat/hurt.wav
+    - id: 7102000258
+      type: var.get
+      position: [9350, 7060]
+      values:
+        variable: health
+    - id: 7102000259
+      type: compare.less_equal
+      position: [9350, 7180]
+      values:
+        B: "0"
+    - id: 7102000260
+      type: flow.branch
+      position: [9860, 6900]
+    - id: 7102000261
+      type: func.call
+      position: [10200, 6900]
+      values:
+        function: die
+    - id: 7102000262
+      type: var.get
+      position: [10030, 7060]
+      values:
+        variable: cooldown
+    - id: 7102000263
+      type: math.subtract
+      position: [10030, 7180]
+    - id: 7102000264
+      type: math.max
+      position: [10030, 7300]
+      values:
+        A: "0"
+    - id: 7102000265
+      type: var.set
+      position: [10540, 6900]
+      values:
+        variable: cooldown
+    - id: 7102000266
+      type: var.get
+      position: [10370, 7060]
+      values:
+        variable: swing
+    - id: 7102000267
+      type: math.subtract
+      position: [10370, 7180]
+    - id: 7102000268
+      type: math.max
+      position: [10370, 7300]
+      values:
+        A: "0"
+    - id: 7102000269
+      type: var.set
+      position: [10880, 6900]
+      values:
+        variable: swing
+    - id: 7102000270
+      type: func.call
+      position: [11220, 6900]
+      values:
+        function: update_view
+    - id: 7102000271
+      type: var.get
+      position: [11050, 7060]
+      values:
+        variable: on_update_weapon
+    - id: 7102000272
+      type: call.ui.is_transition_active
+      position: [11050, 7180]
+    - id: 7102000273
+      type: flow.branch
+      position: [11560, 6900]
+    - id: 7102000274
+      type: call.gamestate.get
+      position: [11900, 6900]
+      values:
+        key: wolf_leaving
+        default: "0"
+    - id: 7102000275
+      type: compare.equal
+      position: [11730, 7060]
+      values:
+        B: "1"
+    - id: 7102000276
+      type: flow.branch
+      position: [12240, 6900]
+    - id: 7102000277
+      type: call.gamestate.get
+      position: [12580, 6900]
+      values:
+        key: wolf_paused
+        default: "false"
+    - id: 7102000278
+      type: flow.branch
+      position: [12920, 6900]
+    - id: 7102000279
+      type: flow.for
+      position: [13260, 6900]
+      values:
+        First: "1"
+        Last: "4"
+    - id: 7102000280
+      type: call.input.is_action_just_pressed
+      position: [13090, 7060]
+    - id: 7102000281
+      type: text.concat
+      position: [13090, 7180]
+      values:
+        A: weapon_
+    - id: 7102000282
+      type: flow.branch
+      position: [13600, 6900]
+    - id: 7102000283
+      type: func.call
+      position: [13940, 6900]
+      values:
+        function: select_weapon
+    - id: 7102000284
+      type: call.input.is_action_just_pressed
+      position: [13770, 7060]
+      values:
+        action: next_weapon
+    - id: 7102000285
+      type: flow.branch
+      position: [14280, 6900]
+    - id: 7102000286
+      type: func.call
+      position: [14620, 6900]
+      values:
+        function: cycle_weapon
+    - id: 7102000287
+      type: call.gamestate.get
+      position: [14960, 6900]
+      values:
+        key: wolf_weapon
+        default: "2"
+    - id: 7102000288
+      type: var.set
+      position: [15300, 6900]
+      values:
+        variable: on_update_weapon
+    - id: 7102000289
+      type: call.input.is_action_just_pressed
+      position: [15130, 7060]
+      values:
+        action: fire
+    - id: 7102000290
+      type: var.get
+      position: [15130, 7180]
+      values:
+        variable: AUTOMATIC
+    - id: 7102000291
+      type: var.get
+      position: [15130, 7300]
+      values:
+        variable: on_update_weapon
+    - id: 7102000292
+      type: table.get
+      position: [15130, 7420]
+    - id: 7102000293
+      type: call.input.is_action_pressed
+      position: [15130, 7540]
+      values:
+        action: fire
+    - id: 7102000294
+      type: logic.and
+      position: [15130, 7660]
+    - id: 7102000295
+      type: logic.or
+      position: [15130, 7780]
+    - id: 7102000296
+      type: var.set
+      position: [15640, 6900]
+      values:
+        variable: wants
+    - id: 7102000297
+      type: var.get
+      position: [15470, 7060]
+      values:
+        variable: wants
+    - id: 7102000298
+      type: var.get
+      position: [15470, 7180]
+      values:
+        variable: cooldown
+    - id: 7102000299
+      type: compare.less_equal
+      position: [15470, 7300]
+      values:
+        B: "0"
+    - id: 7102000300
+      type: logic.and
+      position: [15470, 7420]
+    - id: 7102000301
+      type: flow.branch
+      position: [15980, 6900]
+    - id: 7102000302
+      type: var.get
+      position: [15810, 7060]
+      values:
+        variable: on_update_weapon
+    - id: 7102000303
+      type: compare.greater
+      position: [15810, 7180]
+      values:
+        B: "1"
+    - id: 7102000304
+      type: flow.branch
+      position: [16320, 6900]
+    - id: 7102000305
+      type: call.gamestate.get
+      position: [16660, 6900]
+      values:
+        key: wolf_ammo
+        default: "0"
+    - id: 7102000306
+      type: compare.less_equal
+      position: [16490, 7060]
+      values:
+        B: "0"
+    - id: 7102000307
+      type: flow.branch
+      position: [17000, 6900]
+    - id: 7102000308
+      type: call.sound.play
+      position: [17340, 6900]
+      values:
+        asset_path: sounds/combat/empty.wav
+    - id: 7102000309
+      type: var.set
+      position: [17680, 6900]
+      values:
+        variable: cooldown
+        Value: "0.3"
+    - id: 7102000310
+      type: func.call
+      position: [18020, 6900]
+      values:
+        function: select_weapon
+        weapon: "1"
+    - id: 7102000311
+      type: func.call
+      position: [18360, 6900]
+      values:
+        function: attack
+    - id: 7102000312
+      type: var.get
+      position: [18190, 7060]
+      values:
+        variable: on_update_weapon
+    - id: 7102000313
+      type: custom.call
+      position: [170, 2100]
+      values:
+        custom: init_state
+  links:
+    - {from: 7102000002, fromPin: Value, to: 7102000003, toPin: Table}
+    - {from: 7102000001, fromPin: name, to: 7102000003, toPin: Key}
+    - {from: 7102000003, fromPin: Result, to: 7102000004, toPin: A}
+    - {from: 7102000005, fromPin: Value, to: 7102000006, toPin: Table}
+    - {from: 7102000001, fromPin: name, to: 7102000006, toPin: Key}
+    - {from: 7102000006, fromPin: Result, to: 7102000007, toPin: A}
+    - {from: 7102000001, fromPin: text, to: 7102000007, toPin: B}
+    - {from: 7102000004, fromPin: Result, to: 7102000008, toPin: A}
+    - {from: 7102000007, fromPin: Result, to: 7102000008, toPin: B}
+    - {from: 7102000008, fromPin: Result, to: 7102000009, toPin: Condition}
+    - {from: 7102000001, fromPin: Then, to: 7102000009, toPin: Exec}
+    - {from: 7102000010, fromPin: Value, to: 7102000011, toPin: Table}
+    - {from: 7102000001, fromPin: name, to: 7102000011, toPin: Key}
+    - {from: 7102000001, fromPin: text, to: 7102000011, toPin: Value}
+    - {from: 7102000009, fromPin: "True", to: 7102000011, toPin: Exec}
+    - {from: 7102000013, fromPin: Value, to: 7102000014, toPin: Table}
+    - {from: 7102000001, fromPin: name, to: 7102000014, toPin: Key}
+    - {from: 7102000014, fromPin: Result, to: 7102000012, toPin: entity_id}
+    - {from: 7102000001, fromPin: text, to: 7102000012, toPin: text}
+    - {from: 7102000011, fromPin: Then, to: 7102000012, toPin: Exec}
+    - {from: 7102000015, fromPin: weapon, to: 7102000017, toPin: B}
+    - {from: 7102000017, fromPin: Result, to: 7102000016, toPin: key}
+    - {from: 7102000015, fromPin: Then, to: 7102000016, toPin: Exec}
+    - {from: 7102000016, fromPin: value, to: 7102000018, toPin: A}
+    - {from: 7102000018, fromPin: Result, to: 7102000019, toPin: result}
+    - {from: 7102000016, fromPin: Then, to: 7102000019, toPin: Exec}
+    - {from: 7102000022, fromPin: Value, to: 7102000021, toPin: value}
+    - {from: 7102000020, fromPin: Then, to: 7102000021, toPin: Exec}
+    - {from: 7102000024, fromPin: Value, to: 7102000023, toPin: value}
+    - {from: 7102000021, fromPin: Then, to: 7102000023, toPin: Exec}
+    - {from: 7102000023, fromPin: Then, to: 7102000025, toPin: Exec}
+    - {from: 7102000025, fromPin: Then, to: 7102000026, toPin: Exec}
+    - {from: 7102000026, fromPin: Then, to: 7102000027, toPin: Exec}
+    - {from: 7102000027, fromPin: Then, to: 7102000028, toPin: Exec}
+    - {from: 7102000028, fromPin: Then, to: 7102000029, toPin: Exec}
+    - {from: 7102000031, fromPin: entity_id, to: 7102000032, toPin: Value}
+    - {from: 7102000313, fromPin: Then, to: 7102000032, toPin: Exec}
+    - {from: 7102000033, fromPin: Result, to: 7102000034, toPin: List}
+    - {from: 7102000032, fromPin: Then, to: 7102000034, toPin: Exec}
+    - {from: 7102000034, fromPin: Item, to: 7102000035, toPin: name}
+    - {from: 7102000036, fromPin: Value, to: 7102000037, toPin: Table}
+    - {from: 7102000034, fromPin: Item, to: 7102000037, toPin: Key}
+    - {from: 7102000035, fromPin: entity_id, to: 7102000037, toPin: Value}
+    - {from: 7102000034, fromPin: Body, to: 7102000037, toPin: Exec}
+    - {from: 7102000039, fromPin: Result, to: 7102000038, toPin: default}
+    - {from: 7102000034, fromPin: Completed, to: 7102000038, toPin: Exec}
+    - {from: 7102000038, fromPin: value, to: 7102000040, toPin: A}
+    - {from: 7102000041, fromPin: Result, to: 7102000040, toPin: B}
+    - {from: 7102000040, fromPin: Result, to: 7102000042, toPin: Condition}
+    - {from: 7102000038, fromPin: Then, to: 7102000042, toPin: Exec}
+    - {from: 7102000042, fromPin: "True", to: 7102000043, toPin: Exec}
+    - {from: 7102000043, fromPin: Then, to: 7102000044, toPin: Exec}
+    - {from: 7102000042, fromPin: "False", to: 7102000044, toPin: Exec}
+    - {from: 7102000044, fromPin: value, to: 7102000045, toPin: Condition}
+    - {from: 7102000044, fromPin: Then, to: 7102000045, toPin: Exec}
+    - {from: 7102000045, fromPin: "True", to: 7102000046, toPin: Exec}
+    - {from: 7102000046, fromPin: Then, to: 7102000047, toPin: Exec}
+    - {from: 7102000047, fromPin: Then, to: 7102000049, toPin: Exec}
+    - {from: 7102000049, fromPin: value, to: 7102000050, toPin: A}
+    - {from: 7102000050, fromPin: Result, to: 7102000048, toPin: value}
+    - {from: 7102000049, fromPin: Then, to: 7102000048, toPin: Exec}
+    - {from: 7102000048, fromPin: Then, to: 7102000051, toPin: Exec}
+    - {from: 7102000045, fromPin: "False", to: 7102000051, toPin: Exec}
+    - {from: 7102000051, fromPin: Then, to: 7102000052, toPin: Exec}
+    - {from: 7102000053, fromPin: Then, to: 7102000054, toPin: Exec}
+    - {from: 7102000053, fromPin: weapon, to: 7102000055, toPin: A}
+    - {from: 7102000054, fromPin: value, to: 7102000055, toPin: B}
+    - {from: 7102000055, fromPin: Result, to: 7102000056, toPin: Condition}
+    - {from: 7102000054, fromPin: Then, to: 7102000056, toPin: Exec}
+    - {from: 7102000053, fromPin: weapon, to: 7102000057, toPin: weapon}
+    - {from: 7102000056, fromPin: "True", to: 7102000057, toPin: Exec}
+    - {from: 7102000057, fromPin: result, to: 7102000058, toPin: Condition}
+    - {from: 7102000057, fromPin: Then, to: 7102000058, toPin: Exec}
+    - {from: 7102000053, fromPin: weapon, to: 7102000059, toPin: value}
+    - {from: 7102000058, fromPin: "True", to: 7102000059, toPin: Exec}
+    - {from: 7102000060, fromPin: Then, to: 7102000061, toPin: Exec}
+    - {from: 7102000061, fromPin: value, to: 7102000062, toPin: Value}
+    - {from: 7102000061, fromPin: Then, to: 7102000062, toPin: Exec}
+    - {from: 7102000062, fromPin: Then, to: 7102000063, toPin: Exec}
+    - {from: 7102000064, fromPin: Value, to: 7102000065, toPin: A}
+    - {from: 7102000063, fromPin: Index, to: 7102000065, toPin: B}
+    - {from: 7102000065, fromPin: Result, to: 7102000066, toPin: A}
+    - {from: 7102000066, fromPin: Result, to: 7102000067, toPin: A}
+    - {from: 7102000067, fromPin: Result, to: 7102000068, toPin: A}
+    - {from: 7102000068, fromPin: Result, to: 7102000069, toPin: Value}
+    - {from: 7102000063, fromPin: Body, to: 7102000069, toPin: Exec}
+    - {from: 7102000071, fromPin: Value, to: 7102000070, toPin: weapon}
+    - {from: 7102000069, fromPin: Then, to: 7102000070, toPin: Exec}
+    - {from: 7102000070, fromPin: result, to: 7102000072, toPin: Condition}
+    - {from: 7102000070, fromPin: Then, to: 7102000072, toPin: Exec}
+    - {from: 7102000073, fromPin: Value, to: 7102000074, toPin: A}
+    - {from: 7102000074, fromPin: Result, to: 7102000075, toPin: Value}
+    - {from: 7102000072, fromPin: "True", to: 7102000075, toPin: Exec}
+    - {from: 7102000077, fromPin: Value, to: 7102000076, toPin: Condition}
+    - {from: 7102000075, fromPin: Then, to: 7102000076, toPin: Exec}
+    - {from: 7102000076, fromPin: "False", to: 7102000078, toPin: Exec}
+    - {from: 7102000078, fromPin: value, to: 7102000079, toPin: A}
+    - {from: 7102000079, fromPin: Result, to: 7102000080, toPin: Value}
+    - {from: 7102000078, fromPin: Then, to: 7102000080, toPin: Exec}
+    - {from: 7102000081, fromPin: Value, to: 7102000082, toPin: Condition}
+    - {from: 7102000080, fromPin: Then, to: 7102000082, toPin: Exec}
+    - {from: 7102000076, fromPin: "True", to: 7102000082, toPin: Exec}
+    - {from: 7102000084, fromPin: Value, to: 7102000083, toPin: weapon}
+    - {from: 7102000082, fromPin: "True", to: 7102000083, toPin: Exec}
+    - {from: 7102000083, fromPin: Then, to: 7102000085, toPin: Exec}
+    - {from: 7102000087, fromPin: Value, to: 7102000088, toPin: Table}
+    - {from: 7102000086, fromPin: weapon, to: 7102000088, toPin: Key}
+    - {from: 7102000088, fromPin: Result, to: 7102000089, toPin: Value}
+    - {from: 7102000086, fromPin: Then, to: 7102000089, toPin: Exec}
+    - {from: 7102000090, fromPin: Value, to: 7102000091, toPin: Table}
+    - {from: 7102000086, fromPin: weapon, to: 7102000091, toPin: Key}
+    - {from: 7102000091, fromPin: Result, to: 7102000092, toPin: B}
+    - {from: 7102000092, fromPin: Result, to: 7102000093, toPin: Value}
+    - {from: 7102000089, fromPin: Then, to: 7102000093, toPin: Exec}
+    - {from: 7102000095, fromPin: Value, to: 7102000096, toPin: Table}
+    - {from: 7102000086, fromPin: weapon, to: 7102000096, toPin: Key}
+    - {from: 7102000096, fromPin: Result, to: 7102000094, toPin: asset_path}
+    - {from: 7102000093, fromPin: Then, to: 7102000094, toPin: Exec}
+    - {from: 7102000094, fromPin: Then, to: 7102000098, toPin: Exec}
+    - {from: 7102000098, fromPin: value, to: 7102000099, toPin: A}
+    - {from: 7102000099, fromPin: Result, to: 7102000097, toPin: value}
+    - {from: 7102000098, fromPin: Then, to: 7102000097, toPin: Exec}
+    - {from: 7102000101, fromPin: Value, to: 7102000100, toPin: entity_id}
+    - {from: 7102000100, fromPin: x, to: 7102000102, toPin: Value}
+    - {from: 7102000097, fromPin: Then, to: 7102000102, toPin: Exec}
+    - {from: 7102000100, fromPin: y, to: 7102000103, toPin: Value}
+    - {from: 7102000102, fromPin: Then, to: 7102000103, toPin: Exec}
+    - {from: 7102000086, fromPin: weapon, to: 7102000104, toPin: A}
+    - {from: 7102000104, fromPin: Result, to: 7102000105, toPin: Condition}
+    - {from: 7102000103, fromPin: Then, to: 7102000105, toPin: Exec}
+    - {from: 7102000105, fromPin: "True", to: 7102000107, toPin: Exec}
+    - {from: 7102000107, fromPin: value, to: 7102000108, toPin: A}
+    - {from: 7102000108, fromPin: Result, to: 7102000106, toPin: value}
+    - {from: 7102000107, fromPin: Then, to: 7102000106, toPin: Exec}
+    - {from: 7102000106, fromPin: Then, to: 7102000110, toPin: Exec}
+    - {from: 7102000110, fromPin: value, to: 7102000111, toPin: A}
+    - {from: 7102000111, fromPin: Result, to: 7102000109, toPin: value}
+    - {from: 7102000110, fromPin: Then, to: 7102000109, toPin: Exec}
+    - {from: 7102000113, fromPin: Value, to: 7102000112, toPin: value}
+    - {from: 7102000109, fromPin: Then, to: 7102000112, toPin: Exec}
+    - {from: 7102000115, fromPin: Value, to: 7102000114, toPin: value}
+    - {from: 7102000112, fromPin: Then, to: 7102000114, toPin: Exec}
+    - {from: 7102000117, fromPin: Value, to: 7102000116, toPin: entity_id}
+    - {from: 7102000116, fromPin: rz, to: 7102000118, toPin: Value}
+    - {from: 7102000114, fromPin: Then, to: 7102000118, toPin: Exec}
+    - {from: 7102000105, fromPin: "False", to: 7102000118, toPin: Exec}
+    - {from: 7102000086, fromPin: weapon, to: 7102000119, toPin: A}
+    - {from: 7102000119, fromPin: Result, to: 7102000122, toPin: Condition}
+    - {from: 7102000120, fromPin: Value, to: 7102000122, toPin: "True"}
+    - {from: 7102000121, fromPin: Value, to: 7102000122, toPin: "False"}
+    - {from: 7102000122, fromPin: Result, to: 7102000123, toPin: Value}
+    - {from: 7102000118, fromPin: Then, to: 7102000123, toPin: Exec}
+    - {from: 7102000125, fromPin: Value, to: 7102000124, toPin: player_id}
+    - {from: 7102000126, fromPin: Value, to: 7102000124, toPin: yaw}
+    - {from: 7102000127, fromPin: Value, to: 7102000124, toPin: range}
+    - {from: 7102000128, fromPin: Value, to: 7102000124, toPin: cone}
+    - {from: 7102000123, fromPin: Then, to: 7102000124, toPin: Exec}
+    - {from: 7102000124, fromPin: target, to: 7102000129, toPin: Value}
+    - {from: 7102000124, fromPin: Then, to: 7102000129, toPin: Exec}
+    - {from: 7102000124, fromPin: distance, to: 7102000130, toPin: Value}
+    - {from: 7102000129, fromPin: Then, to: 7102000130, toPin: Exec}
+    - {from: 7102000131, fromPin: Value, to: 7102000132, toPin: A}
+    - {from: 7102000132, fromPin: Result, to: 7102000133, toPin: Condition}
+    - {from: 7102000130, fromPin: Then, to: 7102000133, toPin: Exec}
+    - {from: 7102000135, fromPin: Value, to: 7102000134, toPin: entity_id}
+    - {from: 7102000137, fromPin: Value, to: 7102000136, toPin: entity_id}
+    - {from: 7102000136, fromPin: value, to: 7102000138, toPin: Value}
+    - {from: 7102000139, fromPin: Value, to: 7102000140, toPin: Table}
+    - {from: 7102000086, fromPin: weapon, to: 7102000140, toPin: Key}
+    - {from: 7102000138, fromPin: Result, to: 7102000141, toPin: A}
+    - {from: 7102000140, fromPin: Result, to: 7102000141, toPin: B}
+    - {from: 7102000141, fromPin: Result, to: 7102000134, toPin: value}
+    - {from: 7102000133, fromPin: "True", to: 7102000134, toPin: Exec}
+    - {from: 7102000134, fromPin: Then, to: 7102000143, toPin: Exec}
+    - {from: 7102000143, fromPin: value, to: 7102000144, toPin: A}
+    - {from: 7102000144, fromPin: Result, to: 7102000142, toPin: value}
+    - {from: 7102000143, fromPin: Then, to: 7102000142, toPin: Exec}
+    - {from: 7102000145, fromPin: Then, to: 7102000146, toPin: Exec}
+    - {from: 7102000147, fromPin: Value, to: 7102000148, toPin: Value}
+    - {from: 7102000146, fromPin: Then, to: 7102000148, toPin: Exec}
+    - {from: 7102000148, fromPin: Then, to: 7102000149, toPin: Exec}
+    - {from: 7102000149, fromPin: Then, to: 7102000150, toPin: Exec}
+    - {from: 7102000152, fromPin: Value, to: 7102000151, toPin: entity_id}
+    - {from: 7102000150, fromPin: Then, to: 7102000151, toPin: Exec}
+    - {from: 7102000151, fromPin: Then, to: 7102000153, toPin: Exec}
+    - {from: 7102000153, fromPin: Then, to: 7102000154, toPin: Exec}
+    - {from: 7102000155, fromPin: Then, to: 7102000156, toPin: Exec}
+    - {from: 7102000157, fromPin: Value, to: 7102000158, toPin: A}
+    - {from: 7102000158, fromPin: Result, to: 7102000159, toPin: Condition}
+    - {from: 7102000156, fromPin: Then, to: 7102000159, toPin: Exec}
+    - {from: 7102000160, fromPin: Value, to: 7102000161, toPin: Table}
+    - {from: 7102000155, fromPin: weapon, to: 7102000161, toPin: Key}
+    - {from: 7102000161, fromPin: Result, to: 7102000162, toPin: B}
+    - {from: 7102000162, fromPin: Result, to: 7102000163, toPin: Value}
+    - {from: 7102000159, fromPin: "True", to: 7102000163, toPin: Exec}
+    - {from: 7102000164, fromPin: Value, to: 7102000166, toPin: A}
+    - {from: 7102000165, fromPin: Value, to: 7102000166, toPin: B}
+    - {from: 7102000166, fromPin: Result, to: 7102000167, toPin: B}
+    - {from: 7102000167, fromPin: Result, to: 7102000168, toPin: A}
+    - {from: 7102000168, fromPin: Result, to: 7102000169, toPin: A}
+    - {from: 7102000169, fromPin: Result, to: 7102000170, toPin: B}
+    - {from: 7102000170, fromPin: Result, to: 7102000171, toPin: B}
+    - {from: 7102000171, fromPin: Result, to: 7102000172, toPin: Value}
+    - {from: 7102000163, fromPin: Then, to: 7102000172, toPin: Exec}
+    - {from: 7102000155, fromPin: weapon, to: 7102000173, toPin: A}
+    - {from: 7102000173, fromPin: Result, to: 7102000174, toPin: A}
+    - {from: 7102000174, fromPin: Result, to: 7102000176, toPin: A}
+    - {from: 7102000175, fromPin: Value, to: 7102000176, toPin: B}
+    - {from: 7102000176, fromPin: Result, to: 7102000177, toPin: Value}
+    - {from: 7102000172, fromPin: Then, to: 7102000177, toPin: Exec}
+    - {from: 7102000159, fromPin: "False", to: 7102000177, toPin: Exec}
+    - {from: 7102000178, fromPin: Value, to: 7102000179, toPin: Table}
+    - {from: 7102000179, fromPin: Result, to: 7102000180, toPin: A}
+    - {from: 7102000181, fromPin: Value, to: 7102000182, toPin: Table}
+    - {from: 7102000182, fromPin: Result, to: 7102000184, toPin: A}
+    - {from: 7102000183, fromPin: Value, to: 7102000184, toPin: B}
+    - {from: 7102000180, fromPin: Result, to: 7102000185, toPin: A}
+    - {from: 7102000184, fromPin: Result, to: 7102000185, toPin: B}
+    - {from: 7102000185, fromPin: Result, to: 7102000186, toPin: Condition}
+    - {from: 7102000177, fromPin: Then, to: 7102000186, toPin: Exec}
+    - {from: 7102000188, fromPin: Value, to: 7102000189, toPin: Table}
+    - {from: 7102000187, fromPin: Value, to: 7102000189, toPin: Value}
+    - {from: 7102000186, fromPin: "True", to: 7102000189, toPin: Exec}
+    - {from: 7102000191, fromPin: Value, to: 7102000192, toPin: Table}
+    - {from: 7102000192, fromPin: Result, to: 7102000190, toPin: entity_id}
+    - {from: 7102000193, fromPin: Value, to: 7102000194, toPin: A}
+    - {from: 7102000194, fromPin: Result, to: 7102000190, toPin: frame}
+    - {from: 7102000189, fromPin: Then, to: 7102000190, toPin: Exec}
+    - {from: 7102000197, fromPin: Value, to: 7102000196, toPin: default}
+    - {from: 7102000195, fromPin: Then, to: 7102000196, toPin: Exec}
+    - {from: 7102000196, fromPin: value, to: 7102000198, toPin: Value}
+    - {from: 7102000196, fromPin: Then, to: 7102000198, toPin: Exec}
+    - {from: 7102000198, fromPin: Then, to: 7102000199, toPin: Exec}
+    - {from: 7102000199, fromPin: value, to: 7102000200, toPin: Value}
+    - {from: 7102000199, fromPin: Then, to: 7102000200, toPin: Exec}
+    - {from: 7102000202, fromPin: Value, to: 7102000203, toPin: B}
+    - {from: 7102000203, fromPin: Result, to: 7102000204, toPin: A}
+    - {from: 7102000204, fromPin: Result, to: 7102000205, toPin: B}
+    - {from: 7102000205, fromPin: Result, to: 7102000201, toPin: text}
+    - {from: 7102000200, fromPin: Then, to: 7102000201, toPin: Exec}
+    - {from: 7102000201, fromPin: Then, to: 7102000207, toPin: Exec}
+    - {from: 7102000209, fromPin: Result, to: 7102000208, toPin: A}
+    - {from: 7102000207, fromPin: value, to: 7102000208, toPin: B}
+    - {from: 7102000208, fromPin: Result, to: 7102000206, toPin: text}
+    - {from: 7102000207, fromPin: Then, to: 7102000206, toPin: Exec}
+    - {from: 7102000211, fromPin: Value, to: 7102000213, toPin: Table}
+    - {from: 7102000212, fromPin: Value, to: 7102000213, toPin: Key}
+    - {from: 7102000213, fromPin: Result, to: 7102000210, toPin: text}
+    - {from: 7102000206, fromPin: Then, to: 7102000210, toPin: Exec}
+    - {from: 7102000214, fromPin: Value, to: 7102000215, toPin: Condition}
+    - {from: 7102000210, fromPin: Then, to: 7102000215, toPin: Exec}
+    - {from: 7102000216, fromPin: Value, to: 7102000217, toPin: A}
+    - {from: 7102000195, fromPin: dt, to: 7102000217, toPin: B}
+    - {from: 7102000217, fromPin: Result, to: 7102000218, toPin: Value}
+    - {from: 7102000215, fromPin: "True", to: 7102000218, toPin: Exec}
+    - {from: 7102000219, fromPin: Value, to: 7102000220, toPin: A}
+    - {from: 7102000220, fromPin: Result, to: 7102000221, toPin: Condition}
+    - {from: 7102000218, fromPin: Then, to: 7102000221, toPin: Exec}
+    - {from: 7102000221, fromPin: "True", to: 7102000222, toPin: Exec}
+    - {from: 7102000222, fromPin: Then, to: 7102000223, toPin: Exec}
+    - {from: 7102000225, fromPin: Value, to: 7102000226, toPin: A}
+    - {from: 7102000226, fromPin: Result, to: 7102000224, toPin: slot}
+    - {from: 7102000224, fromPin: exists, to: 7102000227, toPin: Condition}
+    - {from: 7102000223, fromPin: Then, to: 7102000227, toPin: Exec}
+    - {from: 7102000229, fromPin: Value, to: 7102000230, toPin: A}
+    - {from: 7102000230, fromPin: Result, to: 7102000228, toPin: slot}
+    - {from: 7102000227, fromPin: "True", to: 7102000228, toPin: Exec}
+    - {from: 7102000227, fromPin: "False", to: 7102000231, toPin: Exec}
+    - {from: 7102000231, fromPin: Then, to: 7102000232, toPin: Exec}
+    - {from: 7102000234, fromPin: Value, to: 7102000233, toPin: scene_path}
+    - {from: 7102000235, fromPin: Value, to: 7102000236, toPin: Value}
+    - {from: 7102000236, fromPin: R, to: 7102000233, toPin: r}
+    - {from: 7102000237, fromPin: Value, to: 7102000238, toPin: Value}
+    - {from: 7102000238, fromPin: G, to: 7102000233, toPin: g}
+    - {from: 7102000239, fromPin: Value, to: 7102000240, toPin: Value}
+    - {from: 7102000240, fromPin: B, to: 7102000233, toPin: b}
+    - {from: 7102000232, fromPin: Then, to: 7102000233, toPin: Exec}
+    - {from: 7102000215, fromPin: "False", to: 7102000241, toPin: Exec}
+    - {from: 7102000241, fromPin: value, to: 7102000242, toPin: Value}
+    - {from: 7102000241, fromPin: Then, to: 7102000242, toPin: Exec}
+    - {from: 7102000243, fromPin: Value, to: 7102000244, toPin: A}
+    - {from: 7102000244, fromPin: Result, to: 7102000245, toPin: Condition}
+    - {from: 7102000242, fromPin: Then, to: 7102000245, toPin: Exec}
+    - {from: 7102000245, fromPin: "True", to: 7102000246, toPin: Exec}
+    - {from: 7102000247, fromPin: Value, to: 7102000249, toPin: A}
+    - {from: 7102000248, fromPin: Value, to: 7102000249, toPin: B}
+    - {from: 7102000249, fromPin: Result, to: 7102000250, toPin: B}
+    - {from: 7102000250, fromPin: Result, to: 7102000251, toPin: Value}
+    - {from: 7102000246, fromPin: Then, to: 7102000251, toPin: Exec}
+    - {from: 7102000253, fromPin: Value, to: 7102000252, toPin: value}
+    - {from: 7102000251, fromPin: Then, to: 7102000252, toPin: Exec}
+    - {from: 7102000252, fromPin: Then, to: 7102000255, toPin: Exec}
+    - {from: 7102000255, fromPin: value, to: 7102000256, toPin: A}
+    - {from: 7102000256, fromPin: Result, to: 7102000254, toPin: value}
+    - {from: 7102000255, fromPin: Then, to: 7102000254, toPin: Exec}
+    - {from: 7102000254, fromPin: Then, to: 7102000257, toPin: Exec}
+    - {from: 7102000258, fromPin: Value, to: 7102000259, toPin: A}
+    - {from: 7102000259, fromPin: Result, to: 7102000260, toPin: Condition}
+    - {from: 7102000257, fromPin: Then, to: 7102000260, toPin: Exec}
+    - {from: 7102000260, fromPin: "True", to: 7102000261, toPin: Exec}
+    - {from: 7102000262, fromPin: Value, to: 7102000263, toPin: A}
+    - {from: 7102000195, fromPin: dt, to: 7102000263, toPin: B}
+    - {from: 7102000263, fromPin: Result, to: 7102000264, toPin: B}
+    - {from: 7102000264, fromPin: Result, to: 7102000265, toPin: Value}
+    - {from: 7102000260, fromPin: "False", to: 7102000265, toPin: Exec}
+    - {from: 7102000245, fromPin: "False", to: 7102000265, toPin: Exec}
+    - {from: 7102000266, fromPin: Value, to: 7102000267, toPin: A}
+    - {from: 7102000195, fromPin: dt, to: 7102000267, toPin: B}
+    - {from: 7102000267, fromPin: Result, to: 7102000268, toPin: B}
+    - {from: 7102000268, fromPin: Result, to: 7102000269, toPin: Value}
+    - {from: 7102000265, fromPin: Then, to: 7102000269, toPin: Exec}
+    - {from: 7102000271, fromPin: Value, to: 7102000270, toPin: weapon}
+    - {from: 7102000195, fromPin: dt, to: 7102000270, toPin: dt}
+    - {from: 7102000269, fromPin: Then, to: 7102000270, toPin: Exec}
+    - {from: 7102000272, fromPin: active, to: 7102000273, toPin: Condition}
+    - {from: 7102000270, fromPin: Then, to: 7102000273, toPin: Exec}
+    - {from: 7102000273, fromPin: "False", to: 7102000274, toPin: Exec}
+    - {from: 7102000274, fromPin: value, to: 7102000275, toPin: A}
+    - {from: 7102000275, fromPin: Result, to: 7102000276, toPin: Condition}
+    - {from: 7102000274, fromPin: Then, to: 7102000276, toPin: Exec}
+    - {from: 7102000276, fromPin: "False", to: 7102000277, toPin: Exec}
+    - {from: 7102000277, fromPin: value, to: 7102000278, toPin: Condition}
+    - {from: 7102000277, fromPin: Then, to: 7102000278, toPin: Exec}
+    - {from: 7102000278, fromPin: "False", to: 7102000279, toPin: Exec}
+    - {from: 7102000279, fromPin: Index, to: 7102000281, toPin: B}
+    - {from: 7102000281, fromPin: Result, to: 7102000280, toPin: action}
+    - {from: 7102000280, fromPin: pressed, to: 7102000282, toPin: Condition}
+    - {from: 7102000279, fromPin: Body, to: 7102000282, toPin: Exec}
+    - {from: 7102000279, fromPin: Index, to: 7102000283, toPin: weapon}
+    - {from: 7102000282, fromPin: "True", to: 7102000283, toPin: Exec}
+    - {from: 7102000284, fromPin: pressed, to: 7102000285, toPin: Condition}
+    - {from: 7102000279, fromPin: Completed, to: 7102000285, toPin: Exec}
+    - {from: 7102000285, fromPin: "True", to: 7102000286, toPin: Exec}
+    - {from: 7102000286, fromPin: Then, to: 7102000287, toPin: Exec}
+    - {from: 7102000285, fromPin: "False", to: 7102000287, toPin: Exec}
+    - {from: 7102000287, fromPin: value, to: 7102000288, toPin: Value}
+    - {from: 7102000287, fromPin: Then, to: 7102000288, toPin: Exec}
+    - {from: 7102000290, fromPin: Value, to: 7102000292, toPin: Table}
+    - {from: 7102000291, fromPin: Value, to: 7102000292, toPin: Key}
+    - {from: 7102000292, fromPin: Result, to: 7102000294, toPin: A}
+    - {from: 7102000293, fromPin: pressed, to: 7102000294, toPin: B}
+    - {from: 7102000289, fromPin: pressed, to: 7102000295, toPin: A}
+    - {from: 7102000294, fromPin: Result, to: 7102000295, toPin: B}
+    - {from: 7102000295, fromPin: Result, to: 7102000296, toPin: Value}
+    - {from: 7102000288, fromPin: Then, to: 7102000296, toPin: Exec}
+    - {from: 7102000298, fromPin: Value, to: 7102000299, toPin: A}
+    - {from: 7102000297, fromPin: Value, to: 7102000300, toPin: A}
+    - {from: 7102000299, fromPin: Result, to: 7102000300, toPin: B}
+    - {from: 7102000300, fromPin: Result, to: 7102000301, toPin: Condition}
+    - {from: 7102000296, fromPin: Then, to: 7102000301, toPin: Exec}
+    - {from: 7102000302, fromPin: Value, to: 7102000303, toPin: A}
+    - {from: 7102000303, fromPin: Result, to: 7102000304, toPin: Condition}
+    - {from: 7102000301, fromPin: "True", to: 7102000304, toPin: Exec}
+    - {from: 7102000304, fromPin: "True", to: 7102000305, toPin: Exec}
+    - {from: 7102000305, fromPin: value, to: 7102000306, toPin: A}
+    - {from: 7102000306, fromPin: Result, to: 7102000307, toPin: Condition}
+    - {from: 7102000305, fromPin: Then, to: 7102000307, toPin: Exec}
+    - {from: 7102000307, fromPin: "True", to: 7102000308, toPin: Exec}
+    - {from: 7102000308, fromPin: Then, to: 7102000309, toPin: Exec}
+    - {from: 7102000309, fromPin: Then, to: 7102000310, toPin: Exec}
+    - {from: 7102000312, fromPin: Value, to: 7102000311, toPin: weapon}
+    - {from: 7102000304, fromPin: "False", to: 7102000311, toPin: Exec}
+    - {from: 7102000307, fromPin: "False", to: 7102000311, toPin: Exec}
+    - {from: 7102000030, fromPin: Then, to: 7102000313, toPin: Exec}
+  groups:
+    - {id: 7102090000, title: set_text, position: [146, -52], size: [1510, 1080], color: Teal}
+    - {id: 7102090001, title: owns, position: [316, 1088], size: [1000, 480], color: Teal}
+    - {id: 7102090002, title: reset, position: [316, 1628], size: [2700, 360], color: Teal}
+    - {id: 7102090003, title: on_create, position: [146, 2048], size: [5250, 600], color: Red}
+    - {id: 7102090004, title: select_weapon, position: [316, 2708], size: [2020, 360], color: Teal}
+    - {id: 7102090005, title: cycle_weapon, position: [316, 3128], size: [4740, 840], color: Teal}
+    - {id: 7102090006, title: attack, position: [146, 4028], size: [8310, 1080], color: Teal}
+    - {id: 7102090007, title: die, position: [316, 5168], size: [2700, 360], color: Teal}
+    - {id: 7102090008, title: update_view, position: [316, 5588], size: [3040, 1200], color: Teal}
+    - {id: 7102090009, title: on_update, position: [316, 6848], size: [18340, 1080], color: Red}

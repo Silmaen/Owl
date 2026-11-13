@@ -383,7 +383,10 @@ the world:
 A joint is built once both bodies exist; one whose connected entity has no body is not built and a warning is logged.
 Lua `physics.set_joint_motor(id, speed, [enabled])` drives the motor and `physics.get_joint_position(id)` reads the
 hinge angle from the start pose or the slider position, measured on the joint's own entity relative to the connected
-body. Joints are part of `saveState` / `restoreState`. Owl Nest draws the selected joint in the viewport: anchor
+body. `physics.add_joint(id, other_id, kind, x, y, z, [break_force], [break_torque])` joins two bodies in Play (kind
+`fixed`, `distance`, `hinge` or `slider`, anchored at a point of the entity's frame, `other_id` nil for the world): it
+replaces the entity's joint and is built at the next step. `physics.get_joint_load(id)` reads the force and the torque
+the joint held in the last step, the values its break thresholds are compared with (`PhysicCommand::getJointLoad`). Joints are part of `saveState` / `restoreState`. Owl Nest draws the selected joint in the viewport: anchor
 cross, line to the connected body, axis.
 
 A joint with a break force or a break torque breaks when the load it held in a step goes beyond it: the force and the
@@ -400,7 +403,10 @@ when Play starts again. A long chain of joints sags under its own weight at the 
 `addTorque(entity, torque)` turns it; a 2D body keeps X and Y of a force and Z of a torque, a static body is left alone.
 Lua: `physics.add_force(id, fx, fy, [fz])`, `physics.add_force_at(id, fx, fy, px, py)`,
 `physics.add_force_at_3d(id, fx, fy, fz, px, py, pz)`, `physics.add_torque(id, t)`,
-`physics.add_torque_3d(id, tx, ty, tz)`. A force lasts one step: a steady thrust is applied in `on_tick` (or a system's
+`physics.add_torque_3d(id, tx, ty, tz)`. `physics.get_angular_velocity(id)` and
+`physics.set_angular_velocity(id, wx, wy, wz)` read and set the turn rate around the world axes (only `wz` for a 2D
+body; `PhysicCommand::getAngularVelocity3D`, `setAngularVelocity3D`): a craft that turns at the rate of its stick and
+stops when it is released. A force lasts one step: a steady thrust is applied in `on_tick` (or a system's
 `tick`), once per step, so it does not depend on the frame rate.
 
 ## Assemblies {#assemblies}

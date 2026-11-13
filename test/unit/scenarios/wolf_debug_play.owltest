@@ -1,0 +1,13 @@
+# Wolfenstein mini, floor 1 started directly with the visual scripts built as Play in Owl Nest builds them (probes
+# of the wire values): the fog, the minimap and the doors of explore.owlvs, the guards and the arsenal run without a
+# script error while the player turns and walks.
+scene: ../../../samples/wolfenstein/scenes/level_1.owl
+project: ../../../samples/wolfenstein
+debug_scripts: true
+steps:
+  - frames: 30
+  - actions: {turn: 1, frames: 60}
+  - actions: {walk: 1, frames: 60}
+  - actions: {fire: true, frames: 1}
+  - frames: 120
+  - expect: {gamestate: wolf_seen, greater: 10}

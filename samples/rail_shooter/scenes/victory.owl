@@ -111,7 +111,7 @@ Entities:
       gameVisible: true
     Hierarchy: {}
     LuaScript:
-      scriptPath: gid:7fdcda9b19926b16:scripts/ui/backdrop.lua
+      scriptPath: gid:7fdcda9b19926b16:scripts/ui/backdrop.owlvs
       properties:
         - name: speed
           type: float
@@ -935,7 +935,7 @@ Entities:
       referenceResolution: [1280, 720]
       scaleMode: ScaleWithHeight
     LuaScript:
-      scriptPath: gid:3f5dbb49359d85fb:scripts/ui/victory.lua
+      scriptPath: gid:3f5dbb49359d85fb:scripts/ui/victory.owlvs
   - Entity: 7820000000000000058
     Tag:
       tag: ResultGroup
@@ -1006,16 +1006,19 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.03, 0.08, 0.16, 1]
-      hoverColor: [0.08, 0.22, 0.38, 1]
-      pressedColor: [0.12, 0.32, 0.5, 1]
-      disabledColor: [0.05, 0.06, 0.08, 0.6]
+      normalColor: [0.45, 0.85, 1, 0.55]
+      hoverColor: [1, 0.74, 0.25, 1]
+      pressedColor: [1, 1, 1, 1]
+      disabledColor: [0.3, 0.4, 0.5, 0.3]
       onClickCallback: on_menu_clicked
+      Box:
+        texture: gid:c20f529d9e4681db:textures/ui/mfd_button.png
+        sliceInsets: [36, 12, 16, 12]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.02, 0.06, 0.15, 1]
+      outlineWidth: 1
+      outlineColor: [0.01, 0.03, 0.08, 1]
       text: 'TITLE'
-      color: [0.55, 0.92, 1, 1]
+      color: [0.9, 0.97, 1, 1]
       fontSize: 28
       horizontalAlignment: Center
       verticalAlignment: Middle
@@ -1024,35 +1027,14 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBoldItalic
+      font: ShareTechMono-Regular
     UiFocus:
       focusable: true
       initial: false
       onFocusCallback: ''
-      highlightColor: [1, 0.78, 0.3, 1]
-      highlightThickness: 3
+      highlightColor: [0, 0, 0, 0]
+      highlightThickness: 1
   - Entity: 7820000000000000061
-    Tag:
-      tag: MenuButtonFrame
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7820000000000000060
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:4677dd46ed5ab744:textures/ui/button_frame.png
-  - Entity: 7820000000000000062
     Tag:
       tag: RetryButton
     Transform:
@@ -1071,16 +1053,19 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiButton:
-      normalColor: [0.03, 0.08, 0.16, 1]
-      hoverColor: [0.08, 0.22, 0.38, 1]
-      pressedColor: [0.12, 0.32, 0.5, 1]
-      disabledColor: [0.05, 0.06, 0.08, 0.6]
+      normalColor: [0.45, 0.85, 1, 0.55]
+      hoverColor: [1, 0.74, 0.25, 1]
+      pressedColor: [1, 1, 1, 1]
+      disabledColor: [0.3, 0.4, 0.5, 0.3]
       onClickCallback: on_retry_clicked
+      Box:
+        texture: gid:c20f529d9e4681db:textures/ui/mfd_button.png
+        sliceInsets: [36, 12, 16, 12]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.02, 0.06, 0.15, 1]
+      outlineWidth: 1
+      outlineColor: [0.01, 0.03, 0.08, 1]
       text: 'FLY AGAIN'
-      color: [0.55, 0.92, 1, 1]
+      color: [0.9, 0.97, 1, 1]
       fontSize: 28
       horizontalAlignment: Center
       verticalAlignment: Middle
@@ -1089,35 +1074,14 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBoldItalic
+      font: ShareTechMono-Regular
     UiFocus:
       focusable: true
       initial: true
       onFocusCallback: ''
-      highlightColor: [1, 0.78, 0.3, 1]
-      highlightThickness: 3
-  - Entity: 7820000000000000063
-    Tag:
-      tag: RetryButtonFrame
-    Transform:
-      translation: [0, 0, 0]
-      rotation: [0, 0, 0]
-      scale: [1, 1, 1]
-    Visibility:
-      gameVisible: true
-    Hierarchy:
-      parentId: 7820000000000000062
-    UiRect:
-      anchorMin: [0, 0]
-      anchorMax: [0, 0]
-      pivot: [0, 0]
-      size: [1, 1]
-      sizeUnit: [ParentWidth, ParentHeight]
-      offset: [0, 0]
-    UiImage:
-      tint: [1, 1, 1, 1]
-      texture: gid:4677dd46ed5ab744:textures/ui/button_frame.png
-  - Entity: 7820000000000000064
+      highlightColor: [0, 0, 0, 0]
+      highlightThickness: 1
+  - Entity: 7820000000000000062
     Tag:
       tag: BestLabel
     Transform:
@@ -1136,8 +1100,8 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.02, 0.06, 0.15, 1]
+      outlineWidth: 1
+      outlineColor: [0.01, 0.03, 0.08, 1]
       text: ''
       color: [1, 0.78, 0.3, 1]
       fontSize: 26
@@ -1148,8 +1112,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: JetBrainsMono-Regular
-  - Entity: 7820000000000000065
+      font: ShareTechMono-Regular
+  - Entity: 7820000000000000063
     Tag:
       tag: MedalRow
     Transform:
@@ -1167,7 +1131,7 @@ Entities:
       size: [1, 0.16]
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
-  - Entity: 7820000000000000066
+  - Entity: 7820000000000000064
     Tag:
       tag: Medal
     Transform:
@@ -1177,7 +1141,7 @@ Entities:
     Visibility:
       gameVisible: true
     Hierarchy:
-      parentId: 7820000000000000065
+      parentId: 7820000000000000063
     UiRect:
       anchorMin: [0.5, 0.5]
       anchorMax: [0.5, 0.5]
@@ -1191,7 +1155,7 @@ Entities:
       columns: 4
       rows: 1
       frame: 0
-  - Entity: 7820000000000000067
+  - Entity: 7820000000000000065
     Tag:
       tag: StatLine6
     Transform:
@@ -1210,8 +1174,8 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.02, 0.06, 0.15, 1]
+      outlineWidth: 1
+      outlineColor: [0.01, 0.03, 0.08, 1]
       text: ''
       color: [0.55, 0.92, 1, 1]
       fontSize: 26
@@ -1222,8 +1186,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: JetBrainsMono-Regular
-  - Entity: 7820000000000000068
+      font: ShareTechMono-Regular
+  - Entity: 7820000000000000066
     Tag:
       tag: StatLine5
     Transform:
@@ -1242,8 +1206,8 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.02, 0.06, 0.15, 1]
+      outlineWidth: 1
+      outlineColor: [0.01, 0.03, 0.08, 1]
       text: ''
       color: [0.55, 0.92, 1, 1]
       fontSize: 26
@@ -1254,8 +1218,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: JetBrainsMono-Regular
-  - Entity: 7820000000000000069
+      font: ShareTechMono-Regular
+  - Entity: 7820000000000000067
     Tag:
       tag: StatLine4
     Transform:
@@ -1274,8 +1238,8 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.02, 0.06, 0.15, 1]
+      outlineWidth: 1
+      outlineColor: [0.01, 0.03, 0.08, 1]
       text: ''
       color: [0.55, 0.92, 1, 1]
       fontSize: 26
@@ -1286,8 +1250,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: JetBrainsMono-Regular
-  - Entity: 7820000000000000070
+      font: ShareTechMono-Regular
+  - Entity: 7820000000000000068
     Tag:
       tag: StatLine3
     Transform:
@@ -1306,8 +1270,8 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.02, 0.06, 0.15, 1]
+      outlineWidth: 1
+      outlineColor: [0.01, 0.03, 0.08, 1]
       text: ''
       color: [0.55, 0.92, 1, 1]
       fontSize: 26
@@ -1318,8 +1282,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: JetBrainsMono-Regular
-  - Entity: 7820000000000000071
+      font: ShareTechMono-Regular
+  - Entity: 7820000000000000069
     Tag:
       tag: StatLine2
     Transform:
@@ -1338,8 +1302,8 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.02, 0.06, 0.15, 1]
+      outlineWidth: 1
+      outlineColor: [0.01, 0.03, 0.08, 1]
       text: ''
       color: [0.55, 0.92, 1, 1]
       fontSize: 26
@@ -1350,8 +1314,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: JetBrainsMono-Regular
-  - Entity: 7820000000000000072
+      font: ShareTechMono-Regular
+  - Entity: 7820000000000000070
     Tag:
       tag: StatLine1
     Transform:
@@ -1370,8 +1334,8 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.02, 0.06, 0.15, 1]
+      outlineWidth: 1
+      outlineColor: [0.01, 0.03, 0.08, 1]
       text: ''
       color: [0.55, 0.92, 1, 1]
       fontSize: 26
@@ -1382,8 +1346,8 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: JetBrainsMono-Regular
-  - Entity: 7820000000000000073
+      font: ShareTechMono-Regular
+  - Entity: 7820000000000000071
     Tag:
       tag: ResultTitle
     Transform:
@@ -1402,8 +1366,8 @@ Entities:
       sizeUnit: [ParentWidth, ParentHeight]
       offset: [0, 0]
     UiText:
-      outlineWidth: 2
-      outlineColor: [0.02, 0.06, 0.15, 1]
+      outlineWidth: 1
+      outlineColor: [0.01, 0.03, 0.08, 1]
       text: 'SECTOR CLEARED'
       color: [0.55, 0.92, 1, 1]
       fontSize: 64
@@ -1414,4 +1378,4 @@ Entities:
       wrap: false
       fit: Shrink
       minFontSize: 12
-      font: OpenSans-ExtraBoldItalic
+      font: Audiowide-Regular

@@ -199,20 +199,60 @@ def image(texture: str, tint: Colour = (1, 1, 1, 1)) -> str:
 
 def button(
     callback: str,
-    colour: tuple[float, float, float],
+    colour: tuple[float, ...],
     hover: Colour | None = None,
     pressed: Colour | None = None,
     disabled: Colour = (0.15, 0.15, 0.15, 0.5),
+    box_style: str = "",
 ) -> str:
-    """A ``UiButton`` of a colour, lighter when hovered unless told otherwise."""
-    r, g, b = colour
+    """A ``UiButton`` of a colour (opaque unless it has an alpha), lighter when hovered unless told otherwise, drawn in
+    a ``box`` when given one."""
+    r, g, b = colour[:3]
+    alpha = colour[3] if len(colour) > 3 else 1
     hover_colour = hover if hover is not None else (r + 0.1, g + 0.1, b + 0.1, 1)
     pressed_colour = pressed if pressed is not None else (r - 0.05, g - 0.05, b - 0.05, 1)
     return (
-        f"UiButton:\n  normalColor: {vec(r, g, b, 1)}\n  hoverColor: {vec(*hover_colour)}\n"
+        f"UiButton:\n  normalColor: {vec(r, g, b, alpha)}\n  hoverColor: {vec(*hover_colour)}\n"
         f"  pressedColor: {vec(*pressed_colour)}\n  disabledColor: {vec(*disabled)}\n"
-        f"  onClickCallback: {callback}\n"
+        f"  onClickCallback: {callback}\n{box_style}"
     )
+
+
+def box(
+    radius: float = 0,
+    border: Colour | None = None,
+    border_width: float = 0,
+    shadow: Colour | None = None,
+    shadow_offset: tuple[float, float] = (0, 4),
+    shadow_blur: float = 8,
+    gradient: Colour | None = None,
+    texture: str = "",
+    insets: tuple[float, float, float, float] = (0, 0, 0, 0),
+) -> str:
+    """The ``Box`` of a button, a slider or a panel (append it to its block): rounded corners, a border, a shadow (a
+    glow with no offset), a vertical gradient (``gradient`` multiplies the fill at the bottom), a nine-slice texture
+    tinted by the fill colour (``insets`` in texture pixels: left, top, right, bottom)."""
+    out = "  Box:\n"
+    if radius > 0:
+        out += f"    cornerRadius: {num(radius)}\n"
+    if gradient is not None:
+        out += f"    bottomTint: {vec(*gradient)}\n"
+    if border is not None and border_width > 0:
+        out += f"    borderColor: {vec(*border)}\n    borderWidth: {num(border_width)}\n"
+    if shadow is not None:
+        out += f"    shadowColor: {vec(*shadow)}\n    shadowOffset: {vec(*shadow_offset)}\n"
+        out += f"    shadowBlur: {num(shadow_blur)}\n"
+    if texture:
+        out += f"    texture: nam:{texture}\n    sliceInsets: {vec(*insets)}\n"
+    return out
+
+
+def neighbours(entities: Entities, uuid: int, **directions: int) -> None:
+    """Name the widgets the focus of an entity goes to (``up``, ``down``, ``left``, ``right``) in its ``UiFocus``."""
+    start = entities.lines.index(f"  - Entity: {uuid}")
+    at = entities.lines.index("    UiFocus:", start) + 1
+    for offset, (direction, target) in enumerate(directions.items()):
+        entities.lines.insert(at + 2 + offset, f"      {direction}: {target}")
 
 
 def focus(
@@ -239,12 +279,15 @@ def layout(arrangement: str, spacing: float = 8, padding: float = 0, cross: str 
 
 
 def panel(
-    colour: Colour = (0.08, 0.07, 0.1, 0.75), border: Colour = (0.55, 0.45, 0.3, 0.6), border_width: float = 1
+    colour: Colour = (0.08, 0.07, 0.1, 0.75),
+    border: Colour = (0.55, 0.45, 0.3, 0.6),
+    border_width: float = 1,
+    box_style: str = "",
 ) -> str:
-    """A ``UiPanel`` with a thin border."""
+    """A ``UiPanel`` drawn in a ``box`` when given one (the engine reads its border from the box only)."""
     return (
         f"UiPanel:\n  backgroundColor: {vec(*colour)}\n  borderColor: {vec(*border)}\n"
-        f"  borderWidth: {num(border_width)}\n  clipChildren: false\n"
+        f"  borderWidth: {num(border_width)}\n  clipChildren: false\n{box_style}"
     )
 
 
@@ -271,11 +314,12 @@ def slider(
     track: Colour = (0.2, 0.2, 0.2, 1),
     fill: Colour = (0.95, 0.7, 0.3, 1),
     handle: Colour = (1, 1, 1, 1),
+    box_style: str = "",
 ) -> str:
-    """A ``UiSlider`` from 0 to 1."""
+    """A ``UiSlider`` from 0 to 1, drawn in a ``box`` when given one."""
     return (
         f"UiSlider:\n  value: {num(value)}\n  minValue: 0\n  maxValue: 1\n  trackColor: {vec(*track)}\n"
-        f"  fillColor: {vec(*fill)}\n  handleColor: {vec(*handle)}\n  onValueChangedCallback: {callback}\n"
+        f"  fillColor: {vec(*fill)}\n  handleColor: {vec(*handle)}\n  onValueChangedCallback: {callback}\n{box_style}"
     )
 
 

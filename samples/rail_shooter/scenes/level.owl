@@ -2,7 +2,7 @@ Scene: level
 FormatVersion: 7
 Hud: gid:459d58803e259f24:huds/play.owlhud
 SceneScript:
-  scriptPath: gid:aa6cc3843d7c30af:scripts/game/rail.lua
+  scriptPath: gid:aa6cc3843d7c30af:scripts/game/rail.owlvs
   properties:
     - name: waves
       type: string
@@ -7437,3 +7437,159 @@ Entities:
       transparent: false
     RendererTag:
       Name: mesh_world
+  - Entity: 7700000000000009001
+    Tag:
+      tag: Wingman
+    Transform:
+      translation: [-3.6, 0.4, -1.0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: models/player.glb
+      color: [0.62, 0.8, 1, 1]
+      transparent: false
+    SteeringAgent:
+      enabled: true
+      plane: Space
+      maxSpeed: 60
+      maxAcceleration: 90
+      radius: 1
+      turn: false
+      target: 0
+      targetPoint: [0, 0, 0]
+      weights: {seek: 0, flee: 0, arrive: 0, pursue: 0, evade: 0, wander: 0, separation: 0, alignment: 0, cohesion: 0, avoidance: 0.5, formation: 1}
+      slowRadius: 2
+      panicDistance: 0
+      prediction: 0.5
+      wander: {radius: 0.6, distance: 1, jitter: 3}
+      flock: wing
+      neighbourRadius: 4
+      separationDistance: 1.5
+      lookAhead: 0.4
+      leader: 7700000000000000005
+      slot: [-3.6, 0.4, -1.0]
+    LuaScript:
+      scriptPath: scripts/game/wingman.owlvs
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000009002
+    Tag:
+      tag: Wingman
+    Transform:
+      translation: [3.6, 0.4, -1.0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: models/player.glb
+      color: [0.62, 0.8, 1, 1]
+      transparent: false
+    SteeringAgent:
+      enabled: true
+      plane: Space
+      maxSpeed: 60
+      maxAcceleration: 90
+      radius: 1
+      turn: false
+      target: 0
+      targetPoint: [0, 0, 0]
+      weights: {seek: 0, flee: 0, arrive: 0, pursue: 0, evade: 0, wander: 0, separation: 0, alignment: 0, cohesion: 0, avoidance: 0.5, formation: 1}
+      slowRadius: 2
+      panicDistance: 0
+      prediction: 0.5
+      wander: {radius: 0.6, distance: 1, jitter: 3}
+      flock: wing
+      neighbourRadius: 4
+      separationDistance: 1.5
+      lookAhead: 0.4
+      leader: 7700000000000000005
+      slot: [3.6, 0.4, -1.0]
+    LuaScript:
+      scriptPath: scripts/game/wingman.owlvs
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7700000000000009003
+    Tag:
+      tag: WingmanTrail
+    Transform:
+      translation: [-0.42, 0.05, 0.95]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7700000000000009001
+    Trail:
+      enabled: true
+      lifetime: 0.14
+      minDistance: 0.15
+      maxPoints: 48
+      width: 0.16
+      color: [0.4, 0.8, 1, 0.9]
+      emissive: 5000
+      blend: Additive
+  - Entity: 7700000000000009004
+    Tag:
+      tag: WingmanTrail
+    Transform:
+      translation: [0.42, 0.05, 0.95]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7700000000000009001
+    Trail:
+      enabled: true
+      lifetime: 0.14
+      minDistance: 0.15
+      maxPoints: 48
+      width: 0.16
+      color: [0.4, 0.8, 1, 0.9]
+      emissive: 5000
+      blend: Additive
+  - Entity: 7700000000000009005
+    Tag:
+      tag: WingmanTrail
+    Transform:
+      translation: [-0.42, 0.05, 0.95]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7700000000000009002
+    Trail:
+      enabled: true
+      lifetime: 0.14
+      minDistance: 0.15
+      maxPoints: 48
+      width: 0.16
+      color: [0.4, 0.8, 1, 0.9]
+      emissive: 5000
+      blend: Additive
+  - Entity: 7700000000000009006
+    Tag:
+      tag: WingmanTrail
+    Transform:
+      translation: [0.42, 0.05, 0.95]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7700000000000009002
+    Trail:
+      enabled: true
+      lifetime: 0.14
+      minDistance: 0.15
+      maxPoints: 48
+      width: 0.16
+      color: [0.4, 0.8, 1, 0.9]
+      emissive: 5000
+      blend: Additive

@@ -1,0 +1,8 @@
+# The Sunken Shrine, the dark crypt: in the dark the hero walks left to a brazier and lights it (E): one of four burns.
+scene: ../../../samples/sunken_shrine/scenes/room_4.owl
+steps:
+  - frames: 5
+  - input: {key: A, frames: 80}
+  - input: {key: E, frames: 1}
+  - frames: 3
+  - expect: {gamestate: shrine_lit_3, equals: true}

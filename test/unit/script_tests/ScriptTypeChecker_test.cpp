@@ -11,6 +11,7 @@
 #include <core/Log.h>
 #include <script/ScriptInstance.h>
 #include <script/ScriptTypeChecker.h>
+#include <script/visual/VisualScript.h>
 
 #include <algorithm>
 #include <cstddef>
@@ -19,6 +20,7 @@
 #include <format>
 #include <fstream>
 #include <iterator>
+#include <optional>
 #include <sstream>
 #include <string>
 #include <string_view>
@@ -163,9 +165,33 @@ TEST_F(ScriptTypeCheckerFixture, ShippedScriptsHaveNoTypeError) {
 		for (const auto& entry: std::filesystem::recursive_directory_iterator(root / folder)) {
 			const auto& path = entry.path();
 			// Editor scripts run in the editor console, against its `editor` module, not in a game.
-			if (path.extension() != ".lua" || path.generic_string().find("/editor/") != std::string::npos)
+			if (path.generic_string().find("/editor/") != std::string::npos)
 				continue;
-			const auto found = errors(readText(path));
+			std::string source;
+			if (path.extension() == ".lua") {
+				source = readText(path);
+			} else if (path.extension() == script::visual::g_VisualScriptExtension) {
+				// A graph is checked as the Lua it compiles to, its Lua modules read from its project.
+				const auto relative = std::filesystem::relative(path, root / folder);
+				const auto base =
+						std::string_view{folder} == "samples" ? root / folder / *relative.begin() : root / folder;
+				script::visual::setLibraryReader([base](const std::string_view iPath) -> std::optional<std::string> {
+					std::ifstream file(base / std::filesystem::path{iPath});
+					if (!file)
+						return std::nullopt;
+					return std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+				});
+				script::visual::clearLibraryCache();
+				const auto lua =
+						script::visual::compileText(readText(path), path.string(), script::visual::CompileMode::Game);
+				script::visual::setLibraryReader({});
+				script::visual::clearLibraryCache();
+				ASSERT_TRUE(lua.has_value()) << path;
+				source = *lua;
+			} else {
+				continue;
+			}
+			const auto found = errors(source);
 			EXPECT_TRUE(found.empty()) << path.lexically_relative(root).generic_string() << describe(found);
 			++checked;
 		}

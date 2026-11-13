@@ -85,7 +85,44 @@ local function strike(bolt, s0, x0, y0)
     return struck
 end
 
+-- The wingmen fire in turn at the nearest enemy ahead of them (never the boss), a green bolt of their own
+-- (`wing_bolt`) every `WING_PERIOD` seconds between them, with a quieter shot; their hits do not count in the hits of
+-- the player.
+local WING_PERIOD = 0.24
+local WING_VOLUME = 0.45
+local function wingmen_fire(dt)
+    if S.phase ~= "play" and S.phase ~= "boss" then return end
+    S.wing_clock = (S.wing_clock or WING_PERIOD) - dt
+    if S.wing_clock > 0 then return end
+    S.wing_clock = WING_PERIOD
+    S.wing_ids = S.wing_ids or scene.find_entities("Wingman")
+    if #S.wing_ids == 0 then return end
+    S.wing_turn = (S.wing_turn or 0) % #S.wing_ids + 1
+    local s, x, y = rs.to_rail(transform.get_world_position(S.wing_ids[S.wing_turn]))
+    local target, best = nil, 150
+    for _, foe in ipairs(S.enemies) do
+        local fs = S.s + foe.dz
+        if foe.alive and foe.kind ~= "boss" and fs - s > 12 and fs - s < best then
+            target, best = foe, fs - s
+        end
+    end
+    if target == nil then return end
+    local ds, dx, dy = S.s + target.dz - s, target.x - x, target.y - y
+    local n = math.sqrt(ds * ds + dx * dx + dy * dy)
+    local speed = C.bolt_speed
+    local id = scene.spawn_prefab("prefabs/wing_bolt.owlprefab", rs.to_scene(s + 1.5, x, y))
+    if id == 0 then return end
+    S.bolts[#S.bolts + 1] = {
+        id = id, s = s + 1.5, x = x, y = y, wing = true,
+        vs = ds / n * speed + S.speed, vx = dx / n * speed, vy = dy / n * speed, life = 1.6,
+    }
+    local handle = sound.play("sounds/game/laser.wav")
+    if handle ~= nil then sound.set_volume(handle, WING_VOLUME) end
+    gamestate.set("rail_wing_shots", gamestate.get("rail_wing_shots", 0) + 1)
+end
+
 function G.update(dt)
+    wingmen_fire(dt)
     local kept = {}
     for _, bolt in ipairs(S.bolts) do
         local s0, x0, y0 = bolt.s, bolt.x, bolt.y
@@ -93,7 +130,11 @@ function G.update(dt)
         bolt.life = bolt.life - dt
         local alive = bolt.life > 0
         if alive and strike(bolt, s0, x0, y0) then
-            S.hits = S.hits + 1
+            if bolt.wing then
+                gamestate.set("rail_wing_hits", gamestate.get("rail_wing_hits", 0) + 1)
+            else
+                S.hits = S.hits + 1
+            end
             alive = false
         end
         if alive then
@@ -106,6 +147,7 @@ function G.update(dt)
     S.bolts = kept
 end
 
+---@return nil
 function G.clear()
     for _, bolt in ipairs(S.bolts) do scene.destroy_entity(bolt.id) end
     S.bolts = {}

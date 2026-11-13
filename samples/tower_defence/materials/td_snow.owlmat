@@ -1,0 +1,108 @@
+Material:
+  FormatVersion: 1
+  metallic: 0
+  roughness: 0.8
+  baseColorMap: gid:f910c7bd02f03894:models/td/Textures/colormap.png
+  graph:
+    nodes:
+      - id: 7652000000000000001
+        type: surface.parameters
+        position: [0, 0]
+      - id: 7652000000000000002
+        type: output.surface
+        position: [1400, 0]
+      - id: 7652000000000000003
+        type: noise.fbm
+        position: [300, -200]
+        values:
+          Scale: "0.4"
+          octaves: "3"
+      - id: 7652000000000000004
+        type: math.smoothstep
+        position: [450, -200]
+        values:
+          Min: "0.35"
+          Max: "0.65"
+      - id: 7652000000000000005
+        type: math.lerp
+        position: [600, -200]
+        values:
+          A: "0.9"
+          B: "1.05"
+      - id: 7652000000000000006
+        type: noise.voronoi
+        position: [300, 300]
+        values:
+          Scale: "9"
+      - id: 7652000000000000007
+        type: math.smoothstep
+        position: [520, 260]
+        values:
+          Min: "0.12"
+          Max: "0.02"
+      - id: 7652000000000000008
+        type: input.time
+        position: [300, 480]
+      - id: 7652000000000000009
+        type: math.multiply
+        position: [520, 420]
+        values:
+          B: "40"
+      - id: 7652000000000000010
+        type: math.multiply
+        position: [520, 520]
+        values:
+          B: "2.5"
+      - id: 7652000000000000011
+        type: math.add
+        position: [700, 460]
+      - id: 7652000000000000012
+        type: math.sin
+        position: [860, 460]
+      - id: 7652000000000000013
+        type: math.saturate
+        position: [1000, 460]
+      - id: 7652000000000000014
+        type: math.multiply
+        position: [1000, 300]
+        values:
+          B: "0.35"
+      - id: 7652000000000000015
+        type: math.multiply
+        position: [1150, 360]
+      - id: 7652000000000000016
+        type: math.multiply
+        position: [900, -100]
+      - id: 7652000000000000017
+        type: math.add
+        position: [1250, -40]
+    links:
+      - {from: 7652000000000000003, fromPin: Value, to: 7652000000000000004, toPin: Value}
+      - {from: 7652000000000000004, fromPin: Result, to: 7652000000000000005, toPin: T}
+      - {from: 7652000000000000006, fromPin: Distance, to: 7652000000000000007, toPin: Value}
+      - {from: 7652000000000000006, fromPin: Cell, to: 7652000000000000009, toPin: A}
+      - {from: 7652000000000000008, fromPin: Time, to: 7652000000000000010, toPin: A}
+      - {from: 7652000000000000009, fromPin: Result, to: 7652000000000000011, toPin: A}
+      - {from: 7652000000000000010, fromPin: Result, to: 7652000000000000011, toPin: B}
+      - {from: 7652000000000000011, fromPin: Result, to: 7652000000000000012, toPin: Value}
+      - {from: 7652000000000000012, fromPin: Result, to: 7652000000000000013, toPin: Value}
+      - {from: 7652000000000000007, fromPin: Result, to: 7652000000000000014, toPin: A}
+      - {from: 7652000000000000014, fromPin: Result, to: 7652000000000000015, toPin: A}
+      - {from: 7652000000000000013, fromPin: Result, to: 7652000000000000015, toPin: B}
+      - {from: 7652000000000000001, fromPin: Base Color, to: 7652000000000000016, toPin: A}
+      - {from: 7652000000000000005, fromPin: Result, to: 7652000000000000016, toPin: B}
+      - {from: 7652000000000000016, fromPin: Result, to: 7652000000000000017, toPin: A}
+      - {from: 7652000000000000015, fromPin: Result, to: 7652000000000000017, toPin: B}
+      - {from: 7652000000000000017, fromPin: Result, to: 7652000000000000002, toPin: Base Color}
+      - {from: 7652000000000000001, fromPin: Alpha, to: 7652000000000000002, toPin: Alpha}
+      - {from: 7652000000000000001, fromPin: Normal, to: 7652000000000000002, toPin: Normal}
+      - {from: 7652000000000000001, fromPin: Metallic, to: 7652000000000000002, toPin: Metallic}
+      - {from: 7652000000000000001, fromPin: Roughness, to: 7652000000000000002, toPin: Roughness}
+      - {from: 7652000000000000001, fromPin: Occlusion, to: 7652000000000000002, toPin: Occlusion}
+      - {from: 7652000000000000001, fromPin: Emissive, to: 7652000000000000002, toPin: Emissive}
+      - {from: 7652000000000000001, fromPin: Clearcoat, to: 7652000000000000002, toPin: Clearcoat}
+      - {from: 7652000000000000001, fromPin: Clearcoat Roughness, to: 7652000000000000002, toPin: Clearcoat Roughness}
+      - {from: 7652000000000000001, fromPin: Sheen Color, to: 7652000000000000002, toPin: Sheen Color}
+      - {from: 7652000000000000001, fromPin: Sheen Roughness, to: 7652000000000000002, toPin: Sheen Roughness}
+      - {from: 7652000000000000001, fromPin: Anisotropy, to: 7652000000000000002, toPin: Anisotropy}
+      - {from: 7652000000000000001, fromPin: Anisotropy Rotation, to: 7652000000000000002, toPin: Anisotropy Rotation}

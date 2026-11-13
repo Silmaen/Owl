@@ -4,8 +4,9 @@ local td = require("scripts.game.td.core")
 local S, C = td.state, td.data
 local UI, Waves, Fx, Foes, Towers = td.ui, td.waves, td.effects, td.enemies, td.towers
 
--- The effects of the phase in the game state, for the scenarios: the range of a level 1 archer on the plain and the
--- speed factor of a goblin, in hundredths.
+--- The effects of the phase in the game state, for the scenarios: the range of a level 1 archer on the plain and the
+--- speed factor of a goblin, in hundredths.
+---@return nil
 function Waves.mirror_effects()
     local archer = Towers.tower_stats({ kind = "archer", level = 1, pad = { level = 0 } })
     gamestate.set("tower_archer_range", math.floor(archer.range * 100 + 0.5))
@@ -17,6 +18,7 @@ function Waves.sky_is_night(h)
     return clock_hour >= 19.0 or clock_hour < 6.0
 end
 
+---@param dt any
 function Waves.update_sky(dt)
     if S.sky_id == 0 then return end
     if math.abs(S.hours_goal - S.hours) > 0.001 then
@@ -100,6 +102,7 @@ function Waves.start_wave()
     UI.message("Wave " .. S.wave .. " / " .. S.wave_count .. (Fx.night and " - by night" or ""), 1.8)
 end
 
+---@return nil
 function Waves.call_early()
     if S.ending ~= nil or S.spawning ~= nil or S.wave >= S.wave_count or S.route == nil then return end
     local bonus = math.floor(S.countdown * early_bonus)
@@ -113,6 +116,7 @@ function Waves.call_early()
     if bonus > 0 then UI.message("Wave " .. S.wave .. " / " .. S.wave_count .. "\n+" .. bonus .. " gold", 1.8) end
 end
 
+---@param dt any
 function Waves.update_waves(dt)
     if S.route == nil then return end
     if S.spawning ~= nil then

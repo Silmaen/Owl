@@ -1,0 +1,3552 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: patrol_c, type: int, default: "-1"}
+    - {name: patrol_r, type: int, default: "-1"}
+    - {name: health, type: float, default: "50", min: 1}
+    - {name: walk_speed, type: float, default: "1.1", min: 0}
+    - {name: run_speed, type: float, default: "2.3", min: 0}
+    - {name: sight_range, type: float, default: "14", min: 0}
+    - {name: fire_range, type: float, default: "9", min: 0}
+    - {name: hearing_range, type: float, default: "10", min: 0}
+    - {name: field_of_view, type: float, default: "2.4", min: 0}
+    - {name: fire_time, type: float, default: "0.5", min: 0.1}
+    - {name: min_damage, type: int, default: "5", min: 0}
+    - {name: max_damage, type: int, default: "13", min: 0}
+    - {name: points, type: int, default: "100", min: 0}
+    - {name: drop, type: string, default: prefabs/clip.owlprefab}
+    - {name: corpse, type: string, default: prefabs/guard_corpse.owlprefab}
+    - {name: tactics, type: numbers, default: "", exposed: false}
+    - {name: player_id, type: entity, default: "0", exposed: false}
+    - {name: yaw, type: float, default: "0", exposed: false}
+    - {name: home_c, type: float, default: "0", exposed: false}
+    - {name: home_r, type: float, default: "0", exposed: false}
+    - {name: goal_c, type: float, default: "0", exposed: false}
+    - {name: goal_r, type: float, default: "0", exposed: false}
+    - {name: heard, type: float, default: "0", exposed: false}
+    - {name: alerted, type: bool, default: "false", exposed: false}
+    - {name: reaction, type: float, default: "0", exposed: false}
+    - {name: dead, type: bool, default: "false", exposed: false}
+    - {name: dying, type: float, default: "0", exposed: false}
+    - {name: pain, type: float, default: "0", exposed: false}
+    - {name: firing, type: float, default: "0", exposed: false}
+    - {name: fired, type: bool, default: "false", exposed: false}
+    - {name: moving, type: bool, default: "false", exposed: false}
+    - {name: walk_clock, type: float, default: "0", exposed: false}
+    - {name: frame, type: float, default: "-1", exposed: false}
+    - {name: rz, type: float, default: "0", exposed: false}
+    - {name: x, type: float, default: "0", exposed: false}
+    - {name: y, type: float, default: "0", exposed: false}
+    - {name: tmp_1, type: float, default: "0", exposed: false}
+    - {name: tmp_2, type: float, default: "0", exposed: false}
+    - {name: tmp_3, type: int, default: "0", exposed: false}
+    - {name: tmp_4, type: int, default: "0", exposed: false}
+    - {name: gx, type: float, default: "0", exposed: false}
+    - {name: gy, type: float, default: "0", exposed: false}
+    - {name: px, type: float, default: "0", exposed: false}
+    - {name: py, type: float, default: "0", exposed: false}
+    - {name: tx, type: float, default: "0", exposed: false}
+    - {name: ty, type: float, default: "0", exposed: false}
+    - {name: walk_to_x, type: float, default: "0", exposed: false}
+    - {name: walk_to_y, type: float, default: "0", exposed: false}
+    - {name: dx, type: float, default: "0", exposed: false}
+    - {name: dy, type: float, default: "0", exposed: false}
+    - {name: distance, type: float, default: "0", exposed: false}
+    - {name: go_to_x, type: float, default: "0", exposed: false}
+    - {name: go_to_y, type: float, default: "0", exposed: false}
+    - {name: here_c, type: int, default: "0", exposed: false}
+    - {name: here_r, type: int, default: "0", exposed: false}
+    - {name: next_c, type: float, default: "0", exposed: false}
+    - {name: next_r, type: float, default: "0", exposed: false}
+    - {name: door_id, type: entity, default: "0", exposed: false}
+    - {name: sees_player_gx, type: float, default: "0", exposed: false}
+    - {name: sees_player_gy, type: float, default: "0", exposed: false}
+    - {name: sees_player_px, type: float, default: "0", exposed: false}
+    - {name: sees_player_py, type: float, default: "0", exposed: false}
+    - {name: sees_player_dx, type: float, default: "0", exposed: false}
+    - {name: sees_player_dy, type: float, default: "0", exposed: false}
+    - {name: sees_player_distance, type: float, default: "0", exposed: false}
+    - {name: fx, type: float, default: "0", exposed: false}
+    - {name: fy, type: float, default: "0", exposed: false}
+    - {name: update_frame_gx, type: float, default: "0", exposed: false}
+    - {name: update_frame_gy, type: float, default: "0", exposed: false}
+    - {name: update_frame_px, type: float, default: "0", exposed: false}
+    - {name: update_frame_py, type: float, default: "0", exposed: false}
+    - {name: column, type: int, default: "0", exposed: false}
+    - {name: on_update_x, type: float, default: "0", exposed: false}
+    - {name: on_update_y, type: float, default: "0", exposed: false}
+    - {name: damage, type: float, default: "0", exposed: false}
+    - {name: guard_can_fire_gx, type: float, default: "0", exposed: false}
+    - {name: guard_can_fire_gy, type: float, default: "0", exposed: false}
+    - {name: guard_can_fire_px, type: float, default: "0", exposed: false}
+    - {name: guard_can_fire_py, type: float, default: "0", exposed: false}
+    - {name: guard_fire_gx, type: float, default: "0", exposed: false}
+    - {name: guard_fire_gy, type: float, default: "0", exposed: false}
+    - {name: guard_fire_px, type: float, default: "0", exposed: false}
+    - {name: guard_fire_py, type: float, default: "0", exposed: false}
+    - {name: guard_fire_distance, type: float, default: "0", exposed: false}
+    - {name: guard_chase_px, type: float, default: "0", exposed: false}
+    - {name: guard_chase_py, type: float, default: "0", exposed: false}
+    - {name: c, type: int, default: "0", exposed: false}
+    - {name: r, type: int, default: "0", exposed: false}
+    - {name: noise, type: float, default: "0", exposed: false}
+    - {name: guard_notices_gx, type: float, default: "0", exposed: false}
+    - {name: guard_notices_gy, type: float, default: "0", exposed: false}
+    - {name: nx, type: float, default: "0", exposed: false}
+    - {name: ny, type: float, default: "0", exposed: false}
+    - {name: tmp_5, type: int, default: "0", exposed: false}
+    - {name: tmp_6, type: int, default: "0", exposed: false}
+    - {name: tmp_7, type: float, default: "0", exposed: false}
+    - {name: tmp_8, type: float, default: "0", exposed: false}
+  functions:
+    - name: stop
+      inputs: []
+      outputs: []
+    - name: face_player
+      inputs: []
+      outputs: []
+    - name: walk_to
+      inputs: [{name: c, type: any}, {name: r, type: any}, {name: speed, type: any}]
+      outputs: [{name: result, type: any}]
+    - name: go_to
+      inputs: [{name: c, type: any}, {name: r, type: any}, {name: speed, type: any}]
+      outputs: [{name: result, type: any}]
+    - name: alert
+      inputs: []
+      outputs: []
+    - name: sees_player
+      inputs: []
+      outputs: [{name: result, type: any}]
+    - name: die
+      inputs: []
+      outputs: []
+    - name: show
+      inputs: [{name: value, type: any}]
+      outputs: []
+    - name: update_frame
+      inputs: [{name: dt, type: any}]
+      outputs: []
+    - name: guard_in_pain
+      inputs: [{name: entity, type: any}, {name: dt, type: any}]
+      outputs: [{name: result, type: any}]
+      exported: true
+    - name: guard_flinch
+      inputs: [{name: entity, type: any}, {name: dt, type: any}]
+      outputs: [{name: result, type: any}]
+      exported: true
+    - name: guard_can_fire
+      inputs: [{name: entity, type: any}, {name: dt, type: any}]
+      outputs: [{name: result, type: any}]
+      exported: true
+    - name: guard_fire
+      inputs: [{name: entity, type: any}, {name: dt, type: any}]
+      outputs: [{name: result, type: any}]
+      exported: true
+    - name: guard_chase
+      inputs: [{name: entity, type: any}, {name: dt, type: any}]
+      outputs: [{name: result, type: any}]
+      exported: true
+    - name: guard_notices
+      inputs: [{name: entity, type: any}, {name: dt, type: any}]
+      outputs: [{name: result, type: any}]
+      exported: true
+    - name: guard_patrol
+      inputs: [{name: entity, type: any}, {name: dt, type: any}]
+      outputs: [{name: result, type: any}]
+      exported: true
+  customNodes:
+    - name: init_state
+      title: Init State
+      inputs: []
+      outputs: []
+      code: |
+        tactics = require("scripts.game.tactics")
+  nodes:
+    - id: 7101000001
+      type: event.on_create
+      position: [340, 0]
+    - id: 7101000002
+      type: call.physics.set_gravity_scale
+      position: [680, 0]
+      values:
+        scale: "0"
+    - id: 7101000003
+      type: value.self
+      position: [510, 160]
+    - id: 7101000004
+      type: call.scene.find_entity
+      position: [510, 280]
+      values:
+        name: Player
+    - id: 7101000005
+      type: var.set
+      position: [1020, 0]
+      values:
+        variable: player_id
+    - id: 7101000006
+      type: call.transform.get_rotation
+      position: [850, 160]
+      values:
+        split.rotation: "true"
+    - id: 7101000007
+      type: value.self
+      position: [850, 280]
+    - id: 7101000008
+      type: var.set
+      position: [1360, 0]
+      values:
+        variable: rz
+    - id: 7101000009
+      type: var.get
+      position: [1190, 160]
+      values:
+        variable: rz
+    - id: 7101000010
+      type: var.set
+      position: [1700, 0]
+      values:
+        variable: yaw
+    - id: 7101000011
+      type: call.transform.get_position
+      position: [1530, 160]
+      values:
+        split.xyz: "true"
+    - id: 7101000012
+      type: value.self
+      position: [1530, 280]
+    - id: 7101000013
+      type: var.set
+      position: [2040, 0]
+      values:
+        variable: x
+    - id: 7101000014
+      type: var.set
+      position: [2380, 0]
+      values:
+        variable: y
+    - id: 7101000015
+      type: lua.pure
+      position: [2210, 160]
+      values:
+        module: scripts.game.tactics
+        function: cell_of
+    - id: 7101000016
+      type: var.get
+      position: [2210, 280]
+      values:
+        variable: x
+    - id: 7101000017
+      type: var.get
+      position: [2210, 400]
+      values:
+        variable: y
+    - id: 7101000018
+      type: var.set
+      position: [2720, 0]
+      values:
+        variable: home_c
+    - id: 7101000019
+      type: var.set
+      position: [3060, 0]
+      values:
+        variable: home_r
+    - id: 7101000020
+      type: var.get
+      position: [2890, 160]
+      values:
+        variable: home_c
+    - id: 7101000021
+      type: var.get
+      position: [2890, 280]
+      values:
+        variable: home_r
+    - id: 7101000022
+      type: var.set
+      position: [3400, 0]
+      values:
+        variable: tmp_1
+    - id: 7101000023
+      type: var.set
+      position: [3740, 0]
+      values:
+        variable: tmp_2
+    - id: 7101000024
+      type: var.get
+      position: [3570, 160]
+      values:
+        variable: tmp_1
+    - id: 7101000025
+      type: var.set
+      position: [4080, 0]
+      values:
+        variable: goal_c
+    - id: 7101000026
+      type: var.get
+      position: [3910, 160]
+      values:
+        variable: tmp_2
+    - id: 7101000027
+      type: var.set
+      position: [4420, 0]
+      values:
+        variable: goal_r
+    - id: 7101000028
+      type: var.get
+      position: [4250, 160]
+      values:
+        variable: patrol_c
+    - id: 7101000029
+      type: compare.greater_equal
+      position: [4250, 280]
+      values:
+        B: "0"
+    - id: 7101000030
+      type: flow.branch
+      position: [4760, 0]
+    - id: 7101000031
+      type: var.get
+      position: [4590, 160]
+      values:
+        variable: patrol_c
+    - id: 7101000032
+      type: var.get
+      position: [4590, 280]
+      values:
+        variable: patrol_r
+    - id: 7101000033
+      type: var.set
+      position: [5100, 0]
+      values:
+        variable: tmp_3
+    - id: 7101000034
+      type: var.set
+      position: [5440, 0]
+      values:
+        variable: tmp_4
+    - id: 7101000035
+      type: var.get
+      position: [5270, 160]
+      values:
+        variable: tmp_3
+    - id: 7101000036
+      type: var.set
+      position: [5780, 0]
+      values:
+        variable: goal_c
+    - id: 7101000037
+      type: var.get
+      position: [5610, 160]
+      values:
+        variable: tmp_4
+    - id: 7101000038
+      type: var.set
+      position: [6120, 0]
+      values:
+        variable: goal_r
+    - id: 7101000039
+      type: call.gamestate.get
+      position: [6460, 0]
+      values:
+        key: wolf_noise
+        default: "0"
+    - id: 7101000040
+      type: var.set
+      position: [6800, 0]
+      values:
+        variable: heard
+    - id: 7101000041
+      type: func.entry
+      position: [340, 660]
+      values:
+        function: stop
+    - id: 7101000042
+      type: var.set
+      position: [680, 660]
+      values:
+        variable: moving
+        Value: "false"
+    - id: 7101000043
+      type: call.physics.set_velocity
+      position: [1020, 660]
+      values:
+        split.velocity: "true"
+        vx: "0"
+        vy: "0"
+    - id: 7101000044
+      type: value.self
+      position: [850, 820]
+    - id: 7101000045
+      type: func.entry
+      position: [340, 1080]
+      values:
+        function: face_player
+    - id: 7101000046
+      type: call.transform.get_position
+      position: [170, 1240]
+      values:
+        split.xyz: "true"
+    - id: 7101000047
+      type: value.self
+      position: [170, 1360]
+    - id: 7101000048
+      type: var.set
+      position: [680, 1080]
+      values:
+        variable: gx
+    - id: 7101000049
+      type: var.set
+      position: [1020, 1080]
+      values:
+        variable: gy
+    - id: 7101000050
+      type: call.transform.get_position
+      position: [850, 1240]
+      values:
+        split.xyz: "true"
+    - id: 7101000051
+      type: var.get
+      position: [850, 1360]
+      values:
+        variable: player_id
+    - id: 7101000052
+      type: var.set
+      position: [1360, 1080]
+      values:
+        variable: px
+    - id: 7101000053
+      type: var.set
+      position: [1700, 1080]
+      values:
+        variable: py
+    - id: 7101000054
+      type: lua.pure
+      position: [1530, 1240]
+      values:
+        module: scripts.game.tactics
+        function: yaw_of
+    - id: 7101000055
+      type: var.get
+      position: [1530, 1360]
+      values:
+        variable: px
+    - id: 7101000056
+      type: var.get
+      position: [1530, 1480]
+      values:
+        variable: gx
+    - id: 7101000057
+      type: math.subtract
+      position: [1530, 1600]
+    - id: 7101000058
+      type: var.get
+      position: [1530, 1720]
+      values:
+        variable: py
+    - id: 7101000059
+      type: var.get
+      position: [1530, 1840]
+      values:
+        variable: gy
+    - id: 7101000060
+      type: math.subtract
+      position: [1530, 1960]
+    - id: 7101000061
+      type: var.set
+      position: [2040, 1080]
+      values:
+        variable: yaw
+    - id: 7101000062
+      type: func.entry
+      position: [340, 2220]
+      values:
+        function: walk_to
+    - id: 7101000063
+      type: lua.pure
+      position: [170, 2380]
+      values:
+        module: scripts.game.tactics
+        function: center_of
+    - id: 7101000064
+      type: var.set
+      position: [680, 2220]
+      values:
+        variable: tx
+    - id: 7101000065
+      type: var.set
+      position: [1020, 2220]
+      values:
+        variable: ty
+    - id: 7101000066
+      type: call.transform.get_position
+      position: [850, 2380]
+      values:
+        split.xyz: "true"
+    - id: 7101000067
+      type: value.self
+      position: [850, 2500]
+    - id: 7101000068
+      type: var.set
+      position: [1360, 2220]
+      values:
+        variable: walk_to_x
+    - id: 7101000069
+      type: var.set
+      position: [1700, 2220]
+      values:
+        variable: walk_to_y
+    - id: 7101000070
+      type: var.get
+      position: [1530, 2380]
+      values:
+        variable: tx
+    - id: 7101000071
+      type: var.get
+      position: [1530, 2500]
+      values:
+        variable: walk_to_x
+    - id: 7101000072
+      type: math.subtract
+      position: [1530, 2620]
+    - id: 7101000073
+      type: var.get
+      position: [1530, 2740]
+      values:
+        variable: ty
+    - id: 7101000074
+      type: var.get
+      position: [1530, 2860]
+      values:
+        variable: walk_to_y
+    - id: 7101000075
+      type: math.subtract
+      position: [1530, 2980]
+    - id: 7101000076
+      type: var.set
+      position: [2040, 2220]
+      values:
+        variable: dx
+    - id: 7101000077
+      type: var.set
+      position: [2380, 2220]
+      values:
+        variable: dy
+    - id: 7101000078
+      type: var.get
+      position: [2210, 2380]
+      values:
+        variable: dx
+    - id: 7101000079
+      type: var.get
+      position: [2210, 2500]
+      values:
+        variable: dx
+    - id: 7101000080
+      type: math.multiply
+      position: [2210, 2620]
+    - id: 7101000081
+      type: var.get
+      position: [2210, 2740]
+      values:
+        variable: dy
+    - id: 7101000082
+      type: var.get
+      position: [2210, 2860]
+      values:
+        variable: dy
+    - id: 7101000083
+      type: math.multiply
+      position: [2210, 2980]
+    - id: 7101000084
+      type: math.add
+      position: [2210, 3100]
+    - id: 7101000085
+      type: math.sqrt
+      position: [2210, 3220]
+    - id: 7101000086
+      type: var.set
+      position: [2720, 2220]
+      values:
+        variable: distance
+    - id: 7101000087
+      type: var.get
+      position: [2550, 2380]
+      values:
+        variable: distance
+    - id: 7101000088
+      type: compare.less
+      position: [2550, 2500]
+      values:
+        B: "0.1"
+    - id: 7101000089
+      type: flow.branch
+      position: [3060, 2220]
+    - id: 7101000090
+      type: func.return
+      position: [3400, 2220]
+      values:
+        function: walk_to
+        result: "true"
+    - id: 7101000091
+      type: var.set
+      position: [3740, 2220]
+      values:
+        variable: moving
+        Value: "true"
+    - id: 7101000092
+      type: lua.pure
+      position: [3570, 2380]
+      values:
+        module: scripts.game.tactics
+        function: yaw_of
+    - id: 7101000093
+      type: var.get
+      position: [3570, 2500]
+      values:
+        variable: dx
+    - id: 7101000094
+      type: var.get
+      position: [3570, 2620]
+      values:
+        variable: dy
+    - id: 7101000095
+      type: var.set
+      position: [4080, 2220]
+      values:
+        variable: yaw
+    - id: 7101000096
+      type: call.physics.set_velocity
+      position: [4420, 2220]
+      values:
+        split.velocity: "true"
+    - id: 7101000097
+      type: value.self
+      position: [4250, 2380]
+    - id: 7101000098
+      type: var.get
+      position: [4250, 2500]
+      values:
+        variable: dx
+    - id: 7101000099
+      type: var.get
+      position: [4250, 2620]
+      values:
+        variable: distance
+    - id: 7101000100
+      type: math.divide
+      position: [4250, 2740]
+    - id: 7101000101
+      type: math.multiply
+      position: [4250, 2860]
+    - id: 7101000102
+      type: var.get
+      position: [4250, 2980]
+      values:
+        variable: dy
+    - id: 7101000103
+      type: var.get
+      position: [4250, 3100]
+      values:
+        variable: distance
+    - id: 7101000104
+      type: math.divide
+      position: [4250, 3220]
+    - id: 7101000105
+      type: math.multiply
+      position: [4250, 3340]
+    - id: 7101000106
+      type: func.return
+      position: [4760, 2220]
+      values:
+        function: walk_to
+        result: "false"
+    - id: 7101000107
+      type: func.entry
+      position: [340, 3600]
+      values:
+        function: go_to
+    - id: 7101000108
+      type: call.transform.get_position
+      position: [170, 3760]
+      values:
+        split.xyz: "true"
+    - id: 7101000109
+      type: value.self
+      position: [170, 3880]
+    - id: 7101000110
+      type: var.set
+      position: [680, 3600]
+      values:
+        variable: go_to_x
+    - id: 7101000111
+      type: var.set
+      position: [1020, 3600]
+      values:
+        variable: go_to_y
+    - id: 7101000112
+      type: lua.pure
+      position: [850, 3760]
+      values:
+        module: scripts.game.tactics
+        function: cell_of
+    - id: 7101000113
+      type: var.get
+      position: [850, 3880]
+      values:
+        variable: go_to_x
+    - id: 7101000114
+      type: var.get
+      position: [850, 4000]
+      values:
+        variable: go_to_y
+    - id: 7101000115
+      type: var.set
+      position: [1360, 3600]
+      values:
+        variable: here_c
+    - id: 7101000116
+      type: var.set
+      position: [1700, 3600]
+      values:
+        variable: here_r
+    - id: 7101000117
+      type: var.get
+      position: [1530, 3760]
+      values:
+        variable: here_c
+    - id: 7101000118
+      type: compare.equal
+      position: [1530, 3880]
+    - id: 7101000119
+      type: var.get
+      position: [1530, 4000]
+      values:
+        variable: here_r
+    - id: 7101000120
+      type: compare.equal
+      position: [1530, 4120]
+    - id: 7101000121
+      type: logic.and
+      position: [1530, 4240]
+    - id: 7101000122
+      type: flow.branch
+      position: [2040, 3600]
+    - id: 7101000123
+      type: func.call
+      position: [2380, 3600]
+      values:
+        function: walk_to
+    - id: 7101000124
+      type: func.return
+      position: [2720, 3600]
+      values:
+        function: go_to
+    - id: 7101000125
+      type: lua.call
+      position: [3060, 3600]
+      values:
+        module: scripts.game.tactics
+        function: next_step
+    - id: 7101000126
+      type: var.get
+      position: [2890, 3760]
+      values:
+        variable: here_c
+    - id: 7101000127
+      type: var.get
+      position: [2890, 3880]
+      values:
+        variable: here_r
+    - id: 7101000128
+      type: var.set
+      position: [3400, 3600]
+      values:
+        variable: next_c
+    - id: 7101000129
+      type: var.set
+      position: [3740, 3600]
+      values:
+        variable: next_r
+    - id: 7101000130
+      type: var.get
+      position: [3570, 3760]
+      values:
+        variable: next_c
+    - id: 7101000131
+      type: compare.equal
+      position: [3570, 3880]
+    - id: 7101000132
+      type: value.nil
+      position: [3570, 4000]
+    - id: 7101000133
+      type: flow.branch
+      position: [4080, 3600]
+    - id: 7101000134
+      type: func.call
+      position: [4420, 3600]
+      values:
+        function: stop
+    - id: 7101000135
+      type: func.return
+      position: [4760, 3600]
+      values:
+        function: go_to
+        result: "false"
+    - id: 7101000136
+      type: lua.call
+      position: [5100, 3600]
+      values:
+        module: scripts.game.tactics
+        function: door_at
+    - id: 7101000137
+      type: var.get
+      position: [4930, 3760]
+      values:
+        variable: next_c
+    - id: 7101000138
+      type: var.get
+      position: [4930, 3880]
+      values:
+        variable: next_r
+    - id: 7101000139
+      type: var.set
+      position: [5440, 3600]
+      values:
+        variable: door_id
+    - id: 7101000140
+      type: var.get
+      position: [5270, 3760]
+      values:
+        variable: door_id
+    - id: 7101000141
+      type: compare.not_equal
+      position: [5270, 3880]
+      values:
+        B: "0"
+    - id: 7101000142
+      type: call.door.is_open
+      position: [5270, 4000]
+    - id: 7101000143
+      type: var.get
+      position: [5270, 4120]
+      values:
+        variable: door_id
+    - id: 7101000144
+      type: logic.not
+      position: [5270, 4240]
+    - id: 7101000145
+      type: logic.and
+      position: [5270, 4360]
+    - id: 7101000146
+      type: flow.branch
+      position: [5780, 3600]
+    - id: 7101000147
+      type: func.call
+      position: [6120, 3600]
+      values:
+        function: stop
+    - id: 7101000148
+      type: call.door.activate
+      position: [6460, 3600]
+    - id: 7101000149
+      type: var.get
+      position: [6290, 3760]
+      values:
+        variable: door_id
+    - id: 7101000150
+      type: func.return
+      position: [6800, 3600]
+      values:
+        function: go_to
+        result: "false"
+    - id: 7101000151
+      type: func.call
+      position: [7140, 3600]
+      values:
+        function: walk_to
+    - id: 7101000152
+      type: var.get
+      position: [6970, 3760]
+      values:
+        variable: next_c
+    - id: 7101000153
+      type: var.get
+      position: [6970, 3880]
+      values:
+        variable: next_r
+    - id: 7101000154
+      type: func.return
+      position: [7480, 3600]
+      values:
+        function: go_to
+        result: "false"
+    - id: 7101000155
+      type: func.entry
+      position: [340, 4620]
+      values:
+        function: alert
+    - id: 7101000156
+      type: var.get
+      position: [170, 4780]
+      values:
+        variable: alerted
+    - id: 7101000157
+      type: var.get
+      position: [170, 4900]
+      values:
+        variable: dead
+    - id: 7101000158
+      type: logic.or
+      position: [170, 5020]
+    - id: 7101000159
+      type: flow.branch
+      position: [680, 4620]
+    - id: 7101000160
+      type: func.return
+      position: [1020, 4620]
+      values:
+        function: alert
+    - id: 7101000161
+      type: var.set
+      position: [1360, 4620]
+      values:
+        variable: alerted
+        Value: "true"
+    - id: 7101000162
+      type: math.random
+      position: [1190, 4780]
+    - id: 7101000163
+      type: math.multiply
+      position: [1190, 4900]
+      values:
+        B: "0.5"
+    - id: 7101000164
+      type: math.add
+      position: [1190, 5020]
+      values:
+        A: "0.5"
+    - id: 7101000165
+      type: var.set
+      position: [1700, 4620]
+      values:
+        variable: reaction
+    - id: 7101000166
+      type: call.gamestate.set
+      position: [2040, 4620]
+      values:
+        key: wolf_alerts
+    - id: 7101000167
+      type: call.gamestate.get
+      position: [2380, 4620]
+      values:
+        key: wolf_alerts
+        default: "0"
+    - id: 7101000168
+      type: math.add
+      position: [2210, 4780]
+      values:
+        B: "1"
+    - id: 7101000169
+      type: call.sound.play
+      position: [2720, 4620]
+      values:
+        asset_path: sounds/combat/alert.wav
+    - id: 7101000170
+      type: func.entry
+      position: [340, 5280]
+      values:
+        function: sees_player
+    - id: 7101000171
+      type: var.get
+      position: [170, 5440]
+      values:
+        variable: player_id
+    - id: 7101000172
+      type: compare.equal
+      position: [170, 5560]
+      values:
+        B: "0"
+    - id: 7101000173
+      type: flow.branch
+      position: [680, 5280]
+    - id: 7101000174
+      type: call.gamestate.get
+      position: [1020, 5280]
+      values:
+        key: wolf_dead
+        default: "0"
+    - id: 7101000175
+      type: compare.equal
+      position: [850, 5440]
+      values:
+        B: "1"
+    - id: 7101000176
+      type: flow.branch
+      position: [1360, 5280]
+    - id: 7101000177
+      type: func.return
+      position: [1700, 5280]
+      values:
+        function: sees_player
+        result: "false"
+    - id: 7101000178
+      type: call.transform.get_position
+      position: [1530, 5440]
+      values:
+        split.xyz: "true"
+    - id: 7101000179
+      type: value.self
+      position: [1530, 5560]
+    - id: 7101000180
+      type: var.set
+      position: [2040, 5280]
+      values:
+        variable: sees_player_gx
+    - id: 7101000181
+      type: var.set
+      position: [2380, 5280]
+      values:
+        variable: sees_player_gy
+    - id: 7101000182
+      type: call.transform.get_position
+      position: [2210, 5440]
+      values:
+        split.xyz: "true"
+    - id: 7101000183
+      type: var.get
+      position: [2210, 5560]
+      values:
+        variable: player_id
+    - id: 7101000184
+      type: var.set
+      position: [2720, 5280]
+      values:
+        variable: sees_player_px
+    - id: 7101000185
+      type: var.set
+      position: [3060, 5280]
+      values:
+        variable: sees_player_py
+    - id: 7101000186
+      type: var.get
+      position: [2890, 5440]
+      values:
+        variable: sees_player_px
+    - id: 7101000187
+      type: var.get
+      position: [2890, 5560]
+      values:
+        variable: sees_player_gx
+    - id: 7101000188
+      type: math.subtract
+      position: [2890, 5680]
+    - id: 7101000189
+      type: var.get
+      position: [2890, 5800]
+      values:
+        variable: sees_player_py
+    - id: 7101000190
+      type: var.get
+      position: [2890, 5920]
+      values:
+        variable: sees_player_gy
+    - id: 7101000191
+      type: math.subtract
+      position: [2890, 6040]
+    - id: 7101000192
+      type: var.set
+      position: [3400, 5280]
+      values:
+        variable: sees_player_dx
+    - id: 7101000193
+      type: var.set
+      position: [3740, 5280]
+      values:
+        variable: sees_player_dy
+    - id: 7101000194
+      type: var.get
+      position: [3570, 5440]
+      values:
+        variable: sees_player_dx
+    - id: 7101000195
+      type: var.get
+      position: [3570, 5560]
+      values:
+        variable: sees_player_dx
+    - id: 7101000196
+      type: math.multiply
+      position: [3570, 5680]
+    - id: 7101000197
+      type: var.get
+      position: [3570, 5800]
+      values:
+        variable: sees_player_dy
+    - id: 7101000198
+      type: var.get
+      position: [3570, 5920]
+      values:
+        variable: sees_player_dy
+    - id: 7101000199
+      type: math.multiply
+      position: [3570, 6040]
+    - id: 7101000200
+      type: math.add
+      position: [3570, 6160]
+    - id: 7101000201
+      type: math.sqrt
+      position: [3570, 6280]
+    - id: 7101000202
+      type: var.set
+      position: [4080, 5280]
+      values:
+        variable: sees_player_distance
+    - id: 7101000203
+      type: var.get
+      position: [3910, 5440]
+      values:
+        variable: sees_player_distance
+    - id: 7101000204
+      type: var.get
+      position: [3910, 5560]
+      values:
+        variable: sight_range
+    - id: 7101000205
+      type: compare.greater
+      position: [3910, 5680]
+    - id: 7101000206
+      type: flow.branch
+      position: [4420, 5280]
+    - id: 7101000207
+      type: func.return
+      position: [4760, 5280]
+      values:
+        function: sees_player
+        result: "false"
+    - id: 7101000208
+      type: var.get
+      position: [4590, 5440]
+      values:
+        variable: alerted
+    - id: 7101000209
+      type: logic.not
+      position: [4590, 5560]
+    - id: 7101000210
+      type: var.get
+      position: [4590, 5680]
+      values:
+        variable: sees_player_distance
+    - id: 7101000211
+      type: compare.greater
+      position: [4590, 5800]
+      values:
+        B: "1.5"
+    - id: 7101000212
+      type: logic.and
+      position: [4590, 5920]
+    - id: 7101000213
+      type: flow.branch
+      position: [5100, 5280]
+    - id: 7101000214
+      type: var.get
+      position: [4930, 5440]
+      values:
+        variable: yaw
+    - id: 7101000215
+      type: math.sin
+      position: [4930, 5560]
+    - id: 7101000216
+      type: math.negate
+      position: [4930, 5680]
+    - id: 7101000217
+      type: var.get
+      position: [4930, 5800]
+      values:
+        variable: yaw
+    - id: 7101000218
+      type: math.cos
+      position: [4930, 5920]
+    - id: 7101000219
+      type: var.set
+      position: [5440, 5280]
+      values:
+        variable: fx
+    - id: 7101000220
+      type: var.set
+      position: [5780, 5280]
+      values:
+        variable: fy
+    - id: 7101000221
+      type: var.get
+      position: [5610, 5440]
+      values:
+        variable: sees_player_dx
+    - id: 7101000222
+      type: var.get
+      position: [5610, 5560]
+      values:
+        variable: fx
+    - id: 7101000223
+      type: math.multiply
+      position: [5610, 5680]
+    - id: 7101000224
+      type: var.get
+      position: [5610, 5800]
+      values:
+        variable: sees_player_dy
+    - id: 7101000225
+      type: var.get
+      position: [5610, 5920]
+      values:
+        variable: fy
+    - id: 7101000226
+      type: math.multiply
+      position: [5610, 6040]
+    - id: 7101000227
+      type: math.add
+      position: [5610, 6160]
+    - id: 7101000228
+      type: var.get
+      position: [5610, 6280]
+      values:
+        variable: sees_player_distance
+    - id: 7101000229
+      type: math.divide
+      position: [5610, 6400]
+    - id: 7101000230
+      type: var.get
+      position: [5610, 6520]
+      values:
+        variable: field_of_view
+    - id: 7101000231
+      type: math.divide
+      position: [5610, 6640]
+      values:
+        B: "2"
+    - id: 7101000232
+      type: math.cos
+      position: [5610, 6760]
+    - id: 7101000233
+      type: compare.less
+      position: [5610, 6880]
+    - id: 7101000234
+      type: flow.branch
+      position: [6120, 5280]
+    - id: 7101000235
+      type: func.return
+      position: [6460, 5280]
+      values:
+        function: sees_player
+        result: "false"
+    - id: 7101000236
+      type: lua.call
+      position: [6800, 5280]
+      values:
+        module: scripts.game.tactics
+        function: can_see
+    - id: 7101000237
+      type: value.self
+      position: [6630, 5440]
+    - id: 7101000238
+      type: var.get
+      position: [6630, 5560]
+      values:
+        variable: player_id
+    - id: 7101000239
+      type: var.get
+      position: [6630, 5680]
+      values:
+        variable: sight_range
+    - id: 7101000240
+      type: func.return
+      position: [7140, 5280]
+      values:
+        function: sees_player
+    - id: 7101000241
+      type: func.entry
+      position: [340, 7140]
+      values:
+        function: die
+    - id: 7101000242
+      type: var.set
+      position: [680, 7140]
+      values:
+        variable: dead
+        Value: "true"
+    - id: 7101000243
+      type: var.set
+      position: [1020, 7140]
+      values:
+        variable: dying
+        Value: "0.6"
+    - id: 7101000244
+      type: func.call
+      position: [1360, 7140]
+      values:
+        function: stop
+    - id: 7101000245
+      type: call.bt.set_value
+      position: [1700, 7140]
+      values:
+        key: dead
+        value: "true"
+    - id: 7101000246
+      type: value.self
+      position: [1530, 7300]
+    - id: 7101000247
+      type: call.entity.set_behaviour_tree_enabled
+      position: [2040, 7140]
+      values:
+        enabled: "false"
+    - id: 7101000248
+      type: value.self
+      position: [1870, 7300]
+    - id: 7101000249
+      type: call.gamestate.set
+      position: [2380, 7140]
+      values:
+        key: wolf_kills
+    - id: 7101000250
+      type: call.gamestate.get
+      position: [2720, 7140]
+      values:
+        key: wolf_kills
+        default: "0"
+    - id: 7101000251
+      type: math.add
+      position: [2550, 7300]
+      values:
+        B: "1"
+    - id: 7101000252
+      type: call.gamestate.set
+      position: [3060, 7140]
+      values:
+        key: wolf_score
+    - id: 7101000253
+      type: call.gamestate.get
+      position: [3400, 7140]
+      values:
+        key: wolf_score
+        default: "0"
+    - id: 7101000254
+      type: var.get
+      position: [3230, 7300]
+      values:
+        variable: points
+    - id: 7101000255
+      type: math.add
+      position: [3230, 7420]
+    - id: 7101000256
+      type: call.sound.play
+      position: [3740, 7140]
+      values:
+        asset_path: sounds/combat/guard_death.wav
+    - id: 7101000257
+      type: func.entry
+      position: [340, 7680]
+      values:
+        function: show
+    - id: 7101000258
+      type: var.get
+      position: [170, 7840]
+      values:
+        variable: frame
+    - id: 7101000259
+      type: compare.not_equal
+      position: [170, 7960]
+    - id: 7101000260
+      type: flow.branch
+      position: [680, 7680]
+    - id: 7101000261
+      type: var.set
+      position: [1020, 7680]
+      values:
+        variable: frame
+    - id: 7101000262
+      type: call.isometric.set_sprite_frame
+      position: [1360, 7680]
+    - id: 7101000263
+      type: value.self
+      position: [1190, 7840]
+    - id: 7101000264
+      type: func.entry
+      position: [340, 8220]
+      values:
+        function: update_frame
+    - id: 7101000265
+      type: var.get
+      position: [170, 8380]
+      values:
+        variable: dead
+    - id: 7101000266
+      type: flow.branch
+      position: [680, 8220]
+    - id: 7101000267
+      type: func.call
+      position: [1020, 8220]
+      values:
+        function: show
+    - id: 7101000268
+      type: math.add
+      position: [850, 8380]
+      values:
+        A: "40"
+        B: "2"
+    - id: 7101000269
+      type: var.get
+      position: [850, 8500]
+      values:
+        variable: dying
+    - id: 7101000270
+      type: math.subtract
+      position: [850, 8620]
+      values:
+        A: "0.6"
+    - id: 7101000271
+      type: math.divide
+      position: [850, 8740]
+      values:
+        B: "0.15"
+    - id: 7101000272
+      type: math.floor
+      position: [850, 8860]
+    - id: 7101000273
+      type: math.min
+      position: [850, 8980]
+      values:
+        A: "3"
+    - id: 7101000274
+      type: math.add
+      position: [850, 9100]
+    - id: 7101000275
+      type: func.return
+      position: [1360, 8220]
+      values:
+        function: update_frame
+    - id: 7101000276
+      type: var.get
+      position: [1190, 8380]
+      values:
+        variable: pain
+    - id: 7101000277
+      type: compare.greater
+      position: [1190, 8500]
+      values:
+        B: "0"
+    - id: 7101000278
+      type: flow.branch
+      position: [1700, 8220]
+    - id: 7101000279
+      type: func.call
+      position: [2040, 8220]
+      values:
+        function: show
+        value: "40"
+    - id: 7101000280
+      type: func.return
+      position: [2380, 8220]
+      values:
+        function: update_frame
+    - id: 7101000281
+      type: var.get
+      position: [2210, 8380]
+      values:
+        variable: firing
+    - id: 7101000282
+      type: compare.greater
+      position: [2210, 8500]
+      values:
+        B: "0"
+    - id: 7101000283
+      type: flow.branch
+      position: [2720, 8220]
+    - id: 7101000284
+      type: func.call
+      position: [3060, 8220]
+      values:
+        function: show
+    - id: 7101000285
+      type: var.get
+      position: [2890, 8380]
+      values:
+        variable: fired
+    - id: 7101000286
+      type: logic.select
+      position: [2890, 8500]
+      values:
+        "True": "2"
+        "False": "1"
+    - id: 7101000287
+      type: math.add
+      position: [2890, 8620]
+      values:
+        A: "48"
+    - id: 7101000288
+      type: func.return
+      position: [3400, 8220]
+      values:
+        function: update_frame
+    - id: 7101000289
+      type: call.transform.get_position
+      position: [3230, 8380]
+      values:
+        split.xyz: "true"
+    - id: 7101000290
+      type: value.self
+      position: [3230, 8500]
+    - id: 7101000291
+      type: var.set
+      position: [3740, 8220]
+      values:
+        variable: update_frame_gx
+    - id: 7101000292
+      type: var.set
+      position: [4080, 8220]
+      values:
+        variable: update_frame_gy
+    - id: 7101000293
+      type: call.transform.get_position
+      position: [3910, 8380]
+      values:
+        split.xyz: "true"
+    - id: 7101000294
+      type: var.get
+      position: [3910, 8500]
+      values:
+        variable: player_id
+    - id: 7101000295
+      type: var.set
+      position: [4420, 8220]
+      values:
+        variable: update_frame_px
+    - id: 7101000296
+      type: var.set
+      position: [4760, 8220]
+      values:
+        variable: update_frame_py
+    - id: 7101000297
+      type: lua.pure
+      position: [4590, 8380]
+      values:
+        module: scripts.game.tactics
+        function: view_column
+    - id: 7101000298
+      type: var.get
+      position: [4590, 8500]
+      values:
+        variable: yaw
+    - id: 7101000299
+      type: var.get
+      position: [4590, 8620]
+      values:
+        variable: update_frame_gx
+    - id: 7101000300
+      type: var.get
+      position: [4590, 8740]
+      values:
+        variable: update_frame_gy
+    - id: 7101000301
+      type: var.get
+      position: [4590, 8860]
+      values:
+        variable: update_frame_px
+    - id: 7101000302
+      type: var.get
+      position: [4590, 8980]
+      values:
+        variable: update_frame_py
+    - id: 7101000303
+      type: var.set
+      position: [5100, 8220]
+      values:
+        variable: column
+    - id: 7101000304
+      type: var.get
+      position: [4930, 8380]
+      values:
+        variable: moving
+    - id: 7101000305
+      type: flow.branch
+      position: [5440, 8220]
+    - id: 7101000306
+      type: var.get
+      position: [5270, 8380]
+      values:
+        variable: walk_clock
+    - id: 7101000307
+      type: math.add
+      position: [5270, 8500]
+    - id: 7101000308
+      type: var.set
+      position: [5780, 8220]
+      values:
+        variable: walk_clock
+    - id: 7101000309
+      type: func.call
+      position: [6120, 8220]
+      values:
+        function: show
+    - id: 7101000310
+      type: var.get
+      position: [5950, 8380]
+      values:
+        variable: walk_clock
+    - id: 7101000311
+      type: math.multiply
+      position: [5950, 8500]
+      values:
+        B: "6"
+    - id: 7101000312
+      type: math.floor
+      position: [5950, 8620]
+    - id: 7101000313
+      type: math.modulo
+      position: [5950, 8740]
+      values:
+        B: "4"
+    - id: 7101000314
+      type: math.add
+      position: [5950, 8860]
+      values:
+        A: "1"
+    - id: 7101000315
+      type: math.multiply
+      position: [5950, 8980]
+      values:
+        B: "8"
+    - id: 7101000316
+      type: var.get
+      position: [5950, 9100]
+      values:
+        variable: column
+    - id: 7101000317
+      type: math.add
+      position: [5950, 9220]
+    - id: 7101000318
+      type: func.call
+      position: [6460, 8220]
+      values:
+        function: show
+    - id: 7101000319
+      type: var.get
+      position: [6290, 8380]
+      values:
+        variable: column
+    - id: 7101000320
+      type: event.on_update
+      position: [340, 9480]
+    - id: 7101000321
+      type: var.get
+      position: [170, 9640]
+      values:
+        variable: dead
+    - id: 7101000322
+      type: flow.branch
+      position: [680, 9480]
+    - id: 7101000323
+      type: var.get
+      position: [510, 9640]
+      values:
+        variable: dying
+    - id: 7101000324
+      type: math.subtract
+      position: [510, 9760]
+    - id: 7101000325
+      type: var.set
+      position: [1020, 9480]
+      values:
+        variable: dying
+    - id: 7101000326
+      type: func.call
+      position: [1360, 9480]
+      values:
+        function: update_frame
+    - id: 7101000327
+      type: var.get
+      position: [1190, 9640]
+      values:
+        variable: dying
+    - id: 7101000328
+      type: compare.less_equal
+      position: [1190, 9760]
+      values:
+        B: "0"
+    - id: 7101000329
+      type: flow.branch
+      position: [1700, 9480]
+    - id: 7101000330
+      type: call.transform.get_position
+      position: [1530, 9640]
+      values:
+        split.xyz: "true"
+    - id: 7101000331
+      type: value.self
+      position: [1530, 9760]
+    - id: 7101000332
+      type: var.set
+      position: [2040, 9480]
+      values:
+        variable: on_update_x
+    - id: 7101000333
+      type: var.set
+      position: [2380, 9480]
+      values:
+        variable: on_update_y
+    - id: 7101000334
+      type: call.scene.spawn_prefab
+      position: [2720, 9480]
+      values:
+        split.xyz: "true"
+        z: "0"
+    - id: 7101000335
+      type: var.get
+      position: [2550, 9640]
+      values:
+        variable: corpse
+    - id: 7101000336
+      type: var.get
+      position: [2550, 9760]
+      values:
+        variable: on_update_x
+    - id: 7101000337
+      type: var.get
+      position: [2550, 9880]
+      values:
+        variable: on_update_y
+    - id: 7101000338
+      type: var.get
+      position: [2550, 10000]
+      values:
+        variable: drop
+    - id: 7101000339
+      type: compare.not_equal
+      position: [2550, 10120]
+    - id: 7101000340
+      type: value.string
+      position: [2550, 10240]
+      values:
+        Value: ""
+    - id: 7101000341
+      type: flow.branch
+      position: [3060, 9480]
+    - id: 7101000342
+      type: call.scene.spawn_prefab
+      position: [3400, 9480]
+      values:
+        split.xyz: "true"
+        z: "0"
+    - id: 7101000343
+      type: var.get
+      position: [3230, 9640]
+      values:
+        variable: drop
+    - id: 7101000344
+      type: var.get
+      position: [3230, 9760]
+      values:
+        variable: on_update_x
+    - id: 7101000345
+      type: var.get
+      position: [3230, 9880]
+      values:
+        variable: on_update_y
+    - id: 7101000346
+      type: call.scene.destroy_entity
+      position: [3740, 9480]
+    - id: 7101000347
+      type: value.self
+      position: [3570, 9640]
+    - id: 7101000348
+      type: call.bt.get_value
+      position: [3570, 9760]
+      values:
+        key: damage
+    - id: 7101000349
+      type: value.self
+      position: [3570, 9880]
+    - id: 7101000350
+      type: logic.default
+      position: [3570, 10000]
+      values:
+        Default: "0"
+    - id: 7101000351
+      type: var.set
+      position: [4080, 9480]
+      values:
+        variable: damage
+    - id: 7101000352
+      type: var.get
+      position: [3910, 9640]
+      values:
+        variable: damage
+    - id: 7101000353
+      type: compare.greater
+      position: [3910, 9760]
+      values:
+        B: "0"
+    - id: 7101000354
+      type: flow.branch
+      position: [4420, 9480]
+    - id: 7101000355
+      type: call.bt.set_value
+      position: [4760, 9480]
+      values:
+        key: damage
+        value: "0"
+    - id: 7101000356
+      type: value.self
+      position: [4590, 9640]
+    - id: 7101000357
+      type: var.get
+      position: [4590, 9760]
+      values:
+        variable: health
+    - id: 7101000358
+      type: var.get
+      position: [4590, 9880]
+      values:
+        variable: damage
+    - id: 7101000359
+      type: math.subtract
+      position: [4590, 10000]
+    - id: 7101000360
+      type: var.set
+      position: [5100, 9480]
+      values:
+        variable: health
+    - id: 7101000361
+      type: func.call
+      position: [5440, 9480]
+      values:
+        function: alert
+    - id: 7101000362
+      type: var.get
+      position: [5270, 9640]
+      values:
+        variable: health
+    - id: 7101000363
+      type: compare.less_equal
+      position: [5270, 9760]
+      values:
+        B: "0"
+    - id: 7101000364
+      type: flow.branch
+      position: [5780, 9480]
+    - id: 7101000365
+      type: func.call
+      position: [6120, 9480]
+      values:
+        function: die
+    - id: 7101000366
+      type: var.set
+      position: [6460, 9480]
+      values:
+        variable: pain
+        Value: "0.3"
+    - id: 7101000367
+      type: call.sound.play
+      position: [6800, 9480]
+      values:
+        asset_path: sounds/combat/guard_pain.wav
+    - id: 7101000368
+      type: var.get
+      position: [6630, 9640]
+      values:
+        variable: pain
+    - id: 7101000369
+      type: math.subtract
+      position: [6630, 9760]
+    - id: 7101000370
+      type: math.max
+      position: [6630, 9880]
+      values:
+        A: "0"
+    - id: 7101000371
+      type: var.set
+      position: [7140, 9480]
+      values:
+        variable: pain
+    - id: 7101000372
+      type: var.get
+      position: [6970, 9640]
+      values:
+        variable: reaction
+    - id: 7101000373
+      type: math.subtract
+      position: [6970, 9760]
+    - id: 7101000374
+      type: math.max
+      position: [6970, 9880]
+      values:
+        A: "0"
+    - id: 7101000375
+      type: var.set
+      position: [7480, 9480]
+      values:
+        variable: reaction
+    - id: 7101000376
+      type: func.call
+      position: [7820, 9480]
+      values:
+        function: update_frame
+    - id: 7101000377
+      type: func.entry
+      position: [340, 10500]
+      values:
+        function: guard_in_pain
+    - id: 7101000378
+      type: var.get
+      position: [170, 10660]
+      values:
+        variable: pain
+    - id: 7101000379
+      type: compare.greater
+      position: [170, 10780]
+      values:
+        B: "0"
+    - id: 7101000380
+      type: func.return
+      position: [680, 10500]
+      values:
+        function: guard_in_pain
+    - id: 7101000381
+      type: func.entry
+      position: [340, 11040]
+      values:
+        function: guard_flinch
+    - id: 7101000382
+      type: func.call
+      position: [680, 11040]
+      values:
+        function: stop
+    - id: 7101000383
+      type: var.get
+      position: [510, 11200]
+      values:
+        variable: pain
+    - id: 7101000384
+      type: compare.greater
+      position: [510, 11320]
+      values:
+        B: "0"
+    - id: 7101000385
+      type: flow.branch
+      position: [1020, 11040]
+    - id: 7101000386
+      type: func.return
+      position: [1360, 11040]
+      values:
+        function: guard_flinch
+        result: running
+    - id: 7101000387
+      type: func.return
+      position: [1700, 11040]
+      values:
+        function: guard_flinch
+        result: "true"
+    - id: 7101000388
+      type: func.entry
+      position: [340, 11580]
+      values:
+        function: guard_can_fire
+    - id: 7101000389
+      type: var.get
+      position: [170, 11740]
+      values:
+        variable: alerted
+    - id: 7101000390
+      type: logic.not
+      position: [170, 11860]
+    - id: 7101000391
+      type: var.get
+      position: [170, 11980]
+      values:
+        variable: reaction
+    - id: 7101000392
+      type: compare.greater
+      position: [170, 12100]
+      values:
+        B: "0"
+    - id: 7101000393
+      type: logic.or
+      position: [170, 12220]
+    - id: 7101000394
+      type: flow.branch
+      position: [680, 11580]
+    - id: 7101000395
+      type: func.call
+      position: [1020, 11580]
+      values:
+        function: sees_player
+    - id: 7101000396
+      type: flow.branch
+      position: [1360, 11580]
+    - id: 7101000397
+      type: func.return
+      position: [1700, 11580]
+      values:
+        function: guard_can_fire
+        result: "false"
+    - id: 7101000398
+      type: call.transform.get_position
+      position: [1530, 11740]
+      values:
+        split.xyz: "true"
+    - id: 7101000399
+      type: value.self
+      position: [1530, 11860]
+    - id: 7101000400
+      type: var.set
+      position: [2040, 11580]
+      values:
+        variable: guard_can_fire_gx
+    - id: 7101000401
+      type: var.set
+      position: [2380, 11580]
+      values:
+        variable: guard_can_fire_gy
+    - id: 7101000402
+      type: call.transform.get_position
+      position: [2210, 11740]
+      values:
+        split.xyz: "true"
+    - id: 7101000403
+      type: var.get
+      position: [2210, 11860]
+      values:
+        variable: player_id
+    - id: 7101000404
+      type: var.set
+      position: [2720, 11580]
+      values:
+        variable: guard_can_fire_px
+    - id: 7101000405
+      type: var.set
+      position: [3060, 11580]
+      values:
+        variable: guard_can_fire_py
+    - id: 7101000406
+      type: var.get
+      position: [2890, 11740]
+      values:
+        variable: guard_can_fire_px
+    - id: 7101000407
+      type: var.get
+      position: [2890, 11860]
+      values:
+        variable: guard_can_fire_gx
+    - id: 7101000408
+      type: math.subtract
+      position: [2890, 11980]
+    - id: 7101000409
+      type: math.power
+      position: [2890, 12100]
+      values:
+        Exponent: "2"
+    - id: 7101000410
+      type: var.get
+      position: [2890, 12220]
+      values:
+        variable: guard_can_fire_py
+    - id: 7101000411
+      type: var.get
+      position: [2890, 12340]
+      values:
+        variable: guard_can_fire_gy
+    - id: 7101000412
+      type: math.subtract
+      position: [2890, 12460]
+    - id: 7101000413
+      type: math.power
+      position: [2890, 12580]
+      values:
+        Exponent: "2"
+    - id: 7101000414
+      type: math.add
+      position: [2890, 12700]
+    - id: 7101000415
+      type: math.sqrt
+      position: [2890, 12820]
+    - id: 7101000416
+      type: var.get
+      position: [2890, 12940]
+      values:
+        variable: fire_range
+    - id: 7101000417
+      type: compare.less_equal
+      position: [2890, 13060]
+    - id: 7101000418
+      type: func.return
+      position: [3400, 11580]
+      values:
+        function: guard_can_fire
+    - id: 7101000419
+      type: func.entry
+      position: [340, 13320]
+      values:
+        function: guard_fire
+    - id: 7101000420
+      type: func.call
+      position: [680, 13320]
+      values:
+        function: stop
+    - id: 7101000421
+      type: func.call
+      position: [1020, 13320]
+      values:
+        function: face_player
+    - id: 7101000422
+      type: var.get
+      position: [850, 13480]
+      values:
+        variable: firing
+    - id: 7101000423
+      type: compare.less_equal
+      position: [850, 13600]
+      values:
+        B: "0"
+    - id: 7101000424
+      type: flow.branch
+      position: [1360, 13320]
+    - id: 7101000425
+      type: var.get
+      position: [1190, 13480]
+      values:
+        variable: fire_time
+    - id: 7101000426
+      type: var.set
+      position: [1700, 13320]
+      values:
+        variable: firing
+    - id: 7101000427
+      type: var.set
+      position: [2040, 13320]
+      values:
+        variable: fired
+        Value: "false"
+    - id: 7101000428
+      type: func.return
+      position: [2380, 13320]
+      values:
+        function: guard_fire
+        result: running
+    - id: 7101000429
+      type: var.get
+      position: [2210, 13480]
+      values:
+        variable: firing
+    - id: 7101000430
+      type: math.subtract
+      position: [2210, 13600]
+    - id: 7101000431
+      type: var.set
+      position: [2720, 13320]
+      values:
+        variable: firing
+    - id: 7101000432
+      type: var.get
+      position: [2550, 13480]
+      values:
+        variable: fired
+    - id: 7101000433
+      type: logic.not
+      position: [2550, 13600]
+    - id: 7101000434
+      type: var.get
+      position: [2550, 13720]
+      values:
+        variable: firing
+    - id: 7101000435
+      type: var.get
+      position: [2550, 13840]
+      values:
+        variable: fire_time
+    - id: 7101000436
+      type: math.divide
+      position: [2550, 13960]
+      values:
+        B: "2"
+    - id: 7101000437
+      type: compare.less_equal
+      position: [2550, 14080]
+    - id: 7101000438
+      type: logic.and
+      position: [2550, 14200]
+    - id: 7101000439
+      type: flow.branch
+      position: [3060, 13320]
+    - id: 7101000440
+      type: var.set
+      position: [3400, 13320]
+      values:
+        variable: fired
+        Value: "true"
+    - id: 7101000441
+      type: call.sound.play
+      position: [3740, 13320]
+      values:
+        asset_path: sounds/combat/guard_shot.wav
+    - id: 7101000442
+      type: call.transform.get_position
+      position: [3570, 13480]
+      values:
+        split.xyz: "true"
+    - id: 7101000443
+      type: value.self
+      position: [3570, 13600]
+    - id: 7101000444
+      type: var.set
+      position: [4080, 13320]
+      values:
+        variable: guard_fire_gx
+    - id: 7101000445
+      type: var.set
+      position: [4420, 13320]
+      values:
+        variable: guard_fire_gy
+    - id: 7101000446
+      type: call.gamestate.get
+      position: [4760, 13320]
+      values:
+        key: wolf_noise
+        default: "0"
+    - id: 7101000447
+      type: math.add
+      position: [4590, 13480]
+      values:
+        B: "1"
+    - id: 7101000448
+      type: var.set
+      position: [5100, 13320]
+      values:
+        variable: heard
+    - id: 7101000449
+      type: call.gamestate.set
+      position: [5440, 13320]
+      values:
+        key: wolf_noise
+    - id: 7101000450
+      type: var.get
+      position: [5270, 13480]
+      values:
+        variable: heard
+    - id: 7101000451
+      type: call.gamestate.set
+      position: [5780, 13320]
+      values:
+        key: wolf_noise_x
+    - id: 7101000452
+      type: var.get
+      position: [5610, 13480]
+      values:
+        variable: guard_fire_gx
+    - id: 7101000453
+      type: call.gamestate.set
+      position: [6120, 13320]
+      values:
+        key: wolf_noise_y
+    - id: 7101000454
+      type: var.get
+      position: [5950, 13480]
+      values:
+        variable: guard_fire_gy
+    - id: 7101000455
+      type: func.call
+      position: [6460, 13320]
+      values:
+        function: sees_player
+    - id: 7101000456
+      type: flow.branch
+      position: [6800, 13320]
+    - id: 7101000457
+      type: call.transform.get_position
+      position: [6630, 13480]
+      values:
+        split.xyz: "true"
+    - id: 7101000458
+      type: var.get
+      position: [6630, 13600]
+      values:
+        variable: player_id
+    - id: 7101000459
+      type: var.set
+      position: [7140, 13320]
+      values:
+        variable: guard_fire_px
+    - id: 7101000460
+      type: var.set
+      position: [7480, 13320]
+      values:
+        variable: guard_fire_py
+    - id: 7101000461
+      type: var.get
+      position: [7310, 13480]
+      values:
+        variable: guard_fire_px
+    - id: 7101000462
+      type: var.get
+      position: [7310, 13600]
+      values:
+        variable: guard_fire_gx
+    - id: 7101000463
+      type: math.subtract
+      position: [7310, 13720]
+    - id: 7101000464
+      type: math.power
+      position: [7310, 13840]
+      values:
+        Exponent: "2"
+    - id: 7101000465
+      type: var.get
+      position: [7310, 13960]
+      values:
+        variable: guard_fire_py
+    - id: 7101000466
+      type: var.get
+      position: [7310, 14080]
+      values:
+        variable: guard_fire_gy
+    - id: 7101000467
+      type: math.subtract
+      position: [7310, 14200]
+    - id: 7101000468
+      type: math.power
+      position: [7310, 14320]
+      values:
+        Exponent: "2"
+    - id: 7101000469
+      type: math.add
+      position: [7310, 14440]
+    - id: 7101000470
+      type: math.sqrt
+      position: [7310, 14560]
+    - id: 7101000471
+      type: var.set
+      position: [7820, 13320]
+      values:
+        variable: guard_fire_distance
+    - id: 7101000472
+      type: math.random
+      position: [7650, 13480]
+    - id: 7101000473
+      type: var.get
+      position: [7650, 13600]
+      values:
+        variable: guard_fire_distance
+    - id: 7101000474
+      type: math.divide
+      position: [7650, 13720]
+      values:
+        B: "12"
+    - id: 7101000475
+      type: math.subtract
+      position: [7650, 13840]
+      values:
+        A: "1"
+    - id: 7101000476
+      type: math.max
+      position: [7650, 13960]
+      values:
+        A: "0.3"
+    - id: 7101000477
+      type: compare.less
+      position: [7650, 14080]
+    - id: 7101000478
+      type: flow.branch
+      position: [8160, 13320]
+    - id: 7101000479
+      type: call.gamestate.set
+      position: [8500, 13320]
+      values:
+        key: wolf_damage
+    - id: 7101000480
+      type: call.gamestate.get
+      position: [8840, 13320]
+      values:
+        key: wolf_damage
+        default: "0"
+    - id: 7101000481
+      type: var.get
+      position: [8670, 13480]
+      values:
+        variable: min_damage
+    - id: 7101000482
+      type: var.get
+      position: [8670, 13600]
+      values:
+        variable: max_damage
+    - id: 7101000483
+      type: math.random_integer
+      position: [8670, 13720]
+    - id: 7101000484
+      type: math.add
+      position: [8670, 13840]
+    - id: 7101000485
+      type: var.get
+      position: [8670, 13960]
+      values:
+        variable: firing
+    - id: 7101000486
+      type: compare.greater
+      position: [8670, 14080]
+      values:
+        B: "0"
+    - id: 7101000487
+      type: flow.branch
+      position: [9180, 13320]
+    - id: 7101000488
+      type: func.return
+      position: [9520, 13320]
+      values:
+        function: guard_fire
+        result: running
+    - id: 7101000489
+      type: var.set
+      position: [9860, 13320]
+      values:
+        variable: firing
+        Value: "0"
+    - id: 7101000490
+      type: func.return
+      position: [10200, 13320]
+      values:
+        function: guard_fire
+        result: "true"
+    - id: 7101000491
+      type: func.entry
+      position: [340, 14820]
+      values:
+        function: guard_chase
+    - id: 7101000492
+      type: var.get
+      position: [170, 14980]
+      values:
+        variable: player_id
+    - id: 7101000493
+      type: compare.equal
+      position: [170, 15100]
+      values:
+        B: "0"
+    - id: 7101000494
+      type: flow.branch
+      position: [680, 14820]
+    - id: 7101000495
+      type: func.return
+      position: [1020, 14820]
+      values:
+        function: guard_chase
+        result: "false"
+    - id: 7101000496
+      type: call.transform.get_position
+      position: [850, 14980]
+      values:
+        split.xyz: "true"
+    - id: 7101000497
+      type: var.get
+      position: [850, 15100]
+      values:
+        variable: player_id
+    - id: 7101000498
+      type: var.set
+      position: [1360, 14820]
+      values:
+        variable: guard_chase_px
+    - id: 7101000499
+      type: var.set
+      position: [1700, 14820]
+      values:
+        variable: guard_chase_py
+    - id: 7101000500
+      type: lua.pure
+      position: [1530, 14980]
+      values:
+        module: scripts.game.tactics
+        function: cell_of
+    - id: 7101000501
+      type: var.get
+      position: [1530, 15100]
+      values:
+        variable: guard_chase_px
+    - id: 7101000502
+      type: var.get
+      position: [1530, 15220]
+      values:
+        variable: guard_chase_py
+    - id: 7101000503
+      type: var.set
+      position: [2040, 14820]
+      values:
+        variable: c
+    - id: 7101000504
+      type: var.set
+      position: [2380, 14820]
+      values:
+        variable: r
+    - id: 7101000505
+      type: func.call
+      position: [2720, 14820]
+      values:
+        function: go_to
+    - id: 7101000506
+      type: var.get
+      position: [2550, 14980]
+      values:
+        variable: c
+    - id: 7101000507
+      type: var.get
+      position: [2550, 15100]
+      values:
+        variable: r
+    - id: 7101000508
+      type: var.get
+      position: [2550, 15220]
+      values:
+        variable: run_speed
+    - id: 7101000509
+      type: func.return
+      position: [3060, 14820]
+      values:
+        function: guard_chase
+        result: running
+    - id: 7101000510
+      type: func.entry
+      position: [340, 15480]
+      values:
+        function: guard_notices
+    - id: 7101000511
+      type: call.gamestate.get
+      position: [680, 15480]
+      values:
+        key: wolf_noise
+        default: "0"
+    - id: 7101000512
+      type: var.set
+      position: [1020, 15480]
+      values:
+        variable: noise
+    - id: 7101000513
+      type: var.get
+      position: [850, 15640]
+      values:
+        variable: noise
+    - id: 7101000514
+      type: var.get
+      position: [850, 15760]
+      values:
+        variable: heard
+    - id: 7101000515
+      type: compare.greater
+      position: [850, 15880]
+    - id: 7101000516
+      type: flow.branch
+      position: [1360, 15480]
+    - id: 7101000517
+      type: var.get
+      position: [1190, 15640]
+      values:
+        variable: noise
+    - id: 7101000518
+      type: var.set
+      position: [1700, 15480]
+      values:
+        variable: heard
+    - id: 7101000519
+      type: call.transform.get_position
+      position: [1530, 15640]
+      values:
+        split.xyz: "true"
+    - id: 7101000520
+      type: value.self
+      position: [1530, 15760]
+    - id: 7101000521
+      type: var.set
+      position: [2040, 15480]
+      values:
+        variable: guard_notices_gx
+    - id: 7101000522
+      type: var.set
+      position: [2380, 15480]
+      values:
+        variable: guard_notices_gy
+    - id: 7101000523
+      type: call.gamestate.get
+      position: [2720, 15480]
+      values:
+        key: wolf_noise_x
+        default: "0"
+    - id: 7101000524
+      type: call.gamestate.get
+      position: [3060, 15480]
+      values:
+        key: wolf_noise_y
+        default: "0"
+    - id: 7101000525
+      type: var.set
+      position: [3400, 15480]
+      values:
+        variable: nx
+    - id: 7101000526
+      type: var.set
+      position: [3740, 15480]
+      values:
+        variable: ny
+    - id: 7101000527
+      type: var.get
+      position: [3570, 15640]
+      values:
+        variable: nx
+    - id: 7101000528
+      type: var.get
+      position: [3570, 15760]
+      values:
+        variable: guard_notices_gx
+    - id: 7101000529
+      type: math.subtract
+      position: [3570, 15880]
+    - id: 7101000530
+      type: math.power
+      position: [3570, 16000]
+      values:
+        Exponent: "2"
+    - id: 7101000531
+      type: var.get
+      position: [3570, 16120]
+      values:
+        variable: ny
+    - id: 7101000532
+      type: var.get
+      position: [3570, 16240]
+      values:
+        variable: guard_notices_gy
+    - id: 7101000533
+      type: math.subtract
+      position: [3570, 16360]
+    - id: 7101000534
+      type: math.power
+      position: [3570, 16480]
+      values:
+        Exponent: "2"
+    - id: 7101000535
+      type: math.add
+      position: [3570, 16600]
+    - id: 7101000536
+      type: math.sqrt
+      position: [3570, 16720]
+    - id: 7101000537
+      type: var.get
+      position: [3570, 16840]
+      values:
+        variable: hearing_range
+    - id: 7101000538
+      type: compare.less_equal
+      position: [3570, 16960]
+    - id: 7101000539
+      type: flow.branch
+      position: [4080, 15480]
+    - id: 7101000540
+      type: func.call
+      position: [4420, 15480]
+      values:
+        function: alert
+    - id: 7101000541
+      type: var.get
+      position: [4250, 15640]
+      values:
+        variable: alerted
+    - id: 7101000542
+      type: logic.not
+      position: [4250, 15760]
+    - id: 7101000543
+      type: flow.branch
+      position: [4760, 15480]
+    - id: 7101000544
+      type: func.call
+      position: [5100, 15480]
+      values:
+        function: sees_player
+    - id: 7101000545
+      type: flow.branch
+      position: [5440, 15480]
+    - id: 7101000546
+      type: func.call
+      position: [5780, 15480]
+      values:
+        function: alert
+    - id: 7101000547
+      type: var.get
+      position: [5610, 15640]
+      values:
+        variable: alerted
+    - id: 7101000548
+      type: func.return
+      position: [6120, 15480]
+      values:
+        function: guard_notices
+    - id: 7101000549
+      type: func.entry
+      position: [340, 17220]
+      values:
+        function: guard_patrol
+    - id: 7101000550
+      type: var.get
+      position: [170, 17380]
+      values:
+        variable: patrol_c
+    - id: 7101000551
+      type: compare.less
+      position: [170, 17500]
+      values:
+        B: "0"
+    - id: 7101000552
+      type: flow.branch
+      position: [680, 17220]
+    - id: 7101000553
+      type: func.call
+      position: [1020, 17220]
+      values:
+        function: stop
+    - id: 7101000554
+      type: func.return
+      position: [1360, 17220]
+      values:
+        function: guard_patrol
+        result: running
+    - id: 7101000555
+      type: func.call
+      position: [1700, 17220]
+      values:
+        function: go_to
+    - id: 7101000556
+      type: var.get
+      position: [1530, 17380]
+      values:
+        variable: goal_c
+    - id: 7101000557
+      type: var.get
+      position: [1530, 17500]
+      values:
+        variable: goal_r
+    - id: 7101000558
+      type: var.get
+      position: [1530, 17620]
+      values:
+        variable: walk_speed
+    - id: 7101000559
+      type: flow.branch
+      position: [2040, 17220]
+    - id: 7101000560
+      type: var.get
+      position: [1870, 17380]
+      values:
+        variable: goal_c
+    - id: 7101000561
+      type: var.get
+      position: [1870, 17500]
+      values:
+        variable: home_c
+    - id: 7101000562
+      type: compare.equal
+      position: [1870, 17620]
+    - id: 7101000563
+      type: var.get
+      position: [1870, 17740]
+      values:
+        variable: goal_r
+    - id: 7101000564
+      type: var.get
+      position: [1870, 17860]
+      values:
+        variable: home_r
+    - id: 7101000565
+      type: compare.equal
+      position: [1870, 17980]
+    - id: 7101000566
+      type: logic.and
+      position: [1870, 18100]
+    - id: 7101000567
+      type: flow.branch
+      position: [2380, 17220]
+    - id: 7101000568
+      type: var.get
+      position: [2210, 17380]
+      values:
+        variable: patrol_c
+    - id: 7101000569
+      type: var.get
+      position: [2210, 17500]
+      values:
+        variable: patrol_r
+    - id: 7101000570
+      type: var.set
+      position: [2720, 17220]
+      values:
+        variable: tmp_5
+    - id: 7101000571
+      type: var.set
+      position: [3060, 17220]
+      values:
+        variable: tmp_6
+    - id: 7101000572
+      type: var.get
+      position: [2890, 17380]
+      values:
+        variable: tmp_5
+    - id: 7101000573
+      type: var.set
+      position: [3400, 17220]
+      values:
+        variable: goal_c
+    - id: 7101000574
+      type: var.get
+      position: [3230, 17380]
+      values:
+        variable: tmp_6
+    - id: 7101000575
+      type: var.set
+      position: [3740, 17220]
+      values:
+        variable: goal_r
+    - id: 7101000576
+      type: var.get
+      position: [3570, 17380]
+      values:
+        variable: home_c
+    - id: 7101000577
+      type: var.get
+      position: [3570, 17500]
+      values:
+        variable: home_r
+    - id: 7101000578
+      type: var.set
+      position: [4080, 17220]
+      values:
+        variable: tmp_7
+    - id: 7101000579
+      type: var.set
+      position: [4420, 17220]
+      values:
+        variable: tmp_8
+    - id: 7101000580
+      type: var.get
+      position: [4250, 17380]
+      values:
+        variable: tmp_7
+    - id: 7101000581
+      type: var.set
+      position: [4760, 17220]
+      values:
+        variable: goal_c
+    - id: 7101000582
+      type: var.get
+      position: [4590, 17380]
+      values:
+        variable: tmp_8
+    - id: 7101000583
+      type: var.set
+      position: [5100, 17220]
+      values:
+        variable: goal_r
+    - id: 7101000584
+      type: func.return
+      position: [5440, 17220]
+      values:
+        function: guard_patrol
+        result: running
+    - id: 7101000585
+      type: custom.call
+      position: [170, 0]
+      values:
+        custom: init_state
+    - id: 7101000586
+      type: math.floor
+      position: [4930, 4000]
+    - id: 7101000587
+      type: math.floor
+      position: [4930, 4120]
+    - id: 7101000901
+      type: call.gamestate.set
+      position: [8500, 14200]
+      values:
+        key: wolf_hit_x
+    - id: 7101000902
+      type: var.get
+      position: [8330, 14360]
+      values:
+        variable: guard_fire_gx
+    - id: 7101000903
+      type: call.gamestate.set
+      position: [8840, 14200]
+      values:
+        key: wolf_hit_y
+    - id: 7101000904
+      type: var.get
+      position: [8670, 14360]
+      values:
+        variable: guard_fire_gy
+  links:
+    - {from: 7101000003, fromPin: Result, to: 7101000002, toPin: entity_id}
+    - {from: 7101000585, fromPin: Then, to: 7101000002, toPin: Exec}
+    - {from: 7101000004, fromPin: entity_id, to: 7101000005, toPin: Value}
+    - {from: 7101000002, fromPin: Then, to: 7101000005, toPin: Exec}
+    - {from: 7101000007, fromPin: Result, to: 7101000006, toPin: entity_id}
+    - {from: 7101000006, fromPin: rz, to: 7101000008, toPin: Value}
+    - {from: 7101000005, fromPin: Then, to: 7101000008, toPin: Exec}
+    - {from: 7101000009, fromPin: Value, to: 7101000010, toPin: Value}
+    - {from: 7101000008, fromPin: Then, to: 7101000010, toPin: Exec}
+    - {from: 7101000012, fromPin: Result, to: 7101000011, toPin: entity_id}
+    - {from: 7101000011, fromPin: x, to: 7101000013, toPin: Value}
+    - {from: 7101000010, fromPin: Then, to: 7101000013, toPin: Exec}
+    - {from: 7101000011, fromPin: y, to: 7101000014, toPin: Value}
+    - {from: 7101000013, fromPin: Then, to: 7101000014, toPin: Exec}
+    - {from: 7101000016, fromPin: Value, to: 7101000015, toPin: x}
+    - {from: 7101000017, fromPin: Value, to: 7101000015, toPin: y}
+    - {from: 7101000015, fromPin: c, to: 7101000018, toPin: Value}
+    - {from: 7101000014, fromPin: Then, to: 7101000018, toPin: Exec}
+    - {from: 7101000015, fromPin: r, to: 7101000019, toPin: Value}
+    - {from: 7101000018, fromPin: Then, to: 7101000019, toPin: Exec}
+    - {from: 7101000020, fromPin: Value, to: 7101000022, toPin: Value}
+    - {from: 7101000019, fromPin: Then, to: 7101000022, toPin: Exec}
+    - {from: 7101000021, fromPin: Value, to: 7101000023, toPin: Value}
+    - {from: 7101000022, fromPin: Then, to: 7101000023, toPin: Exec}
+    - {from: 7101000024, fromPin: Value, to: 7101000025, toPin: Value}
+    - {from: 7101000023, fromPin: Then, to: 7101000025, toPin: Exec}
+    - {from: 7101000026, fromPin: Value, to: 7101000027, toPin: Value}
+    - {from: 7101000025, fromPin: Then, to: 7101000027, toPin: Exec}
+    - {from: 7101000028, fromPin: Value, to: 7101000029, toPin: A}
+    - {from: 7101000029, fromPin: Result, to: 7101000030, toPin: Condition}
+    - {from: 7101000027, fromPin: Then, to: 7101000030, toPin: Exec}
+    - {from: 7101000031, fromPin: Value, to: 7101000033, toPin: Value}
+    - {from: 7101000030, fromPin: "True", to: 7101000033, toPin: Exec}
+    - {from: 7101000032, fromPin: Value, to: 7101000034, toPin: Value}
+    - {from: 7101000033, fromPin: Then, to: 7101000034, toPin: Exec}
+    - {from: 7101000035, fromPin: Value, to: 7101000036, toPin: Value}
+    - {from: 7101000034, fromPin: Then, to: 7101000036, toPin: Exec}
+    - {from: 7101000037, fromPin: Value, to: 7101000038, toPin: Value}
+    - {from: 7101000036, fromPin: Then, to: 7101000038, toPin: Exec}
+    - {from: 7101000038, fromPin: Then, to: 7101000039, toPin: Exec}
+    - {from: 7101000030, fromPin: "False", to: 7101000039, toPin: Exec}
+    - {from: 7101000039, fromPin: value, to: 7101000040, toPin: Value}
+    - {from: 7101000039, fromPin: Then, to: 7101000040, toPin: Exec}
+    - {from: 7101000041, fromPin: Then, to: 7101000042, toPin: Exec}
+    - {from: 7101000044, fromPin: Result, to: 7101000043, toPin: entity_id}
+    - {from: 7101000042, fromPin: Then, to: 7101000043, toPin: Exec}
+    - {from: 7101000047, fromPin: Result, to: 7101000046, toPin: entity_id}
+    - {from: 7101000046, fromPin: x, to: 7101000048, toPin: Value}
+    - {from: 7101000045, fromPin: Then, to: 7101000048, toPin: Exec}
+    - {from: 7101000046, fromPin: y, to: 7101000049, toPin: Value}
+    - {from: 7101000048, fromPin: Then, to: 7101000049, toPin: Exec}
+    - {from: 7101000051, fromPin: Value, to: 7101000050, toPin: entity_id}
+    - {from: 7101000050, fromPin: x, to: 7101000052, toPin: Value}
+    - {from: 7101000049, fromPin: Then, to: 7101000052, toPin: Exec}
+    - {from: 7101000050, fromPin: y, to: 7101000053, toPin: Value}
+    - {from: 7101000052, fromPin: Then, to: 7101000053, toPin: Exec}
+    - {from: 7101000055, fromPin: Value, to: 7101000057, toPin: A}
+    - {from: 7101000056, fromPin: Value, to: 7101000057, toPin: B}
+    - {from: 7101000057, fromPin: Result, to: 7101000054, toPin: dx}
+    - {from: 7101000058, fromPin: Value, to: 7101000060, toPin: A}
+    - {from: 7101000059, fromPin: Value, to: 7101000060, toPin: B}
+    - {from: 7101000060, fromPin: Result, to: 7101000054, toPin: dy}
+    - {from: 7101000054, fromPin: yaw, to: 7101000061, toPin: Value}
+    - {from: 7101000053, fromPin: Then, to: 7101000061, toPin: Exec}
+    - {from: 7101000062, fromPin: c, to: 7101000063, toPin: c}
+    - {from: 7101000062, fromPin: r, to: 7101000063, toPin: r}
+    - {from: 7101000063, fromPin: x, to: 7101000064, toPin: Value}
+    - {from: 7101000062, fromPin: Then, to: 7101000064, toPin: Exec}
+    - {from: 7101000063, fromPin: y, to: 7101000065, toPin: Value}
+    - {from: 7101000064, fromPin: Then, to: 7101000065, toPin: Exec}
+    - {from: 7101000067, fromPin: Result, to: 7101000066, toPin: entity_id}
+    - {from: 7101000066, fromPin: x, to: 7101000068, toPin: Value}
+    - {from: 7101000065, fromPin: Then, to: 7101000068, toPin: Exec}
+    - {from: 7101000066, fromPin: y, to: 7101000069, toPin: Value}
+    - {from: 7101000068, fromPin: Then, to: 7101000069, toPin: Exec}
+    - {from: 7101000070, fromPin: Value, to: 7101000072, toPin: A}
+    - {from: 7101000071, fromPin: Value, to: 7101000072, toPin: B}
+    - {from: 7101000073, fromPin: Value, to: 7101000075, toPin: A}
+    - {from: 7101000074, fromPin: Value, to: 7101000075, toPin: B}
+    - {from: 7101000072, fromPin: Result, to: 7101000076, toPin: Value}
+    - {from: 7101000069, fromPin: Then, to: 7101000076, toPin: Exec}
+    - {from: 7101000075, fromPin: Result, to: 7101000077, toPin: Value}
+    - {from: 7101000076, fromPin: Then, to: 7101000077, toPin: Exec}
+    - {from: 7101000078, fromPin: Value, to: 7101000080, toPin: A}
+    - {from: 7101000079, fromPin: Value, to: 7101000080, toPin: B}
+    - {from: 7101000081, fromPin: Value, to: 7101000083, toPin: A}
+    - {from: 7101000082, fromPin: Value, to: 7101000083, toPin: B}
+    - {from: 7101000080, fromPin: Result, to: 7101000084, toPin: A}
+    - {from: 7101000083, fromPin: Result, to: 7101000084, toPin: B}
+    - {from: 7101000084, fromPin: Result, to: 7101000085, toPin: A}
+    - {from: 7101000085, fromPin: Result, to: 7101000086, toPin: Value}
+    - {from: 7101000077, fromPin: Then, to: 7101000086, toPin: Exec}
+    - {from: 7101000087, fromPin: Value, to: 7101000088, toPin: A}
+    - {from: 7101000088, fromPin: Result, to: 7101000089, toPin: Condition}
+    - {from: 7101000086, fromPin: Then, to: 7101000089, toPin: Exec}
+    - {from: 7101000089, fromPin: "True", to: 7101000090, toPin: Exec}
+    - {from: 7101000089, fromPin: "False", to: 7101000091, toPin: Exec}
+    - {from: 7101000093, fromPin: Value, to: 7101000092, toPin: dx}
+    - {from: 7101000094, fromPin: Value, to: 7101000092, toPin: dy}
+    - {from: 7101000092, fromPin: yaw, to: 7101000095, toPin: Value}
+    - {from: 7101000091, fromPin: Then, to: 7101000095, toPin: Exec}
+    - {from: 7101000097, fromPin: Result, to: 7101000096, toPin: entity_id}
+    - {from: 7101000098, fromPin: Value, to: 7101000100, toPin: A}
+    - {from: 7101000099, fromPin: Value, to: 7101000100, toPin: B}
+    - {from: 7101000100, fromPin: Result, to: 7101000101, toPin: A}
+    - {from: 7101000062, fromPin: speed, to: 7101000101, toPin: B}
+    - {from: 7101000101, fromPin: Result, to: 7101000096, toPin: vx}
+    - {from: 7101000102, fromPin: Value, to: 7101000104, toPin: A}
+    - {from: 7101000103, fromPin: Value, to: 7101000104, toPin: B}
+    - {from: 7101000104, fromPin: Result, to: 7101000105, toPin: A}
+    - {from: 7101000062, fromPin: speed, to: 7101000105, toPin: B}
+    - {from: 7101000105, fromPin: Result, to: 7101000096, toPin: vy}
+    - {from: 7101000095, fromPin: Then, to: 7101000096, toPin: Exec}
+    - {from: 7101000096, fromPin: Then, to: 7101000106, toPin: Exec}
+    - {from: 7101000109, fromPin: Result, to: 7101000108, toPin: entity_id}
+    - {from: 7101000108, fromPin: x, to: 7101000110, toPin: Value}
+    - {from: 7101000107, fromPin: Then, to: 7101000110, toPin: Exec}
+    - {from: 7101000108, fromPin: y, to: 7101000111, toPin: Value}
+    - {from: 7101000110, fromPin: Then, to: 7101000111, toPin: Exec}
+    - {from: 7101000113, fromPin: Value, to: 7101000112, toPin: x}
+    - {from: 7101000114, fromPin: Value, to: 7101000112, toPin: y}
+    - {from: 7101000112, fromPin: c, to: 7101000115, toPin: Value}
+    - {from: 7101000111, fromPin: Then, to: 7101000115, toPin: Exec}
+    - {from: 7101000112, fromPin: r, to: 7101000116, toPin: Value}
+    - {from: 7101000115, fromPin: Then, to: 7101000116, toPin: Exec}
+    - {from: 7101000117, fromPin: Value, to: 7101000118, toPin: A}
+    - {from: 7101000107, fromPin: c, to: 7101000118, toPin: B}
+    - {from: 7101000119, fromPin: Value, to: 7101000120, toPin: A}
+    - {from: 7101000107, fromPin: r, to: 7101000120, toPin: B}
+    - {from: 7101000118, fromPin: Result, to: 7101000121, toPin: A}
+    - {from: 7101000120, fromPin: Result, to: 7101000121, toPin: B}
+    - {from: 7101000121, fromPin: Result, to: 7101000122, toPin: Condition}
+    - {from: 7101000116, fromPin: Then, to: 7101000122, toPin: Exec}
+    - {from: 7101000107, fromPin: c, to: 7101000123, toPin: c}
+    - {from: 7101000107, fromPin: r, to: 7101000123, toPin: r}
+    - {from: 7101000107, fromPin: speed, to: 7101000123, toPin: speed}
+    - {from: 7101000122, fromPin: "True", to: 7101000123, toPin: Exec}
+    - {from: 7101000123, fromPin: result, to: 7101000124, toPin: result}
+    - {from: 7101000123, fromPin: Then, to: 7101000124, toPin: Exec}
+    - {from: 7101000126, fromPin: Value, to: 7101000125, toPin: from_c}
+    - {from: 7101000127, fromPin: Value, to: 7101000125, toPin: from_r}
+    - {from: 7101000107, fromPin: c, to: 7101000125, toPin: to_c}
+    - {from: 7101000107, fromPin: r, to: 7101000125, toPin: to_r}
+    - {from: 7101000122, fromPin: "False", to: 7101000125, toPin: Exec}
+    - {from: 7101000125, fromPin: c, to: 7101000128, toPin: Value}
+    - {from: 7101000125, fromPin: Then, to: 7101000128, toPin: Exec}
+    - {from: 7101000125, fromPin: r, to: 7101000129, toPin: Value}
+    - {from: 7101000128, fromPin: Then, to: 7101000129, toPin: Exec}
+    - {from: 7101000130, fromPin: Value, to: 7101000131, toPin: A}
+    - {from: 7101000132, fromPin: Result, to: 7101000131, toPin: B}
+    - {from: 7101000131, fromPin: Result, to: 7101000133, toPin: Condition}
+    - {from: 7101000129, fromPin: Then, to: 7101000133, toPin: Exec}
+    - {from: 7101000133, fromPin: "True", to: 7101000134, toPin: Exec}
+    - {from: 7101000134, fromPin: Then, to: 7101000135, toPin: Exec}
+    - {from: 7101000137, fromPin: Value, to: 7101000586, toPin: A}
+    - {from: 7101000586, fromPin: Result, to: 7101000136, toPin: c}
+    - {from: 7101000138, fromPin: Value, to: 7101000587, toPin: A}
+    - {from: 7101000587, fromPin: Result, to: 7101000136, toPin: r}
+    - {from: 7101000133, fromPin: "False", to: 7101000136, toPin: Exec}
+    - {from: 7101000136, fromPin: door, to: 7101000139, toPin: Value}
+    - {from: 7101000136, fromPin: Then, to: 7101000139, toPin: Exec}
+    - {from: 7101000140, fromPin: Value, to: 7101000141, toPin: A}
+    - {from: 7101000143, fromPin: Value, to: 7101000142, toPin: entity_id}
+    - {from: 7101000142, fromPin: open, to: 7101000144, toPin: A}
+    - {from: 7101000141, fromPin: Result, to: 7101000145, toPin: A}
+    - {from: 7101000144, fromPin: Result, to: 7101000145, toPin: B}
+    - {from: 7101000145, fromPin: Result, to: 7101000146, toPin: Condition}
+    - {from: 7101000139, fromPin: Then, to: 7101000146, toPin: Exec}
+    - {from: 7101000146, fromPin: "True", to: 7101000147, toPin: Exec}
+    - {from: 7101000149, fromPin: Value, to: 7101000148, toPin: entity_id}
+    - {from: 7101000147, fromPin: Then, to: 7101000148, toPin: Exec}
+    - {from: 7101000148, fromPin: Then, to: 7101000150, toPin: Exec}
+    - {from: 7101000152, fromPin: Value, to: 7101000151, toPin: c}
+    - {from: 7101000153, fromPin: Value, to: 7101000151, toPin: r}
+    - {from: 7101000107, fromPin: speed, to: 7101000151, toPin: speed}
+    - {from: 7101000146, fromPin: "False", to: 7101000151, toPin: Exec}
+    - {from: 7101000151, fromPin: Then, to: 7101000154, toPin: Exec}
+    - {from: 7101000156, fromPin: Value, to: 7101000158, toPin: A}
+    - {from: 7101000157, fromPin: Value, to: 7101000158, toPin: B}
+    - {from: 7101000158, fromPin: Result, to: 7101000159, toPin: Condition}
+    - {from: 7101000155, fromPin: Then, to: 7101000159, toPin: Exec}
+    - {from: 7101000159, fromPin: "True", to: 7101000160, toPin: Exec}
+    - {from: 7101000159, fromPin: "False", to: 7101000161, toPin: Exec}
+    - {from: 7101000162, fromPin: Result, to: 7101000163, toPin: A}
+    - {from: 7101000163, fromPin: Result, to: 7101000164, toPin: B}
+    - {from: 7101000164, fromPin: Result, to: 7101000165, toPin: Value}
+    - {from: 7101000161, fromPin: Then, to: 7101000165, toPin: Exec}
+    - {from: 7101000165, fromPin: Then, to: 7101000167, toPin: Exec}
+    - {from: 7101000167, fromPin: value, to: 7101000168, toPin: A}
+    - {from: 7101000168, fromPin: Result, to: 7101000166, toPin: value}
+    - {from: 7101000167, fromPin: Then, to: 7101000166, toPin: Exec}
+    - {from: 7101000166, fromPin: Then, to: 7101000169, toPin: Exec}
+    - {from: 7101000171, fromPin: Value, to: 7101000172, toPin: A}
+    - {from: 7101000172, fromPin: Result, to: 7101000173, toPin: Condition}
+    - {from: 7101000170, fromPin: Then, to: 7101000173, toPin: Exec}
+    - {from: 7101000173, fromPin: "False", to: 7101000174, toPin: Exec}
+    - {from: 7101000174, fromPin: value, to: 7101000175, toPin: A}
+    - {from: 7101000175, fromPin: Result, to: 7101000176, toPin: Condition}
+    - {from: 7101000174, fromPin: Then, to: 7101000176, toPin: Exec}
+    - {from: 7101000173, fromPin: "True", to: 7101000177, toPin: Exec}
+    - {from: 7101000176, fromPin: "True", to: 7101000177, toPin: Exec}
+    - {from: 7101000179, fromPin: Result, to: 7101000178, toPin: entity_id}
+    - {from: 7101000178, fromPin: x, to: 7101000180, toPin: Value}
+    - {from: 7101000176, fromPin: "False", to: 7101000180, toPin: Exec}
+    - {from: 7101000178, fromPin: y, to: 7101000181, toPin: Value}
+    - {from: 7101000180, fromPin: Then, to: 7101000181, toPin: Exec}
+    - {from: 7101000183, fromPin: Value, to: 7101000182, toPin: entity_id}
+    - {from: 7101000182, fromPin: x, to: 7101000184, toPin: Value}
+    - {from: 7101000181, fromPin: Then, to: 7101000184, toPin: Exec}
+    - {from: 7101000182, fromPin: y, to: 7101000185, toPin: Value}
+    - {from: 7101000184, fromPin: Then, to: 7101000185, toPin: Exec}
+    - {from: 7101000186, fromPin: Value, to: 7101000188, toPin: A}
+    - {from: 7101000187, fromPin: Value, to: 7101000188, toPin: B}
+    - {from: 7101000189, fromPin: Value, to: 7101000191, toPin: A}
+    - {from: 7101000190, fromPin: Value, to: 7101000191, toPin: B}
+    - {from: 7101000188, fromPin: Result, to: 7101000192, toPin: Value}
+    - {from: 7101000185, fromPin: Then, to: 7101000192, toPin: Exec}
+    - {from: 7101000191, fromPin: Result, to: 7101000193, toPin: Value}
+    - {from: 7101000192, fromPin: Then, to: 7101000193, toPin: Exec}
+    - {from: 7101000194, fromPin: Value, to: 7101000196, toPin: A}
+    - {from: 7101000195, fromPin: Value, to: 7101000196, toPin: B}
+    - {from: 7101000197, fromPin: Value, to: 7101000199, toPin: A}
+    - {from: 7101000198, fromPin: Value, to: 7101000199, toPin: B}
+    - {from: 7101000196, fromPin: Result, to: 7101000200, toPin: A}
+    - {from: 7101000199, fromPin: Result, to: 7101000200, toPin: B}
+    - {from: 7101000200, fromPin: Result, to: 7101000201, toPin: A}
+    - {from: 7101000201, fromPin: Result, to: 7101000202, toPin: Value}
+    - {from: 7101000193, fromPin: Then, to: 7101000202, toPin: Exec}
+    - {from: 7101000203, fromPin: Value, to: 7101000205, toPin: A}
+    - {from: 7101000204, fromPin: Value, to: 7101000205, toPin: B}
+    - {from: 7101000205, fromPin: Result, to: 7101000206, toPin: Condition}
+    - {from: 7101000202, fromPin: Then, to: 7101000206, toPin: Exec}
+    - {from: 7101000206, fromPin: "True", to: 7101000207, toPin: Exec}
+    - {from: 7101000208, fromPin: Value, to: 7101000209, toPin: A}
+    - {from: 7101000210, fromPin: Value, to: 7101000211, toPin: A}
+    - {from: 7101000209, fromPin: Result, to: 7101000212, toPin: A}
+    - {from: 7101000211, fromPin: Result, to: 7101000212, toPin: B}
+    - {from: 7101000212, fromPin: Result, to: 7101000213, toPin: Condition}
+    - {from: 7101000206, fromPin: "False", to: 7101000213, toPin: Exec}
+    - {from: 7101000214, fromPin: Value, to: 7101000215, toPin: A}
+    - {from: 7101000215, fromPin: Result, to: 7101000216, toPin: A}
+    - {from: 7101000217, fromPin: Value, to: 7101000218, toPin: A}
+    - {from: 7101000216, fromPin: Result, to: 7101000219, toPin: Value}
+    - {from: 7101000213, fromPin: "True", to: 7101000219, toPin: Exec}
+    - {from: 7101000218, fromPin: Result, to: 7101000220, toPin: Value}
+    - {from: 7101000219, fromPin: Then, to: 7101000220, toPin: Exec}
+    - {from: 7101000221, fromPin: Value, to: 7101000223, toPin: A}
+    - {from: 7101000222, fromPin: Value, to: 7101000223, toPin: B}
+    - {from: 7101000224, fromPin: Value, to: 7101000226, toPin: A}
+    - {from: 7101000225, fromPin: Value, to: 7101000226, toPin: B}
+    - {from: 7101000223, fromPin: Result, to: 7101000227, toPin: A}
+    - {from: 7101000226, fromPin: Result, to: 7101000227, toPin: B}
+    - {from: 7101000227, fromPin: Result, to: 7101000229, toPin: A}
+    - {from: 7101000228, fromPin: Value, to: 7101000229, toPin: B}
+    - {from: 7101000230, fromPin: Value, to: 7101000231, toPin: A}
+    - {from: 7101000231, fromPin: Result, to: 7101000232, toPin: A}
+    - {from: 7101000229, fromPin: Result, to: 7101000233, toPin: A}
+    - {from: 7101000232, fromPin: Result, to: 7101000233, toPin: B}
+    - {from: 7101000233, fromPin: Result, to: 7101000234, toPin: Condition}
+    - {from: 7101000220, fromPin: Then, to: 7101000234, toPin: Exec}
+    - {from: 7101000234, fromPin: "True", to: 7101000235, toPin: Exec}
+    - {from: 7101000237, fromPin: Result, to: 7101000236, toPin: from_id}
+    - {from: 7101000238, fromPin: Value, to: 7101000236, toPin: to_id}
+    - {from: 7101000239, fromPin: Value, to: 7101000236, toPin: range}
+    - {from: 7101000234, fromPin: "False", to: 7101000236, toPin: Exec}
+    - {from: 7101000213, fromPin: "False", to: 7101000236, toPin: Exec}
+    - {from: 7101000236, fromPin: seen, to: 7101000240, toPin: result}
+    - {from: 7101000236, fromPin: Then, to: 7101000240, toPin: Exec}
+    - {from: 7101000241, fromPin: Then, to: 7101000242, toPin: Exec}
+    - {from: 7101000242, fromPin: Then, to: 7101000243, toPin: Exec}
+    - {from: 7101000243, fromPin: Then, to: 7101000244, toPin: Exec}
+    - {from: 7101000246, fromPin: Result, to: 7101000245, toPin: entity_id}
+    - {from: 7101000244, fromPin: Then, to: 7101000245, toPin: Exec}
+    - {from: 7101000248, fromPin: Result, to: 7101000247, toPin: entity_id}
+    - {from: 7101000245, fromPin: Then, to: 7101000247, toPin: Exec}
+    - {from: 7101000247, fromPin: Then, to: 7101000250, toPin: Exec}
+    - {from: 7101000250, fromPin: value, to: 7101000251, toPin: A}
+    - {from: 7101000251, fromPin: Result, to: 7101000249, toPin: value}
+    - {from: 7101000250, fromPin: Then, to: 7101000249, toPin: Exec}
+    - {from: 7101000249, fromPin: Then, to: 7101000253, toPin: Exec}
+    - {from: 7101000253, fromPin: value, to: 7101000255, toPin: A}
+    - {from: 7101000254, fromPin: Value, to: 7101000255, toPin: B}
+    - {from: 7101000255, fromPin: Result, to: 7101000252, toPin: value}
+    - {from: 7101000253, fromPin: Then, to: 7101000252, toPin: Exec}
+    - {from: 7101000252, fromPin: Then, to: 7101000256, toPin: Exec}
+    - {from: 7101000257, fromPin: value, to: 7101000259, toPin: A}
+    - {from: 7101000258, fromPin: Value, to: 7101000259, toPin: B}
+    - {from: 7101000259, fromPin: Result, to: 7101000260, toPin: Condition}
+    - {from: 7101000257, fromPin: Then, to: 7101000260, toPin: Exec}
+    - {from: 7101000257, fromPin: value, to: 7101000261, toPin: Value}
+    - {from: 7101000260, fromPin: "True", to: 7101000261, toPin: Exec}
+    - {from: 7101000263, fromPin: Result, to: 7101000262, toPin: entity_id}
+    - {from: 7101000257, fromPin: value, to: 7101000262, toPin: frame}
+    - {from: 7101000261, fromPin: Then, to: 7101000262, toPin: Exec}
+    - {from: 7101000265, fromPin: Value, to: 7101000266, toPin: Condition}
+    - {from: 7101000264, fromPin: Then, to: 7101000266, toPin: Exec}
+    - {from: 7101000269, fromPin: Value, to: 7101000270, toPin: B}
+    - {from: 7101000270, fromPin: Result, to: 7101000271, toPin: A}
+    - {from: 7101000271, fromPin: Result, to: 7101000272, toPin: A}
+    - {from: 7101000272, fromPin: Result, to: 7101000273, toPin: B}
+    - {from: 7101000268, fromPin: Result, to: 7101000274, toPin: A}
+    - {from: 7101000273, fromPin: Result, to: 7101000274, toPin: B}
+    - {from: 7101000274, fromPin: Result, to: 7101000267, toPin: value}
+    - {from: 7101000266, fromPin: "True", to: 7101000267, toPin: Exec}
+    - {from: 7101000267, fromPin: Then, to: 7101000275, toPin: Exec}
+    - {from: 7101000276, fromPin: Value, to: 7101000277, toPin: A}
+    - {from: 7101000277, fromPin: Result, to: 7101000278, toPin: Condition}
+    - {from: 7101000266, fromPin: "False", to: 7101000278, toPin: Exec}
+    - {from: 7101000278, fromPin: "True", to: 7101000279, toPin: Exec}
+    - {from: 7101000279, fromPin: Then, to: 7101000280, toPin: Exec}
+    - {from: 7101000281, fromPin: Value, to: 7101000282, toPin: A}
+    - {from: 7101000282, fromPin: Result, to: 7101000283, toPin: Condition}
+    - {from: 7101000278, fromPin: "False", to: 7101000283, toPin: Exec}
+    - {from: 7101000285, fromPin: Value, to: 7101000286, toPin: Condition}
+    - {from: 7101000286, fromPin: Result, to: 7101000287, toPin: B}
+    - {from: 7101000287, fromPin: Result, to: 7101000284, toPin: value}
+    - {from: 7101000283, fromPin: "True", to: 7101000284, toPin: Exec}
+    - {from: 7101000284, fromPin: Then, to: 7101000288, toPin: Exec}
+    - {from: 7101000290, fromPin: Result, to: 7101000289, toPin: entity_id}
+    - {from: 7101000289, fromPin: x, to: 7101000291, toPin: Value}
+    - {from: 7101000283, fromPin: "False", to: 7101000291, toPin: Exec}
+    - {from: 7101000289, fromPin: y, to: 7101000292, toPin: Value}
+    - {from: 7101000291, fromPin: Then, to: 7101000292, toPin: Exec}
+    - {from: 7101000294, fromPin: Value, to: 7101000293, toPin: entity_id}
+    - {from: 7101000293, fromPin: x, to: 7101000295, toPin: Value}
+    - {from: 7101000292, fromPin: Then, to: 7101000295, toPin: Exec}
+    - {from: 7101000293, fromPin: y, to: 7101000296, toPin: Value}
+    - {from: 7101000295, fromPin: Then, to: 7101000296, toPin: Exec}
+    - {from: 7101000298, fromPin: Value, to: 7101000297, toPin: yaw}
+    - {from: 7101000299, fromPin: Value, to: 7101000297, toPin: gx}
+    - {from: 7101000300, fromPin: Value, to: 7101000297, toPin: gy}
+    - {from: 7101000301, fromPin: Value, to: 7101000297, toPin: px}
+    - {from: 7101000302, fromPin: Value, to: 7101000297, toPin: py}
+    - {from: 7101000297, fromPin: column, to: 7101000303, toPin: Value}
+    - {from: 7101000296, fromPin: Then, to: 7101000303, toPin: Exec}
+    - {from: 7101000304, fromPin: Value, to: 7101000305, toPin: Condition}
+    - {from: 7101000303, fromPin: Then, to: 7101000305, toPin: Exec}
+    - {from: 7101000306, fromPin: Value, to: 7101000307, toPin: A}
+    - {from: 7101000264, fromPin: dt, to: 7101000307, toPin: B}
+    - {from: 7101000307, fromPin: Result, to: 7101000308, toPin: Value}
+    - {from: 7101000305, fromPin: "True", to: 7101000308, toPin: Exec}
+    - {from: 7101000310, fromPin: Value, to: 7101000311, toPin: A}
+    - {from: 7101000311, fromPin: Result, to: 7101000312, toPin: A}
+    - {from: 7101000312, fromPin: Result, to: 7101000313, toPin: A}
+    - {from: 7101000313, fromPin: Result, to: 7101000314, toPin: B}
+    - {from: 7101000314, fromPin: Result, to: 7101000315, toPin: A}
+    - {from: 7101000315, fromPin: Result, to: 7101000317, toPin: A}
+    - {from: 7101000316, fromPin: Value, to: 7101000317, toPin: B}
+    - {from: 7101000317, fromPin: Result, to: 7101000309, toPin: value}
+    - {from: 7101000308, fromPin: Then, to: 7101000309, toPin: Exec}
+    - {from: 7101000319, fromPin: Value, to: 7101000318, toPin: value}
+    - {from: 7101000305, fromPin: "False", to: 7101000318, toPin: Exec}
+    - {from: 7101000321, fromPin: Value, to: 7101000322, toPin: Condition}
+    - {from: 7101000320, fromPin: Then, to: 7101000322, toPin: Exec}
+    - {from: 7101000323, fromPin: Value, to: 7101000324, toPin: A}
+    - {from: 7101000320, fromPin: dt, to: 7101000324, toPin: B}
+    - {from: 7101000324, fromPin: Result, to: 7101000325, toPin: Value}
+    - {from: 7101000322, fromPin: "True", to: 7101000325, toPin: Exec}
+    - {from: 7101000320, fromPin: dt, to: 7101000326, toPin: dt}
+    - {from: 7101000325, fromPin: Then, to: 7101000326, toPin: Exec}
+    - {from: 7101000327, fromPin: Value, to: 7101000328, toPin: A}
+    - {from: 7101000328, fromPin: Result, to: 7101000329, toPin: Condition}
+    - {from: 7101000326, fromPin: Then, to: 7101000329, toPin: Exec}
+    - {from: 7101000331, fromPin: Result, to: 7101000330, toPin: entity_id}
+    - {from: 7101000330, fromPin: x, to: 7101000332, toPin: Value}
+    - {from: 7101000329, fromPin: "True", to: 7101000332, toPin: Exec}
+    - {from: 7101000330, fromPin: y, to: 7101000333, toPin: Value}
+    - {from: 7101000332, fromPin: Then, to: 7101000333, toPin: Exec}
+    - {from: 7101000335, fromPin: Value, to: 7101000334, toPin: prefab_path}
+    - {from: 7101000336, fromPin: Value, to: 7101000334, toPin: x}
+    - {from: 7101000337, fromPin: Value, to: 7101000334, toPin: y}
+    - {from: 7101000333, fromPin: Then, to: 7101000334, toPin: Exec}
+    - {from: 7101000338, fromPin: Value, to: 7101000339, toPin: A}
+    - {from: 7101000340, fromPin: Result, to: 7101000339, toPin: B}
+    - {from: 7101000339, fromPin: Result, to: 7101000341, toPin: Condition}
+    - {from: 7101000334, fromPin: Then, to: 7101000341, toPin: Exec}
+    - {from: 7101000343, fromPin: Value, to: 7101000342, toPin: prefab_path}
+    - {from: 7101000344, fromPin: Value, to: 7101000342, toPin: x}
+    - {from: 7101000345, fromPin: Value, to: 7101000342, toPin: y}
+    - {from: 7101000341, fromPin: "True", to: 7101000342, toPin: Exec}
+    - {from: 7101000347, fromPin: Result, to: 7101000346, toPin: entity_id}
+    - {from: 7101000342, fromPin: Then, to: 7101000346, toPin: Exec}
+    - {from: 7101000341, fromPin: "False", to: 7101000346, toPin: Exec}
+    - {from: 7101000349, fromPin: Result, to: 7101000348, toPin: entity_id}
+    - {from: 7101000348, fromPin: value, to: 7101000350, toPin: Value}
+    - {from: 7101000350, fromPin: Result, to: 7101000351, toPin: Value}
+    - {from: 7101000322, fromPin: "False", to: 7101000351, toPin: Exec}
+    - {from: 7101000352, fromPin: Value, to: 7101000353, toPin: A}
+    - {from: 7101000353, fromPin: Result, to: 7101000354, toPin: Condition}
+    - {from: 7101000351, fromPin: Then, to: 7101000354, toPin: Exec}
+    - {from: 7101000356, fromPin: Result, to: 7101000355, toPin: entity_id}
+    - {from: 7101000354, fromPin: "True", to: 7101000355, toPin: Exec}
+    - {from: 7101000357, fromPin: Value, to: 7101000359, toPin: A}
+    - {from: 7101000358, fromPin: Value, to: 7101000359, toPin: B}
+    - {from: 7101000359, fromPin: Result, to: 7101000360, toPin: Value}
+    - {from: 7101000355, fromPin: Then, to: 7101000360, toPin: Exec}
+    - {from: 7101000360, fromPin: Then, to: 7101000361, toPin: Exec}
+    - {from: 7101000362, fromPin: Value, to: 7101000363, toPin: A}
+    - {from: 7101000363, fromPin: Result, to: 7101000364, toPin: Condition}
+    - {from: 7101000361, fromPin: Then, to: 7101000364, toPin: Exec}
+    - {from: 7101000364, fromPin: "True", to: 7101000365, toPin: Exec}
+    - {from: 7101000364, fromPin: "False", to: 7101000366, toPin: Exec}
+    - {from: 7101000366, fromPin: Then, to: 7101000367, toPin: Exec}
+    - {from: 7101000368, fromPin: Value, to: 7101000369, toPin: A}
+    - {from: 7101000320, fromPin: dt, to: 7101000369, toPin: B}
+    - {from: 7101000369, fromPin: Result, to: 7101000370, toPin: B}
+    - {from: 7101000370, fromPin: Result, to: 7101000371, toPin: Value}
+    - {from: 7101000367, fromPin: Then, to: 7101000371, toPin: Exec}
+    - {from: 7101000354, fromPin: "False", to: 7101000371, toPin: Exec}
+    - {from: 7101000372, fromPin: Value, to: 7101000373, toPin: A}
+    - {from: 7101000320, fromPin: dt, to: 7101000373, toPin: B}
+    - {from: 7101000373, fromPin: Result, to: 7101000374, toPin: B}
+    - {from: 7101000374, fromPin: Result, to: 7101000375, toPin: Value}
+    - {from: 7101000371, fromPin: Then, to: 7101000375, toPin: Exec}
+    - {from: 7101000320, fromPin: dt, to: 7101000376, toPin: dt}
+    - {from: 7101000375, fromPin: Then, to: 7101000376, toPin: Exec}
+    - {from: 7101000378, fromPin: Value, to: 7101000379, toPin: A}
+    - {from: 7101000379, fromPin: Result, to: 7101000380, toPin: result}
+    - {from: 7101000377, fromPin: Then, to: 7101000380, toPin: Exec}
+    - {from: 7101000381, fromPin: Then, to: 7101000382, toPin: Exec}
+    - {from: 7101000383, fromPin: Value, to: 7101000384, toPin: A}
+    - {from: 7101000384, fromPin: Result, to: 7101000385, toPin: Condition}
+    - {from: 7101000382, fromPin: Then, to: 7101000385, toPin: Exec}
+    - {from: 7101000385, fromPin: "True", to: 7101000386, toPin: Exec}
+    - {from: 7101000385, fromPin: "False", to: 7101000387, toPin: Exec}
+    - {from: 7101000389, fromPin: Value, to: 7101000390, toPin: A}
+    - {from: 7101000391, fromPin: Value, to: 7101000392, toPin: A}
+    - {from: 7101000390, fromPin: Result, to: 7101000393, toPin: A}
+    - {from: 7101000392, fromPin: Result, to: 7101000393, toPin: B}
+    - {from: 7101000393, fromPin: Result, to: 7101000394, toPin: Condition}
+    - {from: 7101000388, fromPin: Then, to: 7101000394, toPin: Exec}
+    - {from: 7101000394, fromPin: "False", to: 7101000395, toPin: Exec}
+    - {from: 7101000395, fromPin: result, to: 7101000396, toPin: Condition}
+    - {from: 7101000395, fromPin: Then, to: 7101000396, toPin: Exec}
+    - {from: 7101000394, fromPin: "True", to: 7101000397, toPin: Exec}
+    - {from: 7101000396, fromPin: "False", to: 7101000397, toPin: Exec}
+    - {from: 7101000399, fromPin: Result, to: 7101000398, toPin: entity_id}
+    - {from: 7101000398, fromPin: x, to: 7101000400, toPin: Value}
+    - {from: 7101000396, fromPin: "True", to: 7101000400, toPin: Exec}
+    - {from: 7101000398, fromPin: y, to: 7101000401, toPin: Value}
+    - {from: 7101000400, fromPin: Then, to: 7101000401, toPin: Exec}
+    - {from: 7101000403, fromPin: Value, to: 7101000402, toPin: entity_id}
+    - {from: 7101000402, fromPin: x, to: 7101000404, toPin: Value}
+    - {from: 7101000401, fromPin: Then, to: 7101000404, toPin: Exec}
+    - {from: 7101000402, fromPin: y, to: 7101000405, toPin: Value}
+    - {from: 7101000404, fromPin: Then, to: 7101000405, toPin: Exec}
+    - {from: 7101000406, fromPin: Value, to: 7101000408, toPin: A}
+    - {from: 7101000407, fromPin: Value, to: 7101000408, toPin: B}
+    - {from: 7101000408, fromPin: Result, to: 7101000409, toPin: A}
+    - {from: 7101000410, fromPin: Value, to: 7101000412, toPin: A}
+    - {from: 7101000411, fromPin: Value, to: 7101000412, toPin: B}
+    - {from: 7101000412, fromPin: Result, to: 7101000413, toPin: A}
+    - {from: 7101000409, fromPin: Result, to: 7101000414, toPin: A}
+    - {from: 7101000413, fromPin: Result, to: 7101000414, toPin: B}
+    - {from: 7101000414, fromPin: Result, to: 7101000415, toPin: A}
+    - {from: 7101000415, fromPin: Result, to: 7101000417, toPin: A}
+    - {from: 7101000416, fromPin: Value, to: 7101000417, toPin: B}
+    - {from: 7101000417, fromPin: Result, to: 7101000418, toPin: result}
+    - {from: 7101000405, fromPin: Then, to: 7101000418, toPin: Exec}
+    - {from: 7101000419, fromPin: Then, to: 7101000420, toPin: Exec}
+    - {from: 7101000420, fromPin: Then, to: 7101000421, toPin: Exec}
+    - {from: 7101000422, fromPin: Value, to: 7101000423, toPin: A}
+    - {from: 7101000423, fromPin: Result, to: 7101000424, toPin: Condition}
+    - {from: 7101000421, fromPin: Then, to: 7101000424, toPin: Exec}
+    - {from: 7101000425, fromPin: Value, to: 7101000426, toPin: Value}
+    - {from: 7101000424, fromPin: "True", to: 7101000426, toPin: Exec}
+    - {from: 7101000426, fromPin: Then, to: 7101000427, toPin: Exec}
+    - {from: 7101000427, fromPin: Then, to: 7101000428, toPin: Exec}
+    - {from: 7101000429, fromPin: Value, to: 7101000430, toPin: A}
+    - {from: 7101000419, fromPin: dt, to: 7101000430, toPin: B}
+    - {from: 7101000430, fromPin: Result, to: 7101000431, toPin: Value}
+    - {from: 7101000424, fromPin: "False", to: 7101000431, toPin: Exec}
+    - {from: 7101000432, fromPin: Value, to: 7101000433, toPin: A}
+    - {from: 7101000435, fromPin: Value, to: 7101000436, toPin: A}
+    - {from: 7101000434, fromPin: Value, to: 7101000437, toPin: A}
+    - {from: 7101000436, fromPin: Result, to: 7101000437, toPin: B}
+    - {from: 7101000433, fromPin: Result, to: 7101000438, toPin: A}
+    - {from: 7101000437, fromPin: Result, to: 7101000438, toPin: B}
+    - {from: 7101000438, fromPin: Result, to: 7101000439, toPin: Condition}
+    - {from: 7101000431, fromPin: Then, to: 7101000439, toPin: Exec}
+    - {from: 7101000439, fromPin: "True", to: 7101000440, toPin: Exec}
+    - {from: 7101000440, fromPin: Then, to: 7101000441, toPin: Exec}
+    - {from: 7101000443, fromPin: Result, to: 7101000442, toPin: entity_id}
+    - {from: 7101000442, fromPin: x, to: 7101000444, toPin: Value}
+    - {from: 7101000441, fromPin: Then, to: 7101000444, toPin: Exec}
+    - {from: 7101000442, fromPin: y, to: 7101000445, toPin: Value}
+    - {from: 7101000444, fromPin: Then, to: 7101000445, toPin: Exec}
+    - {from: 7101000445, fromPin: Then, to: 7101000446, toPin: Exec}
+    - {from: 7101000446, fromPin: value, to: 7101000447, toPin: A}
+    - {from: 7101000447, fromPin: Result, to: 7101000448, toPin: Value}
+    - {from: 7101000446, fromPin: Then, to: 7101000448, toPin: Exec}
+    - {from: 7101000450, fromPin: Value, to: 7101000449, toPin: value}
+    - {from: 7101000448, fromPin: Then, to: 7101000449, toPin: Exec}
+    - {from: 7101000452, fromPin: Value, to: 7101000451, toPin: value}
+    - {from: 7101000449, fromPin: Then, to: 7101000451, toPin: Exec}
+    - {from: 7101000454, fromPin: Value, to: 7101000453, toPin: value}
+    - {from: 7101000451, fromPin: Then, to: 7101000453, toPin: Exec}
+    - {from: 7101000453, fromPin: Then, to: 7101000455, toPin: Exec}
+    - {from: 7101000455, fromPin: result, to: 7101000456, toPin: Condition}
+    - {from: 7101000455, fromPin: Then, to: 7101000456, toPin: Exec}
+    - {from: 7101000458, fromPin: Value, to: 7101000457, toPin: entity_id}
+    - {from: 7101000457, fromPin: x, to: 7101000459, toPin: Value}
+    - {from: 7101000456, fromPin: "True", to: 7101000459, toPin: Exec}
+    - {from: 7101000457, fromPin: y, to: 7101000460, toPin: Value}
+    - {from: 7101000459, fromPin: Then, to: 7101000460, toPin: Exec}
+    - {from: 7101000461, fromPin: Value, to: 7101000463, toPin: A}
+    - {from: 7101000462, fromPin: Value, to: 7101000463, toPin: B}
+    - {from: 7101000463, fromPin: Result, to: 7101000464, toPin: A}
+    - {from: 7101000465, fromPin: Value, to: 7101000467, toPin: A}
+    - {from: 7101000466, fromPin: Value, to: 7101000467, toPin: B}
+    - {from: 7101000467, fromPin: Result, to: 7101000468, toPin: A}
+    - {from: 7101000464, fromPin: Result, to: 7101000469, toPin: A}
+    - {from: 7101000468, fromPin: Result, to: 7101000469, toPin: B}
+    - {from: 7101000469, fromPin: Result, to: 7101000470, toPin: A}
+    - {from: 7101000470, fromPin: Result, to: 7101000471, toPin: Value}
+    - {from: 7101000460, fromPin: Then, to: 7101000471, toPin: Exec}
+    - {from: 7101000473, fromPin: Value, to: 7101000474, toPin: A}
+    - {from: 7101000474, fromPin: Result, to: 7101000475, toPin: B}
+    - {from: 7101000475, fromPin: Result, to: 7101000476, toPin: B}
+    - {from: 7101000472, fromPin: Result, to: 7101000477, toPin: A}
+    - {from: 7101000476, fromPin: Result, to: 7101000477, toPin: B}
+    - {from: 7101000477, fromPin: Result, to: 7101000478, toPin: Condition}
+    - {from: 7101000471, fromPin: Then, to: 7101000478, toPin: Exec}
+    - {from: 7101000478, fromPin: "True", to: 7101000480, toPin: Exec}
+    - {from: 7101000481, fromPin: Value, to: 7101000483, toPin: Min}
+    - {from: 7101000482, fromPin: Value, to: 7101000483, toPin: Max}
+    - {from: 7101000480, fromPin: value, to: 7101000484, toPin: A}
+    - {from: 7101000483, fromPin: Result, to: 7101000484, toPin: B}
+    - {from: 7101000484, fromPin: Result, to: 7101000479, toPin: value}
+    - {from: 7101000480, fromPin: Then, to: 7101000479, toPin: Exec}
+    - {from: 7101000485, fromPin: Value, to: 7101000486, toPin: A}
+    - {from: 7101000486, fromPin: Result, to: 7101000487, toPin: Condition}
+    - {from: 7101000479, fromPin: Then, to: 7101000901, toPin: Exec}
+    - {from: 7101000902, fromPin: Value, to: 7101000901, toPin: value}
+    - {from: 7101000901, fromPin: Then, to: 7101000903, toPin: Exec}
+    - {from: 7101000904, fromPin: Value, to: 7101000903, toPin: value}
+    - {from: 7101000903, fromPin: Then, to: 7101000487, toPin: Exec}
+    - {from: 7101000478, fromPin: "False", to: 7101000487, toPin: Exec}
+    - {from: 7101000456, fromPin: "False", to: 7101000487, toPin: Exec}
+    - {from: 7101000439, fromPin: "False", to: 7101000487, toPin: Exec}
+    - {from: 7101000487, fromPin: "True", to: 7101000488, toPin: Exec}
+    - {from: 7101000487, fromPin: "False", to: 7101000489, toPin: Exec}
+    - {from: 7101000489, fromPin: Then, to: 7101000490, toPin: Exec}
+    - {from: 7101000492, fromPin: Value, to: 7101000493, toPin: A}
+    - {from: 7101000493, fromPin: Result, to: 7101000494, toPin: Condition}
+    - {from: 7101000491, fromPin: Then, to: 7101000494, toPin: Exec}
+    - {from: 7101000494, fromPin: "True", to: 7101000495, toPin: Exec}
+    - {from: 7101000497, fromPin: Value, to: 7101000496, toPin: entity_id}
+    - {from: 7101000496, fromPin: x, to: 7101000498, toPin: Value}
+    - {from: 7101000494, fromPin: "False", to: 7101000498, toPin: Exec}
+    - {from: 7101000496, fromPin: y, to: 7101000499, toPin: Value}
+    - {from: 7101000498, fromPin: Then, to: 7101000499, toPin: Exec}
+    - {from: 7101000501, fromPin: Value, to: 7101000500, toPin: x}
+    - {from: 7101000502, fromPin: Value, to: 7101000500, toPin: y}
+    - {from: 7101000500, fromPin: c, to: 7101000503, toPin: Value}
+    - {from: 7101000499, fromPin: Then, to: 7101000503, toPin: Exec}
+    - {from: 7101000500, fromPin: r, to: 7101000504, toPin: Value}
+    - {from: 7101000503, fromPin: Then, to: 7101000504, toPin: Exec}
+    - {from: 7101000506, fromPin: Value, to: 7101000505, toPin: c}
+    - {from: 7101000507, fromPin: Value, to: 7101000505, toPin: r}
+    - {from: 7101000508, fromPin: Value, to: 7101000505, toPin: speed}
+    - {from: 7101000504, fromPin: Then, to: 7101000505, toPin: Exec}
+    - {from: 7101000505, fromPin: Then, to: 7101000509, toPin: Exec}
+    - {from: 7101000510, fromPin: Then, to: 7101000511, toPin: Exec}
+    - {from: 7101000511, fromPin: value, to: 7101000512, toPin: Value}
+    - {from: 7101000511, fromPin: Then, to: 7101000512, toPin: Exec}
+    - {from: 7101000513, fromPin: Value, to: 7101000515, toPin: A}
+    - {from: 7101000514, fromPin: Value, to: 7101000515, toPin: B}
+    - {from: 7101000515, fromPin: Result, to: 7101000516, toPin: Condition}
+    - {from: 7101000512, fromPin: Then, to: 7101000516, toPin: Exec}
+    - {from: 7101000517, fromPin: Value, to: 7101000518, toPin: Value}
+    - {from: 7101000516, fromPin: "True", to: 7101000518, toPin: Exec}
+    - {from: 7101000520, fromPin: Result, to: 7101000519, toPin: entity_id}
+    - {from: 7101000519, fromPin: x, to: 7101000521, toPin: Value}
+    - {from: 7101000518, fromPin: Then, to: 7101000521, toPin: Exec}
+    - {from: 7101000519, fromPin: y, to: 7101000522, toPin: Value}
+    - {from: 7101000521, fromPin: Then, to: 7101000522, toPin: Exec}
+    - {from: 7101000522, fromPin: Then, to: 7101000523, toPin: Exec}
+    - {from: 7101000523, fromPin: Then, to: 7101000524, toPin: Exec}
+    - {from: 7101000523, fromPin: value, to: 7101000525, toPin: Value}
+    - {from: 7101000524, fromPin: Then, to: 7101000525, toPin: Exec}
+    - {from: 7101000524, fromPin: value, to: 7101000526, toPin: Value}
+    - {from: 7101000525, fromPin: Then, to: 7101000526, toPin: Exec}
+    - {from: 7101000527, fromPin: Value, to: 7101000529, toPin: A}
+    - {from: 7101000528, fromPin: Value, to: 7101000529, toPin: B}
+    - {from: 7101000529, fromPin: Result, to: 7101000530, toPin: A}
+    - {from: 7101000531, fromPin: Value, to: 7101000533, toPin: A}
+    - {from: 7101000532, fromPin: Value, to: 7101000533, toPin: B}
+    - {from: 7101000533, fromPin: Result, to: 7101000534, toPin: A}
+    - {from: 7101000530, fromPin: Result, to: 7101000535, toPin: A}
+    - {from: 7101000534, fromPin: Result, to: 7101000535, toPin: B}
+    - {from: 7101000535, fromPin: Result, to: 7101000536, toPin: A}
+    - {from: 7101000536, fromPin: Result, to: 7101000538, toPin: A}
+    - {from: 7101000537, fromPin: Value, to: 7101000538, toPin: B}
+    - {from: 7101000538, fromPin: Result, to: 7101000539, toPin: Condition}
+    - {from: 7101000526, fromPin: Then, to: 7101000539, toPin: Exec}
+    - {from: 7101000539, fromPin: "True", to: 7101000540, toPin: Exec}
+    - {from: 7101000541, fromPin: Value, to: 7101000542, toPin: A}
+    - {from: 7101000542, fromPin: Result, to: 7101000543, toPin: Condition}
+    - {from: 7101000540, fromPin: Then, to: 7101000543, toPin: Exec}
+    - {from: 7101000539, fromPin: "False", to: 7101000543, toPin: Exec}
+    - {from: 7101000516, fromPin: "False", to: 7101000543, toPin: Exec}
+    - {from: 7101000543, fromPin: "True", to: 7101000544, toPin: Exec}
+    - {from: 7101000544, fromPin: result, to: 7101000545, toPin: Condition}
+    - {from: 7101000544, fromPin: Then, to: 7101000545, toPin: Exec}
+    - {from: 7101000545, fromPin: "True", to: 7101000546, toPin: Exec}
+    - {from: 7101000547, fromPin: Value, to: 7101000548, toPin: result}
+    - {from: 7101000546, fromPin: Then, to: 7101000548, toPin: Exec}
+    - {from: 7101000543, fromPin: "False", to: 7101000548, toPin: Exec}
+    - {from: 7101000545, fromPin: "False", to: 7101000548, toPin: Exec}
+    - {from: 7101000550, fromPin: Value, to: 7101000551, toPin: A}
+    - {from: 7101000551, fromPin: Result, to: 7101000552, toPin: Condition}
+    - {from: 7101000549, fromPin: Then, to: 7101000552, toPin: Exec}
+    - {from: 7101000552, fromPin: "True", to: 7101000553, toPin: Exec}
+    - {from: 7101000553, fromPin: Then, to: 7101000554, toPin: Exec}
+    - {from: 7101000556, fromPin: Value, to: 7101000555, toPin: c}
+    - {from: 7101000557, fromPin: Value, to: 7101000555, toPin: r}
+    - {from: 7101000558, fromPin: Value, to: 7101000555, toPin: speed}
+    - {from: 7101000552, fromPin: "False", to: 7101000555, toPin: Exec}
+    - {from: 7101000555, fromPin: result, to: 7101000559, toPin: Condition}
+    - {from: 7101000555, fromPin: Then, to: 7101000559, toPin: Exec}
+    - {from: 7101000560, fromPin: Value, to: 7101000562, toPin: A}
+    - {from: 7101000561, fromPin: Value, to: 7101000562, toPin: B}
+    - {from: 7101000563, fromPin: Value, to: 7101000565, toPin: A}
+    - {from: 7101000564, fromPin: Value, to: 7101000565, toPin: B}
+    - {from: 7101000562, fromPin: Result, to: 7101000566, toPin: A}
+    - {from: 7101000565, fromPin: Result, to: 7101000566, toPin: B}
+    - {from: 7101000566, fromPin: Result, to: 7101000567, toPin: Condition}
+    - {from: 7101000559, fromPin: "True", to: 7101000567, toPin: Exec}
+    - {from: 7101000568, fromPin: Value, to: 7101000570, toPin: Value}
+    - {from: 7101000567, fromPin: "True", to: 7101000570, toPin: Exec}
+    - {from: 7101000569, fromPin: Value, to: 7101000571, toPin: Value}
+    - {from: 7101000570, fromPin: Then, to: 7101000571, toPin: Exec}
+    - {from: 7101000572, fromPin: Value, to: 7101000573, toPin: Value}
+    - {from: 7101000571, fromPin: Then, to: 7101000573, toPin: Exec}
+    - {from: 7101000574, fromPin: Value, to: 7101000575, toPin: Value}
+    - {from: 7101000573, fromPin: Then, to: 7101000575, toPin: Exec}
+    - {from: 7101000576, fromPin: Value, to: 7101000578, toPin: Value}
+    - {from: 7101000567, fromPin: "False", to: 7101000578, toPin: Exec}
+    - {from: 7101000577, fromPin: Value, to: 7101000579, toPin: Value}
+    - {from: 7101000578, fromPin: Then, to: 7101000579, toPin: Exec}
+    - {from: 7101000580, fromPin: Value, to: 7101000581, toPin: Value}
+    - {from: 7101000579, fromPin: Then, to: 7101000581, toPin: Exec}
+    - {from: 7101000582, fromPin: Value, to: 7101000583, toPin: Value}
+    - {from: 7101000581, fromPin: Then, to: 7101000583, toPin: Exec}
+    - {from: 7101000575, fromPin: Then, to: 7101000584, toPin: Exec}
+    - {from: 7101000583, fromPin: Then, to: 7101000584, toPin: Exec}
+    - {from: 7101000559, fromPin: "False", to: 7101000584, toPin: Exec}
+    - {from: 7101000001, fromPin: Then, to: 7101000585, toPin: Exec}
+  groups:
+    - {id: 7101090000, title: on_create, position: [146, -52], size: [6950, 600], color: Red}
+    - {id: 7101090001, title: stop, position: [316, 608], size: [1000, 360], color: Teal}
+    - {id: 7101090002, title: face_player, position: [146, 1028], size: [2190, 1080], color: Teal}
+    - {id: 7101090003, title: walk_to, position: [146, 2168], size: [4910, 1320], color: Teal}
+    - {id: 7101090004, title: go_to, position: [146, 3548], size: [7630, 960], color: Teal}
+    - {id: 7101090005, title: alert, position: [146, 4568], size: [2870, 600], color: Teal}
+    - {id: 7101090006, title: sees_player, position: [146, 5228], size: [7290, 1800], color: Teal}
+    - {id: 7101090007, title: die, position: [316, 7088], size: [3720, 480], color: Teal}
+    - {id: 7101090008, title: show, position: [146, 7628], size: [1510, 480], color: Teal}
+    - {id: 7101090009, title: update_frame, position: [146, 8168], size: [6610, 1200], color: Teal}
+    - {id: 7101090010, title: on_update, position: [146, 9428], size: [7970, 960], color: Red}
+    - {id: 7101090011, title: guard_in_pain, position: [146, 10448], size: [830, 480], color: Teal}
+    - {id: 7101090012, title: guard_flinch, position: [316, 10988], size: [1680, 480], color: Teal}
+    - {id: 7101090013, title: guard_can_fire, position: [146, 11528], size: [3550, 1680], color: Teal}
+    - {id: 7101090014, title: guard_fire, position: [316, 13268], size: [10180, 1440], color: Teal}
+    - {id: 7101090015, title: guard_chase, position: [146, 14768], size: [3210, 600], color: Teal}
+    - {id: 7101090016, title: guard_notices, position: [316, 15428], size: [6100, 1680], color: Teal}
+    - {id: 7101090017, title: guard_patrol, position: [146, 17168], size: [5590, 1080], color: Teal}

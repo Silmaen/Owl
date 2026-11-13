@@ -29,6 +29,7 @@
 #include <numbers>
 #include <optional>
 #include <utility>
+#include <vector>
 
 namespace owl::scene::nav {
 
@@ -401,7 +402,9 @@ void drawNavMeshes(Scene& ioScene) {
 		drawBox(boundsMin, boundsMax, boxColor);
 		volume.setLinks(links);
 		const auto& mesh = volume.getMesh();
-		const auto& vertices = mesh.getVertices();
+		// A mesh of walk areas is drawn back in their plane (x, y).
+		std::vector<math::vec3> vertices = mesh.getVertices();
+		for (auto& vertex: vertices) vertex = volume.toWorldSpace(vertex);
 		const auto& triangles = mesh.getTriangles();
 		for (size_t index = 0; index < triangles.size(); ++index) {
 			const auto& triangle = triangles[index];

@@ -1,0 +1,9 @@
+# The Sunken Shrine on a gamepad: the left stick walks the hero, X uses the old man in front of it.
+scene: ../../../samples/sunken_shrine/scenes/room_1.owl
+steps:
+  - frames: 5
+  - input: {gamepad: {left_y: -1.0}, frames: 40}
+  - expect: {gamestate: shrine_y, greater: -1.5}
+  - input: {gamepad: {button: X}, frames: 1}
+  - frames: 3
+  - expect: {gamestate: shrine_talking, equals: true}

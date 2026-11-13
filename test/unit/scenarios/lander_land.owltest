@@ -1,0 +1,184 @@
+# Lunar Lander landed: a powered descent on the first pad (free fall, then the engine pulsed to come down at about
+# 1 m/s, cut just above the deck) touches down softly, the lander rests upright on the pad, the landing scores and
+# the second landing starts.
+scene: ../../../samples/lunar_lander/scenes/landing_1.owl
+steps:
+  - frames: 56
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 16
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 8
+  - input: {key: Space, frames: 8}
+  - frames: 21
+  - frames: 30
+  - expect: {gamestate: lander_touchdown, less: 2}
+  - expect: {gamestate: lander_touch_alt, less: 0.12}
+  - expect: {gamestate: lander_crash, equals: none}
+  - frames: 90
+  - expect: {gamestate: lander_state, equals: landed}
+  - expect: {gamestate: lander_score, greater: 1000}
+  - frames: 240
+  - expect: {gamestate: lander_landing, equals: 2}
+  - expect: {gamestate: lander_state, equals: fly}

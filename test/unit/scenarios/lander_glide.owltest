@@ -1,0 +1,11 @@
+# Lunar Lander, second landing: the lander starts high and gliding towards the pad, the predicted path meets the
+# ground ahead (the impact marker), and left alone it keeps flying until it falls.
+scene: ../../../samples/lunar_lander/scenes/landing_2.owl
+steps:
+  - frames: 30
+  - expect: {gamestate: lander_landing, equals: 2}
+  - expect: {gamestate: lander_alt, greater: 45}
+  - expect: {gamestate: lander_hs, greater: 3}
+  - expect: {gamestate: lander_impact, equals: true}
+  - frames: 120
+  - expect: {gamestate: lander_state, equals: fly}

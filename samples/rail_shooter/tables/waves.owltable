@@ -16,83 +16,153 @@ rows:
     x: 0
     y: 2
   - key: w02
-    distance: 460
+    distance: 400
+    kind: scout
+    count: 4
+    pattern: swoop_left
+    x: 0
+    y: 3
+  - key: w03
+    distance: 470
     kind: fighter
     count: 4
     pattern: vee
     x: 0
     y: -1
-  - key: w03
-    distance: 680
+  - key: w04
+    distance: 620
+    kind: scout
+    count: 4
+    pattern: swoop_right
+    x: 0
+    y: -2
+  - key: w05
+    distance: 700
     kind: fighter
     count: 3
     pattern: swoop_left
     x: 0
     y: 1
-  - key: w04
+  - key: w06
     distance: 860
-    kind: fighter
+    kind: raider
     count: 3
     pattern: swoop_right
     x: 0
     y: -1
-  - key: w05
+  - key: w07
+    distance: 960
+    kind: fighter
+    count: 5
+    pattern: line
+    x: 0
+    y: 3
+  - key: w08
     distance: 1120
     kind: interceptor
     count: 2
     pattern: hover
     x: 0
     y: 1
-  - key: w06
+  - key: w09
+    distance: 1200
+    kind: scout
+    count: 4
+    pattern: vee
+    x: 0
+    y: -2
+  - key: w10
     distance: 1380
     kind: fighter
     count: 5
     pattern: vee
     x: 0
     y: 2
-  - key: w07
+  - key: w11
+    distance: 1480
+    kind: raider
+    count: 3
+    pattern: line
+    x: 0
+    y: -2
+  - key: w12
     distance: 1620
     kind: fighter
     count: 3
     pattern: swoop_left
     x: 0
     y: 2
-  - key: w08
+  - key: w13
     distance: 1700
-    kind: fighter
+    kind: raider
     count: 3
     pattern: swoop_right
     x: 0
     y: -2
-  - key: w09
+  - key: w14
+    distance: 1820
+    kind: scout
+    count: 5
+    pattern: line
+    x: 0
+    y: 0
+  - key: w15
     distance: 1960
     kind: interceptor
     count: 3
     pattern: hover
     x: 0
     y: 0
-  - key: w10
-    distance: 2240
+  - key: w16
+    distance: 2080
     kind: fighter
+    count: 4
+    pattern: swoop_left
+    x: 0
+    y: -1
+  - key: w17
+    distance: 2240
+    kind: raider
     count: 4
     pattern: line
     x: 0
     y: -2
-  - key: w11
+  - key: w18
+    distance: 2380
+    kind: scout
+    count: 4
+    pattern: swoop_right
+    x: 0
+    y: 2
+  - key: w19
     distance: 2500
     kind: interceptor
     count: 2
     pattern: hover
     x: 0
     y: 2
-  - key: w12
-    distance: 2760
+  - key: w20
+    distance: 2600
     kind: fighter
+    count: 4
+    pattern: swoop_left
+    x: 0
+    y: 0
+  - key: w21
+    distance: 2760
+    kind: raider
     count: 6
     pattern: vee
     x: 0
     y: 0
-  - key: w13
+  - key: w22
+    distance: 2900
+    kind: fighter
+    count: 4
+    pattern: line
+    x: 0
+    y: 2
+  - key: w23
     distance: 3150
     kind: boss
     count: 1

@@ -1,0 +1,16 @@
+# Wolfenstein combat: the player stands still under the fire of the alerted guard of the start room until the health
+# runs out; the floor then starts again from its autosave (arsenal.owlvs) with full health, the pistol and eight
+# rounds, the guard back on its post.
+scene: ../../../samples/wolfenstein/scenes/level_1.owl
+project: ../../../samples/wolfenstein
+steps:
+  - frames: 40
+  - actions: {fire: true, frames: 1}
+  - frames: 2400
+  - expect: {gamestate: wolf_restarts, equals: 1}
+  - expect: {gamestate: wolf_health, equals: 100}
+  - expect: {gamestate: wolf_ammo, equals: 8}
+  - expect: {gamestate: wolf_dead, equals: 0}
+  - expect: {gamestate: wolf_level, equals: 1}
+  - expect: {entity: Player, exists: true}
+  - expect: {entity: Guard, exists: true}

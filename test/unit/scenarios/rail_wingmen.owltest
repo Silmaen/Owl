@@ -1,0 +1,14 @@
+# Ring Runner started with the visual scripts built as Play in Owl Nest builds them: the two wingmen fire their green
+# bolts at the squadrons ahead and hit some, the fighters of a line hold the formation of their leader.
+scene: ../../../samples/rail_shooter/scenes/level.owl
+timestep_ms: 33.333
+debug_scripts: true
+steps:
+  - frames: 5
+  - input: {mouse: Left, frames: 2}
+  - frames: 3
+  - expect: {gamestate: rail_phase, equals: play}
+  - frames: 750
+  - expect: {gamestate: rail_formed, greater: 1}
+  - expect: {gamestate: rail_wing_shots, greater: 10}
+  - expect: {gamestate: rail_wing_hits, greater: 0}

@@ -33,6 +33,7 @@
 #include <platform/AtomicFile.h>
 #include <scene/Accessibility.h>
 #include <scene/HudLibrary.h>
+#include <scene/HudThemeLibrary.h>
 #include <scene/SceneSerializer.h>
 #include <scene/ScreenTransition.h>
 #include <scene/SettingsManager.h>
@@ -1096,6 +1097,14 @@ void EditorLayer::closeProject() {
 	auto& app = app::Application::get();
 	app.getEngineContext().getScreenTransition().reset();
 	app.removeAssetDirectory(m_project.projectDirectory);
+	// These libraries key their assets by project-relative path: two projects both have a `tables/waves.owltable`.
+	auto& context = app.getEngineContext();
+	context.getDataTables().clear();
+	context.getDialogues().clear();
+	context.getSequences().clear();
+	context.getBehaviourTrees().clear();
+	context.getHudLibrary().clear();
+	context.getHudThemeLibrary().clear();
 	m_project = {};
 	app.getEngineContext().setSimulationSettings(m_project.simulation);
 	std::ignore = app.getEngineContext().loadActionMap({});

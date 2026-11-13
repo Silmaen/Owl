@@ -1,0 +1,1757 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: map_scene, type: string, default: scenes/world_map.owl}
+    - {name: levels, type: int, default: "10", min: 1}
+    - {name: wipe_color, type: color, default: "0.1, 0.14, 0.24, 1"}
+    - {name: FAMILIES, type: numbers, default: "", exposed: false}
+    - {name: TIERS, type: float, default: "4", exposed: false}
+    - {name: ids, type: numbers, default: "", exposed: false}
+    - {name: leaving, type: bool, default: "false", exposed: false}
+    - {name: total, type: float, default: "0", exposed: false}
+    - {name: stars_spent_total, type: float, default: "0", exposed: false}
+    - {name: bought, type: float, default: "0", exposed: false}
+    - {name: tmp_1, type: bool, default: "false", exposed: false}
+    - {name: won, type: float, default: "0", exposed: false}
+    - {name: spent, type: float, default: "0", exposed: false}
+    - {name: free, type: float, default: "0", exposed: false}
+    - {name: row, type: float, default: "0", exposed: false}
+    - {name: refresh_bought, type: float, default: "0", exposed: false}
+    - {name: cost, type: float, default: "0", exposed: false}
+    - {name: text, type: string, default: "", exposed: false}
+    - {name: can, type: bool, default: "false", exposed: false}
+    - {name: family, type: float, default: "0", exposed: false}
+    - {name: buy_bought, type: float, default: "0", exposed: false}
+    - {name: pips, type: numbers, default: "", exposed: false}
+    - {name: tmp_2, type: numbers, default: "", exposed: false}
+  functions:
+    - name: setting_key
+      inputs: [{name: family, type: any}]
+      outputs: [{name: result, type: any}]
+    - name: tier_of
+      inputs: [{name: family, type: any}]
+      outputs: [{name: result, type: any}]
+    - name: stars_won
+      inputs: []
+      outputs: [{name: result, type: any}]
+    - name: stars_spent
+      inputs: []
+      outputs: [{name: result, type: any}]
+    - name: unlocked
+      inputs: [{name: family, type: any}]
+      outputs: [{name: result, type: any}]
+    - name: refresh
+      inputs: []
+      outputs: []
+    - name: buy
+      inputs: [{name: index, type: any}]
+      outputs: []
+    - name: on_back_clicked
+      inputs: []
+      outputs: []
+      exported: true
+  customNodes:
+    - name: init_state
+      title: Init State
+      inputs: []
+      outputs: []
+      code: |
+        FAMILIES = {
+            { key = "archer", name = "Archers", tiers = { "Bodkin arrows: +15% damage", "Longbows: +12% range",
+                                                          "Drilled archers: shoot 15% faster",
+                                                          "Master bowyers: +10% range" } },
+            { key = "cannon", name = "Cannons", tiers = { "Guild foundry: cannons cost 15% less",
+                                                          "Black powder: 20% wider bursts", "Heavy shells: +20% damage",
+                                                          "Bronze barrels: shoot 15% faster" } },
+            { key = "frost", name = "Frost", tiers = { "Deep cold: the chill lasts 30% longer",
+                                                       "Bitter frost: chilled enemies are slower", "Rime: +12% range",
+                                                       "Hoarfrost: +20% damage" } },
+            { key = "rain", name = "Rain of arrows", unlock = "tower_done_02", unlock_text = "win Thornwood Pass",
+              tiers = { "Fletchers: ready 20% sooner", "Broadheads: +30% damage", "Volley: a 25% wider rain",
+                        "Storm of arrows: +30% damage" } },
+            { key = "shield", name = "Shield wall", unlock = "tower_done_05", unlock_text = "win Frostmere",
+              tiers = { "Drill: ready 20% sooner", "Iron wall: holds 2 seconds more", "Wide wall: 25% wider",
+                        "Bastion: ready 20% sooner again" } },
+            { key = "treasury", name = "Treasury", tiers = { "War chest: +40 gold at the start",
+                                                             "Bounties: +10% gold per kill", "Masons: +2 lives",
+                                                             "Royal mint: +60 gold at the start" } },
+        }
+        ids = {}
+  nodes:
+    - id: 1950600001
+      type: func.entry
+      position: [340, 0]
+      values:
+        function: setting_key
+    - id: 1950600002
+      type: table.get
+      position: [170, 160]
+      values:
+        Key: key
+    - id: 1950600003
+      type: text.concat
+      position: [170, 280]
+      values:
+        A: tower_up_
+    - id: 1950600004
+      type: func.return
+      position: [680, 0]
+      values:
+        function: setting_key
+    - id: 1950600005
+      type: func.entry
+      position: [340, 540]
+      values:
+        function: tier_of
+    - id: 1950600006
+      type: call.settings.get
+      position: [680, 540]
+      values:
+        default: "0"
+    - id: 1950600007
+      type: func.call
+      position: [1020, 540]
+      values:
+        function: setting_key
+    - id: 1950600008
+      type: func.return
+      position: [1360, 540]
+      values:
+        function: tier_of
+    - id: 1950600009
+      type: func.entry
+      position: [340, 840]
+      values:
+        function: stars_won
+    - id: 1950600010
+      type: var.set
+      position: [680, 840]
+      values:
+        variable: total
+        Value: "0"
+    - id: 1950600011
+      type: var.get
+      position: [510, 1000]
+      values:
+        variable: levels
+    - id: 1950600012
+      type: flow.for
+      position: [1020, 840]
+      values:
+        First: "1"
+    - id: 1950600013
+      type: var.get
+      position: [850, 1000]
+      values:
+        variable: total
+    - id: 1950600014
+      type: call.settings.get
+      position: [1360, 840]
+      values:
+        default: "0"
+    - id: 1950600015
+      type: text.format
+      position: [1190, 1000]
+      values:
+        Format: "tower_stars_%02d"
+    - id: 1950600016
+      type: math.add
+      position: [1190, 1120]
+    - id: 1950600017
+      type: var.set
+      position: [1700, 840]
+      values:
+        variable: total
+    - id: 1950600018
+      type: var.get
+      position: [1530, 1000]
+      values:
+        variable: total
+    - id: 1950600019
+      type: func.return
+      position: [2040, 840]
+      values:
+        function: stars_won
+    - id: 1950600020
+      type: func.entry
+      position: [340, 1380]
+      values:
+        function: stars_spent
+    - id: 1950600021
+      type: var.set
+      position: [680, 1380]
+      values:
+        variable: stars_spent_total
+        Value: "0"
+    - id: 1950600022
+      type: var.get
+      position: [510, 1540]
+      values:
+        variable: FAMILIES
+    - id: 1950600023
+      type: flow.for_each
+      position: [1020, 1380]
+    - id: 1950600024
+      type: func.call
+      position: [1360, 1380]
+      values:
+        function: tier_of
+    - id: 1950600025
+      type: var.set
+      position: [1700, 1380]
+      values:
+        variable: bought
+    - id: 1950600026
+      type: var.get
+      position: [1530, 1540]
+      values:
+        variable: stars_spent_total
+    - id: 1950600027
+      type: var.get
+      position: [1530, 1660]
+      values:
+        variable: bought
+    - id: 1950600028
+      type: var.get
+      position: [1530, 1780]
+      values:
+        variable: bought
+    - id: 1950600029
+      type: math.add
+      position: [1530, 1900]
+      values:
+        B: "1"
+    - id: 1950600030
+      type: math.multiply
+      position: [1530, 2020]
+    - id: 1950600031
+      type: math.divide
+      position: [1530, 2140]
+      values:
+        B: "2"
+    - id: 1950600032
+      type: math.floor
+      position: [1530, 2260]
+    - id: 1950600033
+      type: math.add
+      position: [1530, 2380]
+    - id: 1950600034
+      type: var.set
+      position: [2040, 1380]
+      values:
+        variable: stars_spent_total
+    - id: 1950600035
+      type: var.get
+      position: [1870, 1540]
+      values:
+        variable: stars_spent_total
+    - id: 1950600036
+      type: func.return
+      position: [2380, 1380]
+      values:
+        function: stars_spent
+    - id: 1950600037
+      type: func.entry
+      position: [340, 2640]
+      values:
+        function: unlocked
+    - id: 1950600038
+      type: table.get
+      position: [170, 2800]
+      values:
+        Key: unlock
+    - id: 1950600039
+      type: compare.equal
+      position: [170, 2920]
+    - id: 1950600040
+      type: value.nil
+      position: [170, 3040]
+    - id: 1950600041
+      type: var.set
+      position: [680, 2640]
+      values:
+        variable: tmp_1
+    - id: 1950600042
+      type: flow.branch
+      position: [1020, 2640]
+    - id: 1950600043
+      type: var.get
+      position: [850, 2800]
+      values:
+        variable: tmp_1
+    - id: 1950600044
+      type: call.settings.get
+      position: [1360, 2640]
+      values:
+        default: "false"
+    - id: 1950600045
+      type: table.get
+      position: [1190, 2800]
+      values:
+        Key: unlock
+    - id: 1950600046
+      type: compare.equal
+      position: [1190, 2920]
+      values:
+        B: "true"
+    - id: 1950600047
+      type: var.set
+      position: [1700, 2640]
+      values:
+        variable: tmp_1
+    - id: 1950600048
+      type: var.get
+      position: [1530, 2800]
+      values:
+        variable: tmp_1
+    - id: 1950600049
+      type: func.return
+      position: [2040, 2640]
+      values:
+        function: unlocked
+    - id: 1950600050
+      type: func.entry
+      position: [340, 3300]
+      values:
+        function: refresh
+    - id: 1950600051
+      type: func.call
+      position: [680, 3300]
+      values:
+        function: stars_won
+    - id: 1950600052
+      type: func.call
+      position: [1020, 3300]
+      values:
+        function: stars_spent
+    - id: 1950600053
+      type: var.set
+      position: [1360, 3300]
+      values:
+        variable: won
+    - id: 1950600054
+      type: var.set
+      position: [1700, 3300]
+      values:
+        variable: spent
+    - id: 1950600055
+      type: var.get
+      position: [1530, 3460]
+      values:
+        variable: won
+    - id: 1950600056
+      type: var.get
+      position: [1530, 3580]
+      values:
+        variable: spent
+    - id: 1950600057
+      type: math.subtract
+      position: [1530, 3700]
+    - id: 1950600058
+      type: var.set
+      position: [2040, 3300]
+      values:
+        variable: free
+    - id: 1950600059
+      type: call.ui.set_text
+      position: [2380, 3300]
+    - id: 1950600060
+      type: var.get
+      position: [2210, 3460]
+      values:
+        variable: ids
+    - id: 1950600061
+      type: table.get
+      position: [2210, 3580]
+      values:
+        Key: stars
+    - id: 1950600062
+      type: var.get
+      position: [2210, 3700]
+      values:
+        variable: free
+    - id: 1950600063
+      type: var.get
+      position: [2210, 3820]
+      values:
+        variable: won
+    - id: 1950600064
+      type: var.get
+      position: [2210, 3940]
+      values:
+        variable: levels
+    - id: 1950600065
+      type: math.multiply
+      position: [2210, 4060]
+      values:
+        B: "3"
+    - id: 1950600066
+      type: text.format
+      position: [2210, 4180]
+      values:
+        Format: "Stars to spend: %d   (won %d of %d)"
+    - id: 1950600067
+      type: var.get
+      position: [2210, 4300]
+      values:
+        variable: FAMILIES
+    - id: 1950600068
+      type: flow.for_each
+      position: [2720, 3300]
+    - id: 1950600069
+      type: var.get
+      position: [2550, 3460]
+      values:
+        variable: ids
+    - id: 1950600070
+      type: table.get
+      position: [2550, 3580]
+      values:
+        Key: rows
+    - id: 1950600071
+      type: table.get
+      position: [2550, 3700]
+    - id: 1950600072
+      type: var.set
+      position: [3060, 3300]
+      values:
+        variable: row
+    - id: 1950600073
+      type: func.call
+      position: [3400, 3300]
+      values:
+        function: tier_of
+    - id: 1950600074
+      type: var.set
+      position: [3740, 3300]
+      values:
+        variable: refresh_bought
+    - id: 1950600075
+      type: var.get
+      position: [3570, 3460]
+      values:
+        variable: refresh_bought
+    - id: 1950600076
+      type: math.add
+      position: [3570, 3580]
+      values:
+        B: "1"
+    - id: 1950600077
+      type: var.set
+      position: [4080, 3300]
+      values:
+        variable: cost
+    - id: 1950600078
+      type: call.ui.set_text
+      position: [4420, 3300]
+    - id: 1950600079
+      type: var.get
+      position: [4250, 3460]
+      values:
+        variable: row
+    - id: 1950600080
+      type: table.get
+      position: [4250, 3580]
+      values:
+        Key: name
+    - id: 1950600081
+      type: table.get
+      position: [4250, 3700]
+      values:
+        Key: name
+    - id: 1950600082
+      type: var.set
+      position: [4760, 3300]
+      values:
+        variable: text
+    - id: 1950600083
+      type: value.nil
+      position: [4590, 3460]
+    - id: 1950600084
+      type: func.call
+      position: [5100, 3300]
+      values:
+        function: unlocked
+    - id: 1950600085
+      type: flow.branch
+      position: [5440, 3300]
+    - id: 1950600086
+      type: table.get
+      position: [5270, 3460]
+      values:
+        Key: unlock_text
+    - id: 1950600087
+      type: text.concat
+      position: [5270, 3580]
+    - id: 1950600088
+      type: value.string
+      position: [5270, 3700]
+      values:
+        Value: "Locked: "
+    - id: 1950600089
+      type: var.set
+      position: [5780, 3300]
+      values:
+        variable: text
+    - id: 1950600090
+      type: var.get
+      position: [5610, 3460]
+      values:
+        variable: refresh_bought
+    - id: 1950600091
+      type: var.get
+      position: [5610, 3580]
+      values:
+        variable: TIERS
+    - id: 1950600092
+      type: compare.greater_equal
+      position: [5610, 3700]
+    - id: 1950600093
+      type: flow.branch
+      position: [6120, 3300]
+    - id: 1950600094
+      type: table.get
+      position: [5950, 3460]
+      values:
+        Key: tiers
+    - id: 1950600095
+      type: var.get
+      position: [5950, 3580]
+      values:
+        variable: TIERS
+    - id: 1950600096
+      type: table.get
+      position: [5950, 3700]
+    - id: 1950600097
+      type: text.concat
+      position: [5950, 3820]
+    - id: 1950600098
+      type: value.string
+      position: [5950, 3940]
+      values:
+        Value: "All bought: "
+    - id: 1950600099
+      type: var.set
+      position: [6460, 3300]
+      values:
+        variable: text
+    - id: 1950600100
+      type: table.get
+      position: [6290, 3460]
+      values:
+        Key: tiers
+    - id: 1950600101
+      type: var.get
+      position: [6290, 3580]
+      values:
+        variable: cost
+    - id: 1950600102
+      type: table.get
+      position: [6290, 3700]
+    - id: 1950600103
+      type: var.set
+      position: [6800, 3300]
+      values:
+        variable: text
+    - id: 1950600104
+      type: call.ui.set_text
+      position: [7140, 3300]
+    - id: 1950600105
+      type: var.get
+      position: [6970, 3460]
+      values:
+        variable: row
+    - id: 1950600106
+      type: table.get
+      position: [6970, 3580]
+      values:
+        Key: text
+    - id: 1950600107
+      type: var.get
+      position: [6970, 3700]
+      values:
+        variable: text
+    - id: 1950600108
+      type: var.get
+      position: [6970, 3820]
+      values:
+        variable: row
+    - id: 1950600109
+      type: table.get
+      position: [6970, 3940]
+      values:
+        Key: pips
+    - id: 1950600110
+      type: flow.for_each
+      position: [7480, 3300]
+    - id: 1950600111
+      type: call.ui.set_image_frame
+      position: [7820, 3300]
+    - id: 1950600112
+      type: var.get
+      position: [7650, 3460]
+      values:
+        variable: refresh_bought
+    - id: 1950600113
+      type: compare.less_equal
+      position: [7650, 3580]
+    - id: 1950600114
+      type: logic.select
+      position: [7650, 3700]
+      values:
+        "True": "1"
+        "False": "0"
+    - id: 1950600115
+      type: call.ui.set_text
+      position: [8160, 3300]
+    - id: 1950600116
+      type: var.get
+      position: [7990, 3460]
+      values:
+        variable: row
+    - id: 1950600117
+      type: table.get
+      position: [7990, 3580]
+      values:
+        Key: cost
+    - id: 1950600118
+      type: var.get
+      position: [7990, 3700]
+      values:
+        variable: refresh_bought
+    - id: 1950600119
+      type: var.get
+      position: [7990, 3820]
+      values:
+        variable: TIERS
+    - id: 1950600120
+      type: compare.greater_equal
+      position: [7990, 3940]
+    - id: 1950600121
+      type: var.get
+      position: [7990, 4060]
+      values:
+        variable: cost
+    - id: 1950600122
+      type: var.get
+      position: [7990, 4180]
+      values:
+        variable: cost
+    - id: 1950600123
+      type: compare.equal
+      position: [7990, 4300]
+      values:
+        B: "1"
+    - id: 1950600124
+      type: logic.select
+      position: [7990, 4420]
+    - id: 1950600125
+      type: value.string
+      position: [7990, 4540]
+      values:
+        Value: " star"
+    - id: 1950600126
+      type: value.string
+      position: [7990, 4660]
+      values:
+        Value: " stars"
+    - id: 1950600127
+      type: text.concat
+      position: [7990, 4780]
+    - id: 1950600128
+      type: logic.select
+      position: [7990, 4900]
+    - id: 1950600129
+      type: value.string
+      position: [7990, 5020]
+      values:
+        Value: ""
+    - id: 1950600130
+      type: func.call
+      position: [8500, 3300]
+      values:
+        function: unlocked
+    - id: 1950600131
+      type: var.get
+      position: [8330, 3460]
+      values:
+        variable: refresh_bought
+    - id: 1950600132
+      type: var.get
+      position: [8330, 3580]
+      values:
+        variable: TIERS
+    - id: 1950600133
+      type: compare.less
+      position: [8330, 3700]
+    - id: 1950600134
+      type: logic.and
+      position: [8330, 3820]
+    - id: 1950600135
+      type: var.get
+      position: [8330, 3940]
+      values:
+        variable: free
+    - id: 1950600136
+      type: var.get
+      position: [8330, 4060]
+      values:
+        variable: cost
+    - id: 1950600137
+      type: compare.greater_equal
+      position: [8330, 4180]
+    - id: 1950600138
+      type: logic.and
+      position: [8330, 4300]
+    - id: 1950600139
+      type: var.set
+      position: [8840, 3300]
+      values:
+        variable: can
+    - id: 1950600140
+      type: call.ui.set_button_enabled
+      position: [9180, 3300]
+    - id: 1950600141
+      type: var.get
+      position: [9010, 3460]
+      values:
+        variable: row
+    - id: 1950600142
+      type: table.get
+      position: [9010, 3580]
+      values:
+        Key: buy
+    - id: 1950600143
+      type: var.get
+      position: [9010, 3700]
+      values:
+        variable: can
+    - id: 1950600144
+      type: call.ui.set_text
+      position: [9520, 3300]
+    - id: 1950600145
+      type: var.get
+      position: [9350, 3460]
+      values:
+        variable: row
+    - id: 1950600146
+      type: table.get
+      position: [9350, 3580]
+      values:
+        Key: buy
+    - id: 1950600147
+      type: func.call
+      position: [9860, 3300]
+      values:
+        function: unlocked
+    - id: 1950600148
+      type: logic.not
+      position: [9690, 3460]
+    - id: 1950600149
+      type: var.get
+      position: [9690, 3580]
+      values:
+        variable: refresh_bought
+    - id: 1950600150
+      type: var.get
+      position: [9690, 3700]
+      values:
+        variable: TIERS
+    - id: 1950600151
+      type: compare.greater_equal
+      position: [9690, 3820]
+    - id: 1950600152
+      type: logic.select
+      position: [9690, 3940]
+      values:
+        "True": Bought
+        "False": Buy
+    - id: 1950600153
+      type: logic.select
+      position: [9690, 4060]
+      values:
+        "True": Locked
+    - id: 1950600154
+      type: call.gamestate.set
+      position: [10200, 3300]
+    - id: 1950600155
+      type: func.call
+      position: [10540, 3300]
+      values:
+        function: setting_key
+    - id: 1950600156
+      type: var.get
+      position: [10370, 3460]
+      values:
+        variable: refresh_bought
+    - id: 1950600157
+      type: call.gamestate.set
+      position: [10880, 3300]
+      values:
+        key: tower_up_stars
+    - id: 1950600158
+      type: var.get
+      position: [10710, 3460]
+      values:
+        variable: free
+    - id: 1950600159
+      type: call.gamestate.set
+      position: [11220, 3300]
+      values:
+        key: tower_up_won
+    - id: 1950600160
+      type: var.get
+      position: [11050, 3460]
+      values:
+        variable: won
+    - id: 1950600161
+      type: func.entry
+      position: [340, 5400]
+      values:
+        function: buy
+    - id: 1950600162
+      type: var.get
+      position: [170, 5560]
+      values:
+        variable: FAMILIES
+    - id: 1950600163
+      type: table.get
+      position: [170, 5680]
+    - id: 1950600164
+      type: var.set
+      position: [680, 5400]
+      values:
+        variable: family
+    - id: 1950600165
+      type: var.get
+      position: [510, 5560]
+      values:
+        variable: family
+    - id: 1950600166
+      type: compare.equal
+      position: [510, 5680]
+    - id: 1950600167
+      type: value.nil
+      position: [510, 5800]
+    - id: 1950600168
+      type: flow.branch
+      position: [1020, 5400]
+    - id: 1950600169
+      type: func.call
+      position: [1360, 5400]
+      values:
+        function: unlocked
+    - id: 1950600170
+      type: var.get
+      position: [1190, 5560]
+      values:
+        variable: family
+    - id: 1950600171
+      type: flow.branch
+      position: [1700, 5400]
+    - id: 1950600172
+      type: func.return
+      position: [2040, 5400]
+      values:
+        function: buy
+    - id: 1950600173
+      type: func.call
+      position: [2380, 5400]
+      values:
+        function: tier_of
+    - id: 1950600174
+      type: var.get
+      position: [2210, 5560]
+      values:
+        variable: family
+    - id: 1950600175
+      type: var.set
+      position: [2720, 5400]
+      values:
+        variable: buy_bought
+    - id: 1950600176
+      type: var.get
+      position: [2550, 5560]
+      values:
+        variable: buy_bought
+    - id: 1950600177
+      type: var.get
+      position: [2550, 5680]
+      values:
+        variable: TIERS
+    - id: 1950600178
+      type: compare.greater_equal
+      position: [2550, 5800]
+    - id: 1950600179
+      type: flow.branch
+      position: [3060, 5400]
+    - id: 1950600180
+      type: func.call
+      position: [3400, 5400]
+      values:
+        function: stars_won
+    - id: 1950600181
+      type: func.call
+      position: [3740, 5400]
+      values:
+        function: stars_spent
+    - id: 1950600182
+      type: math.subtract
+      position: [3570, 5560]
+    - id: 1950600183
+      type: var.get
+      position: [3570, 5680]
+      values:
+        variable: buy_bought
+    - id: 1950600184
+      type: math.add
+      position: [3570, 5800]
+      values:
+        B: "1"
+    - id: 1950600185
+      type: compare.less
+      position: [3570, 5920]
+    - id: 1950600186
+      type: flow.branch
+      position: [4080, 5400]
+    - id: 1950600187
+      type: func.return
+      position: [4420, 5400]
+      values:
+        function: buy
+    - id: 1950600188
+      type: call.settings.set
+      position: [4760, 5400]
+    - id: 1950600189
+      type: func.call
+      position: [5100, 5400]
+      values:
+        function: setting_key
+    - id: 1950600190
+      type: var.get
+      position: [4930, 5560]
+      values:
+        variable: family
+    - id: 1950600191
+      type: var.get
+      position: [4930, 5680]
+      values:
+        variable: buy_bought
+    - id: 1950600192
+      type: math.add
+      position: [4930, 5800]
+      values:
+        B: "1"
+    - id: 1950600193
+      type: call.settings.save
+      position: [5440, 5400]
+    - id: 1950600194
+      type: call.sound.play
+      position: [5780, 5400]
+      values:
+        asset_path: sounds/game/build.wav
+    - id: 1950600195
+      type: func.call
+      position: [6120, 5400]
+      values:
+        function: refresh
+    - id: 1950600196
+      type: event.custom
+      position: [340, 6180]
+      values:
+        function: on_buy_1
+    - id: 1950600197
+      type: func.call
+      position: [680, 6180]
+      values:
+        function: buy
+        index: "1"
+    - id: 1950600198
+      type: event.custom
+      position: [340, 6480]
+      values:
+        function: on_buy_2
+    - id: 1950600199
+      type: func.call
+      position: [680, 6480]
+      values:
+        function: buy
+        index: "2"
+    - id: 1950600200
+      type: event.custom
+      position: [340, 6780]
+      values:
+        function: on_buy_3
+    - id: 1950600201
+      type: func.call
+      position: [680, 6780]
+      values:
+        function: buy
+        index: "3"
+    - id: 1950600202
+      type: event.custom
+      position: [340, 7080]
+      values:
+        function: on_buy_4
+    - id: 1950600203
+      type: func.call
+      position: [680, 7080]
+      values:
+        function: buy
+        index: "4"
+    - id: 1950600204
+      type: event.custom
+      position: [340, 7380]
+      values:
+        function: on_buy_5
+    - id: 1950600205
+      type: func.call
+      position: [680, 7380]
+      values:
+        function: buy
+        index: "5"
+    - id: 1950600206
+      type: event.custom
+      position: [340, 7680]
+      values:
+        function: on_buy_6
+    - id: 1950600207
+      type: func.call
+      position: [680, 7680]
+      values:
+        function: buy
+        index: "6"
+    - id: 1950600208
+      type: event.custom
+      position: [340, 7980]
+      values:
+        function: on_refund_clicked
+    - id: 1950600209
+      type: var.get
+      position: [170, 8140]
+      values:
+        variable: FAMILIES
+    - id: 1950600210
+      type: flow.for_each
+      position: [680, 7980]
+    - id: 1950600211
+      type: call.settings.set
+      position: [1020, 7980]
+      values:
+        value: "0"
+    - id: 1950600212
+      type: func.call
+      position: [1360, 7980]
+      values:
+        function: setting_key
+    - id: 1950600213
+      type: call.settings.save
+      position: [1700, 7980]
+    - id: 1950600214
+      type: call.sound.play
+      position: [2040, 7980]
+      values:
+        asset_path: sounds/game/coins.wav
+    - id: 1950600215
+      type: func.call
+      position: [2380, 7980]
+      values:
+        function: refresh
+    - id: 1950600216
+      type: func.entry
+      position: [340, 8400]
+      values:
+        function: on_back_clicked
+    - id: 1950600217
+      type: var.get
+      position: [170, 8560]
+      values:
+        variable: leaving
+    - id: 1950600218
+      type: flow.branch
+      position: [680, 8400]
+    - id: 1950600219
+      type: func.return
+      position: [1020, 8400]
+      values:
+        function: on_back_clicked
+    - id: 1950600220
+      type: var.set
+      position: [1360, 8400]
+      values:
+        variable: leaving
+        Value: "true"
+    - id: 1950600221
+      type: call.scene.transition_to
+      position: [1700, 8400]
+      values:
+        split.rgba: "true"
+        kind: wipe_down
+        duration: "0.35"
+    - id: 1950600222
+      type: var.get
+      position: [1530, 8560]
+      values:
+        variable: map_scene
+    - id: 1950600223
+      type: var.get
+      position: [1530, 8680]
+      values:
+        variable: wipe_color
+    - id: 1950600224
+      type: math.break_color
+      position: [1530, 8800]
+    - id: 1950600225
+      type: var.get
+      position: [1530, 8920]
+      values:
+        variable: wipe_color
+    - id: 1950600226
+      type: math.break_color
+      position: [1530, 9040]
+    - id: 1950600227
+      type: var.get
+      position: [1530, 9160]
+      values:
+        variable: wipe_color
+    - id: 1950600228
+      type: math.break_color
+      position: [1530, 9280]
+    - id: 1950600229
+      type: event.on_create
+      position: [340, 9540]
+    - id: 1950600230
+      type: call.ui.is_transition_active
+      position: [170, 9700]
+    - id: 1950600231
+      type: logic.not
+      position: [170, 9820]
+    - id: 1950600232
+      type: flow.branch
+      position: [680, 9540]
+    - id: 1950600233
+      type: call.ui.transition_play
+      position: [1020, 9540]
+      values:
+        split.rgba: "true"
+        kind: wipe_down
+        duration: "0.4"
+    - id: 1950600234
+      type: var.get
+      position: [850, 9700]
+      values:
+        variable: wipe_color
+    - id: 1950600235
+      type: math.break_color
+      position: [850, 9820]
+    - id: 1950600236
+      type: var.get
+      position: [850, 9940]
+      values:
+        variable: wipe_color
+    - id: 1950600237
+      type: math.break_color
+      position: [850, 10060]
+    - id: 1950600238
+      type: var.get
+      position: [850, 10180]
+      values:
+        variable: wipe_color
+    - id: 1950600239
+      type: math.break_color
+      position: [850, 10300]
+    - id: 1950600240
+      type: call.scene.find_entity
+      position: [850, 10420]
+      values:
+        name: StarsText
+    - id: 1950600241
+      type: var.get
+      position: [850, 10540]
+      values:
+        variable: ids
+    - id: 1950600242
+      type: table.set
+      position: [1360, 9540]
+      values:
+        Key: stars
+    - id: 1950600243
+      type: value.table
+      position: [1190, 9700]
+      values:
+        Value: ""
+    - id: 1950600244
+      type: var.get
+      position: [1190, 9820]
+      values:
+        variable: ids
+    - id: 1950600245
+      type: table.set
+      position: [1700, 9540]
+      values:
+        Key: rows
+    - id: 1950600246
+      type: var.get
+      position: [1530, 9700]
+      values:
+        variable: FAMILIES
+    - id: 1950600247
+      type: table.length
+      position: [1530, 9820]
+    - id: 1950600248
+      type: flow.for
+      position: [2040, 9540]
+      values:
+        First: "1"
+    - id: 1950600249
+      type: call.scene.find_entities
+      position: [2380, 9540]
+    - id: 1950600250
+      type: text.concat
+      position: [2210, 9700]
+      values:
+        A: UpgradePip
+    - id: 1950600251
+      type: var.set
+      position: [2720, 9540]
+      values:
+        variable: pips
+    - id: 1950600252
+      type: value.table
+      position: [2550, 9700]
+      values:
+        Value: ""
+    - id: 1950600253
+      type: var.set
+      position: [3060, 9540]
+      values:
+        variable: tmp_2
+    - id: 1950600254
+      type: call.scene.find_entity
+      position: [2890, 9700]
+    - id: 1950600255
+      type: text.concat
+      position: [2890, 9820]
+      values:
+        A: UpgradeName
+    - id: 1950600256
+      type: table.set
+      position: [3400, 9540]
+      values:
+        Key: name
+    - id: 1950600257
+      type: var.get
+      position: [3230, 9700]
+      values:
+        variable: tmp_2
+    - id: 1950600258
+      type: call.scene.find_entity
+      position: [3230, 9820]
+    - id: 1950600259
+      type: text.concat
+      position: [3230, 9940]
+      values:
+        A: UpgradeText
+    - id: 1950600260
+      type: table.set
+      position: [3740, 9540]
+      values:
+        Key: text
+    - id: 1950600261
+      type: var.get
+      position: [3570, 9700]
+      values:
+        variable: tmp_2
+    - id: 1950600262
+      type: call.scene.find_entity
+      position: [3570, 9820]
+    - id: 1950600263
+      type: text.concat
+      position: [3570, 9940]
+      values:
+        A: UpgradeCost
+    - id: 1950600264
+      type: table.set
+      position: [4080, 9540]
+      values:
+        Key: cost
+    - id: 1950600265
+      type: var.get
+      position: [3910, 9700]
+      values:
+        variable: tmp_2
+    - id: 1950600266
+      type: call.scene.find_entity
+      position: [3910, 9820]
+    - id: 1950600267
+      type: text.concat
+      position: [3910, 9940]
+      values:
+        A: UpgradeBuy
+    - id: 1950600268
+      type: table.set
+      position: [4420, 9540]
+      values:
+        Key: buy
+    - id: 1950600269
+      type: var.get
+      position: [4250, 9700]
+      values:
+        variable: tmp_2
+    - id: 1950600270
+      type: var.get
+      position: [4250, 9820]
+      values:
+        variable: pips
+    - id: 1950600271
+      type: table.set
+      position: [4760, 9540]
+      values:
+        Key: pips
+    - id: 1950600272
+      type: var.get
+      position: [4590, 9700]
+      values:
+        variable: tmp_2
+    - id: 1950600273
+      type: var.get
+      position: [4590, 9820]
+      values:
+        variable: tmp_2
+    - id: 1950600274
+      type: var.get
+      position: [4590, 9940]
+      values:
+        variable: ids
+    - id: 1950600275
+      type: table.get
+      position: [4590, 10060]
+      values:
+        Key: rows
+    - id: 1950600276
+      type: table.set
+      position: [5100, 9540]
+    - id: 1950600277
+      type: call.gamestate.set
+      position: [5440, 9540]
+      values:
+        key: tower_upgrades_screen
+        value: "true"
+    - id: 1950600278
+      type: func.call
+      position: [5780, 9540]
+      values:
+        function: refresh
+    - id: 1950600279
+      type: event.on_update
+      position: [340, 10800]
+    - id: 1950600280
+      type: var.get
+      position: [170, 10960]
+      values:
+        variable: leaving
+    - id: 1950600281
+      type: flow.branch
+      position: [680, 10800]
+    - id: 1950600282
+      type: call.input.is_action_just_pressed
+      position: [510, 10960]
+      values:
+        action: ui_cancel
+    - id: 1950600283
+      type: call.input.is_action_just_pressed
+      position: [510, 11080]
+      values:
+        action: cancel
+    - id: 1950600284
+      type: logic.or
+      position: [510, 11200]
+    - id: 1950600285
+      type: flow.branch
+      position: [1020, 10800]
+    - id: 1950600286
+      type: func.call
+      position: [1360, 10800]
+      values:
+        function: on_back_clicked
+    - id: 1950600287
+      type: custom.call
+      position: [170, 9540]
+      values:
+        custom: init_state
+    - id: 1950600288
+      type: logic.select
+      position: [4250, 3820]
+      values:
+        Condition: "true"
+    - id: 1950600289
+      type: logic.select
+      position: [6970, 4060]
+      values:
+        Condition: "true"
+    - id: 1950600290
+      type: logic.select
+      position: [6970, 4180]
+      values:
+        Condition: "true"
+    - id: 1950600291
+      type: logic.select
+      position: [7990, 5140]
+      values:
+        Condition: "true"
+    - id: 1950600292
+      type: logic.select
+      position: [9010, 3820]
+      values:
+        Condition: "true"
+    - id: 1950600293
+      type: logic.select
+      position: [9350, 3700]
+      values:
+        Condition: "true"
+  links:
+    - {from: 1950600001, fromPin: family, to: 1950600002, toPin: Table}
+    - {from: 1950600002, fromPin: Result, to: 1950600003, toPin: B}
+    - {from: 1950600003, fromPin: Result, to: 1950600004, toPin: result}
+    - {from: 1950600001, fromPin: Then, to: 1950600004, toPin: Exec}
+    - {from: 1950600005, fromPin: family, to: 1950600007, toPin: family}
+    - {from: 1950600005, fromPin: Then, to: 1950600007, toPin: Exec}
+    - {from: 1950600007, fromPin: result, to: 1950600006, toPin: key}
+    - {from: 1950600007, fromPin: Then, to: 1950600006, toPin: Exec}
+    - {from: 1950600006, fromPin: value, to: 1950600008, toPin: result}
+    - {from: 1950600006, fromPin: Then, to: 1950600008, toPin: Exec}
+    - {from: 1950600009, fromPin: Then, to: 1950600010, toPin: Exec}
+    - {from: 1950600011, fromPin: Value, to: 1950600012, toPin: Last}
+    - {from: 1950600010, fromPin: Then, to: 1950600012, toPin: Exec}
+    - {from: 1950600012, fromPin: Index, to: 1950600015, toPin: A}
+    - {from: 1950600015, fromPin: Result, to: 1950600014, toPin: key}
+    - {from: 1950600012, fromPin: Body, to: 1950600014, toPin: Exec}
+    - {from: 1950600013, fromPin: Value, to: 1950600016, toPin: A}
+    - {from: 1950600014, fromPin: value, to: 1950600016, toPin: B}
+    - {from: 1950600016, fromPin: Result, to: 1950600017, toPin: Value}
+    - {from: 1950600014, fromPin: Then, to: 1950600017, toPin: Exec}
+    - {from: 1950600018, fromPin: Value, to: 1950600019, toPin: result}
+    - {from: 1950600012, fromPin: Completed, to: 1950600019, toPin: Exec}
+    - {from: 1950600020, fromPin: Then, to: 1950600021, toPin: Exec}
+    - {from: 1950600022, fromPin: Value, to: 1950600023, toPin: List}
+    - {from: 1950600021, fromPin: Then, to: 1950600023, toPin: Exec}
+    - {from: 1950600023, fromPin: Item, to: 1950600024, toPin: family}
+    - {from: 1950600023, fromPin: Body, to: 1950600024, toPin: Exec}
+    - {from: 1950600024, fromPin: result, to: 1950600025, toPin: Value}
+    - {from: 1950600024, fromPin: Then, to: 1950600025, toPin: Exec}
+    - {from: 1950600028, fromPin: Value, to: 1950600029, toPin: A}
+    - {from: 1950600027, fromPin: Value, to: 1950600030, toPin: A}
+    - {from: 1950600029, fromPin: Result, to: 1950600030, toPin: B}
+    - {from: 1950600030, fromPin: Result, to: 1950600031, toPin: A}
+    - {from: 1950600031, fromPin: Result, to: 1950600032, toPin: A}
+    - {from: 1950600026, fromPin: Value, to: 1950600033, toPin: A}
+    - {from: 1950600032, fromPin: Result, to: 1950600033, toPin: B}
+    - {from: 1950600033, fromPin: Result, to: 1950600034, toPin: Value}
+    - {from: 1950600025, fromPin: Then, to: 1950600034, toPin: Exec}
+    - {from: 1950600035, fromPin: Value, to: 1950600036, toPin: result}
+    - {from: 1950600023, fromPin: Completed, to: 1950600036, toPin: Exec}
+    - {from: 1950600037, fromPin: family, to: 1950600038, toPin: Table}
+    - {from: 1950600038, fromPin: Result, to: 1950600039, toPin: A}
+    - {from: 1950600040, fromPin: Result, to: 1950600039, toPin: B}
+    - {from: 1950600039, fromPin: Result, to: 1950600041, toPin: Value}
+    - {from: 1950600037, fromPin: Then, to: 1950600041, toPin: Exec}
+    - {from: 1950600043, fromPin: Value, to: 1950600042, toPin: Condition}
+    - {from: 1950600041, fromPin: Then, to: 1950600042, toPin: Exec}
+    - {from: 1950600037, fromPin: family, to: 1950600045, toPin: Table}
+    - {from: 1950600045, fromPin: Result, to: 1950600044, toPin: key}
+    - {from: 1950600042, fromPin: "False", to: 1950600044, toPin: Exec}
+    - {from: 1950600044, fromPin: value, to: 1950600046, toPin: A}
+    - {from: 1950600046, fromPin: Result, to: 1950600047, toPin: Value}
+    - {from: 1950600044, fromPin: Then, to: 1950600047, toPin: Exec}
+    - {from: 1950600048, fromPin: Value, to: 1950600049, toPin: result}
+    - {from: 1950600047, fromPin: Then, to: 1950600049, toPin: Exec}
+    - {from: 1950600042, fromPin: "True", to: 1950600049, toPin: Exec}
+    - {from: 1950600050, fromPin: Then, to: 1950600051, toPin: Exec}
+    - {from: 1950600051, fromPin: Then, to: 1950600052, toPin: Exec}
+    - {from: 1950600051, fromPin: result, to: 1950600053, toPin: Value}
+    - {from: 1950600052, fromPin: Then, to: 1950600053, toPin: Exec}
+    - {from: 1950600052, fromPin: result, to: 1950600054, toPin: Value}
+    - {from: 1950600053, fromPin: Then, to: 1950600054, toPin: Exec}
+    - {from: 1950600055, fromPin: Value, to: 1950600057, toPin: A}
+    - {from: 1950600056, fromPin: Value, to: 1950600057, toPin: B}
+    - {from: 1950600057, fromPin: Result, to: 1950600058, toPin: Value}
+    - {from: 1950600054, fromPin: Then, to: 1950600058, toPin: Exec}
+    - {from: 1950600060, fromPin: Value, to: 1950600061, toPin: Table}
+    - {from: 1950600061, fromPin: Result, to: 1950600059, toPin: entity_id}
+    - {from: 1950600064, fromPin: Value, to: 1950600065, toPin: A}
+    - {from: 1950600062, fromPin: Value, to: 1950600066, toPin: A}
+    - {from: 1950600063, fromPin: Value, to: 1950600066, toPin: B}
+    - {from: 1950600065, fromPin: Result, to: 1950600066, toPin: C}
+    - {from: 1950600066, fromPin: Result, to: 1950600059, toPin: text}
+    - {from: 1950600058, fromPin: Then, to: 1950600059, toPin: Exec}
+    - {from: 1950600067, fromPin: Value, to: 1950600068, toPin: List}
+    - {from: 1950600059, fromPin: Then, to: 1950600068, toPin: Exec}
+    - {from: 1950600069, fromPin: Value, to: 1950600070, toPin: Table}
+    - {from: 1950600070, fromPin: Result, to: 1950600071, toPin: Table}
+    - {from: 1950600068, fromPin: Index, to: 1950600071, toPin: Key}
+    - {from: 1950600071, fromPin: Result, to: 1950600072, toPin: Value}
+    - {from: 1950600068, fromPin: Body, to: 1950600072, toPin: Exec}
+    - {from: 1950600068, fromPin: Item, to: 1950600073, toPin: family}
+    - {from: 1950600072, fromPin: Then, to: 1950600073, toPin: Exec}
+    - {from: 1950600073, fromPin: result, to: 1950600074, toPin: Value}
+    - {from: 1950600073, fromPin: Then, to: 1950600074, toPin: Exec}
+    - {from: 1950600075, fromPin: Value, to: 1950600076, toPin: A}
+    - {from: 1950600076, fromPin: Result, to: 1950600077, toPin: Value}
+    - {from: 1950600074, fromPin: Then, to: 1950600077, toPin: Exec}
+    - {from: 1950600079, fromPin: Value, to: 1950600288, toPin: "True"}
+    - {from: 1950600288, fromPin: Result, to: 1950600080, toPin: Table}
+    - {from: 1950600080, fromPin: Result, to: 1950600078, toPin: entity_id}
+    - {from: 1950600068, fromPin: Item, to: 1950600081, toPin: Table}
+    - {from: 1950600081, fromPin: Result, to: 1950600078, toPin: text}
+    - {from: 1950600077, fromPin: Then, to: 1950600078, toPin: Exec}
+    - {from: 1950600083, fromPin: Result, to: 1950600082, toPin: Value}
+    - {from: 1950600078, fromPin: Then, to: 1950600082, toPin: Exec}
+    - {from: 1950600068, fromPin: Item, to: 1950600084, toPin: family}
+    - {from: 1950600082, fromPin: Then, to: 1950600084, toPin: Exec}
+    - {from: 1950600084, fromPin: result, to: 1950600085, toPin: Condition}
+    - {from: 1950600084, fromPin: Then, to: 1950600085, toPin: Exec}
+    - {from: 1950600068, fromPin: Item, to: 1950600086, toPin: Table}
+    - {from: 1950600088, fromPin: Result, to: 1950600087, toPin: A}
+    - {from: 1950600086, fromPin: Result, to: 1950600087, toPin: B}
+    - {from: 1950600087, fromPin: Result, to: 1950600089, toPin: Value}
+    - {from: 1950600085, fromPin: "False", to: 1950600089, toPin: Exec}
+    - {from: 1950600090, fromPin: Value, to: 1950600092, toPin: A}
+    - {from: 1950600091, fromPin: Value, to: 1950600092, toPin: B}
+    - {from: 1950600092, fromPin: Result, to: 1950600093, toPin: Condition}
+    - {from: 1950600085, fromPin: "True", to: 1950600093, toPin: Exec}
+    - {from: 1950600068, fromPin: Item, to: 1950600094, toPin: Table}
+    - {from: 1950600094, fromPin: Result, to: 1950600096, toPin: Table}
+    - {from: 1950600095, fromPin: Value, to: 1950600096, toPin: Key}
+    - {from: 1950600098, fromPin: Result, to: 1950600097, toPin: A}
+    - {from: 1950600096, fromPin: Result, to: 1950600097, toPin: B}
+    - {from: 1950600097, fromPin: Result, to: 1950600099, toPin: Value}
+    - {from: 1950600093, fromPin: "True", to: 1950600099, toPin: Exec}
+    - {from: 1950600068, fromPin: Item, to: 1950600100, toPin: Table}
+    - {from: 1950600100, fromPin: Result, to: 1950600102, toPin: Table}
+    - {from: 1950600101, fromPin: Value, to: 1950600102, toPin: Key}
+    - {from: 1950600102, fromPin: Result, to: 1950600103, toPin: Value}
+    - {from: 1950600093, fromPin: "False", to: 1950600103, toPin: Exec}
+    - {from: 1950600105, fromPin: Value, to: 1950600289, toPin: "True"}
+    - {from: 1950600289, fromPin: Result, to: 1950600106, toPin: Table}
+    - {from: 1950600106, fromPin: Result, to: 1950600104, toPin: entity_id}
+    - {from: 1950600107, fromPin: Value, to: 1950600104, toPin: text}
+    - {from: 1950600089, fromPin: Then, to: 1950600104, toPin: Exec}
+    - {from: 1950600099, fromPin: Then, to: 1950600104, toPin: Exec}
+    - {from: 1950600103, fromPin: Then, to: 1950600104, toPin: Exec}
+    - {from: 1950600108, fromPin: Value, to: 1950600290, toPin: "True"}
+    - {from: 1950600290, fromPin: Result, to: 1950600109, toPin: Table}
+    - {from: 1950600109, fromPin: Result, to: 1950600110, toPin: List}
+    - {from: 1950600104, fromPin: Then, to: 1950600110, toPin: Exec}
+    - {from: 1950600110, fromPin: Item, to: 1950600111, toPin: entity_id}
+    - {from: 1950600110, fromPin: Index, to: 1950600113, toPin: A}
+    - {from: 1950600112, fromPin: Value, to: 1950600113, toPin: B}
+    - {from: 1950600113, fromPin: Result, to: 1950600114, toPin: Condition}
+    - {from: 1950600114, fromPin: Result, to: 1950600111, toPin: frame}
+    - {from: 1950600110, fromPin: Body, to: 1950600111, toPin: Exec}
+    - {from: 1950600116, fromPin: Value, to: 1950600291, toPin: "True"}
+    - {from: 1950600291, fromPin: Result, to: 1950600117, toPin: Table}
+    - {from: 1950600117, fromPin: Result, to: 1950600115, toPin: entity_id}
+    - {from: 1950600118, fromPin: Value, to: 1950600120, toPin: A}
+    - {from: 1950600119, fromPin: Value, to: 1950600120, toPin: B}
+    - {from: 1950600122, fromPin: Value, to: 1950600123, toPin: A}
+    - {from: 1950600123, fromPin: Result, to: 1950600124, toPin: Condition}
+    - {from: 1950600125, fromPin: Result, to: 1950600124, toPin: "True"}
+    - {from: 1950600126, fromPin: Result, to: 1950600124, toPin: "False"}
+    - {from: 1950600121, fromPin: Value, to: 1950600127, toPin: A}
+    - {from: 1950600124, fromPin: Result, to: 1950600127, toPin: B}
+    - {from: 1950600120, fromPin: Result, to: 1950600128, toPin: Condition}
+    - {from: 1950600129, fromPin: Result, to: 1950600128, toPin: "True"}
+    - {from: 1950600127, fromPin: Result, to: 1950600128, toPin: "False"}
+    - {from: 1950600128, fromPin: Result, to: 1950600115, toPin: text}
+    - {from: 1950600110, fromPin: Completed, to: 1950600115, toPin: Exec}
+    - {from: 1950600068, fromPin: Item, to: 1950600130, toPin: family}
+    - {from: 1950600115, fromPin: Then, to: 1950600130, toPin: Exec}
+    - {from: 1950600131, fromPin: Value, to: 1950600133, toPin: A}
+    - {from: 1950600132, fromPin: Value, to: 1950600133, toPin: B}
+    - {from: 1950600130, fromPin: result, to: 1950600134, toPin: A}
+    - {from: 1950600133, fromPin: Result, to: 1950600134, toPin: B}
+    - {from: 1950600135, fromPin: Value, to: 1950600137, toPin: A}
+    - {from: 1950600136, fromPin: Value, to: 1950600137, toPin: B}
+    - {from: 1950600134, fromPin: Result, to: 1950600138, toPin: A}
+    - {from: 1950600137, fromPin: Result, to: 1950600138, toPin: B}
+    - {from: 1950600138, fromPin: Result, to: 1950600139, toPin: Value}
+    - {from: 1950600130, fromPin: Then, to: 1950600139, toPin: Exec}
+    - {from: 1950600141, fromPin: Value, to: 1950600292, toPin: "True"}
+    - {from: 1950600292, fromPin: Result, to: 1950600142, toPin: Table}
+    - {from: 1950600142, fromPin: Result, to: 1950600140, toPin: entity_id}
+    - {from: 1950600143, fromPin: Value, to: 1950600140, toPin: enabled}
+    - {from: 1950600139, fromPin: Then, to: 1950600140, toPin: Exec}
+    - {from: 1950600145, fromPin: Value, to: 1950600293, toPin: "True"}
+    - {from: 1950600293, fromPin: Result, to: 1950600146, toPin: Table}
+    - {from: 1950600146, fromPin: Result, to: 1950600144, toPin: entity_id}
+    - {from: 1950600068, fromPin: Item, to: 1950600147, toPin: family}
+    - {from: 1950600140, fromPin: Then, to: 1950600147, toPin: Exec}
+    - {from: 1950600147, fromPin: result, to: 1950600148, toPin: A}
+    - {from: 1950600149, fromPin: Value, to: 1950600151, toPin: A}
+    - {from: 1950600150, fromPin: Value, to: 1950600151, toPin: B}
+    - {from: 1950600151, fromPin: Result, to: 1950600152, toPin: Condition}
+    - {from: 1950600148, fromPin: Result, to: 1950600153, toPin: Condition}
+    - {from: 1950600152, fromPin: Result, to: 1950600153, toPin: "False"}
+    - {from: 1950600153, fromPin: Result, to: 1950600144, toPin: text}
+    - {from: 1950600147, fromPin: Then, to: 1950600144, toPin: Exec}
+    - {from: 1950600068, fromPin: Item, to: 1950600155, toPin: family}
+    - {from: 1950600144, fromPin: Then, to: 1950600155, toPin: Exec}
+    - {from: 1950600155, fromPin: result, to: 1950600154, toPin: key}
+    - {from: 1950600156, fromPin: Value, to: 1950600154, toPin: value}
+    - {from: 1950600155, fromPin: Then, to: 1950600154, toPin: Exec}
+    - {from: 1950600158, fromPin: Value, to: 1950600157, toPin: value}
+    - {from: 1950600068, fromPin: Completed, to: 1950600157, toPin: Exec}
+    - {from: 1950600160, fromPin: Value, to: 1950600159, toPin: value}
+    - {from: 1950600157, fromPin: Then, to: 1950600159, toPin: Exec}
+    - {from: 1950600162, fromPin: Value, to: 1950600163, toPin: Table}
+    - {from: 1950600161, fromPin: index, to: 1950600163, toPin: Key}
+    - {from: 1950600163, fromPin: Result, to: 1950600164, toPin: Value}
+    - {from: 1950600161, fromPin: Then, to: 1950600164, toPin: Exec}
+    - {from: 1950600165, fromPin: Value, to: 1950600166, toPin: A}
+    - {from: 1950600167, fromPin: Result, to: 1950600166, toPin: B}
+    - {from: 1950600166, fromPin: Result, to: 1950600168, toPin: Condition}
+    - {from: 1950600164, fromPin: Then, to: 1950600168, toPin: Exec}
+    - {from: 1950600170, fromPin: Value, to: 1950600169, toPin: family}
+    - {from: 1950600168, fromPin: "False", to: 1950600169, toPin: Exec}
+    - {from: 1950600169, fromPin: result, to: 1950600171, toPin: Condition}
+    - {from: 1950600169, fromPin: Then, to: 1950600171, toPin: Exec}
+    - {from: 1950600168, fromPin: "True", to: 1950600172, toPin: Exec}
+    - {from: 1950600171, fromPin: "False", to: 1950600172, toPin: Exec}
+    - {from: 1950600174, fromPin: Value, to: 1950600173, toPin: family}
+    - {from: 1950600171, fromPin: "True", to: 1950600173, toPin: Exec}
+    - {from: 1950600173, fromPin: result, to: 1950600175, toPin: Value}
+    - {from: 1950600173, fromPin: Then, to: 1950600175, toPin: Exec}
+    - {from: 1950600176, fromPin: Value, to: 1950600178, toPin: A}
+    - {from: 1950600177, fromPin: Value, to: 1950600178, toPin: B}
+    - {from: 1950600178, fromPin: Result, to: 1950600179, toPin: Condition}
+    - {from: 1950600175, fromPin: Then, to: 1950600179, toPin: Exec}
+    - {from: 1950600179, fromPin: "False", to: 1950600180, toPin: Exec}
+    - {from: 1950600180, fromPin: Then, to: 1950600181, toPin: Exec}
+    - {from: 1950600180, fromPin: result, to: 1950600182, toPin: A}
+    - {from: 1950600181, fromPin: result, to: 1950600182, toPin: B}
+    - {from: 1950600183, fromPin: Value, to: 1950600184, toPin: A}
+    - {from: 1950600182, fromPin: Result, to: 1950600185, toPin: A}
+    - {from: 1950600184, fromPin: Result, to: 1950600185, toPin: B}
+    - {from: 1950600185, fromPin: Result, to: 1950600186, toPin: Condition}
+    - {from: 1950600181, fromPin: Then, to: 1950600186, toPin: Exec}
+    - {from: 1950600179, fromPin: "True", to: 1950600187, toPin: Exec}
+    - {from: 1950600186, fromPin: "True", to: 1950600187, toPin: Exec}
+    - {from: 1950600190, fromPin: Value, to: 1950600189, toPin: family}
+    - {from: 1950600186, fromPin: "False", to: 1950600189, toPin: Exec}
+    - {from: 1950600189, fromPin: result, to: 1950600188, toPin: key}
+    - {from: 1950600191, fromPin: Value, to: 1950600192, toPin: A}
+    - {from: 1950600192, fromPin: Result, to: 1950600188, toPin: value}
+    - {from: 1950600189, fromPin: Then, to: 1950600188, toPin: Exec}
+    - {from: 1950600188, fromPin: Then, to: 1950600193, toPin: Exec}
+    - {from: 1950600193, fromPin: Then, to: 1950600194, toPin: Exec}
+    - {from: 1950600194, fromPin: Then, to: 1950600195, toPin: Exec}
+    - {from: 1950600196, fromPin: Then, to: 1950600197, toPin: Exec}
+    - {from: 1950600198, fromPin: Then, to: 1950600199, toPin: Exec}
+    - {from: 1950600200, fromPin: Then, to: 1950600201, toPin: Exec}
+    - {from: 1950600202, fromPin: Then, to: 1950600203, toPin: Exec}
+    - {from: 1950600204, fromPin: Then, to: 1950600205, toPin: Exec}
+    - {from: 1950600206, fromPin: Then, to: 1950600207, toPin: Exec}
+    - {from: 1950600209, fromPin: Value, to: 1950600210, toPin: List}
+    - {from: 1950600208, fromPin: Then, to: 1950600210, toPin: Exec}
+    - {from: 1950600210, fromPin: Item, to: 1950600212, toPin: family}
+    - {from: 1950600210, fromPin: Body, to: 1950600212, toPin: Exec}
+    - {from: 1950600212, fromPin: result, to: 1950600211, toPin: key}
+    - {from: 1950600212, fromPin: Then, to: 1950600211, toPin: Exec}
+    - {from: 1950600210, fromPin: Completed, to: 1950600213, toPin: Exec}
+    - {from: 1950600213, fromPin: Then, to: 1950600214, toPin: Exec}
+    - {from: 1950600214, fromPin: Then, to: 1950600215, toPin: Exec}
+    - {from: 1950600217, fromPin: Value, to: 1950600218, toPin: Condition}
+    - {from: 1950600216, fromPin: Then, to: 1950600218, toPin: Exec}
+    - {from: 1950600218, fromPin: "True", to: 1950600219, toPin: Exec}
+    - {from: 1950600218, fromPin: "False", to: 1950600220, toPin: Exec}
+    - {from: 1950600222, fromPin: Value, to: 1950600221, toPin: scene_path}
+    - {from: 1950600223, fromPin: Value, to: 1950600224, toPin: Value}
+    - {from: 1950600224, fromPin: R, to: 1950600221, toPin: r}
+    - {from: 1950600225, fromPin: Value, to: 1950600226, toPin: Value}
+    - {from: 1950600226, fromPin: G, to: 1950600221, toPin: g}
+    - {from: 1950600227, fromPin: Value, to: 1950600228, toPin: Value}
+    - {from: 1950600228, fromPin: B, to: 1950600221, toPin: b}
+    - {from: 1950600220, fromPin: Then, to: 1950600221, toPin: Exec}
+    - {from: 1950600230, fromPin: active, to: 1950600231, toPin: A}
+    - {from: 1950600231, fromPin: Result, to: 1950600232, toPin: Condition}
+    - {from: 1950600287, fromPin: Then, to: 1950600232, toPin: Exec}
+    - {from: 1950600234, fromPin: Value, to: 1950600235, toPin: Value}
+    - {from: 1950600235, fromPin: R, to: 1950600233, toPin: r}
+    - {from: 1950600236, fromPin: Value, to: 1950600237, toPin: Value}
+    - {from: 1950600237, fromPin: G, to: 1950600233, toPin: g}
+    - {from: 1950600238, fromPin: Value, to: 1950600239, toPin: Value}
+    - {from: 1950600239, fromPin: B, to: 1950600233, toPin: b}
+    - {from: 1950600232, fromPin: "True", to: 1950600233, toPin: Exec}
+    - {from: 1950600241, fromPin: Value, to: 1950600242, toPin: Table}
+    - {from: 1950600240, fromPin: entity_id, to: 1950600242, toPin: Value}
+    - {from: 1950600233, fromPin: Then, to: 1950600242, toPin: Exec}
+    - {from: 1950600232, fromPin: "False", to: 1950600242, toPin: Exec}
+    - {from: 1950600244, fromPin: Value, to: 1950600245, toPin: Table}
+    - {from: 1950600243, fromPin: Result, to: 1950600245, toPin: Value}
+    - {from: 1950600242, fromPin: Then, to: 1950600245, toPin: Exec}
+    - {from: 1950600246, fromPin: Value, to: 1950600247, toPin: List}
+    - {from: 1950600247, fromPin: Result, to: 1950600248, toPin: Last}
+    - {from: 1950600245, fromPin: Then, to: 1950600248, toPin: Exec}
+    - {from: 1950600248, fromPin: Index, to: 1950600250, toPin: B}
+    - {from: 1950600250, fromPin: Result, to: 1950600249, toPin: name}
+    - {from: 1950600248, fromPin: Body, to: 1950600249, toPin: Exec}
+    - {from: 1950600249, fromPin: entity_ids, to: 1950600251, toPin: Value}
+    - {from: 1950600249, fromPin: Then, to: 1950600251, toPin: Exec}
+    - {from: 1950600252, fromPin: Result, to: 1950600253, toPin: Value}
+    - {from: 1950600251, fromPin: Then, to: 1950600253, toPin: Exec}
+    - {from: 1950600248, fromPin: Index, to: 1950600255, toPin: B}
+    - {from: 1950600255, fromPin: Result, to: 1950600254, toPin: name}
+    - {from: 1950600257, fromPin: Value, to: 1950600256, toPin: Table}
+    - {from: 1950600254, fromPin: entity_id, to: 1950600256, toPin: Value}
+    - {from: 1950600253, fromPin: Then, to: 1950600256, toPin: Exec}
+    - {from: 1950600248, fromPin: Index, to: 1950600259, toPin: B}
+    - {from: 1950600259, fromPin: Result, to: 1950600258, toPin: name}
+    - {from: 1950600261, fromPin: Value, to: 1950600260, toPin: Table}
+    - {from: 1950600258, fromPin: entity_id, to: 1950600260, toPin: Value}
+    - {from: 1950600256, fromPin: Then, to: 1950600260, toPin: Exec}
+    - {from: 1950600248, fromPin: Index, to: 1950600263, toPin: B}
+    - {from: 1950600263, fromPin: Result, to: 1950600262, toPin: name}
+    - {from: 1950600265, fromPin: Value, to: 1950600264, toPin: Table}
+    - {from: 1950600262, fromPin: entity_id, to: 1950600264, toPin: Value}
+    - {from: 1950600260, fromPin: Then, to: 1950600264, toPin: Exec}
+    - {from: 1950600248, fromPin: Index, to: 1950600267, toPin: B}
+    - {from: 1950600267, fromPin: Result, to: 1950600266, toPin: name}
+    - {from: 1950600269, fromPin: Value, to: 1950600268, toPin: Table}
+    - {from: 1950600266, fromPin: entity_id, to: 1950600268, toPin: Value}
+    - {from: 1950600264, fromPin: Then, to: 1950600268, toPin: Exec}
+    - {from: 1950600272, fromPin: Value, to: 1950600271, toPin: Table}
+    - {from: 1950600270, fromPin: Value, to: 1950600271, toPin: Value}
+    - {from: 1950600268, fromPin: Then, to: 1950600271, toPin: Exec}
+    - {from: 1950600274, fromPin: Value, to: 1950600275, toPin: Table}
+    - {from: 1950600275, fromPin: Result, to: 1950600276, toPin: Table}
+    - {from: 1950600248, fromPin: Index, to: 1950600276, toPin: Key}
+    - {from: 1950600273, fromPin: Value, to: 1950600276, toPin: Value}
+    - {from: 1950600271, fromPin: Then, to: 1950600276, toPin: Exec}
+    - {from: 1950600248, fromPin: Completed, to: 1950600277, toPin: Exec}
+    - {from: 1950600277, fromPin: Then, to: 1950600278, toPin: Exec}
+    - {from: 1950600280, fromPin: Value, to: 1950600281, toPin: Condition}
+    - {from: 1950600279, fromPin: Then, to: 1950600281, toPin: Exec}
+    - {from: 1950600282, fromPin: pressed, to: 1950600284, toPin: A}
+    - {from: 1950600283, fromPin: pressed, to: 1950600284, toPin: B}
+    - {from: 1950600284, fromPin: Result, to: 1950600285, toPin: Condition}
+    - {from: 1950600281, fromPin: "False", to: 1950600285, toPin: Exec}
+    - {from: 1950600285, fromPin: "True", to: 1950600286, toPin: Exec}
+    - {from: 1950600229, fromPin: Then, to: 1950600287, toPin: Exec}
+  groups:
+    - {id: 1950690000, title: setting_key, position: [146, -52], size: [830, 480], color: Teal}
+    - {id: 1950690001, title: tier_of, position: [316, 488], size: [1340, 200], color: Teal}
+    - {id: 1950690002, title: stars_won, position: [316, 788], size: [2020, 480], color: Teal}
+    - {id: 1950690003, title: stars_spent, position: [316, 1328], size: [2360, 1200], color: Teal}
+    - {id: 1950690004, title: unlocked, position: [146, 2588], size: [2190, 600], color: Teal}
+    - {id: 1950690005, title: refresh, position: [316, 3248], size: [11200, 2040], color: Teal}
+    - {id: 1950690006, title: buy, position: [146, 5348], size: [6270, 720], color: Teal}
+    - {id: 1950690007, title: on_buy_1, position: [316, 6128], size: [660, 200], color: Red}
+    - {id: 1950690008, title: on_buy_2, position: [316, 6428], size: [660, 200], color: Red}
+    - {id: 1950690009, title: on_buy_3, position: [316, 6728], size: [660, 200], color: Red}
+    - {id: 1950690010, title: on_buy_4, position: [316, 7028], size: [660, 200], color: Red}
+    - {id: 1950690011, title: on_buy_5, position: [316, 7328], size: [660, 200], color: Red}
+    - {id: 1950690012, title: on_buy_6, position: [316, 7628], size: [660, 200], color: Red}
+    - {id: 1950690013, title: on_refund_clicked, position: [146, 7928], size: [2530, 360], color: Red}
+    - {id: 1950690014, title: on_back_clicked, position: [146, 8348], size: [1850, 1080], color: Red}
+    - {id: 1950690015, title: on_create, position: [146, 9488], size: [5930, 1200], color: Red}
+    - {id: 1950690016, title: on_update, position: [146, 10748], size: [1510, 600], color: Red}

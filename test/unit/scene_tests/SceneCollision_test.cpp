@@ -266,3 +266,85 @@ end
 	EXPECT_GT(physics::PhysicCommand::getVelocity(hull).y(), 0.f);
 	scn.onEndRuntime();
 }
+
+TEST_F(SceneCollisionTest, LuaJoinsBodiesInPlayAndReadsTheirLoad) {
+	const auto path = writeScript("join.lua", R"(
+function on_create()
+    if entity.get_name(entity_id) == "Weight" then
+        gamestate.set("joined", physics.add_joint(entity_id, scene.find_entity("Anchor"), "hinge", 0, 1, 0, 1000))
+        gamestate.set("bad_kind", physics.add_joint(entity_id, nil, "rope", 0, 0, 0))
+    end
+end
+function on_tick(dt)
+    if entity.get_name(entity_id) == "Weight" then
+        local force, torque = physics.get_joint_load(entity_id)
+        gamestate.set("load", force)
+    end
+end
+)");
+	Scene scn;
+	addBody(scn, "Anchor", SceneBody::BodyType::Static, {0.f, 5.f, 0.f}, path);
+	auto weight = addBody(scn, "Weight", SceneBody::BodyType::Dynamic, {0.f, 4.f, 0.f}, path);
+	scn.onStartRuntime();
+	for (int i = 0; i < 30; ++i) scn.onUpdateRuntime(makeStep(16), false);
+	EXPECT_TRUE(std::get<bool>(scn.getGameState().get("joined", false)));
+	EXPECT_FALSE(std::get<bool>(scn.getGameState().get("bad_kind", true)));
+	ASSERT_TRUE(weight.hasComponent<component::PhysicJoint>());
+	EXPECT_EQ(weight.getComponent<component::PhysicJoint>().joint.type, SceneJoint::Type::Hinge);
+	EXPECT_NE(weight.getComponent<component::PhysicJoint>().joint.jointId, 0u);
+	// The weight hangs from the anchor: the joint holds about its weight (1 kg under 9.81).
+	const auto [force, torque] = physics::PhysicCommand::getJointLoad(weight);
+	EXPECT_NEAR(force, 9.81f, 2.f);
+	EXPECT_GT(getInt(scn, "load"), 5);
+	EXPECT_NEAR(weight.getComponent<component::Transform>().transform.translation().y(), 4.f, 0.1f);
+	scn.onEndRuntime();
+}
+
+TEST_F(SceneCollisionTest, LuaSetsAndReadsAngularVelocity) {
+	const auto path = writeScript("spin.lua", R"(
+local ticks = 0
+function on_tick(dt)
+    if ticks == 0 then
+        physics.set_angular_velocity(entity_id, 0.5, 1.5, 2)
+    end
+    local wx, wy, wz = physics.get_angular_velocity(entity_id)
+    gamestate.set(entity.get_name(entity_id) .. "_wy", math.floor(wy * 10 + 0.5))
+    gamestate.set(entity.get_name(entity_id) .. "_wz", math.floor(wz * 10 + 0.5))
+    ticks = ticks + 1
+end
+)");
+	Scene scn;
+	scn.getPhysicsSettings().gravity = {0.f, 0.f, 0.f};
+	auto probe = addBody(scn, "Probe", SceneBody::BodyType::Dynamic, {0.f, 0.f, 0.f}, path);
+	probe.getComponent<component::PhysicBody>().body.dimension = SceneBody::Dimension::Space;
+	probe.getComponent<component::PhysicBody>().body.shape = SceneBody::Shape::Sphere;
+	addBody(scn, "Disc", SceneBody::BodyType::Dynamic, {10.f, 0.f, 0.f}, path)
+			.getComponent<component::PhysicBody>()
+			.body.shape = SceneBody::Shape::Sphere;
+	scn.onStartRuntime();
+	for (int i = 0; i < 4; ++i) scn.onUpdateRuntime(makeStep(16), false);
+	EXPECT_EQ(getInt(scn, "Probe_wy"), 15);
+	EXPECT_EQ(getInt(scn, "Probe_wz"), 20);
+	// A 2D body turns around Z only.
+	EXPECT_EQ(getInt(scn, "Disc_wy"), 0);
+	EXPECT_EQ(getInt(scn, "Disc_wz"), 20);
+	EXPECT_NEAR(physics::PhysicCommand::getAngularVelocity3D(probe).x(), 0.5f, 0.01f);
+	scn.onEndRuntime();
+}
+
+TEST_F(SceneCollisionTest, LuaInvertsThePitchOfAShip) {
+	const auto path = writeScript("ship.lua", R"(
+function on_create()
+    gamestate.set("done", entity.set_ship_invert_pitch(entity_id, true))
+end
+)");
+	Scene scn;
+	auto ship = scn.createEntity("Ship");
+	ship.addComponent<component::ShipController>();
+	ship.addComponent<component::LuaScript>().scriptPath = path;
+	scn.onStartRuntime();
+	scn.onUpdateRuntime(makeStep(16), false);
+	EXPECT_TRUE(std::get<bool>(scn.getGameState().get("done", false)));
+	EXPECT_TRUE(ship.getComponent<component::ShipController>().invertPitch);
+	scn.onEndRuntime();
+}

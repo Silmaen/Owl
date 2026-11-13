@@ -1,0 +1,14 @@
+# Asteroid Field wingmen: ordered to attack (1) they leave their slot and shoot the first waves down while the
+# player waits; ordered to escort (2) they come back on the player.
+scene: ../../../samples/asteroid_field/scenes/mission.owl
+timestep_ms: 33.333
+steps:
+  - frames: 5
+  - input: {key: D1, frames: 1}
+  - frames: 2
+  - expect: {gamestate: field_order, equals: attack}
+  - frames: 1200
+  - expect: {gamestate: field_kills, greater: 2}
+  - input: {key: D2, frames: 1}
+  - frames: 2
+  - expect: {gamestate: field_order, equals: escort}

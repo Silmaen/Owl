@@ -1,6 +1,6 @@
 FormatVersion: 1
 # Actions of Tower defence, on top of the built-in ones (`primary` / `secondary` are the mouse buttons, the `ui_*`
-# actions drive the menus). Read by scripts/game/defence.lua.
+# actions drive the menus). Read by scripts/game/defence.owlvs.
 actions:
   - name: pan
     type: vector

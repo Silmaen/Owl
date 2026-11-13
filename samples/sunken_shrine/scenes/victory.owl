@@ -1,0 +1,646 @@
+Scene: victory
+FormatVersion: 7
+EnabledRenderers:
+  - {Name: world, Enabled: true}
+  - {Name: ui, Enabled: false}
+Entities:
+  - Entity: 7320000681149000001
+    Tag:
+      tag: MenuCamera
+    Transform:
+      translation: [0, -0.6, 5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Camera:
+      camera:
+        projectionType: Orthographic
+        perspectiveFOV: 0.7853982
+        perspectiveNear: 0.01
+        perspectiveFar: 1000
+        orthographicSize: 11
+        orthographicNear: -1
+        orthographicFar: 10
+      primary: true
+      fixedAspectRatio: false
+  - Entity: 7320000681149000002
+    Tag:
+      tag: Background
+    Transform:
+      translation: [0, 0, -1]
+      rotation: [0, 0, 0]
+      scale: [40, 26, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    BackgroundTexture:
+      mode: 0
+      type: 0
+      color: [0.08, 0.05, 0.07, 1]
+      topColor: [0.8, 0.9, 1, 1]
+  - Entity: 7320000681149000003
+    Tag:
+      tag: Room
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Tilemap:
+      tilemapPath: gid:0bd7a6eb6fd134f9:tilemaps/room_1.owltilemap
+  - Entity: 7320000681149000004
+    Tag:
+      tag: Ambient
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Light2D: {type: Ambient, enabled: true, color: [0.8, 0.75, 1], intensity: 0.22, radius: 5, falloff: 2, height: 1, castShadows: false}
+  - Entity: 7320000681149000005
+    Tag:
+      tag: Torch
+    Transform:
+      translation: [-6, 3, 0.05]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Light2D: {type: Point, enabled: true, color: [1, 0.65, 0.3], intensity: 1.6, radius: 5, falloff: 2, height: 1, castShadows: false}
+  - Entity: 7320000681149000006
+    Tag:
+      tag: Torch
+    Transform:
+      translation: [6, 3, 0.05]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Light2D: {type: Point, enabled: true, color: [1, 0.65, 0.3], intensity: 1.6, radius: 5, falloff: 2, height: 1, castShadows: false}
+  - Entity: 7320000681149000007
+    Tag:
+      tag: OldMan
+    Transform:
+      translation: [0, 0, 0.05]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: gid:007111dca97df923:textures/tiles/dungeon.png
+      columns: 12
+      rows: 11
+      firstFrame: 84
+      lastFrame: 84
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7320000681149000008
+    Tag:
+      tag: Torch
+    Transform:
+      translation: [-6, -3, 0.05]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Light2D: {type: Point, enabled: true, color: [1, 0.65, 0.3], intensity: 1.6, radius: 5, falloff: 2, height: 1, castShadows: false}
+  - Entity: 7320000681149000009
+    Tag:
+      tag: Torch
+    Transform:
+      translation: [6, -3, 0.05]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Light2D: {type: Point, enabled: true, color: [1, 0.65, 0.3], intensity: 1.6, radius: 5, falloff: 2, height: 1, castShadows: false}
+  - Entity: 7320000681149000010
+    Tag:
+      tag: Hero
+    Transform:
+      translation: [0, -2, 0.05]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: gid:007111dca97df923:textures/tiles/dungeon.png
+      columns: 12
+      rows: 11
+      firstFrame: 85
+      lastFrame: 85
+      frameDuration: 0.1
+      loop: false
+  - Entity: 7320000681149000011
+    Tag:
+      tag: ResultCanvas
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Canvas:
+      space: ScreenOverlay
+      sortOrder: 0
+      referenceResolution: [1280, 720]
+      scaleMode: ScaleWithHeight
+    LuaScript:
+      scriptPath: gid:1d2bd7fd8c386620:scripts/ui/result.owlvs
+      properties:
+        - name: victory
+          type: bool
+          value: true
+        - name: retry_scene
+          type: string
+          value: scenes/room_1.owl
+        - name: best_key
+          type: string
+          value: shrine_best
+        - name: prefix
+          type: string
+          value: shrine
+  - Entity: 7320000681149000012
+    Tag:
+      tag: ResultGroup
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7320000681149000011
+    UiRect:
+      anchorMin: [0.5, 0]
+      anchorMax: [0.5, 0]
+      pivot: [0.5, 0]
+      size: [1.1, 0.92]
+      sizeUnit: [ScreenHeight, ScreenHeight]
+      offset: [0, 0.04]
+      offsetUnit: [ScreenHeight, ScreenHeight]
+    UiLayout:
+      arrangement: Column
+      crossAlign: Center
+      spacing: 4
+      padding: 0
+      columns: 1
+      cellSize: [0, 0]
+  - Entity: 7320000681149000013
+    Tag:
+      tag: ButtonRow
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7320000681149000012
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 0.11]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiLayout:
+      arrangement: Row
+      crossAlign: Center
+      spacing: 16
+      padding: 0
+      columns: 1
+      cellSize: [0, 0]
+  - Entity: 7320000681149000014
+    Tag:
+      tag: MenuButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7320000681149000013
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.42, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.18, 0.12, 0.16, 1]
+      hoverColor: [0.3, 0.2, 0.26, 1]
+      pressedColor: [0.38, 0.26, 0.32, 1]
+      disabledColor: [0.1, 0.1, 0.1, 0.5]
+      onClickCallback: on_menu_clicked
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.14, 0.07, 0.1, 1]
+      text: 'TITLE'
+      color: [1, 0.93, 0.7, 1]
+      fontSize: 30
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [1, 0.78, 0.25, 1]
+      highlightThickness: 3
+  - Entity: 7320000681149000015
+    Tag:
+      tag: MenuButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7320000681149000014
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: gid:fc3c6ea58b296e5f:textures/ui/frame.png
+  - Entity: 7320000681149000016
+    Tag:
+      tag: RetryButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7320000681149000013
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.42, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.18, 0.12, 0.16, 1]
+      hoverColor: [0.3, 0.2, 0.26, 1]
+      pressedColor: [0.38, 0.26, 0.32, 1]
+      disabledColor: [0.1, 0.1, 0.1, 0.5]
+      onClickCallback: on_retry_clicked
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.14, 0.07, 0.1, 1]
+      text: 'PLAY AGAIN'
+      color: [1, 0.93, 0.7, 1]
+      fontSize: 30
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp
+    UiFocus:
+      focusable: true
+      initial: true
+      onFocusCallback: ''
+      highlightColor: [1, 0.78, 0.25, 1]
+      highlightThickness: 3
+  - Entity: 7320000681149000017
+    Tag:
+      tag: RetryButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7320000681149000016
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: gid:fc3c6ea58b296e5f:textures/ui/frame.png
+  - Entity: 7320000681149000018
+    Tag:
+      tag: BestLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7320000681149000012
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 0.065]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.14, 0.07, 0.1, 1]
+      text: ''
+      color: [1, 0.78, 0.25, 1]
+      fontSize: 26
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 7320000681149000019
+    Tag:
+      tag: ScoreLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7320000681149000012
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 0.1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.14, 0.07, 0.1, 1]
+      text: ''
+      color: [1, 0.93, 0.7, 1]
+      fontSize: 36
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 7320000681149000020
+    Tag:
+      tag: StatLine6
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7320000681149000012
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.8, 0.06]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.14, 0.07, 0.1, 1]
+      text: ''
+      color: [0.85, 0.8, 0.72, 1]
+      fontSize: 24
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 7320000681149000021
+    Tag:
+      tag: StatLine5
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7320000681149000012
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.8, 0.06]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.14, 0.07, 0.1, 1]
+      text: ''
+      color: [0.85, 0.8, 0.72, 1]
+      fontSize: 24
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 7320000681149000022
+    Tag:
+      tag: StatLine4
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7320000681149000012
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.8, 0.06]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.14, 0.07, 0.1, 1]
+      text: ''
+      color: [0.85, 0.8, 0.72, 1]
+      fontSize: 24
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 7320000681149000023
+    Tag:
+      tag: StatLine3
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7320000681149000012
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.8, 0.06]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.14, 0.07, 0.1, 1]
+      text: ''
+      color: [0.85, 0.8, 0.72, 1]
+      fontSize: 24
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 7320000681149000024
+    Tag:
+      tag: StatLine2
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7320000681149000012
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.8, 0.06]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.14, 0.07, 0.1, 1]
+      text: ''
+      color: [0.85, 0.8, 0.72, 1]
+      fontSize: 24
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 7320000681149000025
+    Tag:
+      tag: StatLine1
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7320000681149000012
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.8, 0.06]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.14, 0.07, 0.1, 1]
+      text: ''
+      color: [0.85, 0.8, 0.72, 1]
+      fontSize: 24
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 7320000681149000026
+    Tag:
+      tag: ResultTitle
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7320000681149000012
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 0.15]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.14, 0.07, 0.1, 1]
+      text: 'THE SHRINE IS FREE'
+      color: [1, 0.93, 0.7, 1]
+      fontSize: 64
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: MedievalSharp

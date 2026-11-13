@@ -1,0 +1,12 @@
+# The Sunken Shrine, the hall: the hero walks out by the east exit into the armoury and stands there facing east, the
+# way it walked.
+scene: ../../../samples/sunken_shrine/scenes/room_1.owl
+steps:
+  - frames: 5
+  - input: {key: D, frames: 40}
+  - input: {key: W, frames: 27}
+  - input: {key: D, frames: 52}
+  - frames: 60
+  - expect: {gamestate: shrine_room, equals: 3}
+  - expect: {gamestate: shrine_face_x, equals: 1}
+  - expect: {gamestate: shrine_face_y, equals: 0}

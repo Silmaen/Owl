@@ -1,0 +1,55 @@
+FormatVersion: 1
+# Actions of Lunar Lander, on top of the built-in ones (the `ui_*` actions drive the menus). Read by
+# scripts/game/landing.owlvs.
+actions:
+  - name: thrust
+    type: axis
+    bindings:
+      - {key: Space}
+      - {mouse_button: Left}
+      - {gamepad_axis: right_trigger}
+      - {gamepad_button: A}
+  - name: attitude
+    type: vector
+    bindings:
+      - {key: D, component: x}
+      - {key: A, component: x, scale: -1}
+      - {key: S, component: y}
+      - {key: W, component: y, scale: -1}
+      - {gamepad_stick: left}
+  - name: rcs
+    type: vector
+    bindings:
+      - {key: Right, component: x}
+      - {key: Left, component: x, scale: -1}
+      - {key: Down, component: y}
+      - {key: Up, component: y, scale: -1}
+      - {gamepad_button: DpadRight, component: x}
+      - {gamepad_button: DpadLeft, component: x, scale: -1}
+      - {gamepad_button: DpadDown, component: y}
+      - {gamepad_button: DpadUp, component: y, scale: -1}
+  - name: camera_orbit
+    type: vector
+    bindings:
+      - {key: E, component: x}
+      - {key: Q, component: x, scale: -1}
+      - {key: F, component: y}
+      - {key: R, component: y, scale: -1}
+      - {gamepad_stick: right}
+  - name: camera_zoom
+    type: axis
+    bindings:
+      - {key: X}
+      - {key: Z, scale: -1}
+      - {gamepad_button: RightBumper}
+      - {gamepad_button: LeftBumper, scale: -1}
+  - name: camera_drag
+    type: button
+    bindings:
+      - {mouse_button: Right}
+  - name: pause
+    type: button
+    bindings:
+      - {key: Escape}
+      - {key: P}
+      - {gamepad_button: Start}

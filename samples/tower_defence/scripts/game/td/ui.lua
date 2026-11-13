@@ -11,10 +11,14 @@ function UI.set_text(key, text)
     end
 end
 
+---@param id any
+---@param visible any
 function UI.show(id, visible)
     if id ~= nil and id ~= 0 then ui.set_visible(id, visible) end
 end
 
+---@param text any
+---@param seconds any
 function UI.message(text, seconds)
     UI.show(S.hud.briefing, false)
     UI.set_text("message", text)
@@ -22,6 +26,7 @@ function UI.message(text, seconds)
     S.message_clock = seconds or 2.0
 end
 
+---@param path any
 function UI.play(path)
     sound.play(path)
     local caption = C.CAPTIONS[path]
@@ -31,6 +36,7 @@ function UI.play(path)
     end
 end
 
+---@return nil
 function UI.mirror()
     gamestate.set("tower_gold", S.gold)
     gamestate.set("tower_lives", math.max(0, S.lives_left))
@@ -76,6 +82,7 @@ function UI.next_change()
     return nil
 end
 
+---@return nil
 function UI.update_hud()
     local change = UI.next_change()
     local phase = Fx.night and "Night" or "Day"

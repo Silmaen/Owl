@@ -1,0 +1,385 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: levels, type: int, default: 6, min: 1}
+    - {name: names, type: strings, default: 'FIRST CROSSING, MILL CREEK, LONG REACH, DEEP GORGE, THE STEP, GREAT RIVER'}
+    - {name: sweep, type: color, default: '0.32, 0.18, 0.08, 1'}
+    - {name: leaving, type: bool, default: false, exposed: false}
+  functions:
+    - name: go
+      inputs: [{name: scene_path, type: string}, {name: jingle, type: boolean}]
+      outputs: []
+  nodes:
+    - id: 6530000000000000001
+      type: event.on_create
+      position: [0, 0]
+    - id: 6530000000000000002
+      type: call.ui.is_transition_active
+      position: [-60, 300]
+    - id: 6530000000000000003
+      type: logic.not
+      position: [100, 150]
+    - id: 6530000000000000004
+      type: flow.branch
+      position: [300, 0]
+    - id: 6530000000000000005
+      type: var.get
+      position: [440, 150]
+      values:
+        variable: sweep
+    - id: 6530000000000000006
+      type: call.ui.transition_play
+      position: [600, 0]
+      values:
+        duration: 0.5
+        kind: wipe_left
+    - id: 6530000000000000007
+      type: flow.sequence
+      position: [900, 0]
+    - id: 6530000000000000008
+      type: var.get
+      position: [1040, 150]
+      values:
+        variable: levels
+    - id: 6530000000000000009
+      type: flow.for
+      position: [1200, 0]
+      values:
+        First: 1
+    - id: 6530000000000000010
+      type: text.concat
+      position: [1740, 300]
+      values:
+        A: LevelButton
+    - id: 6530000000000000011
+      type: text.concat
+      position: [1340, 150]
+      values:
+        A: bridge_stars_
+    - id: 6530000000000000012
+      type: call.settings.get
+      position: [1500, 0]
+      values:
+        default: 0
+    - id: 6530000000000000013
+      type: math.subtract
+      position: [1440, 300]
+      values:
+        B: 1
+    - id: 6530000000000000014
+      type: text.concat
+      position: [1600, 150]
+      values:
+        A: bridge_done_
+    - id: 6530000000000000015
+      type: call.settings.get
+      position: [1800, 0]
+      values:
+        default: false
+    - id: 6530000000000000016
+      type: compare.equal
+      position: [1500, 530]
+      values:
+        B: 1
+    - id: 6530000000000000017
+      type: logic.or
+      position: [1660, 380]
+    - id: 6530000000000000018
+      type: var.get
+      position: [1260, 760]
+      values:
+        variable: names
+    - id: 6530000000000000019
+      type: table.get_item
+      position: [1420, 610]
+    - id: 6530000000000000020
+      type: text.format
+      position: [1620, 460]
+      values:
+        Format: '%d. %s   %d / 3'
+    - id: 6530000000000000021
+      type: text.format
+      position: [1700, 540]
+      values:
+        Format: '%d. LOCKED'
+    - id: 6530000000000000022
+      type: logic.select
+      position: [1860, 230]
+    - id: 6530000000000000023
+      type: call.scene.find_entity
+      position: [1900, 150]
+    - id: 6530000000000000024
+      type: call.ui.set_text
+      position: [2100, 0]
+    - id: 6530000000000000025
+      type: text.concat
+      position: [2340, 300]
+      values:
+        A: LevelButton
+    - id: 6530000000000000026
+      type: call.scene.find_entity
+      position: [2500, 150]
+    - id: 6530000000000000027
+      type: compare.equal
+      position: [2340, 380]
+      values:
+        B: 1
+    - id: 6530000000000000028
+      type: math.subtract
+      position: [2040, 300]
+      values:
+        B: 1
+    - id: 6530000000000000029
+      type: text.concat
+      position: [2200, 150]
+      values:
+        A: bridge_done_
+    - id: 6530000000000000030
+      type: call.settings.get
+      position: [2400, 0]
+      values:
+        default: false
+    - id: 6530000000000000031
+      type: logic.or
+      position: [2500, 230]
+    - id: 6530000000000000032
+      type: call.ui.set_button_enabled
+      position: [2700, 0]
+    - id: 6530000000000000033
+      type: call.gamestate.set
+      position: [3000, 0]
+      values:
+        key: bridge_select
+        value: true
+    - id: 6530000000000000034
+      type: event.on_update
+      position: [0, 420]
+    - id: 6530000000000000035
+      type: var.get
+      position: [-300, 870]
+      values:
+        variable: leaving
+    - id: 6530000000000000036
+      type: logic.not
+      position: [-140, 720]
+    - id: 6530000000000000037
+      type: call.input.is_action_just_pressed
+      position: [-100, 800]
+      values:
+        action: ui_cancel
+    - id: 6530000000000000038
+      type: logic.and
+      position: [60, 570]
+    - id: 6530000000000000039
+      type: flow.branch
+      position: [300, 420]
+    - id: 6530000000000000040
+      type: func.call
+      position: [600, 420]
+      values:
+        function: go
+        jingle: false
+        scene_path: scenes/title.owl
+    - id: 6530000000000000041
+      type: event.custom
+      position: [0, 840]
+      values:
+        function: on_level_1_clicked
+    - id: 6530000000000000042
+      type: func.call
+      position: [300, 840]
+      values:
+        function: go
+        jingle: true
+        scene_path: scenes/level_1.owl
+    - id: 6530000000000000043
+      type: event.custom
+      position: [0, 1260]
+      values:
+        function: on_level_2_clicked
+    - id: 6530000000000000044
+      type: func.call
+      position: [300, 1260]
+      values:
+        function: go
+        jingle: true
+        scene_path: scenes/level_2.owl
+    - id: 6530000000000000045
+      type: event.custom
+      position: [0, 1680]
+      values:
+        function: on_level_3_clicked
+    - id: 6530000000000000046
+      type: func.call
+      position: [300, 1680]
+      values:
+        function: go
+        jingle: true
+        scene_path: scenes/level_3.owl
+    - id: 6530000000000000047
+      type: event.custom
+      position: [0, 2100]
+      values:
+        function: on_level_4_clicked
+    - id: 6530000000000000048
+      type: func.call
+      position: [300, 2100]
+      values:
+        function: go
+        jingle: true
+        scene_path: scenes/level_4.owl
+    - id: 6530000000000000049
+      type: event.custom
+      position: [0, 2520]
+      values:
+        function: on_level_5_clicked
+    - id: 6530000000000000050
+      type: func.call
+      position: [300, 2520]
+      values:
+        function: go
+        jingle: true
+        scene_path: scenes/level_5.owl
+    - id: 6530000000000000051
+      type: event.custom
+      position: [0, 2940]
+      values:
+        function: on_level_6_clicked
+    - id: 6530000000000000052
+      type: func.call
+      position: [300, 2940]
+      values:
+        function: go
+        jingle: true
+        scene_path: scenes/level_6.owl
+    - id: 6530000000000000053
+      type: event.custom
+      position: [0, 3360]
+      values:
+        function: on_back_clicked
+    - id: 6530000000000000054
+      type: func.call
+      position: [300, 3360]
+      values:
+        function: go
+        jingle: false
+        scene_path: scenes/title.owl
+    - id: 6530000000000000055
+      type: func.entry
+      position: [0, 3780]
+      values:
+        function: go
+    - id: 6530000000000000056
+      type: var.get
+      position: [140, 3930]
+      values:
+        variable: leaving
+    - id: 6530000000000000057
+      type: flow.branch
+      position: [300, 3780]
+    - id: 6530000000000000058
+      type: flow.branch
+      position: [600, 3780]
+    - id: 6530000000000000059
+      type: var.set
+      position: [900, 3780]
+      values:
+        Value: true
+        variable: leaving
+    - id: 6530000000000000060
+      type: call.sound.play
+      position: [1200, 3780]
+      values:
+        asset_path: sounds/ui/start.wav
+    - id: 6530000000000000061
+      type: var.get
+      position: [1340, 3930]
+      values:
+        variable: sweep
+    - id: 6530000000000000062
+      type: call.scene.transition_to
+      position: [1500, 3780]
+      values:
+        duration: 0.45
+        kind: wipe_left
+  links:
+    - {from: 6530000000000000002, fromPin: active, to: 6530000000000000003, toPin: A}
+    - {from: 6530000000000000003, fromPin: Result, to: 6530000000000000004, toPin: Condition}
+    - {from: 6530000000000000001, fromPin: Then, to: 6530000000000000004, toPin: Exec}
+    - {from: 6530000000000000005, fromPin: Value, to: 6530000000000000006, toPin: rgba}
+    - {from: 6530000000000000004, fromPin: True, to: 6530000000000000006, toPin: Exec}
+    - {from: 6530000000000000004, fromPin: False, to: 6530000000000000007, toPin: Exec}
+    - {from: 6530000000000000006, fromPin: Then, to: 6530000000000000007, toPin: Exec}
+    - {from: 6530000000000000008, fromPin: Value, to: 6530000000000000009, toPin: Last}
+    - {from: 6530000000000000007, fromPin: Then 1, to: 6530000000000000009, toPin: Exec}
+    - {from: 6530000000000000009, fromPin: Index, to: 6530000000000000010, toPin: B}
+    - {from: 6530000000000000009, fromPin: Index, to: 6530000000000000011, toPin: B}
+    - {from: 6530000000000000011, fromPin: Result, to: 6530000000000000012, toPin: key}
+    - {from: 6530000000000000009, fromPin: Index, to: 6530000000000000013, toPin: A}
+    - {from: 6530000000000000013, fromPin: Result, to: 6530000000000000014, toPin: B}
+    - {from: 6530000000000000014, fromPin: Result, to: 6530000000000000015, toPin: key}
+    - {from: 6530000000000000009, fromPin: Index, to: 6530000000000000016, toPin: A}
+    - {from: 6530000000000000016, fromPin: Result, to: 6530000000000000017, toPin: A}
+    - {from: 6530000000000000015, fromPin: value, to: 6530000000000000017, toPin: B}
+    - {from: 6530000000000000018, fromPin: Value, to: 6530000000000000019, toPin: List}
+    - {from: 6530000000000000009, fromPin: Index, to: 6530000000000000019, toPin: Index}
+    - {from: 6530000000000000009, fromPin: Index, to: 6530000000000000020, toPin: A}
+    - {from: 6530000000000000019, fromPin: Result, to: 6530000000000000020, toPin: B}
+    - {from: 6530000000000000012, fromPin: value, to: 6530000000000000020, toPin: C}
+    - {from: 6530000000000000009, fromPin: Index, to: 6530000000000000021, toPin: A}
+    - {from: 6530000000000000017, fromPin: Result, to: 6530000000000000022, toPin: Condition}
+    - {from: 6530000000000000020, fromPin: Result, to: 6530000000000000022, toPin: True}
+    - {from: 6530000000000000021, fromPin: Result, to: 6530000000000000022, toPin: False}
+    - {from: 6530000000000000010, fromPin: Result, to: 6530000000000000023, toPin: name}
+    - {from: 6530000000000000023, fromPin: entity_id, to: 6530000000000000024, toPin: entity_id}
+    - {from: 6530000000000000022, fromPin: Result, to: 6530000000000000024, toPin: text}
+    - {from: 6530000000000000009, fromPin: Index, to: 6530000000000000025, toPin: B}
+    - {from: 6530000000000000025, fromPin: Result, to: 6530000000000000026, toPin: name}
+    - {from: 6530000000000000009, fromPin: Index, to: 6530000000000000027, toPin: A}
+    - {from: 6530000000000000009, fromPin: Index, to: 6530000000000000028, toPin: A}
+    - {from: 6530000000000000028, fromPin: Result, to: 6530000000000000029, toPin: B}
+    - {from: 6530000000000000029, fromPin: Result, to: 6530000000000000030, toPin: key}
+    - {from: 6530000000000000027, fromPin: Result, to: 6530000000000000031, toPin: A}
+    - {from: 6530000000000000030, fromPin: value, to: 6530000000000000031, toPin: B}
+    - {from: 6530000000000000026, fromPin: entity_id, to: 6530000000000000032, toPin: entity_id}
+    - {from: 6530000000000000031, fromPin: Result, to: 6530000000000000032, toPin: enabled}
+    - {from: 6530000000000000009, fromPin: Body, to: 6530000000000000015, toPin: Exec}
+    - {from: 6530000000000000015, fromPin: Then, to: 6530000000000000012, toPin: Exec}
+    - {from: 6530000000000000012, fromPin: Then, to: 6530000000000000024, toPin: Exec}
+    - {from: 6530000000000000024, fromPin: Then, to: 6530000000000000030, toPin: Exec}
+    - {from: 6530000000000000030, fromPin: Then, to: 6530000000000000032, toPin: Exec}
+    - {from: 6530000000000000009, fromPin: Completed, to: 6530000000000000033, toPin: Exec}
+    - {from: 6530000000000000035, fromPin: Value, to: 6530000000000000036, toPin: A}
+    - {from: 6530000000000000036, fromPin: Result, to: 6530000000000000038, toPin: A}
+    - {from: 6530000000000000037, fromPin: pressed, to: 6530000000000000038, toPin: B}
+    - {from: 6530000000000000038, fromPin: Result, to: 6530000000000000039, toPin: Condition}
+    - {from: 6530000000000000034, fromPin: Then, to: 6530000000000000039, toPin: Exec}
+    - {from: 6530000000000000039, fromPin: True, to: 6530000000000000040, toPin: Exec}
+    - {from: 6530000000000000041, fromPin: Then, to: 6530000000000000042, toPin: Exec}
+    - {from: 6530000000000000043, fromPin: Then, to: 6530000000000000044, toPin: Exec}
+    - {from: 6530000000000000045, fromPin: Then, to: 6530000000000000046, toPin: Exec}
+    - {from: 6530000000000000047, fromPin: Then, to: 6530000000000000048, toPin: Exec}
+    - {from: 6530000000000000049, fromPin: Then, to: 6530000000000000050, toPin: Exec}
+    - {from: 6530000000000000051, fromPin: Then, to: 6530000000000000052, toPin: Exec}
+    - {from: 6530000000000000053, fromPin: Then, to: 6530000000000000054, toPin: Exec}
+    - {from: 6530000000000000056, fromPin: Value, to: 6530000000000000057, toPin: Condition}
+    - {from: 6530000000000000055, fromPin: jingle, to: 6530000000000000058, toPin: Condition}
+    - {from: 6530000000000000055, fromPin: Then, to: 6530000000000000057, toPin: Exec}
+    - {from: 6530000000000000057, fromPin: False, to: 6530000000000000059, toPin: Exec}
+    - {from: 6530000000000000059, fromPin: Then, to: 6530000000000000058, toPin: Exec}
+    - {from: 6530000000000000058, fromPin: True, to: 6530000000000000060, toPin: Exec}
+    - {from: 6530000000000000055, fromPin: scene_path, to: 6530000000000000062, toPin: scene_path}
+    - {from: 6530000000000000061, fromPin: Value, to: 6530000000000000062, toPin: rgba}
+    - {from: 6530000000000000058, fromPin: False, to: 6530000000000000062, toPin: Exec}
+    - {from: 6530000000000000060, fromPin: Then, to: 6530000000000000062, toPin: Exec}
+  groups:
+    - {id: 6530000000000000063, title: on_create, position: [-100, -60], size: [3400, 580], color: Red}
+    - {id: 6530000000000000064, title: on_update, position: [-180, 360], size: [2180, 580], color: Red}
+    - {id: 6530000000000000065, title: on_level_1_clicked, position: [-340, 780], size: [940, 230], color: Red}
+    - {id: 6530000000000000066, title: on_level_2_clicked, position: [-40, 1200], size: [640, 200], color: Red}
+    - {id: 6530000000000000067, title: on_level_3_clicked, position: [-40, 1620], size: [640, 200], color: Red}
+    - {id: 6530000000000000068, title: on_level_4_clicked, position: [-40, 2040], size: [640, 200], color: Red}
+    - {id: 6530000000000000069, title: on_level_5_clicked, position: [-40, 2460], size: [640, 200], color: Red}
+    - {id: 6530000000000000070, title: on_level_6_clicked, position: [-40, 2880], size: [640, 200], color: Red}
+    - {id: 6530000000000000071, title: on_back_clicked, position: [-40, 3300], size: [640, 200], color: Red}
+    - {id: 6530000000000000072, title: go, position: [-40, 3720], size: [1840, 350], color: Red}

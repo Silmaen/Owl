@@ -15,42 +15,57 @@ local function rows()
     return keys
 end
 
--- Number of levels.
+--- Number of levels.
+---@return any result
 function L.count()
     return #rows()
 end
 
--- Scene of level `i`, nil past the last one.
+--- Scene of level `i`, nil past the last one.
+---@param i any
+---@return any result
 function L.scene(i)
     local key = rows()[i]
     return key and datatable.get(L.TABLE, key, "scene") or nil
 end
 
--- Name of level `i` ("" when there is none).
+--- Name of level `i` ("" when there is none).
+---@param i any
+---@return any result
 function L.name(i)
     local key = rows()[i]
     return key and datatable.get(L.TABLE, key, "name") or ""
 end
 
--- Scene played after level `i`: the next level, the victory screen after the last one.
+--- Scene played after level `i`: the next level, the victory screen after the last one.
+---@param i any
+---@return any result
 function L.next_scene(i)
     return L.scene(i + 1) or L.VICTORY
 end
 
+---@param i any
+---@return any result
 function L.done_key(i)
     return string.format("sokoban_done_%02d", i)
 end
 
+---@param i any
+---@return any result
 function L.best_key(i)
     return string.format("sokoban_best_%02d", i)
 end
 
--- Whether level `i` was solved once.
+--- Whether level `i` was solved once.
+---@param i any
+---@return any result
 function L.done(i)
     return settings.get(L.done_key(i), false)
 end
 
--- Fewest moves of level `i` (0 when not done).
+--- Fewest moves of level `i` (0 when not done).
+---@param i any
+---@return any result
 function L.best(i)
     return settings.get(L.best_key(i), 0)
 end

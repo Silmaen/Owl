@@ -3,12 +3,13 @@
 Write the scenes and the data of The Moon Lantern, the point-and-click sample game, into ``samples/point_and_click/``:
 
 - ``scenes/``: the three rooms (``cottage``, ``glade``, ``bridge``) from the layout of ``rooms.py``, the ``title``,
-  the ``settings`` and the ``ending``;
+  the ``ending``, and through ``generate_menus.py`` the ``title`` and the ``settings``;
 - ``huds/play.owlhud``: the HUD of the rooms (the name under the cursor, the hero's remarks, the inventory, the
   dialogue panel and the pause window);
 - ``dialogues/barnaby.owldlg`` and ``dialogues/troll.owldlg``, ``sequences/ending.owlseq``;
 - ``localisation.yml`` (English and French, from ``texts.py``), ``game_settings.yml``, ``input_actions.yml``;
-- an ``.owlmeta`` beside each picture (nearest filtering: the art is pixel art), its GUID derived from its path.
+- an ``.owlmeta`` beside each picture (nearest filtering: the art is pixel art), its GUID kept, or derived from its
+  path for a new file.
 
 A room is the backdrop and its walk-behind masks and props in the depth-tested 2D layer ``world``, the 3D actors in
 the mesh layer ``actors`` (orthographic camera, so the floor of a room is the plane of its backdrop), the cursor in the
@@ -63,7 +64,12 @@ ENEMY = "EnemyArmature|EnemyArmature|EnemyArmature|"
 
 
 def guid(path: str) -> str:
-    """A stable GUID for an asset of the project."""
+    """The GUID of an asset of the project: the one of its sidecar, else one derived from its path."""
+    meta = ROOT / f"{path}.owlmeta"
+    if meta.exists():
+        for line in meta.read_text().splitlines():
+            if line.startswith("Guid: "):
+                return line.removeprefix("Guid: ").strip()
     return hashlib.sha1(f"point_and_click/{path}".encode()).hexdigest()[:16]
 
 
@@ -134,6 +140,10 @@ def looping(texture: str, columns: int, duration: float) -> str:
 def layer(name: str) -> str:
     """The layer of the renderer stack that draws the entity."""
     return f"RendererTag:\n  Name: {name}\n"
+
+
+ROOM_NAV = "NavMeshVolume:\n  size: [40, 40, 40]\n  sources: WalkAreas\n"
+"""The navigation mesh of a room, read from the floors of its walk area."""
 
 
 def walk_area(room: Room) -> str:
@@ -382,6 +392,8 @@ def room_scene(room: Room, base: int, script: str, ambient: str, build_extra=Non
         scene_script(script) + "EnabledRenderers:\n- {Name: actors, Enabled: true}\n- {Name: world, Enabled: "
         "true}\n- {Name: cursor, Enabled: true}\n"
     )
+    # The navigation mesh of the room, baked from its walk area when the room starts (`adventure.lua`).
+    entities.add("RoomNav", [ROOM_NAV])
     return y.scene(room.name, entities, ref("huds/play.owlhud"), header)
 
 
@@ -548,74 +560,6 @@ def menu_scene(name: str, entities: y.Entities, script: str) -> str:
     return y.scene(name, entities, "", header)
 
 
-def title_scene() -> str:
-    """Title: the glade at night, the hero, the name of the tale and four buttons."""
-    entities = y.Entities(9400000000000000000)
-    menu_world(entities, "textures/rooms/title.png", (250, 168))
-    entities.add("Music", [sound("sounds/music.wav", "Music", 0.45)])
-    root = entities.add("MenuCanvas", [y.canvas()])
-    heading = entities.add(
-        "TitleBlock", [y.rect((0.5, 0), (0.9, 0.26), (0, 24), WIDE), y.layout("Column", 2)], parent=root
-    )
-    entities.add("Tagline", [y.child_rect((1, 0.25)), text("title.tagline", 30)], parent=heading)
-    entities.add("TitleText", [y.child_rect((1, 0.7)), text("title.name", 92, GOLD)], parent=heading)
-    panel = entities.add(
-        "ButtonPanel",
-        [
-            y.rect((0, 1), (0.42, 0.4), (0.05, -0.05), offset_units=("ScreenHeight", "ScreenHeight")),
-            y.layout("Column", 2),
-        ],
-        parent=root,
-    )
-    for index, (tag, label, callback) in reversed(
-        list(
-            enumerate(
-                [
-                    ("NewButton", "title.new", "on_new_clicked"),
-                    ("ContinueButton", "title.continue", "on_continue_clicked"),
-                    ("SettingsButton", "title.settings", "on_settings_clicked"),
-                    ("QuitButton", "title.quit", "on_quit_clicked"),
-                ]
-            )
-        )
-    ):
-        button(entities, panel, tag, label, callback, (0.95, 0.22), initial=index == 0)
-    return menu_scene("title", entities, "scripts/ui/title.lua")
-
-
-def settings_scene() -> str:
-    """Settings: the volumes, the language, the subtitles; Back saves them."""
-    entities = y.Entities(9410000000000000000)
-    menu_world(entities, "textures/rooms/title.png", None, 0.85)
-    root = entities.add("SettingsCanvas", [y.canvas()])
-    panel = entities.add(
-        "SettingsList",
-        [y.rect((0.5, 0.5), (1.0, 0.9)), y.panel(NIGHT_PANEL, GOLD, 2), y.layout("Column", 6, 14)],
-        parent=root,
-    )
-
-    def slider(callback: str, initial: bool) -> list[str]:
-        bar = y.slider(callback, 1.0, (0.12, 0.08, 0.1, 1), GOLD, PARCHMENT)
-        return [y.child_rect((0.84, 0.05)), bar, y.focus(initial, True, "", GOLD, 3)]
-
-    rows: list[tuple[str, list[str]]] = [
-        ("SettingsTitle", [y.child_rect((0.9, 0.12)), text("settings.title", 54, GOLD)]),
-        ("MasterLabel", [y.child_rect((0.9, 0.06)), text("", 28)]),
-        ("MasterSlider", slider("on_master_changed", True)),
-        ("MusicLabel", [y.child_rect((0.9, 0.06)), text("", 28)]),
-        ("MusicSlider", slider("on_music_changed", False)),
-        ("EffectsLabel", [y.child_rect((0.9, 0.06)), text("", 28)]),
-        ("EffectsSlider", slider("on_effects_changed", False)),
-    ]
-    button(entities, panel, "BackButton", "settings.back", "go_back", (0.6, 0.075), font_size=28)
-    button(entities, panel, "ResetButton", "settings.reset", "on_reset_clicked", (0.6, 0.075), font_size=28)
-    button(entities, panel, "SubtitlesButton", "", "on_subtitles_clicked", (0.6, 0.075), font_size=28)
-    button(entities, panel, "LanguageButton", "", "on_language_clicked", (0.6, 0.075), font_size=28)
-    for tag, components in reversed(rows):
-        entities.add(tag, components, parent=panel)
-    return menu_scene("settings", entities, "scripts/ui/settings.lua")
-
-
 def ending_scene() -> str:
     """Ending: the cottage, the lantern lit, the camera closing in while three lines tell the end."""
     entities = y.Entities(9420000000000000000)
@@ -695,7 +639,7 @@ def ending_scene() -> str:
         parent=root,
         visible=False,
     )
-    return menu_scene("ending", entities, "scripts/ui/ending.lua")
+    return menu_scene("ending", entities, "scripts/ui/ending.owlvs")
 
 
 # --- data ----------------------------------------------------------------------------------------------------------
@@ -902,18 +846,19 @@ def main() -> None:
     """Write every scene and data file, then the sidecars."""
     write(
         "scenes/cottage.owl",
-        room_scene(rooms.COTTAGE, 9100000000000000000, "scripts/rooms/cottage.lua", "sounds/fire.wav", cottage_extra),
+        room_scene(rooms.COTTAGE, 9100000000000000000, "scripts/rooms/cottage.owlvs", "sounds/fire.wav", cottage_extra),
     )
     write(
         "scenes/glade.owl",
-        room_scene(rooms.GLADE, 9110000000000000000, "scripts/rooms/glade.lua", "sounds/fireflies.wav"),
+        room_scene(rooms.GLADE, 9110000000000000000, "scripts/rooms/glade.owlvs", "sounds/fireflies.wav"),
     )
     write(
         "scenes/bridge.owl",
-        room_scene(rooms.BRIDGE, 9120000000000000000, "scripts/rooms/bridge.lua", "sounds/stream.wav", bridge_extra),
+        room_scene(rooms.BRIDGE, 9120000000000000000, "scripts/rooms/bridge.owlvs", "sounds/stream.wav", bridge_extra),
     )
-    write("scenes/title.owl", title_scene())
-    write("scenes/settings.owl", settings_scene())
+    from tools.samples.point_and_click import generate_menus
+
+    generate_menus.main()
     write("scenes/ending.owl", ending_scene())
     write("huds/play.owlhud", play_hud())
     write("dialogues/barnaby.owldlg", barnaby_dialogue())

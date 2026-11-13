@@ -1,0 +1,787 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: speed, type: float, default: 4.5, min: 0}
+    - {name: reach, type: float, default: 0.8, min: 0}
+    - {name: facing, type: vec2, default: '0, -1', exposed: false}
+    - {name: hurt_time, type: float, default: 1.2, exposed: false}
+    - {name: knock, type: vec2, default: '0, 0', exposed: false}
+    - {name: knock_time, type: float, default: 0, exposed: false}
+    - {name: strike_time, type: float, default: 0, exposed: false}
+  nodes:
+    - id: 6710000000000000001
+      type: event.on_tick
+      position: [0, 0]
+    - id: 6710000000000000002
+      type: call.input.get_action_vector
+      position: [0, 750]
+      values:
+        action: move
+    - id: 6710000000000000003
+      type: math.break_vector2
+      position: [160, 600]
+    - id: 6710000000000000004
+      type: math.negate
+      position: [360, 450]
+    - id: 6710000000000000005
+      type: math.make_vector2
+      position: [600, 300]
+    - id: 6710000000000000006
+      type: call.gamestate.get
+      position: [300, 0]
+      values:
+        default: play
+        key: shrine_state
+    - id: 6710000000000000007
+      type: compare.equal
+      position: [540, 300]
+      values:
+        B: play
+    - id: 6710000000000000008
+      type: call.gamestate.get
+      position: [600, 0]
+      values:
+        default: false
+        key: shrine_talking
+    - id: 6710000000000000009
+      type: logic.not
+      position: [540, 380]
+    - id: 6710000000000000010
+      type: logic.and
+      position: [700, 150]
+    - id: 6710000000000000011
+      type: flow.branch
+      position: [900, 0]
+    - id: 6710000000000000012
+      type: var.get
+      position: [720, 380]
+      values:
+        variable: speed
+    - id: 6710000000000000013
+      type: math.vector2_scale
+      position: [880, 150]
+    - id: 6710000000000000014
+      type: call.physics.set_velocity
+      position: [1200, 0]
+    - id: 6710000000000000015
+      type: math.vector2_length
+      position: [1140, 300]
+    - id: 6710000000000000016
+      type: compare.greater
+      position: [1300, 150]
+      values:
+        B: 0.3
+    - id: 6710000000000000017
+      type: flow.branch
+      position: [1500, 0]
+    - id: 6710000000000000018
+      type: math.negate
+      position: [1200, 450]
+    - id: 6710000000000000019
+      type: math.make_vector2
+      position: [1360, 300]
+    - id: 6710000000000000020
+      type: lua.pure
+      position: [1560, 150]
+      values:
+        function: axis
+        module: scripts.game.shrine
+    - id: 6710000000000000021
+      type: var.set
+      position: [1800, 0]
+      values:
+        variable: facing
+    - id: 6710000000000000022
+      type: call.physics.set_velocity
+      position: [2100, 0]
+      values:
+        velocity: '0, 0'
+    - id: 6710000000000000023
+      type: event.on_update
+      position: [0, 420]
+    - id: 6710000000000000024
+      type: var.get
+      position: [2700, 1170]
+      values:
+        variable: facing
+    - id: 6710000000000000025
+      type: math.break_vector2
+      position: [2860, 1020]
+    - id: 6710000000000000026
+      type: call.transform.get_position
+      position: [2940, 1100]
+    - id: 6710000000000000027
+      type: math.break_vector3
+      position: [3100, 950]
+    - id: 6710000000000000028
+      type: var.get
+      position: [2900, 1100]
+      values:
+        variable: reach
+    - id: 6710000000000000029
+      type: math.multiply
+      position: [3060, 870]
+    - id: 6710000000000000030
+      type: math.add
+      position: [3300, 720]
+    - id: 6710000000000000031
+      type: var.get
+      position: [2980, 1100]
+      values:
+        variable: reach
+    - id: 6710000000000000032
+      type: math.multiply
+      position: [3140, 950]
+    - id: 6710000000000000033
+      type: math.add
+      position: [3340, 800]
+    - id: 6710000000000000034
+      type: math.make_vector2
+      position: [3580, 570]
+    - id: 6710000000000000035
+      type: var.get
+      position: [-60, 720]
+      values:
+        variable: hurt_time
+    - id: 6710000000000000036
+      type: math.subtract
+      position: [100, 570]
+    - id: 6710000000000000037
+      type: var.set
+      position: [300, 420]
+      values:
+        variable: hurt_time
+    - id: 6710000000000000038
+      type: var.get
+      position: [240, 720]
+      values:
+        variable: strike_time
+    - id: 6710000000000000039
+      type: math.subtract
+      position: [400, 570]
+    - id: 6710000000000000040
+      type: var.set
+      position: [600, 420]
+      values:
+        variable: strike_time
+    - id: 6710000000000000041
+      type: call.gamestate.set
+      position: [900, 420]
+      values:
+        key: shrine_face_x
+    - id: 6710000000000000042
+      type: call.gamestate.set
+      position: [1200, 420]
+      values:
+        key: shrine_face_y
+    - id: 6710000000000000043
+      type: call.gamestate.set
+      position: [1500, 420]
+      values:
+        key: shrine_x
+    - id: 6710000000000000044
+      type: call.gamestate.set
+      position: [1800, 420]
+      values:
+        key: shrine_y
+    - id: 6710000000000000045
+      type: call.scene.find_entity
+      position: [1940, 570]
+      values:
+        name: Player
+    - id: 6710000000000000046
+      type: call.scene.find_entity
+      position: [1940, 650]
+      values:
+        name: Slash
+    - id: 6710000000000000047
+      type: call.scene.find_entity
+      position: [1940, 730]
+      values:
+        name: Blade
+    - id: 6710000000000000049
+      type: var.get
+      position: [1940, 890]
+      values:
+        variable: facing
+    - id: 6710000000000000050
+      type: var.get
+      position: [1940, 970]
+      values:
+        variable: reach
+    - id: 6710000000000000051
+      type: var.get
+      position: [1940, 1050]
+      values:
+        variable: strike_time
+    - id: 6710000000000000052
+      type: lua.call
+      position: [2100, 420]
+      values:
+        function: pose
+        length: 0.3
+        module: scripts.game.shrine
+    - id: 6710000000000000053
+      type: var.get
+      position: [1800, 870]
+      values:
+        variable: hurt_time
+    - id: 6710000000000000059
+      type: call.entity.set_tint
+      position: [2400, 420]
+      values:
+        a: 1
+        r: 1
+    - id: 6710000000000000060
+      type: call.input.is_action_just_pressed
+      position: [3000, 870]
+      values:
+        action: attack
+    - id: 6710000000000000061
+      type: call.gamestate.get
+      position: [2700, 420]
+      values:
+        default: false
+        key: shrine_sword
+    - id: 6710000000000000062
+      type: logic.and
+      position: [3160, 720]
+    - id: 6710000000000000063
+      type: var.get
+      position: [2760, 1100]
+      values:
+        variable: strike_time
+    - id: 6710000000000000064
+      type: compare.less_equal
+      position: [2920, 950]
+      values:
+        B: 0
+    - id: 6710000000000000065
+      type: call.gamestate.get
+      position: [3000, 420]
+      values:
+        default: play
+        key: shrine_state
+    - id: 6710000000000000066
+      type: compare.equal
+      position: [2760, 1180]
+      values:
+        B: play
+    - id: 6710000000000000067
+      type: call.gamestate.get
+      position: [3300, 420]
+      values:
+        default: false
+        key: shrine_talking
+    - id: 6710000000000000068
+      type: logic.not
+      position: [2760, 1260]
+    - id: 6710000000000000069
+      type: logic.and
+      position: [2920, 1030]
+    - id: 6710000000000000070
+      type: logic.and
+      position: [3120, 800]
+    - id: 6710000000000000071
+      type: logic.and
+      position: [3360, 570]
+    - id: 6710000000000000072
+      type: flow.branch
+      position: [3600, 420]
+    - id: 6710000000000000073
+      type: call.physics.overlap_circle
+      position: [3900, 420]
+      values:
+        radius: 0.75
+    - id: 6710000000000000074
+      type: flow.for_each
+      position: [4200, 420]
+    - id: 6710000000000000075
+      type: var.set
+      position: [4500, 420]
+      values:
+        Value: 0.3
+        variable: strike_time
+    - id: 6710000000000000076
+      type: call.sound.play
+      position: [4800, 420]
+      values:
+        asset_path: sounds/game/sword.wav
+    - id: 6710000000000000077
+      type: call.entity.get_name
+      position: [4740, 720]
+    - id: 6710000000000000078
+      type: text.concat
+      position: [4900, 570]
+      values:
+        A: shrine_hit_
+    - id: 6710000000000000079
+      type: call.gamestate.set
+      position: [5100, 420]
+      values:
+        value: true
+    - id: 6710000000000000080
+      type: call.input.is_action_just_pressed
+      position: [5340, 720]
+      values:
+        action: use
+    - id: 6710000000000000081
+      type: call.gamestate.get
+      position: [5400, 420]
+      values:
+        default: play
+        key: shrine_state
+    - id: 6710000000000000082
+      type: compare.equal
+      position: [5340, 800]
+      values:
+        B: play
+    - id: 6710000000000000083
+      type: logic.and
+      position: [5500, 570]
+    - id: 6710000000000000084
+      type: flow.branch
+      position: [5700, 420]
+    - id: 6710000000000000085
+      type: call.physics.overlap_circle
+      position: [6000, 420]
+      values:
+        radius: 0.6
+    - id: 6710000000000000086
+      type: lua.pure
+      position: [6140, 570]
+      values:
+        function: usable
+        module: scripts.game.shrine
+    - id: 6710000000000000087
+      type: call.gamestate.set
+      position: [6300, 420]
+      values:
+        key: shrine_use
+    - id: 6710000000000000088
+      type: call.physics.overlap_circle
+      position: [6600, 420]
+      values:
+        radius: 0.6
+    - id: 6710000000000000089
+      type: lua.pure
+      position: [6740, 570]
+      values:
+        function: usable
+        module: scripts.game.shrine
+    - id: 6710000000000000090
+      type: call.gamestate.set
+      position: [6900, 420]
+      values:
+        key: shrine_use_name
+    - id: 6710000000000000091
+      type: call.gamestate.get
+      position: [7200, 420]
+      values:
+        default: false
+        key: shrine_talking
+    - id: 6710000000000000092
+      type: flow.branch
+      position: [7500, 420]
+    - id: 6710000000000000093
+      type: call.gamestate.set
+      position: [7800, 420]
+      values:
+        key: shrine_use
+        value: OldMan
+    - id: 6710000000000000094
+      type: math.make_vector2
+      position: [7940, 570]
+    - id: 6710000000000000095
+      type: call.physics.overlap_circle
+      position: [8100, 420]
+      values:
+        radius: 0.62
+    - id: 6710000000000000096
+      type: lua.pure
+      position: [8100, 870]
+      values:
+        function: creature
+        module: scripts.game.shrine
+    - id: 6710000000000000097
+      type: compare.not_equal
+      position: [8260, 720]
+      values:
+        B: none
+    - id: 6710000000000000098
+      type: var.get
+      position: [7860, 1100]
+      values:
+        variable: hurt_time
+    - id: 6710000000000000099
+      type: compare.less_equal
+      position: [8020, 950]
+      values:
+        B: 0
+    - id: 6710000000000000100
+      type: call.gamestate.get
+      position: [8400, 420]
+      values:
+        default: play
+        key: shrine_state
+    - id: 6710000000000000101
+      type: compare.equal
+      position: [8060, 1030]
+      values:
+        B: play
+    - id: 6710000000000000102
+      type: logic.and
+      position: [8220, 800]
+    - id: 6710000000000000103
+      type: logic.and
+      position: [8460, 570]
+    - id: 6710000000000000104
+      type: flow.branch
+      position: [8700, 420]
+    - id: 6710000000000000105
+      type: call.settings.get
+      position: [9000, 420]
+      values:
+        default: false
+        key: shrine_gentle
+    - id: 6710000000000000106
+      type: math.make_vector2
+      position: [9140, 570]
+    - id: 6710000000000000107
+      type: call.physics.overlap_circle
+      position: [9300, 420]
+      values:
+        radius: 0.62
+    - id: 6710000000000000108
+      type: lua.pure
+      position: [9000, 1170]
+      values:
+        function: creature
+        module: scripts.game.shrine
+    - id: 6710000000000000109
+      type: compare.equal
+      position: [9160, 1020]
+      values:
+        B: Guardian
+    - id: 6710000000000000110
+      type: logic.select
+      position: [9360, 870]
+      values:
+        False: 1
+        True: 2
+    - id: 6710000000000000111
+      type: logic.select
+      position: [9440, 570]
+      values:
+        False: 1
+        True: 2
+    - id: 6710000000000000112
+      type: var.set
+      position: [9600, 420]
+      values:
+        variable: hurt_time
+    - id: 6710000000000000113
+      type: call.gamestate.get
+      position: [9900, 420]
+      values:
+        default: 5
+        key: shrine_hearts
+    - id: 6710000000000000114
+      type: math.subtract
+      position: [9600, 720]
+    - id: 6710000000000000115
+      type: math.max
+      position: [9880, 570]
+      values:
+        A: 0
+    - id: 6710000000000000116
+      type: call.gamestate.set
+      position: [10200, 420]
+      values:
+        key: shrine_hearts
+    - id: 6710000000000000117
+      type: call.sound.play
+      position: [10500, 420]
+      values:
+        asset_path: sounds/game/hurt.wav
+    - id: 6710000000000000120
+      type: var.get
+      position: [1100, 300]
+      values:
+        variable: knock_time
+    - id: 6710000000000000121
+      type: compare.greater
+      position: [1100, 380]
+      values:
+        B: 0
+    - id: 6710000000000000122
+      type: flow.branch
+      position: [1050, 0]
+    - id: 6710000000000000123
+      type: var.get
+      position: [1100, 460]
+      values:
+        variable: knock
+    - id: 6710000000000000124
+      type: call.physics.set_velocity
+      position: [1200, -150]
+    - id: 6710000000000000125
+      type: var.get
+      position: [540, 720]
+      values:
+        variable: knock_time
+    - id: 6710000000000000126
+      type: math.subtract
+      position: [700, 570]
+    - id: 6710000000000000127
+      type: var.set
+      position: [750, 420]
+      values:
+        variable: knock_time
+    - id: 6710000000000000128
+      type: call.scene.find_entity
+      position: [800, 720]
+      values:
+        name: RoomCamera
+    - id: 6710000000000000129
+      type: lua.call
+      position: [820, 300]
+      values:
+        function: settle
+        module: scripts.game.shrine
+    - id: 6710000000000000130
+      type: lua.pure
+      position: [1960, 720]
+      values:
+        function: hurt_look
+        module: scripts.game.shrine
+    - id: 6710000000000000131
+      type: value.self
+      position: [10500, 720]
+    - id: 6710000000000000132
+      type: lua.pure
+      position: [10650, 570]
+      values:
+        function: knock
+        module: scripts.game.shrine
+        strength: 8
+        time: 0.15
+    - id: 6710000000000000133
+      type: var.set
+      position: [10800, 420]
+      values:
+        variable: knock
+    - id: 6710000000000000134
+      type: var.set
+      position: [11100, 420]
+      values:
+        Value: 0.15
+        variable: knock_time
+    - id: 6710000000000000135
+      type: lua.call
+      position: [11400, 420]
+      values:
+        amount: 0.5
+        function: jolt
+        module: scripts.game.shrine
+    - id: 6710000000000000136
+      type: event.on_create
+      position: [0, -600]
+    - id: 6710000000000000137
+      type: call.gamestate.get
+      position: [240, -520]
+      values:
+        default: 0
+        key: shrine_face_x
+    - id: 6710000000000000138
+      type: call.gamestate.get
+      position: [240, -440]
+      values:
+        default: -1
+        key: shrine_face_y
+    - id: 6710000000000000139
+      type: math.make_vector2
+      position: [560, -500]
+    - id: 6710000000000000140
+      type: var.set
+      position: [800, -600]
+      values:
+        variable: facing
+  links:
+    - {from: 6710000000000000002, fromPin: xy, to: 6710000000000000003, toPin: Value}
+    - {from: 6710000000000000003, fromPin: Y, to: 6710000000000000004, toPin: A}
+    - {from: 6710000000000000003, fromPin: X, to: 6710000000000000005, toPin: X}
+    - {from: 6710000000000000004, fromPin: Result, to: 6710000000000000005, toPin: Y}
+    - {from: 6710000000000000006, fromPin: value, to: 6710000000000000007, toPin: A}
+    - {from: 6710000000000000008, fromPin: value, to: 6710000000000000009, toPin: A}
+    - {from: 6710000000000000007, fromPin: Result, to: 6710000000000000010, toPin: A}
+    - {from: 6710000000000000009, fromPin: Result, to: 6710000000000000010, toPin: B}
+    - {from: 6710000000000000010, fromPin: Result, to: 6710000000000000011, toPin: Condition}
+    - {from: 6710000000000000001, fromPin: Then, to: 6710000000000000006, toPin: Exec}
+    - {from: 6710000000000000006, fromPin: Then, to: 6710000000000000008, toPin: Exec}
+    - {from: 6710000000000000008, fromPin: Then, to: 6710000000000000011, toPin: Exec}
+    - {from: 6710000000000000012, fromPin: Value, to: 6710000000000000013, toPin: Factor}
+    - {from: 6710000000000000005, fromPin: Result, to: 6710000000000000013, toPin: A}
+    - {from: 6710000000000000013, fromPin: Result, to: 6710000000000000014, toPin: velocity}
+    - {from: 6710000000000000005, fromPin: Result, to: 6710000000000000015, toPin: A}
+    - {from: 6710000000000000015, fromPin: Result, to: 6710000000000000016, toPin: A}
+    - {from: 6710000000000000016, fromPin: Result, to: 6710000000000000017, toPin: Condition}
+    - {from: 6710000000000000011, fromPin: True, to: 6710000000000000122, toPin: Exec}
+    - {from: 6710000000000000120, fromPin: Value, to: 6710000000000000121, toPin: A}
+    - {from: 6710000000000000121, fromPin: Result, to: 6710000000000000122, toPin: Condition}
+    - {from: 6710000000000000122, fromPin: False, to: 6710000000000000014, toPin: Exec}
+    - {from: 6710000000000000122, fromPin: True, to: 6710000000000000124, toPin: Exec}
+    - {from: 6710000000000000123, fromPin: Value, to: 6710000000000000124, toPin: velocity}
+    - {from: 6710000000000000014, fromPin: Then, to: 6710000000000000017, toPin: Exec}
+    - {from: 6710000000000000003, fromPin: Y, to: 6710000000000000018, toPin: A}
+    - {from: 6710000000000000003, fromPin: X, to: 6710000000000000019, toPin: X}
+    - {from: 6710000000000000018, fromPin: Result, to: 6710000000000000019, toPin: Y}
+    - {from: 6710000000000000019, fromPin: Result, to: 6710000000000000020, toPin: direction}
+    - {from: 6710000000000000020, fromPin: axis, to: 6710000000000000021, toPin: Value}
+    - {from: 6710000000000000017, fromPin: True, to: 6710000000000000021, toPin: Exec}
+    - {from: 6710000000000000011, fromPin: False, to: 6710000000000000022, toPin: Exec}
+    - {from: 6710000000000000024, fromPin: Value, to: 6710000000000000025, toPin: Value}
+    - {from: 6710000000000000026, fromPin: xyz, to: 6710000000000000027, toPin: Value}
+    - {from: 6710000000000000025, fromPin: X, to: 6710000000000000029, toPin: A}
+    - {from: 6710000000000000028, fromPin: Value, to: 6710000000000000029, toPin: B}
+    - {from: 6710000000000000027, fromPin: X, to: 6710000000000000030, toPin: A}
+    - {from: 6710000000000000029, fromPin: Result, to: 6710000000000000030, toPin: B}
+    - {from: 6710000000000000025, fromPin: Y, to: 6710000000000000032, toPin: A}
+    - {from: 6710000000000000031, fromPin: Value, to: 6710000000000000032, toPin: B}
+    - {from: 6710000000000000027, fromPin: Y, to: 6710000000000000033, toPin: A}
+    - {from: 6710000000000000032, fromPin: Result, to: 6710000000000000033, toPin: B}
+    - {from: 6710000000000000030, fromPin: Result, to: 6710000000000000034, toPin: X}
+    - {from: 6710000000000000033, fromPin: Result, to: 6710000000000000034, toPin: Y}
+    - {from: 6710000000000000035, fromPin: Value, to: 6710000000000000036, toPin: A}
+    - {from: 6710000000000000023, fromPin: dt, to: 6710000000000000036, toPin: B}
+    - {from: 6710000000000000036, fromPin: Result, to: 6710000000000000037, toPin: Value}
+    - {from: 6710000000000000038, fromPin: Value, to: 6710000000000000039, toPin: A}
+    - {from: 6710000000000000023, fromPin: dt, to: 6710000000000000039, toPin: B}
+    - {from: 6710000000000000039, fromPin: Result, to: 6710000000000000040, toPin: Value}
+    - {from: 6710000000000000025, fromPin: X, to: 6710000000000000041, toPin: value}
+    - {from: 6710000000000000025, fromPin: Y, to: 6710000000000000042, toPin: value}
+    - {from: 6710000000000000027, fromPin: X, to: 6710000000000000043, toPin: value}
+    - {from: 6710000000000000027, fromPin: Y, to: 6710000000000000044, toPin: value}
+    - {from: 6710000000000000045, fromPin: entity_id, to: 6710000000000000052, toPin: hero}
+    - {from: 6710000000000000046, fromPin: entity_id, to: 6710000000000000052, toPin: slash}
+    - {from: 6710000000000000047, fromPin: entity_id, to: 6710000000000000052, toPin: blade}
+    - {from: 6710000000000000049, fromPin: Value, to: 6710000000000000052, toPin: face}
+    - {from: 6710000000000000050, fromPin: Value, to: 6710000000000000052, toPin: reach}
+    - {from: 6710000000000000051, fromPin: Value, to: 6710000000000000052, toPin: left}
+    - {from: 6710000000000000023, fromPin: Then, to: 6710000000000000037, toPin: Exec}
+    - {from: 6710000000000000037, fromPin: Then, to: 6710000000000000040, toPin: Exec}
+    - {from: 6710000000000000040, fromPin: Then, to: 6710000000000000127, toPin: Exec}
+    - {from: 6710000000000000125, fromPin: Value, to: 6710000000000000126, toPin: A}
+    - {from: 6710000000000000023, fromPin: dt, to: 6710000000000000126, toPin: B}
+    - {from: 6710000000000000126, fromPin: Result, to: 6710000000000000127, toPin: Value}
+    - {from: 6710000000000000127, fromPin: Then, to: 6710000000000000129, toPin: Exec}
+    - {from: 6710000000000000128, fromPin: entity_id, to: 6710000000000000129, toPin: camera}
+    - {from: 6710000000000000023, fromPin: dt, to: 6710000000000000129, toPin: dt}
+    - {from: 6710000000000000129, fromPin: Then, to: 6710000000000000041, toPin: Exec}
+    - {from: 6710000000000000041, fromPin: Then, to: 6710000000000000042, toPin: Exec}
+    - {from: 6710000000000000042, fromPin: Then, to: 6710000000000000043, toPin: Exec}
+    - {from: 6710000000000000043, fromPin: Then, to: 6710000000000000044, toPin: Exec}
+    - {from: 6710000000000000044, fromPin: Then, to: 6710000000000000052, toPin: Exec}
+    - {from: 6710000000000000052, fromPin: Then, to: 6710000000000000059, toPin: Exec}
+    - {from: 6710000000000000053, fromPin: Value, to: 6710000000000000130, toPin: left}
+    - {from: 6710000000000000130, fromPin: shade, to: 6710000000000000059, toPin: g}
+    - {from: 6710000000000000130, fromPin: shade, to: 6710000000000000059, toPin: b}
+    - {from: 6710000000000000130, fromPin: alpha, to: 6710000000000000059, toPin: a}
+    - {from: 6710000000000000060, fromPin: pressed, to: 6710000000000000062, toPin: A}
+    - {from: 6710000000000000061, fromPin: value, to: 6710000000000000062, toPin: B}
+    - {from: 6710000000000000063, fromPin: Value, to: 6710000000000000064, toPin: A}
+    - {from: 6710000000000000065, fromPin: value, to: 6710000000000000066, toPin: A}
+    - {from: 6710000000000000067, fromPin: value, to: 6710000000000000068, toPin: A}
+    - {from: 6710000000000000066, fromPin: Result, to: 6710000000000000069, toPin: A}
+    - {from: 6710000000000000068, fromPin: Result, to: 6710000000000000069, toPin: B}
+    - {from: 6710000000000000064, fromPin: Result, to: 6710000000000000070, toPin: A}
+    - {from: 6710000000000000069, fromPin: Result, to: 6710000000000000070, toPin: B}
+    - {from: 6710000000000000062, fromPin: Result, to: 6710000000000000071, toPin: A}
+    - {from: 6710000000000000070, fromPin: Result, to: 6710000000000000071, toPin: B}
+    - {from: 6710000000000000071, fromPin: Result, to: 6710000000000000072, toPin: Condition}
+    - {from: 6710000000000000059, fromPin: Then, to: 6710000000000000061, toPin: Exec}
+    - {from: 6710000000000000061, fromPin: Then, to: 6710000000000000065, toPin: Exec}
+    - {from: 6710000000000000065, fromPin: Then, to: 6710000000000000067, toPin: Exec}
+    - {from: 6710000000000000067, fromPin: Then, to: 6710000000000000072, toPin: Exec}
+    - {from: 6710000000000000034, fromPin: Result, to: 6710000000000000073, toPin: xy}
+    - {from: 6710000000000000073, fromPin: entity_ids, to: 6710000000000000074, toPin: List}
+    - {from: 6710000000000000072, fromPin: True, to: 6710000000000000075, toPin: Exec}
+    - {from: 6710000000000000075, fromPin: Then, to: 6710000000000000076, toPin: Exec}
+    - {from: 6710000000000000076, fromPin: Then, to: 6710000000000000073, toPin: Exec}
+    - {from: 6710000000000000073, fromPin: Then, to: 6710000000000000074, toPin: Exec}
+    - {from: 6710000000000000074, fromPin: Item, to: 6710000000000000077, toPin: entity_id}
+    - {from: 6710000000000000077, fromPin: name, to: 6710000000000000078, toPin: B}
+    - {from: 6710000000000000078, fromPin: Result, to: 6710000000000000079, toPin: key}
+    - {from: 6710000000000000074, fromPin: Body, to: 6710000000000000079, toPin: Exec}
+    - {from: 6710000000000000081, fromPin: value, to: 6710000000000000082, toPin: A}
+    - {from: 6710000000000000080, fromPin: pressed, to: 6710000000000000083, toPin: A}
+    - {from: 6710000000000000082, fromPin: Result, to: 6710000000000000083, toPin: B}
+    - {from: 6710000000000000083, fromPin: Result, to: 6710000000000000084, toPin: Condition}
+    - {from: 6710000000000000072, fromPin: False, to: 6710000000000000081, toPin: Exec}
+    - {from: 6710000000000000074, fromPin: Completed, to: 6710000000000000081, toPin: Exec}
+    - {from: 6710000000000000081, fromPin: Then, to: 6710000000000000084, toPin: Exec}
+    - {from: 6710000000000000034, fromPin: Result, to: 6710000000000000085, toPin: xy}
+    - {from: 6710000000000000085, fromPin: entity_ids, to: 6710000000000000086, toPin: ids}
+    - {from: 6710000000000000086, fromPin: name, to: 6710000000000000087, toPin: value}
+    - {from: 6710000000000000034, fromPin: Result, to: 6710000000000000088, toPin: xy}
+    - {from: 6710000000000000088, fromPin: entity_ids, to: 6710000000000000089, toPin: ids}
+    - {from: 6710000000000000089, fromPin: name, to: 6710000000000000090, toPin: value}
+    - {from: 6710000000000000084, fromPin: True, to: 6710000000000000085, toPin: Exec}
+    - {from: 6710000000000000085, fromPin: Then, to: 6710000000000000087, toPin: Exec}
+    - {from: 6710000000000000087, fromPin: Then, to: 6710000000000000088, toPin: Exec}
+    - {from: 6710000000000000088, fromPin: Then, to: 6710000000000000090, toPin: Exec}
+    - {from: 6710000000000000091, fromPin: value, to: 6710000000000000092, toPin: Condition}
+    - {from: 6710000000000000090, fromPin: Then, to: 6710000000000000091, toPin: Exec}
+    - {from: 6710000000000000091, fromPin: Then, to: 6710000000000000092, toPin: Exec}
+    - {from: 6710000000000000092, fromPin: True, to: 6710000000000000093, toPin: Exec}
+    - {from: 6710000000000000027, fromPin: X, to: 6710000000000000094, toPin: X}
+    - {from: 6710000000000000027, fromPin: Y, to: 6710000000000000094, toPin: Y}
+    - {from: 6710000000000000094, fromPin: Result, to: 6710000000000000095, toPin: xy}
+    - {from: 6710000000000000095, fromPin: entity_ids, to: 6710000000000000096, toPin: ids}
+    - {from: 6710000000000000096, fromPin: kind, to: 6710000000000000097, toPin: A}
+    - {from: 6710000000000000098, fromPin: Value, to: 6710000000000000099, toPin: A}
+    - {from: 6710000000000000100, fromPin: value, to: 6710000000000000101, toPin: A}
+    - {from: 6710000000000000099, fromPin: Result, to: 6710000000000000102, toPin: A}
+    - {from: 6710000000000000101, fromPin: Result, to: 6710000000000000102, toPin: B}
+    - {from: 6710000000000000097, fromPin: Result, to: 6710000000000000103, toPin: A}
+    - {from: 6710000000000000102, fromPin: Result, to: 6710000000000000103, toPin: B}
+    - {from: 6710000000000000103, fromPin: Result, to: 6710000000000000104, toPin: Condition}
+    - {from: 6710000000000000084, fromPin: False, to: 6710000000000000095, toPin: Exec}
+    - {from: 6710000000000000092, fromPin: False, to: 6710000000000000095, toPin: Exec}
+    - {from: 6710000000000000093, fromPin: Then, to: 6710000000000000095, toPin: Exec}
+    - {from: 6710000000000000095, fromPin: Then, to: 6710000000000000100, toPin: Exec}
+    - {from: 6710000000000000100, fromPin: Then, to: 6710000000000000104, toPin: Exec}
+    - {from: 6710000000000000027, fromPin: X, to: 6710000000000000106, toPin: X}
+    - {from: 6710000000000000027, fromPin: Y, to: 6710000000000000106, toPin: Y}
+    - {from: 6710000000000000106, fromPin: Result, to: 6710000000000000107, toPin: xy}
+    - {from: 6710000000000000107, fromPin: entity_ids, to: 6710000000000000108, toPin: ids}
+    - {from: 6710000000000000108, fromPin: kind, to: 6710000000000000109, toPin: A}
+    - {from: 6710000000000000109, fromPin: Result, to: 6710000000000000110, toPin: Condition}
+    - {from: 6710000000000000105, fromPin: value, to: 6710000000000000111, toPin: Condition}
+    - {from: 6710000000000000111, fromPin: Result, to: 6710000000000000112, toPin: Value}
+    - {from: 6710000000000000113, fromPin: value, to: 6710000000000000114, toPin: A}
+    - {from: 6710000000000000110, fromPin: Result, to: 6710000000000000114, toPin: B}
+    - {from: 6710000000000000114, fromPin: Result, to: 6710000000000000115, toPin: B}
+    - {from: 6710000000000000115, fromPin: Result, to: 6710000000000000116, toPin: value}
+    - {from: 6710000000000000104, fromPin: True, to: 6710000000000000105, toPin: Exec}
+    - {from: 6710000000000000105, fromPin: Then, to: 6710000000000000112, toPin: Exec}
+    - {from: 6710000000000000112, fromPin: Then, to: 6710000000000000113, toPin: Exec}
+    - {from: 6710000000000000113, fromPin: Then, to: 6710000000000000107, toPin: Exec}
+    - {from: 6710000000000000107, fromPin: Then, to: 6710000000000000116, toPin: Exec}
+    - {from: 6710000000000000116, fromPin: Then, to: 6710000000000000117, toPin: Exec}
+    - {from: 6710000000000000117, fromPin: Then, to: 6710000000000000133, toPin: Exec}
+    - {from: 6710000000000000131, fromPin: Result, to: 6710000000000000132, toPin: hero}
+    - {from: 6710000000000000107, fromPin: entity_ids, to: 6710000000000000132, toPin: ids}
+    - {from: 6710000000000000132, fromPin: push, to: 6710000000000000133, toPin: Value}
+    - {from: 6710000000000000133, fromPin: Then, to: 6710000000000000134, toPin: Exec}
+    - {from: 6710000000000000134, fromPin: Then, to: 6710000000000000135, toPin: Exec}
+    - {from: 6710000000000000136, fromPin: Then, to: 6710000000000000137, toPin: Exec}
+    - {from: 6710000000000000137, fromPin: Then, to: 6710000000000000138, toPin: Exec}
+    - {from: 6710000000000000138, fromPin: Then, to: 6710000000000000140, toPin: Exec}
+    - {from: 6710000000000000137, fromPin: value, to: 6710000000000000139, toPin: X}
+    - {from: 6710000000000000138, fromPin: value, to: 6710000000000000139, toPin: Y}
+    - {from: 6710000000000000139, fromPin: Result, to: 6710000000000000140, toPin: Value}
+  groups:
+    - {id: 6710000000000000141, title: on_create, position: [-40, -660], size: [1100, 300], color: Red}
+    - {id: 6710000000000000118, title: on_tick, position: [-40, -60], size: [2440, 580], color: Red}
+    - {id: 6710000000000000119, title: on_update, position: [-100, 360], size: [11700, 590], color: Red}

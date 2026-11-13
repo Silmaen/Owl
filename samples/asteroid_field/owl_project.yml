@@ -1,0 +1,31 @@
+OwlProject:
+  name: OwlAsteroidField
+  firstScene: scenes/title.owl
+  author: Silmaen
+  description: Asteroid Field, an escort sample game of the Owl Engine
+  icon: logo/logo_owl.png
+  gamepadMappings: input/gamecontrollerdb.txt
+  window:
+    width: 1280
+    height: 720
+    fullscreen: false
+    resizable: true
+  RendererStack:
+    - Type: Renderer2D
+      Name: world
+    - Type: RendererMesh
+      Name: mesh_world
+      DefaultConfig:
+        SunDirection: [-0.42, -0.48, -0.77]
+        Ambient: [0.05, 0.06, 0.08]
+    - Type: RendererPlanet
+      Name: planet_world
+      DefaultConfig:
+        SunDirection: [-0.42, -0.48, -0.77]
+        Ambient: [0.03, 0.035, 0.05]
+    - Type: RendererParticles
+      Name: particles
+    - Type: Renderer2D
+      Name: ui
+    - Type: Renderer2D
+      Name: overlay

@@ -1,0 +1,76 @@
+FormatVersion: 1
+BehaviourTree:
+  blackboard:
+    - name: player
+      type: Entity
+      value: 0
+      description: 'The hero, written by guardian.owlvs.'
+    - name: hurt
+      type: Bool
+      value: false
+      description: 'Set when it is hit: it backs off.'
+  nodes:
+    - id: 3972000000000000001
+      type: root
+      position: [0, 96]
+    - id: 3972000000000000002
+      type: composite.selector
+      position: [220, 192]
+      values:
+        reactive: true
+      comment: 'Checked at every tick.'
+    - id: 3972000000000000003
+      type: composite.sequence
+      position: [440, 288]
+      comment: 'Hit: back off.'
+    - id: 3972000000000000004
+      type: condition.compare
+      position: [660, 384]
+      values:
+        key: hurt
+        op: '=='
+        value: true
+    - id: 3972000000000000005
+      type: action.steer
+      position: [660, 480]
+      values:
+        behaviour: flee
+        key: player
+        weight: 1
+    - id: 3972000000000000006
+      type: action.wait
+      position: [660, 576]
+      values:
+        seconds: 1.0
+    - id: 3972000000000000007
+      type: action.set
+      position: [660, 672]
+      values:
+        key: hurt
+        value: false
+    - id: 3972000000000000008
+      type: composite.sequence
+      position: [440, 768]
+      comment: 'Chase the hero.'
+    - id: 3972000000000000009
+      type: action.steer
+      position: [660, 864]
+      values:
+        behaviour: pursue
+        key: player
+        weight: 1
+    - id: 3972000000000000010
+      type: action.wait
+      position: [660, 960]
+      values:
+        seconds: 0.4
+  links:
+    - {parent: 3972000000000000001, child: 3972000000000000002}
+    - {parent: 3972000000000000002, child: 3972000000000000003}
+    - {parent: 3972000000000000003, child: 3972000000000000004}
+    - {parent: 3972000000000000003, child: 3972000000000000005}
+    - {parent: 3972000000000000003, child: 3972000000000000006}
+    - {parent: 3972000000000000003, child: 3972000000000000007}
+    - {parent: 3972000000000000002, child: 3972000000000000008}
+    - {parent: 3972000000000000008, child: 3972000000000000009}
+    - {parent: 3972000000000000008, child: 3972000000000000010}

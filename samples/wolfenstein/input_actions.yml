@@ -59,3 +59,31 @@ actions:
     type: button
     bindings:
       - {key: F9}
+  - name: fire
+    type: button
+    bindings:
+      - {key: LeftControl}
+      - {key: RightControl}
+      - {key: F}
+      - {gamepad_axis: right_trigger}
+      - {gamepad_button: B}
+  - name: next_weapon
+    type: button
+    bindings:
+      - {gamepad_button: LeftBumper}
+  - name: weapon_1
+    type: button
+    bindings:
+      - {key: D1}
+  - name: weapon_2
+    type: button
+    bindings:
+      - {key: D2}
+  - name: weapon_3
+    type: button
+    bindings:
+      - {key: D3}
+  - name: weapon_4
+    type: button
+    bindings:
+      - {key: D4}

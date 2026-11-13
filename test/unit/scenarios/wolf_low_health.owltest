@@ -1,0 +1,22 @@
+# Wolfenstein combat, low health (status.owlvs): the player stands under the fire of the alerted guard of the start
+# room. Above 25 % the view stays clear; below it the view turns red and the face of the status bar is in its bloodiest
+# row; once the floor starts again from its autosave with full health, the view is clear and the face healthy again.
+scene: ../../../samples/wolfenstein/scenes/level_1.owl
+project: ../../../samples/wolfenstein
+steps:
+  - frames: 40
+  - actions: {fire: true, frames: 1}
+  - frames: 600
+  - expect: {gamestate: wolf_health, greater: 25}
+  - expect: {gamestate: wolf_low_health, equals: 0}
+  - frames: 300
+  - expect: {gamestate: wolf_health, less: 21}
+  - expect: {gamestate: wolf_health, greater: 0}
+  - expect: {gamestate: wolf_low_health, equals: 1}
+  - expect: {gamestate: wolf_face, greater: 19}
+  - expect: {gamestate: wolf_face, less: 25}
+  - frames: 300
+  - expect: {gamestate: wolf_restarts, equals: 1}
+  - expect: {gamestate: wolf_health, equals: 100}
+  - expect: {gamestate: wolf_low_health, equals: 0}
+  - expect: {gamestate: wolf_face, less: 5}

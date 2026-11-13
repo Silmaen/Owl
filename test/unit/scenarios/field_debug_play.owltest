@@ -1,0 +1,14 @@
+# Asteroid Field, the mission started directly with the visual scripts built as Play in Owl Nest builds them (probes
+# of the wire values): throttle, turns, fire, lock and orders through the first wave, no script error.
+scene: ../../../samples/asteroid_field/scenes/mission.owl
+debug_scripts: true
+steps:
+  - frames: 10
+  - input: {key: W, frames: 60}
+  - input: {key: A, frames: 20}
+  - input: {key: Space, frames: 60}
+  - input: {key: F, frames: 1}
+  - input: {key: D1, frames: 1}
+  - frames: 300
+  - expect: {gamestate: field_wave, greater: 0}
+  - expect: {gamestate: field_shots, greater: 3}

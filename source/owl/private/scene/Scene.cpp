@@ -748,6 +748,10 @@ void Scene::startSpawnedEntity(const Entity& iEntity) {
 		anim.m_elapsedTime = 0.0f;
 		anim.m_playing = true;
 	}
+	if (iEntity.hasComponent<component::SoundSource>() &&
+		iEntity.getComponent<component::SoundSource>().sound.playOnStart &&
+		sound::SoundSystem::getState() == sound::SoundSystem::State::Running)
+		std::ignore = sound::SoundHelper::playEntitySound(iEntity);
 	if (iEntity.hasComponent<component::Trigger>()) {
 		auto& trigger = iEntity.getComponent<component::Trigger>().trigger;
 		trigger.setOverlapping(false);

@@ -4,7 +4,7 @@ Write the menu scenes of the Tower defence sample game into ``samples/tower_defe
 settings, the victory and the game over screens, in the medieval look of the game (``medieval_ui.py``).
 
 Every menu stands over a strip of meadow at the bottom of the screen where a wave marches past an archer tower
-(``scripts/ui/parade.lua``, the sprites of the game in the 2D world layer); the victory adds fireworks over the keep.
+(``scripts/ui/parade.owlvs``, the sprites of the game in the 2D world layer); the victory adds fireworks over the keep.
 The title is gold capitals, the boards dark wood with a gold rim, the buttons wooden planks with iron bands
 (``textures/ui/banner.png`` over the button colour) and a gold focus frame; titles in ``Cinzel``, labels in
 ``MedievalSharp`` (both in ``fonts/``). The canvas is 1280 x 720 reference pixels, sizes and offsets in screen
@@ -101,11 +101,14 @@ def button(
     initial: bool = False,
     focusable: bool = True,
     font_size: int = 30,
+    raised: bool = False,
 ) -> int:
-    """A plank button in a layout: the wood colour shows through the plank, the label is parchment on ink."""
+    """A plank button in a layout: the wood colour shows through the plank, the label is parchment on ink; a raised
+    one (the menus) casts a soft shadow on its board."""
+    shadow = y.box(shadow=(0, 0, 0, 0.6), shadow_offset=(0, 5), shadow_blur=8) if raised else ""
     components = [
         y.child_rect(size),
-        y.button(callback, BUTTON, BUTTON_HOVER, BUTTON_PRESSED, (0.12, 0.1, 0.12, 1)),
+        y.button(callback, BUTTON, BUTTON_HOVER, BUTTON_PRESSED, (0.12, 0.1, 0.12, 1), shadow),
         label(text, font_size),
         y.focus(initial=initial, focusable=focusable, colour=GOLD, thickness=3),
     ]
@@ -117,7 +120,7 @@ def button(
 def column(entities: y.Entities, parent: int, rows: list[tuple[str, str, str]], height: float) -> None:
     """Buttons from top to bottom (a layout lays its children out from the last one added), the first focused."""
     for position, (tag, text, callback) in reversed(list(enumerate(rows))):
-        button(entities, parent, tag, text, callback, (0.92, height), position == 0)
+        button(entities, parent, tag, text, callback, (0.92, height), position == 0, raised=True)
 
 
 def board() -> str:
@@ -146,7 +149,7 @@ def world(entities: y.Entities, fireworks: bool = False, fallen: bool = False) -
     ground = y.sprite("textures/menu/ground.png", tiling=(9, 1))
     entities.add("Meadow", [ground], position=(0, -6.5, -0.5), scale=(240 * PIXEL * 9, 112 * PIXEL, 1))
     properties: list[tuple[str, str, object]] = [("fireworks", "bool", fireworks), ("marching", "bool", not fallen)]
-    parade = entities.add("Parade", [y.script("scripts/ui/parade.lua", properties)])
+    parade = entities.add("Parade", [y.script("scripts/ui/parade.owlvs", properties)])
     for index, kind in enumerate(PARADE):
         sprite = y.frames(f"textures/enemies/{kind}.png", DIRECTIONS, FRAMES, PARADE_COLUMN)
         size = PARADE_SIZE * (1.35 if kind == "chieftain" else 1.0)
@@ -170,7 +173,7 @@ def title() -> str:
     """Title: the title art, the buttons on the left, the map board (progress) on the right, the How to play window."""
     entities = y.Entities(7400000000000000000)
     world(entities)
-    root = entities.add("MenuCanvas", [y.canvas(), y.script("scripts/ui/title.lua")])
+    root = entities.add("MenuCanvas", [y.canvas(), y.script("scripts/ui/title.owlvs")])
     art = y.image("textures/ui/title.png")
     entities.add("TitleArt", [y.rect((0.5, 0), (1.25, 0.232), (0, 0.03), SCREEN, SCREEN), art], parent=root)
     panel = entities.add(
@@ -232,7 +235,7 @@ def settings() -> str:
     right, Back (saves) and Reset defaults at the bottom."""
     entities = y.Entities(7410000000000000000)
     world(entities)
-    root = entities.add("SettingsCanvas", [y.canvas(), y.script("scripts/ui/settings.lua")])
+    root = entities.add("SettingsCanvas", [y.canvas(), y.script("scripts/ui/settings.owlvs")])
     panel = entities.add(
         "SettingsList",
         [y.rect((0.5, 0), (1.3, 0.9), (0, 0.02), SCREEN, SCREEN), board(), y.layout("Column", 4, 8)],
@@ -250,8 +253,18 @@ def settings() -> str:
         return [y.child_rect((0.9, 0.08)), label(text, 24, SOFT)]
 
     bottom = entities.add("SettingsButtons", [y.child_rect((0.7, 0.09)), y.layout("Row", 16)], parent=panel)
-    button(entities, bottom, "ResetButton", "Reset defaults", "on_reset_clicked", (0.45, 0.95), False, font_size=24)
-    button(entities, bottom, "BackButton", "Back", "go_back", (0.45, 0.95), False, font_size=24)
+    button(
+        entities,
+        bottom,
+        "ResetButton",
+        "Reset defaults",
+        "on_reset_clicked",
+        (0.45, 0.95),
+        False,
+        font_size=24,
+        raised=True,
+    )
+    button(entities, bottom, "BackButton", "Back", "go_back", (0.45, 0.95), False, font_size=24, raised=True)
     columns = entities.add("SettingsColumns", [y.child_rect((0.96, 0.72)), y.layout("Row", 20)], parent=panel)
     entities.add("TitleText", [y.child_rect((0.9, 0.13)), label("Settings", 56, GOLD, font=HEADING)], parent=panel)
     right = entities.add("AccessColumn", [y.child_rect((0.47, 1)), y.layout("Column", 6, 4)], parent=columns)
@@ -265,7 +278,7 @@ def settings() -> str:
             ("ResetProgressButton", "Reset progress", "on_reset_progress_clicked"),
         ]
     ):
-        button(entities, right, tag, text, callback, (0.9, 0.11), False, font_size=22)
+        button(entities, right, tag, text, callback, (0.9, 0.11), False, font_size=22, raised=True)
     entities.add("AccessHeading", heading("Accessibility"), parent=right)
     left = entities.add("SoundColumn", [y.child_rect((0.47, 1)), y.layout("Column", 2, 4)], parent=columns)
     rows: list[tuple[str, list[str]]] = [
@@ -298,7 +311,7 @@ def _result(scene_name: str, base: int, heading: str, script: str, fireworks: bo
     row = entities.add("ButtonRow", [y.child_rect((0.95, 0.13)), y.layout("Row", 16)], parent=group)
     buttons = [("AgainButton", "Play again", "on_again_clicked"), ("TitleButton", "World map", "on_title_clicked")]
     for index, (tag, text, callback) in reversed(list(enumerate(buttons))):
-        button(entities, row, tag, text, callback, (0.44, 0.85), index == 0)
+        button(entities, row, tag, text, callback, (0.44, 0.85), index == 0, raised=True)
     for index in reversed(range(6)):
         line = label("", 26 if index < 5 else 24, SOFT if index < 5 else GOLD, "Left", font="JetBrainsMono-Regular")
         entities.add(f"StatLine{index + 1}", [y.child_rect((0.8, 0.075)), line], parent=group)
@@ -309,12 +322,12 @@ def _result(scene_name: str, base: int, heading: str, script: str, fireworks: bo
 
 def victory() -> str:
     """Victory: the keep holds, the stats of the map counted up, fireworks."""
-    return _result("victory", 7420000000000000000, "The keep holds!", "scripts/ui/victory.lua", True, False)
+    return _result("victory", 7420000000000000000, "The keep holds!", "scripts/ui/victory.owlvs", True, False)
 
 
 def game_over() -> str:
     """Game over: the keep has fallen, the wave reached."""
-    return _result("game_over", 7430000000000000000, "The keep has fallen", "scripts/ui/game_over.lua", False, True)
+    return _result("game_over", 7430000000000000000, "The keep has fallen", "scripts/ui/game_over.owlvs", False, True)
 
 
 UNLOCKS = (
@@ -448,7 +461,7 @@ def world_map() -> str:
         levels.append(f"{level.name}|{len(level.waves)}|{unlock}|{', '.join(new)}|{twists}")
         scenes.append(f"scenes/level_{level.number:02d}.owl")
     script = (
-        "LuaScript:\n  scriptPath: scripts/ui/world_map.lua\n  properties:\n"
+        "LuaScript:\n  scriptPath: scripts/ui/world_map.owlvs\n  properties:\n"
         "    - name: levels\n      type: strings\n      value:"
         + "".join(f"\n        - {y.quote(entry)}" for entry in levels)
         + "\n    - name: level_scenes\n      type: strings\n      value:"
@@ -484,14 +497,14 @@ def world_map() -> str:
 
 
 UPGRADE_ROWS = 6
-"""Families of upgrades on the upgrades screen (``scripts/ui/upgrades.lua`` names them)."""
+"""Families of upgrades on the upgrades screen (``scripts/ui/upgrades.owlvs`` names them)."""
 
 
 def upgrades() -> str:
     """Upgrades: the stars won to spend, a row per family (name, the next tier, three pips, Buy), Refund all, Back."""
     entities = y.Entities(7450000000000000000)
     world(entities)
-    root = entities.add("UpgradesCanvas", [y.canvas(), y.script("scripts/ui/upgrades.lua")])
+    root = entities.add("UpgradesCanvas", [y.canvas(), y.script("scripts/ui/upgrades.owlvs")])
     board_id = entities.add(
         "UpgradesBoard",
         [y.rect((0.5, 0.5), (1.3, 0.96), (0, 0), SCREEN, SCREEN), board(), y.layout("Column", 2, 8)],

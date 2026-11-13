@@ -119,7 +119,7 @@ Entities:
       gameVisible: true
     Hierarchy: {}
     LuaScript:
-      scriptPath: gid:5935eeb4bfce3cd0:scripts/game/sokoban.lua
+      scriptPath: gid:5935eeb4bfce3cd0:scripts/game/sokoban.owlvs
       properties:
         - name: level
           type: int

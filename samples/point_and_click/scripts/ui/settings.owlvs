@@ -1,0 +1,671 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: ids, type: numbers, default: "", exposed: false}
+    - {name: leaving, type: bool, default: "false", exposed: false}
+    - {name: next_language, type: string, default: "", exposed: false}
+  functions:
+    - name: percent
+      inputs: [{name: key, type: any}]
+      outputs: [{name: result, type: any}]
+    - name: update_labels
+      inputs: []
+      outputs: []
+    - name: update_sliders
+      inputs: []
+      outputs: []
+    - name: set_volume
+      inputs: [{name: key, type: any}]
+      outputs: []
+    - name: go_back
+      inputs: []
+      outputs: []
+      exported: true
+  customNodes:
+    - name: init_state
+      title: Init State
+      inputs: []
+      outputs: []
+      code: |
+        ids = {}
+  nodes:
+    - id: 2855400001
+      type: func.entry
+      position: [340, 0]
+      values:
+        function: percent
+    - id: 2855400002
+      type: call.settings.get
+      position: [680, 0]
+      values:
+        default: "1"
+    - id: 2855400003
+      type: math.multiply
+      position: [510, 160]
+      values:
+        B: "100"
+    - id: 2855400004
+      type: math.add
+      position: [510, 280]
+      values:
+        B: "0.5"
+    - id: 2855400005
+      type: math.floor
+      position: [510, 400]
+    - id: 2855400006
+      type: func.return
+      position: [1020, 0]
+      values:
+        function: percent
+    - id: 2855400007
+      type: func.entry
+      position: [340, 660]
+      values:
+        function: update_labels
+    - id: 2855400008
+      type: call.ui.set_text
+      position: [680, 660]
+    - id: 2855400009
+      type: var.get
+      position: [510, 820]
+      values:
+        variable: ids
+    - id: 2855400010
+      type: table.get
+      position: [510, 940]
+      values:
+        Key: MasterLabel
+    - id: 2855400011
+      type: call.locale.tr
+      position: [1020, 660]
+      values:
+        key: settings.master
+    - id: 2855400012
+      type: func.call
+      position: [1360, 660]
+      values:
+        function: percent
+        key: volume_master
+    - id: 2855400013
+      type: text.format
+      position: [1190, 820]
+    - id: 2855400014
+      type: call.ui.set_text
+      position: [1700, 660]
+    - id: 2855400015
+      type: var.get
+      position: [1530, 820]
+      values:
+        variable: ids
+    - id: 2855400016
+      type: table.get
+      position: [1530, 940]
+      values:
+        Key: MusicLabel
+    - id: 2855400017
+      type: call.locale.tr
+      position: [2040, 660]
+      values:
+        key: settings.music
+    - id: 2855400018
+      type: func.call
+      position: [2380, 660]
+      values:
+        function: percent
+        key: volume_music
+    - id: 2855400019
+      type: text.format
+      position: [2210, 820]
+    - id: 2855400020
+      type: call.ui.set_text
+      position: [2720, 660]
+    - id: 2855400021
+      type: var.get
+      position: [2550, 820]
+      values:
+        variable: ids
+    - id: 2855400022
+      type: table.get
+      position: [2550, 940]
+      values:
+        Key: EffectsLabel
+    - id: 2855400023
+      type: call.locale.tr
+      position: [3060, 660]
+      values:
+        key: settings.effects
+    - id: 2855400024
+      type: func.call
+      position: [3400, 660]
+      values:
+        function: percent
+        key: volume_sfx
+    - id: 2855400025
+      type: text.format
+      position: [3230, 820]
+    - id: 2855400026
+      type: call.ui.set_text
+      position: [3740, 660]
+    - id: 2855400027
+      type: var.get
+      position: [3570, 820]
+      values:
+        variable: ids
+    - id: 2855400028
+      type: table.get
+      position: [3570, 940]
+      values:
+        Key: LanguageButton
+    - id: 2855400029
+      type: call.locale.tr
+      position: [4080, 660]
+      values:
+        key: settings.language
+    - id: 2855400030
+      type: call.ui.set_text
+      position: [4420, 660]
+    - id: 2855400031
+      type: var.get
+      position: [4250, 820]
+      values:
+        variable: ids
+    - id: 2855400032
+      type: table.get
+      position: [4250, 940]
+      values:
+        Key: SubtitlesButton
+    - id: 2855400033
+      type: call.locale.tr
+      position: [4760, 660]
+    - id: 2855400034
+      type: call.settings.get
+      position: [5100, 660]
+      values:
+        key: subtitles
+        default: "true"
+    - id: 2855400035
+      type: logic.select
+      position: [4930, 820]
+      values:
+        "True": settings.subtitles_on
+        "False": settings.subtitles_off
+    - id: 2855400036
+      type: func.entry
+      position: [340, 1200]
+      values:
+        function: update_sliders
+    - id: 2855400037
+      type: call.ui.set_slider_value
+      position: [680, 1200]
+    - id: 2855400038
+      type: var.get
+      position: [510, 1360]
+      values:
+        variable: ids
+    - id: 2855400039
+      type: table.get
+      position: [510, 1480]
+      values:
+        Key: MasterSlider
+    - id: 2855400040
+      type: call.settings.get
+      position: [1020, 1200]
+      values:
+        key: volume_master
+        default: "1"
+    - id: 2855400041
+      type: call.ui.set_slider_value
+      position: [1360, 1200]
+    - id: 2855400042
+      type: var.get
+      position: [1190, 1360]
+      values:
+        variable: ids
+    - id: 2855400043
+      type: table.get
+      position: [1190, 1480]
+      values:
+        Key: MusicSlider
+    - id: 2855400044
+      type: call.settings.get
+      position: [1700, 1200]
+      values:
+        key: volume_music
+        default: "0.8"
+    - id: 2855400045
+      type: call.ui.set_slider_value
+      position: [2040, 1200]
+    - id: 2855400046
+      type: var.get
+      position: [1870, 1360]
+      values:
+        variable: ids
+    - id: 2855400047
+      type: table.get
+      position: [1870, 1480]
+      values:
+        Key: EffectsSlider
+    - id: 2855400048
+      type: call.settings.get
+      position: [2380, 1200]
+      values:
+        key: volume_sfx
+        default: "1"
+    - id: 2855400049
+      type: event.on_create
+      position: [340, 1740]
+    - id: 2855400050
+      type: value.table
+      position: [170, 1900]
+      values:
+        Value: "MasterLabel, MasterSlider, MusicLabel, MusicSlider, EffectsLabel, EffectsSlider, LanguageButton, SubtitlesButton"
+    - id: 2855400051
+      type: flow.for_each
+      position: [680, 1740]
+    - id: 2855400052
+      type: call.scene.find_entity
+      position: [510, 1900]
+    - id: 2855400053
+      type: var.get
+      position: [510, 2020]
+      values:
+        variable: ids
+    - id: 2855400054
+      type: table.set
+      position: [1020, 1740]
+    - id: 2855400055
+      type: func.call
+      position: [1360, 1740]
+      values:
+        function: update_sliders
+    - id: 2855400056
+      type: func.call
+      position: [1700, 1740]
+      values:
+        function: update_labels
+    - id: 2855400057
+      type: call.ui.is_transition_active
+      position: [1530, 1900]
+    - id: 2855400058
+      type: logic.not
+      position: [1530, 2020]
+    - id: 2855400059
+      type: flow.branch
+      position: [2040, 1740]
+    - id: 2855400060
+      type: call.ui.transition_play
+      position: [2380, 1740]
+      values:
+        split.rgba: "true"
+        kind: fade_in
+        duration: "0.4"
+        r: "0.02"
+        g: "0.02"
+        b: "0.05"
+    - id: 2855400061
+      type: event.on_update
+      position: [340, 2280]
+    - id: 2855400062
+      type: var.get
+      position: [170, 2440]
+      values:
+        variable: leaving
+    - id: 2855400063
+      type: logic.not
+      position: [170, 2560]
+    - id: 2855400064
+      type: call.input.is_action_just_pressed
+      position: [170, 2680]
+      values:
+        action: ui_cancel
+    - id: 2855400065
+      type: logic.and
+      position: [170, 2800]
+    - id: 2855400066
+      type: flow.branch
+      position: [680, 2280]
+    - id: 2855400067
+      type: func.call
+      position: [1020, 2280]
+      values:
+        function: go_back
+    - id: 2855400068
+      type: func.entry
+      position: [340, 3060]
+      values:
+        function: set_volume
+    - id: 2855400069
+      type: call.settings.set
+      position: [680, 3060]
+    - id: 2855400070
+      type: value.widget
+      position: [510, 3220]
+    - id: 2855400071
+      type: logic.default
+      position: [510, 3340]
+      values:
+        Default: "1"
+    - id: 2855400072
+      type: call.settings.apply
+      position: [1020, 3060]
+    - id: 2855400073
+      type: func.call
+      position: [1360, 3060]
+      values:
+        function: update_labels
+    - id: 2855400074
+      type: event.custom
+      position: [340, 3600]
+      values:
+        function: on_master_changed
+    - id: 2855400075
+      type: func.call
+      position: [680, 3600]
+      values:
+        function: set_volume
+        key: volume_master
+    - id: 2855400076
+      type: event.custom
+      position: [340, 3900]
+      values:
+        function: on_music_changed
+    - id: 2855400077
+      type: func.call
+      position: [680, 3900]
+      values:
+        function: set_volume
+        key: volume_music
+    - id: 2855400078
+      type: event.custom
+      position: [340, 4200]
+      values:
+        function: on_effects_changed
+    - id: 2855400079
+      type: func.call
+      position: [680, 4200]
+      values:
+        function: set_volume
+        key: volume_sfx
+    - id: 2855400080
+      type: event.custom
+      position: [340, 4500]
+      values:
+        function: on_language_clicked
+    - id: 2855400081
+      type: call.locale.get_language
+      position: [170, 4660]
+    - id: 2855400082
+      type: compare.equal
+      position: [170, 4780]
+      values:
+        B: fr
+    - id: 2855400083
+      type: logic.select
+      position: [170, 4900]
+      values:
+        "True": en
+        "False": fr
+    - id: 2855400084
+      type: var.set
+      position: [680, 4500]
+      values:
+        variable: next_language
+    - id: 2855400085
+      type: call.settings.set
+      position: [1020, 4500]
+      values:
+        key: language
+    - id: 2855400086
+      type: var.get
+      position: [850, 4660]
+      values:
+        variable: next_language
+    - id: 2855400087
+      type: call.settings.apply
+      position: [1360, 4500]
+    - id: 2855400088
+      type: call.sound.play
+      position: [1700, 4500]
+      values:
+        asset_path: sounds/click.wav
+    - id: 2855400089
+      type: func.call
+      position: [2040, 4500]
+      values:
+        function: update_labels
+    - id: 2855400090
+      type: event.custom
+      position: [340, 5160]
+      values:
+        function: on_subtitles_clicked
+    - id: 2855400091
+      type: call.settings.set
+      position: [680, 5160]
+      values:
+        key: subtitles
+    - id: 2855400092
+      type: call.settings.get
+      position: [1020, 5160]
+      values:
+        key: subtitles
+        default: "true"
+    - id: 2855400093
+      type: logic.not
+      position: [850, 5320]
+    - id: 2855400094
+      type: call.settings.apply
+      position: [1360, 5160]
+    - id: 2855400095
+      type: call.sound.play
+      position: [1700, 5160]
+      values:
+        asset_path: sounds/click.wav
+    - id: 2855400096
+      type: func.call
+      position: [2040, 5160]
+      values:
+        function: update_labels
+    - id: 2855400097
+      type: event.custom
+      position: [340, 5580]
+      values:
+        function: on_reset_clicked
+    - id: 2855400098
+      type: value.table
+      position: [170, 5740]
+      values:
+        Value: "volume_master, volume_music, volume_sfx, language, subtitles"
+    - id: 2855400099
+      type: flow.for_each
+      position: [680, 5580]
+    - id: 2855400100
+      type: call.settings.reset
+      position: [1020, 5580]
+    - id: 2855400101
+      type: call.settings.apply
+      position: [1360, 5580]
+    - id: 2855400102
+      type: func.call
+      position: [1700, 5580]
+      values:
+        function: update_sliders
+    - id: 2855400103
+      type: func.call
+      position: [2040, 5580]
+      values:
+        function: update_labels
+    - id: 2855400104
+      type: func.entry
+      position: [340, 6000]
+      values:
+        function: go_back
+    - id: 2855400105
+      type: var.get
+      position: [170, 6160]
+      values:
+        variable: leaving
+    - id: 2855400106
+      type: flow.branch
+      position: [680, 6000]
+    - id: 2855400107
+      type: func.return
+      position: [1020, 6000]
+      values:
+        function: go_back
+    - id: 2855400108
+      type: var.set
+      position: [1360, 6000]
+      values:
+        variable: leaving
+        Value: "true"
+    - id: 2855400109
+      type: call.settings.save
+      position: [1700, 6000]
+    - id: 2855400110
+      type: call.scene.transition_to
+      position: [2040, 6000]
+      values:
+        split.rgba: "true"
+        scene_path: scenes/title.owl
+        kind: fade_out
+        duration: "0.3"
+        r: "0.02"
+        g: "0.02"
+        b: "0.05"
+    - id: 2855400111
+      type: custom.call
+      position: [170, 1740]
+      values:
+        custom: init_state
+  links:
+    - {from: 2855400001, fromPin: key, to: 2855400002, toPin: key}
+    - {from: 2855400001, fromPin: Then, to: 2855400002, toPin: Exec}
+    - {from: 2855400002, fromPin: value, to: 2855400003, toPin: A}
+    - {from: 2855400003, fromPin: Result, to: 2855400004, toPin: A}
+    - {from: 2855400004, fromPin: Result, to: 2855400005, toPin: A}
+    - {from: 2855400005, fromPin: Result, to: 2855400006, toPin: result}
+    - {from: 2855400002, fromPin: Then, to: 2855400006, toPin: Exec}
+    - {from: 2855400009, fromPin: Value, to: 2855400010, toPin: Table}
+    - {from: 2855400010, fromPin: Result, to: 2855400008, toPin: entity_id}
+    - {from: 2855400007, fromPin: Then, to: 2855400011, toPin: Exec}
+    - {from: 2855400011, fromPin: Then, to: 2855400012, toPin: Exec}
+    - {from: 2855400011, fromPin: text, to: 2855400013, toPin: Format}
+    - {from: 2855400012, fromPin: result, to: 2855400013, toPin: A}
+    - {from: 2855400013, fromPin: Result, to: 2855400008, toPin: text}
+    - {from: 2855400012, fromPin: Then, to: 2855400008, toPin: Exec}
+    - {from: 2855400015, fromPin: Value, to: 2855400016, toPin: Table}
+    - {from: 2855400016, fromPin: Result, to: 2855400014, toPin: entity_id}
+    - {from: 2855400008, fromPin: Then, to: 2855400017, toPin: Exec}
+    - {from: 2855400017, fromPin: Then, to: 2855400018, toPin: Exec}
+    - {from: 2855400017, fromPin: text, to: 2855400019, toPin: Format}
+    - {from: 2855400018, fromPin: result, to: 2855400019, toPin: A}
+    - {from: 2855400019, fromPin: Result, to: 2855400014, toPin: text}
+    - {from: 2855400018, fromPin: Then, to: 2855400014, toPin: Exec}
+    - {from: 2855400021, fromPin: Value, to: 2855400022, toPin: Table}
+    - {from: 2855400022, fromPin: Result, to: 2855400020, toPin: entity_id}
+    - {from: 2855400014, fromPin: Then, to: 2855400023, toPin: Exec}
+    - {from: 2855400023, fromPin: Then, to: 2855400024, toPin: Exec}
+    - {from: 2855400023, fromPin: text, to: 2855400025, toPin: Format}
+    - {from: 2855400024, fromPin: result, to: 2855400025, toPin: A}
+    - {from: 2855400025, fromPin: Result, to: 2855400020, toPin: text}
+    - {from: 2855400024, fromPin: Then, to: 2855400020, toPin: Exec}
+    - {from: 2855400027, fromPin: Value, to: 2855400028, toPin: Table}
+    - {from: 2855400028, fromPin: Result, to: 2855400026, toPin: entity_id}
+    - {from: 2855400020, fromPin: Then, to: 2855400029, toPin: Exec}
+    - {from: 2855400029, fromPin: text, to: 2855400026, toPin: text}
+    - {from: 2855400029, fromPin: Then, to: 2855400026, toPin: Exec}
+    - {from: 2855400031, fromPin: Value, to: 2855400032, toPin: Table}
+    - {from: 2855400032, fromPin: Result, to: 2855400030, toPin: entity_id}
+    - {from: 2855400026, fromPin: Then, to: 2855400034, toPin: Exec}
+    - {from: 2855400034, fromPin: value, to: 2855400035, toPin: Condition}
+    - {from: 2855400035, fromPin: Result, to: 2855400033, toPin: key}
+    - {from: 2855400034, fromPin: Then, to: 2855400033, toPin: Exec}
+    - {from: 2855400033, fromPin: text, to: 2855400030, toPin: text}
+    - {from: 2855400033, fromPin: Then, to: 2855400030, toPin: Exec}
+    - {from: 2855400038, fromPin: Value, to: 2855400039, toPin: Table}
+    - {from: 2855400039, fromPin: Result, to: 2855400037, toPin: entity_id}
+    - {from: 2855400036, fromPin: Then, to: 2855400040, toPin: Exec}
+    - {from: 2855400040, fromPin: value, to: 2855400037, toPin: value}
+    - {from: 2855400040, fromPin: Then, to: 2855400037, toPin: Exec}
+    - {from: 2855400042, fromPin: Value, to: 2855400043, toPin: Table}
+    - {from: 2855400043, fromPin: Result, to: 2855400041, toPin: entity_id}
+    - {from: 2855400037, fromPin: Then, to: 2855400044, toPin: Exec}
+    - {from: 2855400044, fromPin: value, to: 2855400041, toPin: value}
+    - {from: 2855400044, fromPin: Then, to: 2855400041, toPin: Exec}
+    - {from: 2855400046, fromPin: Value, to: 2855400047, toPin: Table}
+    - {from: 2855400047, fromPin: Result, to: 2855400045, toPin: entity_id}
+    - {from: 2855400041, fromPin: Then, to: 2855400048, toPin: Exec}
+    - {from: 2855400048, fromPin: value, to: 2855400045, toPin: value}
+    - {from: 2855400048, fromPin: Then, to: 2855400045, toPin: Exec}
+    - {from: 2855400050, fromPin: Result, to: 2855400051, toPin: List}
+    - {from: 2855400111, fromPin: Then, to: 2855400051, toPin: Exec}
+    - {from: 2855400051, fromPin: Item, to: 2855400052, toPin: name}
+    - {from: 2855400053, fromPin: Value, to: 2855400054, toPin: Table}
+    - {from: 2855400051, fromPin: Item, to: 2855400054, toPin: Key}
+    - {from: 2855400052, fromPin: entity_id, to: 2855400054, toPin: Value}
+    - {from: 2855400051, fromPin: Body, to: 2855400054, toPin: Exec}
+    - {from: 2855400051, fromPin: Completed, to: 2855400055, toPin: Exec}
+    - {from: 2855400055, fromPin: Then, to: 2855400056, toPin: Exec}
+    - {from: 2855400057, fromPin: active, to: 2855400058, toPin: A}
+    - {from: 2855400058, fromPin: Result, to: 2855400059, toPin: Condition}
+    - {from: 2855400056, fromPin: Then, to: 2855400059, toPin: Exec}
+    - {from: 2855400059, fromPin: "True", to: 2855400060, toPin: Exec}
+    - {from: 2855400062, fromPin: Value, to: 2855400063, toPin: A}
+    - {from: 2855400063, fromPin: Result, to: 2855400065, toPin: A}
+    - {from: 2855400064, fromPin: pressed, to: 2855400065, toPin: B}
+    - {from: 2855400065, fromPin: Result, to: 2855400066, toPin: Condition}
+    - {from: 2855400061, fromPin: Then, to: 2855400066, toPin: Exec}
+    - {from: 2855400066, fromPin: "True", to: 2855400067, toPin: Exec}
+    - {from: 2855400068, fromPin: key, to: 2855400069, toPin: key}
+    - {from: 2855400070, fromPin: slider_value, to: 2855400071, toPin: Value}
+    - {from: 2855400071, fromPin: Result, to: 2855400069, toPin: value}
+    - {from: 2855400068, fromPin: Then, to: 2855400069, toPin: Exec}
+    - {from: 2855400069, fromPin: Then, to: 2855400072, toPin: Exec}
+    - {from: 2855400072, fromPin: Then, to: 2855400073, toPin: Exec}
+    - {from: 2855400074, fromPin: Then, to: 2855400075, toPin: Exec}
+    - {from: 2855400076, fromPin: Then, to: 2855400077, toPin: Exec}
+    - {from: 2855400078, fromPin: Then, to: 2855400079, toPin: Exec}
+    - {from: 2855400081, fromPin: code, to: 2855400082, toPin: A}
+    - {from: 2855400082, fromPin: Result, to: 2855400083, toPin: Condition}
+    - {from: 2855400083, fromPin: Result, to: 2855400084, toPin: Value}
+    - {from: 2855400080, fromPin: Then, to: 2855400084, toPin: Exec}
+    - {from: 2855400086, fromPin: Value, to: 2855400085, toPin: value}
+    - {from: 2855400084, fromPin: Then, to: 2855400085, toPin: Exec}
+    - {from: 2855400085, fromPin: Then, to: 2855400087, toPin: Exec}
+    - {from: 2855400087, fromPin: Then, to: 2855400088, toPin: Exec}
+    - {from: 2855400088, fromPin: Then, to: 2855400089, toPin: Exec}
+    - {from: 2855400090, fromPin: Then, to: 2855400092, toPin: Exec}
+    - {from: 2855400092, fromPin: value, to: 2855400093, toPin: A}
+    - {from: 2855400093, fromPin: Result, to: 2855400091, toPin: value}
+    - {from: 2855400092, fromPin: Then, to: 2855400091, toPin: Exec}
+    - {from: 2855400091, fromPin: Then, to: 2855400094, toPin: Exec}
+    - {from: 2855400094, fromPin: Then, to: 2855400095, toPin: Exec}
+    - {from: 2855400095, fromPin: Then, to: 2855400096, toPin: Exec}
+    - {from: 2855400098, fromPin: Result, to: 2855400099, toPin: List}
+    - {from: 2855400097, fromPin: Then, to: 2855400099, toPin: Exec}
+    - {from: 2855400099, fromPin: Item, to: 2855400100, toPin: key}
+    - {from: 2855400099, fromPin: Body, to: 2855400100, toPin: Exec}
+    - {from: 2855400099, fromPin: Completed, to: 2855400101, toPin: Exec}
+    - {from: 2855400101, fromPin: Then, to: 2855400102, toPin: Exec}
+    - {from: 2855400102, fromPin: Then, to: 2855400103, toPin: Exec}
+    - {from: 2855400105, fromPin: Value, to: 2855400106, toPin: Condition}
+    - {from: 2855400104, fromPin: Then, to: 2855400106, toPin: Exec}
+    - {from: 2855400106, fromPin: "True", to: 2855400107, toPin: Exec}
+    - {from: 2855400106, fromPin: "False", to: 2855400108, toPin: Exec}
+    - {from: 2855400108, fromPin: Then, to: 2855400109, toPin: Exec}
+    - {from: 2855400109, fromPin: Then, to: 2855400110, toPin: Exec}
+    - {from: 2855400049, fromPin: Then, to: 2855400111, toPin: Exec}
+  groups:
+    - {id: 2855490000, title: percent, position: [316, -52], size: [1000, 600], color: Teal}
+    - {id: 2855490001, title: update_labels, position: [316, 608], size: [5080, 480], color: Teal}
+    - {id: 2855490002, title: update_sliders, position: [316, 1148], size: [2360, 480], color: Teal}
+    - {id: 2855490003, title: on_create, position: [146, 1688], size: [2530, 480], color: Red}
+    - {id: 2855490004, title: on_update, position: [146, 2228], size: [1170, 720], color: Red}
+    - {id: 2855490005, title: set_volume, position: [316, 3008], size: [1340, 480], color: Teal}
+    - {id: 2855490006, title: on_master_changed, position: [316, 3548], size: [660, 200], color: Red}
+    - {id: 2855490007, title: on_music_changed, position: [316, 3848], size: [660, 200], color: Red}
+    - {id: 2855490008, title: on_effects_changed, position: [316, 4148], size: [660, 200], color: Red}
+    - {id: 2855490009, title: on_language_clicked, position: [146, 4448], size: [2190, 600], color: Red}
+    - {id: 2855490010, title: on_subtitles_clicked, position: [316, 5108], size: [2020, 360], color: Red}
+    - {id: 2855490011, title: on_reset_clicked, position: [146, 5528], size: [2190, 360], color: Red}
+    - {id: 2855490012, title: go_back, position: [146, 5948], size: [2190, 360], color: Teal}

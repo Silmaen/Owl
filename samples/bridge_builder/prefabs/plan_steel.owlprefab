@@ -1,0 +1,19 @@
+Prefab: Plan steel
+Version: 1
+Entities:
+  - Entity: 7590000000000000201
+    Tag:
+      tag: Plan
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:980d0d4eec6ca762:models/steel.glb
+      color: [0.85, 0.9, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world

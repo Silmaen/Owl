@@ -64,7 +64,7 @@ def test_the_scene_has_its_road_pads_and_towers() -> None:
     assert text.count("tag: Pad\n") == len(level.cells("P"))
     assert "tag: Road\n" in text and "interpolation: Linear" in text
     assert text.count("{name: lane_") == gen.LANES
-    assert "scripts/game/defence.lua" in text
+    assert "scripts/game/defence.owlvs" in text
     prefabs = gen.prefabs()
     for kind in ("archer", "cannon", "frost"):
         for step in ("1", "2", "3"):
@@ -129,15 +129,14 @@ def test_the_horde_is_introduced_across_the_campaign() -> None:
 
 def test_the_level_modifiers_and_effects_exist_in_the_rules() -> None:
     game = gen.ROOT / "scripts" / "game"
-    rules = "".join(path.read_text() for path in [game / "defence.lua", *sorted((game / "td").glob("*.lua"))])
+    rules = "".join(path.read_text() for path in [game / "defence.owlvs", *sorted((game / "td").glob("*.lua"))])
     for level in mp.LEVELS:
         for key in level.modifiers:
             assert f"\n    {key} = {{" in rules, key
             assert key in menus.MODIFIER_NAMES
-    for kind in creatures.CREATURES:
-        assert f'"{kind} day ' in rules and f'"{kind} night ' in rules, kind
-    for kind in ("archer", "cannon", "frost"):
-        assert f'"{kind} day ' in rules and f'"{kind} night ' in rules, kind
+    # The `time_effects` property of the level graph: a list of "subject phase stat factor" items.
+    for kind in [*creatures.CREATURES, "archer", "cannon", "frost"]:
+        assert re.search(rf'["\s]{kind} day ', rules) and re.search(rf'["\s]{kind} night ', rules), kind
 
 
 @pytest.mark.parametrize("level", mp.LEVELS, ids=lambda level: f"level_{level.number:02d}")

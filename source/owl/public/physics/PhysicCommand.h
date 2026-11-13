@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <optional>
 #include <span>
+#include <utility>
 #include <vector>
 
 /**
@@ -277,6 +278,14 @@ public:
 
 	/**
 	 * @brief
+	 *  Load the joint of an entity held in the last collision step, as its break thresholds measure it.
+	 * @param[in] iEntity The entity with the joint.
+	 * @return The force in newtons and the torque in newton metres; zeros without a built joint.
+	 */
+	[[nodiscard]] static auto getJointLoad(const scene::Entity& iEntity) -> std::pair<float, float>;
+
+	/**
+	 * @brief
 	 *  A joint broken by its load (`SceneJoint::breakForce`, `breakTorque`).
 	 */
 	struct JointBreak {
@@ -458,6 +467,22 @@ public:
 	 * @param[in] iVelocity The velocity.
 	 */
 	static void setVelocity3D(const scene::Entity& iEntity, const math::vec3f& iVelocity);
+
+	/**
+	 * @brief
+	 *  Angular velocity of the given entity's body, in radians per second around the world axes.
+	 * @param[in] iEntity The entity.
+	 * @return The angular velocity (X and Y are 0 for a 2D body), zero without a moving body.
+	 */
+	[[nodiscard]] static auto getAngularVelocity3D(const scene::Entity& iEntity) -> math::vec3f;
+
+	/**
+	 * @brief
+	 *  Set the angular velocity of the given entity's body; a 2D body takes its Z only.
+	 * @param[in] iEntity The entity.
+	 * @param[in] iVelocity The angular velocity, radians per second around the world axes.
+	 */
+	static void setAngularVelocity3D(const scene::Entity& iEntity, const math::vec3f& iVelocity);
 
 	/**
 	 * @brief

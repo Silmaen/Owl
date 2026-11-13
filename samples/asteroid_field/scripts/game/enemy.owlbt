@@ -1,0 +1,111 @@
+FormatVersion: 1
+BehaviourTree:
+  blackboard:
+    - name: target
+      type: Entity
+      value: 0
+      description: 'What the fighter goes for, set at its spawn.'
+    - name: hurt
+      type: Bool
+      value: false
+      description: 'Set when its hull is low or it closes in on a freighter it attacks: it breaks off.'
+  nodes:
+    - id: 3960000000000000001
+      type: root
+      position: [0, 96]
+    - id: 3960000000000000002
+      type: composite.selector
+      position: [220, 192]
+      values:
+        reactive: true
+      comment: 'The first branch that holds wins, checked at every tick.'
+    - id: 3960000000000000003
+      type: composite.sequence
+      position: [440, 288]
+      comment: 'Hurt or too close: break off for a while.'
+    - id: 3960000000000000004
+      type: condition.compare
+      position: [660, 384]
+      values:
+        key: hurt
+        op: '=='
+        value: true
+    - id: 3960000000000000005
+      type: action.steer
+      position: [660, 480]
+      values:
+        behaviour: flee
+        key: target
+        weight: 1
+    - id: 3960000000000000006
+      type: action.wait
+      position: [660, 576]
+      values:
+        seconds: 2.5
+    - id: 3960000000000000007
+      type: action.set
+      position: [660, 672]
+      values:
+        key: hurt
+        value: false
+    - id: 3960000000000000008
+      type: composite.sequence
+      position: [440, 768]
+      comment: 'Close: chase and fire.'
+    - id: 3960000000000000009
+      type: condition.distance
+      position: [660, 864]
+      values:
+        distance: 70
+        key: target
+        op: closer than
+        space: 3D
+    - id: 3960000000000000010
+      type: action.steer
+      position: [660, 960]
+      values:
+        behaviour: pursue
+        key: target
+        weight: 1
+    - id: 3960000000000000011
+      type: decorator.cooldown
+      position: [660, 1056]
+      values:
+        seconds: 1.1
+    - id: 3960000000000000012
+      type: action.lua
+      position: [880, 1152]
+      values:
+        function: enemy_fire
+      comment: 'Exported by mission.owlvs.'
+    - id: 3960000000000000013
+      type: composite.sequence
+      position: [440, 1248]
+      comment: 'Far: chase.'
+    - id: 3960000000000000014
+      type: action.steer
+      position: [660, 1344]
+      values:
+        behaviour: pursue
+        key: target
+        weight: 1
+    - id: 3960000000000000015
+      type: action.wait
+      position: [660, 1440]
+      values:
+        seconds: 0.4
+  links:
+    - {parent: 3960000000000000001, child: 3960000000000000002}
+    - {parent: 3960000000000000002, child: 3960000000000000003}
+    - {parent: 3960000000000000003, child: 3960000000000000004}
+    - {parent: 3960000000000000003, child: 3960000000000000005}
+    - {parent: 3960000000000000003, child: 3960000000000000006}
+    - {parent: 3960000000000000003, child: 3960000000000000007}
+    - {parent: 3960000000000000002, child: 3960000000000000008}
+    - {parent: 3960000000000000008, child: 3960000000000000009}
+    - {parent: 3960000000000000008, child: 3960000000000000010}
+    - {parent: 3960000000000000008, child: 3960000000000000011}
+    - {parent: 3960000000000000011, child: 3960000000000000012}
+    - {parent: 3960000000000000002, child: 3960000000000000013}
+    - {parent: 3960000000000000013, child: 3960000000000000014}
+    - {parent: 3960000000000000013, child: 3960000000000000015}

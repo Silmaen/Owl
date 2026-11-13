@@ -43,7 +43,8 @@ TEST(VisualScriptCanvas, PinsOfARowShareItsHeight) {
 	vs::VisualScript script;
 	script.nodes.push_back(node("flow.for"));
 	const auto layout = layoutNode(script, script.nodes.front(), measure);
-	ASSERT_EQ(layout.inputs.size(), 3u);
+	// Exec, First, Last, Step in; Body, Index, Completed out.
+	ASSERT_EQ(layout.inputs.size(), 4u);
 	ASSERT_EQ(layout.outputs.size(), 3u);
 	for (size_t i = 0; i < 3; ++i) {
 		EXPECT_FLOAT_EQ(layout.inputs[i][1], layout.outputs[i][1]);
@@ -52,6 +53,7 @@ TEST(VisualScriptCanvas, PinsOfARowShareItsHeight) {
 		EXPECT_LT(layout.inputs[i][0], layout.outputs[i][0]);
 	}
 	EXPECT_GT(layout.inputs[1][1], layout.inputs[0][1]);
+	EXPECT_GT(layout.inputs[3][1], layout.inputs[2][1]);
 }
 
 TEST(VisualScriptCanvas, LinkedInputsHaveNoField) {

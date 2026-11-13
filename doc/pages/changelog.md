@@ -18,6 +18,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fair play: `SceneCamera::setMaxAspectRatio` (*Max Aspect Ratio* on the camera) bounds the width of the view, so a wider screen sees no more of the game.
 - Fair play: `Visibility::gameplay` (*Gameplay*) tags an entity that no quality setting may cut; gameplay lights keep their shadows first on every backend.
 - Breakable joints: `breakForce` and `breakTorque` on `PhysicJoint`, the `on_joint_break(other_id)` hook and its visual script event.
+- `ShipController::invertPitch` (*Invert Pitch* in the inspector) and Lua `entity.set_ship_invert_pitch`: stick or mouse forward raises the nose.
+- `ShipController::levelRate` (*Level Rate* in the inspector): with the flight assist, the wings roll back level once the roll is released.
+- `ShipController::maxPitch` (*Max Pitch*): arcade flight, the yaw turns about the world up and the nose stays within a pitch bound.
+- `ShipController::mouseSteer` (*Mouse Steer*): off, the captured mouse no longer turns the ship and is left to the game, an aim; an `angularResponse` of 0 turns without rotational inertia.
+- Lua `scene.get_view_ray` (the camera ray through a viewport pixel) and `ui.set_offset` (move a widget), for a sight following the mouse.
+- Asteroid Field: the keys and sticks turn the fighter at once, the mouse moves an aim circle the gimballed lasers fire toward, the middle button and the wheel lock and cycle the enemies, and an X leads the locked one.
+- Lua `entity.set_ship_velocity`: set the velocity of a `ShipController`, for a rebound or a knock.
+- Asteroid Field: the fighter bounces off the rocks and the other ships, hits flash the ship hit and throw sparks, the camera shakes when the fighter is hit (not with the reduced motion), and the aim circle replaces the system cursor in flight.
+- `ShipController::throttleRate` and `minThrottle` (*Throttle Rate*, *Min Throttle*), Lua `entity.set_ship_throttle`: a persistent throttle the ship holds as a speed once the keys are released.
+- Lua `entity.set_ship_turn`: a script turns a `ShipController` in screen directions on top of the `look` action, to steer toward a cursor.
+- Asteroid Field: the right button turns the fighter toward the aim circle, W / S set a persistent throttle shown on the HUD (Backspace cuts it), and kills, hits and damage show richer effects (shockwave flash, debris, smoke, red screen edges).
+- A prefab spawned in Play starts its `playOnStart` sounds, so a spawned ship or shot carries its spatial, Doppler-shifted sound.
 - Physics assemblies: a `PhysicBody` marked `part` merges into its ancestor's body, mass and centre of mass recomputed; Lua `physics.attach`, `detach`, `get_assembly`, `get_mass`, `get_center_of_mass`.
 - Forces and torques at a point: `PhysicCommand::addForce`, `addForceAtPoint`, `addTorque`; Lua `physics.add_force`, `add_force_at`, `add_force_at_3d`, `add_torque`, `add_torque_3d`.
 - Solver iterations per scene (`velocitySteps`, `positionSteps`) in *Scene Settings* and `scene.set_physics_settings`, for long chains of joints.
@@ -35,6 +47,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Engine Demo: a recorded tour of the platformer house, checked by `replay_platformer_house.owltest`.
 - Engine Demo: 15 short gameplay scripts are visual scripts, and a test compiles every demo graph.
 - Engine Demo: 21 more scripts are visual scripts (hub, platformer, raycast, tavern, plaza walkers, main menu), and every demo graph must load.
+- Visual script loop nodes `While Loop`, `For Each Pair`, `Break` and `Continue`, and a `Step` on `For Loop`.
+- Visual script `Widget Values` node: the slider value, list row, selection and button a widget handler receives.
+- Visual script debug build (Play in Owl Nest): the right side of `And`, `Or`, `Or Default` and the branches of `Select` are evaluated only when Lua needs them, as in the game build.
+- Scenario key `debug_scripts`: the visual scripts built with probes, as Play in Owl Nest builds them; every sample game has such a scenario.
+- Wolfenstein mini: food heals (+10 %, dog food +4 %), left on the floor at full health.
+- Rail shooter: the wingmen fire at the nearest fighter ahead.
+- `NavMeshVolume` sources `WalkAreas`: a navigation mesh baked from the walk areas of a 2D room, searched and drawn in their plane.
+- Point-and-click: the hero walks the corners of paths on a navigation mesh of each room, baked from its walk area.
+- Tower defence: water, ground and snow tiles on material graphs (flowing ripples, shade changes, glints).
+- Tests compile every material graph of the sample games.
+- Tower defence: the enemies walk their lanes on steering agents, apart from each other and around each other.
+- Rail shooter: two wingmen in steering formation beside the ship, and fighter squadrons in the formation of their leader, scattering when it falls.
+- Wolfenstein mini: guards on behaviour trees who patrol, hear the shots, see the player, chase and fire, with CC0 art of OpenGameArt (`guard.owlbt`, `guard.owlvs`).
+- Wolfenstein mini: knife, pistol, machine gun and chain gun, ammo, first aid kits and dropped clips, the weapon in hand, health and ammo on the HUD (`arsenal.owlvs`).
+- Wolfenstein mini: at zero health the floor starts again from its autosave, and the tally gives the kills in percent.
+- Wolfenstein mini: the status bar of Wolfenstein 3D along the bottom (floor, score, face, health, ammo, keys, weapon), its boxes filling the screen width at any aspect ratio, the face bloodier as the health drops.
+- Wolfenstein mini: a hit flashes the view red, lights the edge on the side of the shot, makes the face wince and shakes the view (not with reduced motion).
+- Wolfenstein mini: below 25 % health the edges of the view turn red and pulse; scenarios `wolf_hit_feedback`, `wolf_debug_hit`, `wolf_low_health`.
+- Every script of the six earlier sample games is a visual script, the closures, the undo stack and the fog of war left in Custom Lua nodes, the rule modules called as Lua Function nodes.
+- Visual script compiler: a branch side linked to nothing ends its path, so the other side no longer runs the code after the branch.
+- Tests compile, load and type-check every visual script of the sample games.
 - Visual script internal variables (`exposed: false`): state of the script kept out of the inspector, a list holding any table.
 - Visual script variable bounds `min`, `max` and `step`, written to the script property and edited in Owl Nest.
 - Visual script exported functions: a global function the engine calls and reads the results of, such as a dialogue condition.
@@ -105,8 +138,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `script::ScriptTypeChecker` and `getScriptDefinitions`: Luau type checking of a script against declarations generated from the binding registry, with the engine globals, the script properties and the required modules.
 - Owl Nest code editor: Lua scripts are type-checked as you type, errors and lint warnings marked on their line and listed under the editor.
 
+- Lua `physics.get_angular_velocity` and `physics.set_angular_velocity`: the turn rate of a body around the world axes (`PhysicCommand::getAngularVelocity3D`, `setAngularVelocity3D`).
+- Lua `physics.add_joint` joins two bodies in Play and `physics.get_joint_load` reads the force and torque a joint holds (`PhysicCommand::getJointLoad`).
+- Lunar Lander sample game (`samples/lunar_lander/`): five landings on a moon with a gravity field, from a hover to a descent from orbit, the predicted path drawn, legs on breakable joints, touchdown on the foot pads, a camera the player turns and zooms, its rules and menus in visual scripts.
+- A test compiles and loads every visual script of the sample games, with the Lua modules of each project.
+- The Sunken Shrine sample game (`samples/sunken_shrine/`), a Zelda-like of six tilemap rooms: a key, a sword, a dark crypt lit brazier by brazier, a block puzzle, a guardian in three phases, creatures on behaviour trees, an old man's dialogue, saves with Continue, a sword swing, its rules in visual scripts.
+- Asteroid Field sample game (`samples/asteroid_field/`): a convoy escorted through an asteroid field in a 6DoF fighter with two wingmen in formation, enemy waves on 3D steering and behaviour trees, Doppler engines and lasers, a briefing and an objective line, its rules in visual scripts.
+- Bridge Builder sample game (`samples/bridge_builder/`): six gaps spanned within a budget in a side view of 2D bodies, parts hinged in Play by breakable joints, loads drawn on the parts, stars and saved designs, a replay of the run, a view that zooms and pans a little, a grid shown on demand, icons on the tools, its rules in visual scripts.
+- Rail shooter: the wingmen fire green bolts of their own at any enemy ahead and trail their engines, and every enemy burns engine flames.
+- Rail shooter: 22 denser waves with timid scouts and reckless raiders; `accuracy` and `pursuit` columns of the enemy table set each kind's temper, shown by its tint, flames and marker.
+- The Sunken Shrine: the hero shows its back, front or side the way it faces in sharp pixel art, and a hit pushes it back, flashes it, shakes the room and leaves it blinking through its grace.
+- The Sunken Shrine: larger hearts with a light rim on a dark plate.
+
 ### Changed
 
+- Asteroid Field: the fighter has far less translation inertia (stronger flight assist dampers and thrust), it stops and reaches its top speed in about a second.
 - Fair play: the `Player` impulses run on the fixed tick, and the first person, voxel and ship controllers move by the mean speed of each frame, so jumps and burns no longer depend on the frame rate.
 - The visual script compiler joins the two paths of a branch where they meet, so the Lua of a graph follows the shape of hand-written Lua.
 - The mesh shaders read the surface from the material block of `common/mesh_surface.slangh` (`evaluateSurface`, `evaluateVertexOffset`), the parameter materials drawing exactly as before.
@@ -130,6 +176,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Scripts hold entity handles (registry id + 1, exact in a Lua number) instead of UUIDs; `scene.find_by_uuid` converts a UUID written as text.
 - Luau 0.746 replaces Lua 5.5: one VM with an interrupt-based time quota, `lua_breakpoint` breakpoints and the `bit32` and `buffer` libraries.
 - A whole number a script stores in the game state is an integer: Luau numbers are doubles.
+- Sample games: each game's menus have a look of their own: Breakout an arcade cabinet, Sokoban crates and a clipboard, Wolfenstein DOS menus with a skull cursor, Ring Runner cockpit displays, The Moon Lantern a storybook, the tower defence raised planks.
 
 ### Removed
 
@@ -137,6 +184,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Asteroid Field: the enemies no longer fly into a freighter and shoot it from inside; they break off at close range and their shots must cross the gap.
+- The export packs the prefabs a script spawns (a `.owlprefab` path quoted in a script or a script property) with what their entities use.
 - The visual script compiler hung on a function with two unread results, and could start a statement with a parenthesis Luau read as a call.
 - `path.find` and `path.find_now` declare their `mode` as any value: it takes the options table too.
 - Demo and sample scripts no longer pass a nil `tonumber` result to `math.floor` or a numeric `for`.
@@ -145,9 +194,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Owl Nest: stopping a Play that had moved to another level kept that level's renderers, so the edited scene and the next Play drew no meshes.
 - Published Doxygen documentation: the screenshots of the pages show again, the `fix_md_links.py` filter naming the `doc/images` files Doxygen copies into `html/`.
 - `EngineSystems.h` includes the EnTT header it uses, which the nightly include check reported.
+- A vector or colour variable of a visual script that is not a property starts keyed by component (`{ x = 0, y = -1 }`), not as a list its graph read as nil.
+- A visual script link ending on a pin its node does not have is a compile error instead of being dropped, the input silently taking its default.
+- A `ShipController` ignores a jump of the captured cursor (a capture, a warp) instead of turning the ship by it.
 - A visual script is compiled once per text instead of once per entity running it, so a Play of the platformer house starts about four times faster.
 - Nightly: the editor tests no longer time out under ThreadSanitizer, and the export tests get twice their timeout under arm64 emulation.
 - The end-to-end export tests keep their cooked assets in `OWL_TEST_COOK_CACHE` across runs, and every CI build job keeps it as a cache: an export cooks only what changed.
+- Rail shooter: the fighters of a squadron hold the formation of their leader again, their steering agent back on the ship instead of a trail.
 
 ## [0.6.0] - 2026-11-03
 

@@ -1,0 +1,36 @@
+FormatVersion: 1
+VisualScript:
+  variables: []
+  nodes:
+    - id: 6520000000000000001
+      type: event.on_joint_break
+      position: [0, 0]
+    - id: 6520000000000000002
+      type: call.gamestate.get
+      position: [300, 0]
+      values:
+        default: 0
+        key: bridge_breaks
+    - id: 6520000000000000003
+      type: math.add
+      position: [440, 150]
+      values:
+        B: 1
+    - id: 6520000000000000004
+      type: call.gamestate.set
+      position: [600, 0]
+      values:
+        key: bridge_breaks
+    - id: 6520000000000000005
+      type: call.sound.play
+      position: [900, 0]
+      values:
+        asset_path: sounds/game/snap.wav
+  links:
+    - {from: 6520000000000000002, fromPin: value, to: 6520000000000000003, toPin: A}
+    - {from: 6520000000000000003, fromPin: Result, to: 6520000000000000004, toPin: value}
+    - {from: 6520000000000000001, fromPin: Then, to: 6520000000000000002, toPin: Exec}
+    - {from: 6520000000000000002, fromPin: Then, to: 6520000000000000004, toPin: Exec}
+    - {from: 6520000000000000004, fromPin: Then, to: 6520000000000000005, toPin: Exec}
+  groups:
+    - {id: 6520000000000000006, title: on_joint_break, position: [-40, -60], size: [1240, 350], color: Red}

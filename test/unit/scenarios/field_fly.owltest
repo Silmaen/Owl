@@ -1,0 +1,15 @@
+# Asteroid Field mission: the throttle pushes the fighter on (its ShipController), the lasers fire, the convoy rides
+# its route, the first wave of fighters comes out of the field.
+scene: ../../../samples/asteroid_field/scenes/mission.owl
+steps:
+  - frames: 10
+  - expect: {gamestate: field_state, equals: fly}
+  - expect: {gamestate: field_freighters, equals: 3}
+  - input: {key: W, frames: 60}
+  - expect: {gamestate: field_speed, greater: 5}
+  - input: {key: Space, frames: 30}
+  - expect: {gamestate: field_shots, greater: 3}
+  - frames: 300
+  - expect: {gamestate: field_progress, greater: 0.05}
+  - expect: {gamestate: field_wave, greater: 0}
+  - expect: {gamestate: field_enemies, greater: 0}

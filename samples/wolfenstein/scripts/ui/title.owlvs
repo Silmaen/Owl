@@ -1,0 +1,706 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: fade_color, type: color, default: "0.22, 0.02, 0.02, 1"}
+    - {name: FLOORS, type: float, default: "3", exposed: false}
+    - {name: pending_slot, type: float, default: "0", exposed: false}
+    - {name: leaving, type: bool, default: "false", exposed: false}
+    - {name: window_id, type: float, default: "0", exposed: false}
+    - {name: back_id, type: float, default: "0", exposed: false}
+    - {name: how_to_id, type: float, default: "0", exposed: false}
+    - {name: slot, type: float, default: "0", exposed: false}
+    - {name: stamp, type: string, default: "", exposed: false}
+    - {name: tmp_1, type: float, default: "0", exposed: false}
+    - {name: tmp_2, type: float, default: "0", exposed: false}
+    - {name: on_continue_clicked_slot, type: float, default: "0", exposed: false}
+  functions:
+    - name: newest_slot
+      inputs: []
+      outputs: [{name: result, type: any}]
+      exported: true
+    - name: leave
+      inputs: [{name: path, type: any}, {name: jingle, type: any}]
+      outputs: []
+    - name: on_how_to_closed
+      inputs: []
+      outputs: []
+      exported: true
+  customNodes:
+    - name: do_on_create
+      title: On create
+      inputs: []
+      outputs: []
+      code: |
+        if not ui.is_transition_active() then
+            ui.transition_play("fade_in", 0.6, fade_color.r, fade_color.g, fade_color.b)
+        end
+        window_id = scene.find_entity("HowToWindow")
+        back_id = scene.find_entity("HowToBackButton")
+        how_to_id = scene.find_entity("HowToButton")
+        local continue_id = scene.find_entity("ContinueButton")
+        if continue_id ~= 0 then
+            ui.set_button_enabled(continue_id, newest_slot() ~= 0)
+        end
+        local lines = { string.format("BEST SCORE  %d", settings.get("wolf_best_score", 0)) }
+        for floor = 1, FLOORS do
+            local best = "wolf_best_" .. floor .. "_"
+            lines[#lines + 1] = string.format("FLOOR %d\n  items %d%%  secrets %d%%  map %d%%", floor,
+                    settings.get(best .. "items", 0), settings.get(best .. "secrets", 0), settings.get(best .. "explored", 0))
+        end
+        local best_id = scene.find_entity("BestText")
+        if best_id ~= 0 then
+            ui.set_text(best_id, table.concat(lines, "\n"))
+        end
+  nodes:
+    - id: 9442300001
+      type: func.entry
+      position: [340, 0]
+      values:
+        function: newest_slot
+    - id: 9442300002
+      type: var.set
+      position: [680, 0]
+      values:
+        variable: slot
+        Value: "0"
+    - id: 9442300003
+      type: var.set
+      position: [1020, 0]
+      values:
+        variable: stamp
+    - id: 9442300004
+      type: value.string
+      position: [850, 160]
+      values:
+        Value: ""
+    - id: 9442300005
+      type: call.save.list_saves
+      position: [1360, 0]
+    - id: 9442300006
+      type: flow.for_each
+      position: [1700, 0]
+    - id: 9442300007
+      type: table.get
+      position: [1530, 160]
+      values:
+        Key: slot
+    - id: 9442300008
+      type: compare.equal
+      position: [1530, 280]
+      values:
+        B: "1"
+    - id: 9442300009
+      type: table.get
+      position: [1530, 400]
+      values:
+        Key: slot
+    - id: 9442300010
+      type: compare.equal
+      position: [1530, 520]
+      values:
+        B: "2"
+    - id: 9442300011
+      type: logic.or
+      position: [1530, 640]
+    - id: 9442300012
+      type: table.get
+      position: [1530, 760]
+      values:
+        Key: timestamp
+    - id: 9442300013
+      type: var.get
+      position: [1530, 880]
+      values:
+        variable: stamp
+    - id: 9442300014
+      type: compare.greater
+      position: [1530, 1000]
+    - id: 9442300015
+      type: logic.and
+      position: [1530, 1120]
+    - id: 9442300016
+      type: flow.branch
+      position: [2040, 0]
+    - id: 9442300017
+      type: table.get
+      position: [1870, 160]
+      values:
+        Key: slot
+    - id: 9442300018
+      type: table.get
+      position: [1870, 280]
+      values:
+        Key: timestamp
+    - id: 9442300019
+      type: var.set
+      position: [2380, 0]
+      values:
+        variable: tmp_1
+    - id: 9442300020
+      type: var.set
+      position: [2720, 0]
+      values:
+        variable: tmp_2
+    - id: 9442300021
+      type: var.get
+      position: [2550, 160]
+      values:
+        variable: tmp_1
+    - id: 9442300022
+      type: var.set
+      position: [3060, 0]
+      values:
+        variable: slot
+    - id: 9442300023
+      type: var.get
+      position: [2890, 160]
+      values:
+        variable: tmp_2
+    - id: 9442300024
+      type: var.set
+      position: [3400, 0]
+      values:
+        variable: stamp
+    - id: 9442300025
+      type: var.get
+      position: [3230, 160]
+      values:
+        variable: slot
+    - id: 9442300026
+      type: func.return
+      position: [3740, 0]
+      values:
+        function: newest_slot
+    - id: 9442300027
+      type: event.on_update
+      position: [340, 1800]
+    - id: 9442300028
+      type: var.get
+      position: [170, 1960]
+      values:
+        variable: pending_slot
+    - id: 9442300029
+      type: compare.not_equal
+      position: [170, 2080]
+      values:
+        B: "0"
+    - id: 9442300030
+      type: call.ui.is_transition_active
+      position: [170, 2200]
+    - id: 9442300031
+      type: logic.not
+      position: [170, 2320]
+    - id: 9442300032
+      type: logic.and
+      position: [170, 2440]
+    - id: 9442300033
+      type: flow.branch
+      position: [680, 1800]
+    - id: 9442300034
+      type: call.save.load_game
+      position: [1020, 1800]
+    - id: 9442300035
+      type: var.get
+      position: [850, 1960]
+      values:
+        variable: pending_slot
+    - id: 9442300036
+      type: var.set
+      position: [1360, 1800]
+      values:
+        variable: pending_slot
+        Value: "0"
+    - id: 9442300037
+      type: call.gamestate.get
+      position: [1700, 1800]
+      values:
+        key: wolf_how_to
+        default: "false"
+    - id: 9442300038
+      type: call.input.is_action_just_pressed
+      position: [1530, 1960]
+      values:
+        action: ui_cancel
+    - id: 9442300039
+      type: logic.and
+      position: [1530, 2080]
+    - id: 9442300040
+      type: flow.branch
+      position: [2040, 1800]
+    - id: 9442300041
+      type: func.call
+      position: [2380, 1800]
+      values:
+        function: on_how_to_closed
+    - id: 9442300042
+      type: func.entry
+      position: [340, 2700]
+      values:
+        function: leave
+    - id: 9442300043
+      type: var.get
+      position: [170, 2860]
+      values:
+        variable: leaving
+    - id: 9442300044
+      type: flow.branch
+      position: [680, 2700]
+    - id: 9442300045
+      type: func.return
+      position: [1020, 2700]
+      values:
+        function: leave
+    - id: 9442300046
+      type: var.set
+      position: [1360, 2700]
+      values:
+        variable: leaving
+        Value: "true"
+    - id: 9442300047
+      type: flow.branch
+      position: [1700, 2700]
+    - id: 9442300048
+      type: call.sound.play
+      position: [2040, 2700]
+      values:
+        asset_path: sounds/ui/start.wav
+    - id: 9442300049
+      type: call.scene.transition_to
+      position: [2380, 2700]
+      values:
+        split.rgba: "true"
+        kind: fade_out
+        duration: "0.5"
+    - id: 9442300050
+      type: var.get
+      position: [2210, 2860]
+      values:
+        variable: fade_color
+    - id: 9442300051
+      type: math.break_color
+      position: [2210, 2980]
+    - id: 9442300052
+      type: var.get
+      position: [2210, 3100]
+      values:
+        variable: fade_color
+    - id: 9442300053
+      type: math.break_color
+      position: [2210, 3220]
+    - id: 9442300054
+      type: var.get
+      position: [2210, 3340]
+      values:
+        variable: fade_color
+    - id: 9442300055
+      type: math.break_color
+      position: [2210, 3460]
+    - id: 9442300056
+      type: event.custom
+      position: [340, 3720]
+      values:
+        function: on_new_game_clicked
+    - id: 9442300057
+      type: var.get
+      position: [170, 3880]
+      values:
+        variable: leaving
+    - id: 9442300058
+      type: flow.branch
+      position: [680, 3720]
+    - id: 9442300059
+      type: call.gamestate.clear
+      position: [1020, 3720]
+    - id: 9442300060
+      type: call.gamestate.set
+      position: [1360, 3720]
+      values:
+        key: wolf_score
+        value: "0"
+    - id: 9442300061
+      type: func.call
+      position: [1700, 3720]
+      values:
+        function: leave
+        path: scenes/level_1.owl
+        jingle: "true"
+    - id: 9442300062
+      type: event.custom
+      position: [340, 4140]
+      values:
+        function: on_continue_clicked
+    - id: 9442300063
+      type: func.call
+      position: [680, 4140]
+      values:
+        function: newest_slot
+    - id: 9442300064
+      type: var.set
+      position: [1020, 4140]
+      values:
+        variable: on_continue_clicked_slot
+    - id: 9442300065
+      type: var.get
+      position: [850, 4300]
+      values:
+        variable: leaving
+    - id: 9442300066
+      type: var.get
+      position: [850, 4420]
+      values:
+        variable: on_continue_clicked_slot
+    - id: 9442300067
+      type: compare.equal
+      position: [850, 4540]
+      values:
+        B: "0"
+    - id: 9442300068
+      type: logic.or
+      position: [850, 4660]
+    - id: 9442300069
+      type: flow.branch
+      position: [1360, 4140]
+    - id: 9442300070
+      type: var.set
+      position: [1700, 4140]
+      values:
+        variable: leaving
+        Value: "true"
+    - id: 9442300071
+      type: call.sound.play
+      position: [2040, 4140]
+      values:
+        asset_path: sounds/ui/start.wav
+    - id: 9442300072
+      type: var.get
+      position: [1870, 4300]
+      values:
+        variable: on_continue_clicked_slot
+    - id: 9442300073
+      type: var.set
+      position: [2380, 4140]
+      values:
+        variable: pending_slot
+    - id: 9442300074
+      type: call.ui.transition_play
+      position: [2720, 4140]
+      values:
+        split.rgba: "true"
+        kind: fade_out
+        duration: "0.4"
+    - id: 9442300075
+      type: var.get
+      position: [2550, 4300]
+      values:
+        variable: fade_color
+    - id: 9442300076
+      type: math.break_color
+      position: [2550, 4420]
+    - id: 9442300077
+      type: var.get
+      position: [2550, 4540]
+      values:
+        variable: fade_color
+    - id: 9442300078
+      type: math.break_color
+      position: [2550, 4660]
+    - id: 9442300079
+      type: var.get
+      position: [2550, 4780]
+      values:
+        variable: fade_color
+    - id: 9442300080
+      type: math.break_color
+      position: [2550, 4900]
+    - id: 9442300081
+      type: event.custom
+      position: [340, 5160]
+      values:
+        function: on_how_to_clicked
+    - id: 9442300082
+      type: var.get
+      position: [170, 5320]
+      values:
+        variable: leaving
+    - id: 9442300083
+      type: var.get
+      position: [170, 5440]
+      values:
+        variable: window_id
+    - id: 9442300084
+      type: compare.equal
+      position: [170, 5560]
+      values:
+        B: "0"
+    - id: 9442300085
+      type: logic.or
+      position: [170, 5680]
+    - id: 9442300086
+      type: flow.branch
+      position: [680, 5160]
+    - id: 9442300087
+      type: call.ui.set_visible
+      position: [1020, 5160]
+      values:
+        visible: "true"
+    - id: 9442300088
+      type: var.get
+      position: [850, 5320]
+      values:
+        variable: window_id
+    - id: 9442300089
+      type: math.floor
+      position: [850, 5440]
+    - id: 9442300090
+      type: call.ui.raise_window
+      position: [1360, 5160]
+    - id: 9442300091
+      type: var.get
+      position: [1190, 5320]
+      values:
+        variable: window_id
+    - id: 9442300092
+      type: math.floor
+      position: [1190, 5440]
+    - id: 9442300093
+      type: call.ui.set_focus
+      position: [1700, 5160]
+    - id: 9442300094
+      type: var.get
+      position: [1530, 5320]
+      values:
+        variable: back_id
+    - id: 9442300095
+      type: math.floor
+      position: [1530, 5440]
+    - id: 9442300096
+      type: call.gamestate.set
+      position: [2040, 5160]
+      values:
+        key: wolf_how_to
+        value: "true"
+    - id: 9442300097
+      type: func.entry
+      position: [340, 5940]
+      values:
+        function: on_how_to_closed
+    - id: 9442300098
+      type: var.get
+      position: [170, 6100]
+      values:
+        variable: window_id
+    - id: 9442300099
+      type: compare.equal
+      position: [170, 6220]
+      values:
+        B: "0"
+    - id: 9442300100
+      type: flow.branch
+      position: [680, 5940]
+    - id: 9442300101
+      type: func.return
+      position: [1020, 5940]
+      values:
+        function: on_how_to_closed
+    - id: 9442300102
+      type: call.ui.set_visible
+      position: [1360, 5940]
+      values:
+        visible: "false"
+    - id: 9442300103
+      type: var.get
+      position: [1190, 6100]
+      values:
+        variable: window_id
+    - id: 9442300104
+      type: math.floor
+      position: [1190, 6220]
+    - id: 9442300105
+      type: call.ui.set_focus
+      position: [1700, 5940]
+    - id: 9442300106
+      type: var.get
+      position: [1530, 6100]
+      values:
+        variable: how_to_id
+    - id: 9442300107
+      type: math.floor
+      position: [1530, 6220]
+    - id: 9442300108
+      type: call.gamestate.set
+      position: [2040, 5940]
+      values:
+        key: wolf_how_to
+        value: "false"
+    - id: 9442300109
+      type: event.custom
+      position: [340, 6480]
+      values:
+        function: on_settings_clicked
+    - id: 9442300110
+      type: func.call
+      position: [680, 6480]
+      values:
+        function: leave
+        path: scenes/settings.owl
+        jingle: "false"
+    - id: 9442300111
+      type: event.custom
+      position: [340, 6780]
+      values:
+        function: on_quit_clicked
+    - id: 9442300112
+      type: call.scene.quit
+      position: [680, 6780]
+    - id: 9442300113
+      type: event.on_create
+      position: [340, 1500]
+    - id: 9442300114
+      type: custom.call
+      position: [680, 1500]
+      values:
+        custom: do_on_create
+    - id: 9442300115
+      type: logic.select
+      position: [1530, 1240]
+      values:
+        Condition: "true"
+    - id: 9442300116
+      type: logic.select
+      position: [3230, 280]
+      values:
+        Condition: "true"
+    - id: 9442300117
+      type: math.floor
+      position: [850, 2080]
+  links:
+    - {from: 9442300001, fromPin: Then, to: 9442300002, toPin: Exec}
+    - {from: 9442300004, fromPin: Result, to: 9442300003, toPin: Value}
+    - {from: 9442300002, fromPin: Then, to: 9442300003, toPin: Exec}
+    - {from: 9442300003, fromPin: Then, to: 9442300005, toPin: Exec}
+    - {from: 9442300005, fromPin: saves, to: 9442300006, toPin: List}
+    - {from: 9442300005, fromPin: Then, to: 9442300006, toPin: Exec}
+    - {from: 9442300006, fromPin: Item, to: 9442300007, toPin: Table}
+    - {from: 9442300007, fromPin: Result, to: 9442300008, toPin: A}
+    - {from: 9442300006, fromPin: Item, to: 9442300009, toPin: Table}
+    - {from: 9442300009, fromPin: Result, to: 9442300010, toPin: A}
+    - {from: 9442300008, fromPin: Result, to: 9442300011, toPin: A}
+    - {from: 9442300010, fromPin: Result, to: 9442300011, toPin: B}
+    - {from: 9442300006, fromPin: Item, to: 9442300012, toPin: Table}
+    - {from: 9442300012, fromPin: Result, to: 9442300014, toPin: A}
+    - {from: 9442300013, fromPin: Value, to: 9442300115, toPin: "True"}
+    - {from: 9442300115, fromPin: Result, to: 9442300014, toPin: B}
+    - {from: 9442300011, fromPin: Result, to: 9442300015, toPin: A}
+    - {from: 9442300014, fromPin: Result, to: 9442300015, toPin: B}
+    - {from: 9442300015, fromPin: Result, to: 9442300016, toPin: Condition}
+    - {from: 9442300006, fromPin: Body, to: 9442300016, toPin: Exec}
+    - {from: 9442300006, fromPin: Item, to: 9442300017, toPin: Table}
+    - {from: 9442300006, fromPin: Item, to: 9442300018, toPin: Table}
+    - {from: 9442300017, fromPin: Result, to: 9442300019, toPin: Value}
+    - {from: 9442300016, fromPin: "True", to: 9442300019, toPin: Exec}
+    - {from: 9442300018, fromPin: Result, to: 9442300020, toPin: Value}
+    - {from: 9442300019, fromPin: Then, to: 9442300020, toPin: Exec}
+    - {from: 9442300021, fromPin: Value, to: 9442300022, toPin: Value}
+    - {from: 9442300020, fromPin: Then, to: 9442300022, toPin: Exec}
+    - {from: 9442300023, fromPin: Value, to: 9442300116, toPin: "True"}
+    - {from: 9442300116, fromPin: Result, to: 9442300024, toPin: Value}
+    - {from: 9442300022, fromPin: Then, to: 9442300024, toPin: Exec}
+    - {from: 9442300025, fromPin: Value, to: 9442300026, toPin: result}
+    - {from: 9442300006, fromPin: Completed, to: 9442300026, toPin: Exec}
+    - {from: 9442300028, fromPin: Value, to: 9442300029, toPin: A}
+    - {from: 9442300030, fromPin: active, to: 9442300031, toPin: A}
+    - {from: 9442300029, fromPin: Result, to: 9442300032, toPin: A}
+    - {from: 9442300031, fromPin: Result, to: 9442300032, toPin: B}
+    - {from: 9442300032, fromPin: Result, to: 9442300033, toPin: Condition}
+    - {from: 9442300027, fromPin: Then, to: 9442300033, toPin: Exec}
+    - {from: 9442300035, fromPin: Value, to: 9442300117, toPin: A}
+    - {from: 9442300117, fromPin: Result, to: 9442300034, toPin: slot}
+    - {from: 9442300033, fromPin: "True", to: 9442300034, toPin: Exec}
+    - {from: 9442300034, fromPin: Then, to: 9442300036, toPin: Exec}
+    - {from: 9442300036, fromPin: Then, to: 9442300037, toPin: Exec}
+    - {from: 9442300033, fromPin: "False", to: 9442300037, toPin: Exec}
+    - {from: 9442300037, fromPin: value, to: 9442300039, toPin: A}
+    - {from: 9442300038, fromPin: pressed, to: 9442300039, toPin: B}
+    - {from: 9442300039, fromPin: Result, to: 9442300040, toPin: Condition}
+    - {from: 9442300037, fromPin: Then, to: 9442300040, toPin: Exec}
+    - {from: 9442300040, fromPin: "True", to: 9442300041, toPin: Exec}
+    - {from: 9442300043, fromPin: Value, to: 9442300044, toPin: Condition}
+    - {from: 9442300042, fromPin: Then, to: 9442300044, toPin: Exec}
+    - {from: 9442300044, fromPin: "True", to: 9442300045, toPin: Exec}
+    - {from: 9442300044, fromPin: "False", to: 9442300046, toPin: Exec}
+    - {from: 9442300042, fromPin: jingle, to: 9442300047, toPin: Condition}
+    - {from: 9442300046, fromPin: Then, to: 9442300047, toPin: Exec}
+    - {from: 9442300047, fromPin: "True", to: 9442300048, toPin: Exec}
+    - {from: 9442300042, fromPin: path, to: 9442300049, toPin: scene_path}
+    - {from: 9442300050, fromPin: Value, to: 9442300051, toPin: Value}
+    - {from: 9442300051, fromPin: R, to: 9442300049, toPin: r}
+    - {from: 9442300052, fromPin: Value, to: 9442300053, toPin: Value}
+    - {from: 9442300053, fromPin: G, to: 9442300049, toPin: g}
+    - {from: 9442300054, fromPin: Value, to: 9442300055, toPin: Value}
+    - {from: 9442300055, fromPin: B, to: 9442300049, toPin: b}
+    - {from: 9442300048, fromPin: Then, to: 9442300049, toPin: Exec}
+    - {from: 9442300047, fromPin: "False", to: 9442300049, toPin: Exec}
+    - {from: 9442300057, fromPin: Value, to: 9442300058, toPin: Condition}
+    - {from: 9442300056, fromPin: Then, to: 9442300058, toPin: Exec}
+    - {from: 9442300058, fromPin: "False", to: 9442300059, toPin: Exec}
+    - {from: 9442300059, fromPin: Then, to: 9442300060, toPin: Exec}
+    - {from: 9442300060, fromPin: Then, to: 9442300061, toPin: Exec}
+    - {from: 9442300062, fromPin: Then, to: 9442300063, toPin: Exec}
+    - {from: 9442300063, fromPin: result, to: 9442300064, toPin: Value}
+    - {from: 9442300063, fromPin: Then, to: 9442300064, toPin: Exec}
+    - {from: 9442300066, fromPin: Value, to: 9442300067, toPin: A}
+    - {from: 9442300065, fromPin: Value, to: 9442300068, toPin: A}
+    - {from: 9442300067, fromPin: Result, to: 9442300068, toPin: B}
+    - {from: 9442300068, fromPin: Result, to: 9442300069, toPin: Condition}
+    - {from: 9442300064, fromPin: Then, to: 9442300069, toPin: Exec}
+    - {from: 9442300069, fromPin: "False", to: 9442300070, toPin: Exec}
+    - {from: 9442300070, fromPin: Then, to: 9442300071, toPin: Exec}
+    - {from: 9442300072, fromPin: Value, to: 9442300073, toPin: Value}
+    - {from: 9442300071, fromPin: Then, to: 9442300073, toPin: Exec}
+    - {from: 9442300075, fromPin: Value, to: 9442300076, toPin: Value}
+    - {from: 9442300076, fromPin: R, to: 9442300074, toPin: r}
+    - {from: 9442300077, fromPin: Value, to: 9442300078, toPin: Value}
+    - {from: 9442300078, fromPin: G, to: 9442300074, toPin: g}
+    - {from: 9442300079, fromPin: Value, to: 9442300080, toPin: Value}
+    - {from: 9442300080, fromPin: B, to: 9442300074, toPin: b}
+    - {from: 9442300073, fromPin: Then, to: 9442300074, toPin: Exec}
+    - {from: 9442300083, fromPin: Value, to: 9442300084, toPin: A}
+    - {from: 9442300082, fromPin: Value, to: 9442300085, toPin: A}
+    - {from: 9442300084, fromPin: Result, to: 9442300085, toPin: B}
+    - {from: 9442300085, fromPin: Result, to: 9442300086, toPin: Condition}
+    - {from: 9442300081, fromPin: Then, to: 9442300086, toPin: Exec}
+    - {from: 9442300088, fromPin: Value, to: 9442300089, toPin: A}
+    - {from: 9442300089, fromPin: Result, to: 9442300087, toPin: entity_id}
+    - {from: 9442300086, fromPin: "False", to: 9442300087, toPin: Exec}
+    - {from: 9442300091, fromPin: Value, to: 9442300092, toPin: A}
+    - {from: 9442300092, fromPin: Result, to: 9442300090, toPin: entity_id}
+    - {from: 9442300087, fromPin: Then, to: 9442300090, toPin: Exec}
+    - {from: 9442300094, fromPin: Value, to: 9442300095, toPin: A}
+    - {from: 9442300095, fromPin: Result, to: 9442300093, toPin: entity_id}
+    - {from: 9442300090, fromPin: Then, to: 9442300093, toPin: Exec}
+    - {from: 9442300093, fromPin: Then, to: 9442300096, toPin: Exec}
+    - {from: 9442300098, fromPin: Value, to: 9442300099, toPin: A}
+    - {from: 9442300099, fromPin: Result, to: 9442300100, toPin: Condition}
+    - {from: 9442300097, fromPin: Then, to: 9442300100, toPin: Exec}
+    - {from: 9442300100, fromPin: "True", to: 9442300101, toPin: Exec}
+    - {from: 9442300103, fromPin: Value, to: 9442300104, toPin: A}
+    - {from: 9442300104, fromPin: Result, to: 9442300102, toPin: entity_id}
+    - {from: 9442300100, fromPin: "False", to: 9442300102, toPin: Exec}
+    - {from: 9442300106, fromPin: Value, to: 9442300107, toPin: A}
+    - {from: 9442300107, fromPin: Result, to: 9442300105, toPin: entity_id}
+    - {from: 9442300102, fromPin: Then, to: 9442300105, toPin: Exec}
+    - {from: 9442300105, fromPin: Then, to: 9442300108, toPin: Exec}
+    - {from: 9442300109, fromPin: Then, to: 9442300110, toPin: Exec}
+    - {from: 9442300111, fromPin: Then, to: 9442300112, toPin: Exec}
+    - {from: 9442300113, fromPin: Then, to: 9442300114, toPin: Exec}
+  groups:
+    - {id: 9442390000, title: newest_slot, position: [316, -52], size: [3720, 1440], color: Teal}
+    - {id: 9442390001, title: on_update, position: [146, 1748], size: [2530, 840], color: Red}
+    - {id: 9442390002, title: leave, position: [146, 2648], size: [2530, 960], color: Teal}
+    - {id: 9442390003, title: on_new_game_clicked, position: [146, 3668], size: [1850, 360], color: Red}
+    - {id: 9442390004, title: on_continue_clicked, position: [316, 4088], size: [2700, 960], color: Red}
+    - {id: 9442390005, title: on_how_to_clicked, position: [146, 5108], size: [2190, 720], color: Red}
+    - {id: 9442390006, title: on_how_to_closed, position: [146, 5888], size: [2190, 480], color: Red}
+    - {id: 9442390007, title: on_settings_clicked, position: [316, 6428], size: [660, 200], color: Red}
+    - {id: 9442390008, title: on_quit_clicked, position: [316, 6728], size: [660, 200], color: Red}
+    - {id: 9442390009, title: on_create, position: [316, 1448], size: [660, 200], color: Red}

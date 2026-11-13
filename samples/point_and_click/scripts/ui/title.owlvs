@@ -1,0 +1,308 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: first_room, type: string, default: scenes/cottage.owl}
+    - {name: wave_every, type: float, default: "6", min: 1}
+    - {name: hero, type: entity, default: "0", exposed: false}
+    - {name: timer, type: float, default: "0", exposed: false}
+    - {name: leaving, type: bool, default: "false", exposed: false}
+    - {name: continue, type: entity, default: "0", exposed: false}
+  nodes:
+    - id: 9442300001
+      type: event.on_create
+      position: [340, 0]
+    - id: 9442300002
+      type: call.scene.find_entity
+      position: [170, 160]
+      values:
+        name: Hero
+    - id: 9442300003
+      type: var.set
+      position: [680, 0]
+      values:
+        variable: hero
+    - id: 9442300004
+      type: call.ui.find
+      position: [510, 160]
+      values:
+        name: ContinueButton
+    - id: 9442300005
+      type: var.set
+      position: [1020, 0]
+      values:
+        variable: continue
+    - id: 9442300006
+      type: call.ui.set_button_enabled
+      position: [1360, 0]
+    - id: 9442300007
+      type: var.get
+      position: [1190, 160]
+      values:
+        variable: continue
+    - id: 9442300008
+      type: call.save.has_save
+      position: [1190, 280]
+      values:
+        slot: "1"
+    - id: 9442300009
+      type: call.gamestate.set
+      position: [1700, 0]
+      values:
+        key: title_has_save
+    - id: 9442300010
+      type: call.save.has_save
+      position: [1530, 160]
+      values:
+        slot: "1"
+    - id: 9442300011
+      type: call.ui.is_transition_active
+      position: [1530, 280]
+    - id: 9442300012
+      type: logic.not
+      position: [1530, 400]
+    - id: 9442300013
+      type: flow.branch
+      position: [2040, 0]
+    - id: 9442300014
+      type: call.ui.transition_play
+      position: [2380, 0]
+      values:
+        split.rgba: "true"
+        kind: fade_in
+        duration: "0.6"
+        r: "0.02"
+        g: "0.02"
+        b: "0.05"
+    - id: 9442300015
+      type: event.on_update
+      position: [340, 660]
+    - id: 9442300016
+      type: var.get
+      position: [170, 820]
+      values:
+        variable: timer
+    - id: 9442300017
+      type: math.add
+      position: [170, 940]
+    - id: 9442300018
+      type: var.set
+      position: [680, 660]
+      values:
+        variable: timer
+    - id: 9442300019
+      type: var.get
+      position: [510, 820]
+      values:
+        variable: timer
+    - id: 9442300020
+      type: var.get
+      position: [510, 940]
+      values:
+        variable: wave_every
+    - id: 9442300021
+      type: compare.greater
+      position: [510, 1060]
+    - id: 9442300022
+      type: flow.branch
+      position: [1020, 660]
+    - id: 9442300023
+      type: var.set
+      position: [1360, 660]
+      values:
+        variable: timer
+        Value: "0"
+    - id: 9442300024
+      type: call.animator.trigger
+      position: [1700, 660]
+      values:
+        name: act
+    - id: 9442300025
+      type: var.get
+      position: [1530, 820]
+      values:
+        variable: hero
+    - id: 9442300026
+      type: event.custom
+      position: [340, 1320]
+      values:
+        function: on_new_clicked
+    - id: 9442300027
+      type: var.get
+      position: [170, 1480]
+      values:
+        variable: leaving
+    - id: 9442300028
+      type: flow.branch
+      position: [680, 1320]
+    - id: 9442300029
+      type: var.set
+      position: [1020, 1320]
+      values:
+        variable: leaving
+        Value: "true"
+    - id: 9442300030
+      type: call.sound.play
+      position: [1360, 1320]
+      values:
+        asset_path: sounds/click.wav
+    - id: 9442300031
+      type: call.gamestate.clear
+      position: [1700, 1320]
+    - id: 9442300032
+      type: call.gamestate.set
+      position: [2040, 1320]
+      values:
+        key: entry
+        value: start
+    - id: 9442300033
+      type: call.scene.transition_to
+      position: [2380, 1320]
+      values:
+        split.rgba: "true"
+        kind: fade_out
+        duration: "0.6"
+        r: "0.02"
+        g: "0.02"
+        b: "0.05"
+    - id: 9442300034
+      type: var.get
+      position: [2210, 1480]
+      values:
+        variable: first_room
+    - id: 9442300035
+      type: event.custom
+      position: [340, 1740]
+      values:
+        function: on_continue_clicked
+    - id: 9442300036
+      type: var.get
+      position: [170, 1900]
+      values:
+        variable: leaving
+    - id: 9442300037
+      type: call.save.has_save
+      position: [170, 2020]
+      values:
+        slot: "1"
+    - id: 9442300038
+      type: logic.not
+      position: [170, 2140]
+    - id: 9442300039
+      type: logic.or
+      position: [170, 2260]
+    - id: 9442300040
+      type: flow.branch
+      position: [680, 1740]
+    - id: 9442300041
+      type: var.set
+      position: [1020, 1740]
+      values:
+        variable: leaving
+        Value: "true"
+    - id: 9442300042
+      type: call.sound.play
+      position: [1360, 1740]
+      values:
+        asset_path: sounds/click.wav
+    - id: 9442300043
+      type: call.save.load_game
+      position: [1700, 1740]
+      values:
+        slot: "1"
+    - id: 9442300044
+      type: event.custom
+      position: [340, 2520]
+      values:
+        function: on_settings_clicked
+    - id: 9442300045
+      type: var.get
+      position: [170, 2680]
+      values:
+        variable: leaving
+    - id: 9442300046
+      type: flow.branch
+      position: [680, 2520]
+    - id: 9442300047
+      type: var.set
+      position: [1020, 2520]
+      values:
+        variable: leaving
+        Value: "true"
+    - id: 9442300048
+      type: call.sound.play
+      position: [1360, 2520]
+      values:
+        asset_path: sounds/click.wav
+    - id: 9442300049
+      type: call.scene.transition_to
+      position: [1700, 2520]
+      values:
+        split.rgba: "true"
+        scene_path: scenes/settings.owl
+        kind: fade_out
+        duration: "0.3"
+        r: "0.02"
+        g: "0.02"
+        b: "0.05"
+    - id: 9442300050
+      type: event.custom
+      position: [340, 2940]
+      values:
+        function: on_quit_clicked
+    - id: 9442300051
+      type: call.scene.quit
+      position: [680, 2940]
+  links:
+    - {from: 9442300002, fromPin: entity_id, to: 9442300003, toPin: Value}
+    - {from: 9442300001, fromPin: Then, to: 9442300003, toPin: Exec}
+    - {from: 9442300004, fromPin: entity_id, to: 9442300005, toPin: Value}
+    - {from: 9442300003, fromPin: Then, to: 9442300005, toPin: Exec}
+    - {from: 9442300007, fromPin: Value, to: 9442300006, toPin: entity_id}
+    - {from: 9442300008, fromPin: exists, to: 9442300006, toPin: enabled}
+    - {from: 9442300005, fromPin: Then, to: 9442300006, toPin: Exec}
+    - {from: 9442300010, fromPin: exists, to: 9442300009, toPin: value}
+    - {from: 9442300006, fromPin: Then, to: 9442300009, toPin: Exec}
+    - {from: 9442300011, fromPin: active, to: 9442300012, toPin: A}
+    - {from: 9442300012, fromPin: Result, to: 9442300013, toPin: Condition}
+    - {from: 9442300009, fromPin: Then, to: 9442300013, toPin: Exec}
+    - {from: 9442300013, fromPin: "True", to: 9442300014, toPin: Exec}
+    - {from: 9442300016, fromPin: Value, to: 9442300017, toPin: A}
+    - {from: 9442300015, fromPin: dt, to: 9442300017, toPin: B}
+    - {from: 9442300017, fromPin: Result, to: 9442300018, toPin: Value}
+    - {from: 9442300015, fromPin: Then, to: 9442300018, toPin: Exec}
+    - {from: 9442300019, fromPin: Value, to: 9442300021, toPin: A}
+    - {from: 9442300020, fromPin: Value, to: 9442300021, toPin: B}
+    - {from: 9442300021, fromPin: Result, to: 9442300022, toPin: Condition}
+    - {from: 9442300018, fromPin: Then, to: 9442300022, toPin: Exec}
+    - {from: 9442300022, fromPin: "True", to: 9442300023, toPin: Exec}
+    - {from: 9442300025, fromPin: Value, to: 9442300024, toPin: entity_id}
+    - {from: 9442300023, fromPin: Then, to: 9442300024, toPin: Exec}
+    - {from: 9442300027, fromPin: Value, to: 9442300028, toPin: Condition}
+    - {from: 9442300026, fromPin: Then, to: 9442300028, toPin: Exec}
+    - {from: 9442300028, fromPin: "False", to: 9442300029, toPin: Exec}
+    - {from: 9442300029, fromPin: Then, to: 9442300030, toPin: Exec}
+    - {from: 9442300030, fromPin: Then, to: 9442300031, toPin: Exec}
+    - {from: 9442300031, fromPin: Then, to: 9442300032, toPin: Exec}
+    - {from: 9442300034, fromPin: Value, to: 9442300033, toPin: scene_path}
+    - {from: 9442300032, fromPin: Then, to: 9442300033, toPin: Exec}
+    - {from: 9442300037, fromPin: exists, to: 9442300038, toPin: A}
+    - {from: 9442300036, fromPin: Value, to: 9442300039, toPin: A}
+    - {from: 9442300038, fromPin: Result, to: 9442300039, toPin: B}
+    - {from: 9442300039, fromPin: Result, to: 9442300040, toPin: Condition}
+    - {from: 9442300035, fromPin: Then, to: 9442300040, toPin: Exec}
+    - {from: 9442300040, fromPin: "False", to: 9442300041, toPin: Exec}
+    - {from: 9442300041, fromPin: Then, to: 9442300042, toPin: Exec}
+    - {from: 9442300042, fromPin: Then, to: 9442300043, toPin: Exec}
+    - {from: 9442300045, fromPin: Value, to: 9442300046, toPin: Condition}
+    - {from: 9442300044, fromPin: Then, to: 9442300046, toPin: Exec}
+    - {from: 9442300046, fromPin: "False", to: 9442300047, toPin: Exec}
+    - {from: 9442300047, fromPin: Then, to: 9442300048, toPin: Exec}
+    - {from: 9442300048, fromPin: Then, to: 9442300049, toPin: Exec}
+    - {from: 9442300050, fromPin: Then, to: 9442300051, toPin: Exec}
+  groups:
+    - {id: 9442390000, title: on_create, position: [146, -52], size: [2530, 600], color: Red}
+    - {id: 9442390001, title: on_update, position: [146, 608], size: [1850, 600], color: Red}
+    - {id: 9442390002, title: on_new_clicked, position: [146, 1268], size: [2530, 360], color: Red}
+    - {id: 9442390003, title: on_continue_clicked, position: [146, 1688], size: [1850, 720], color: Red}
+    - {id: 9442390004, title: on_settings_clicked, position: [146, 2468], size: [1850, 360], color: Red}
+    - {id: 9442390005, title: on_quit_clicked, position: [316, 2888], size: [660, 200], color: Red}

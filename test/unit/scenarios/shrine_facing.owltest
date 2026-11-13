@@ -1,0 +1,18 @@
+# The Sunken Shrine, the hall: the hero shows the picture of the way it faces, its back walking up, its front walking
+# down, its sides walking left and right.
+scene: ../../../samples/sunken_shrine/scenes/room_1.owl
+steps:
+  - frames: 5
+  - expect: {gamestate: shrine_hero_frame, equals: 0}
+  - input: {key: D, frames: 6}
+  - frames: 2
+  - expect: {gamestate: shrine_hero_frame, equals: 3}
+  - input: {key: A, frames: 6}
+  - frames: 2
+  - expect: {gamestate: shrine_hero_frame, equals: 2}
+  - input: {key: W, frames: 6}
+  - frames: 2
+  - expect: {gamestate: shrine_hero_frame, equals: 1}
+  - input: {key: S, frames: 6}
+  - frames: 2
+  - expect: {gamestate: shrine_hero_frame, equals: 0}

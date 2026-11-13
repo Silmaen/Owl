@@ -3996,6 +3996,8 @@ void renderProps(ShipController& ioComponent) {
 	prop::Checkbox("Flight Assist", &ioComponent.flightAssist);
 	fieldTooltip("Dampers stop the drift and the spin once the controls are released; the ship_assist action (Z) "
 				 "toggles it in Play.");
+	prop::Checkbox("Invert Pitch", &ioComponent.invertPitch);
+	fieldTooltip("Stick or mouse forward raises the nose instead of lowering it; a game sets it from its settings.");
 	prop::DragFloat("Thrust", &ioComponent.thrust, 0.1f, 0.f, 10000.f, "%.1f m/s2");
 	fieldTooltip("Acceleration of the main engine along the nose (ship_thrust: W / S, the triggers).");
 	prop::DragFloat("Strafe Thrust", &ioComponent.strafeThrust, 0.1f, 0.f, 10000.f, "%.1f m/s2");
@@ -4008,12 +4010,33 @@ void renderProps(ShipController& ioComponent) {
 	fieldTooltip("Roll rate of the ship_roll action (A / D, the bumpers) at full deflection.");
 	prop::DragFloat("Mouse Sensitivity", &ioComponent.mouseSensitivity, 0.0001f, 0.0001f, 0.05f, "%.4f");
 	fieldTooltip("Radians of pitch and yaw per pixel while the cursor is captured.");
-	prop::DragFloat("Angular Response", &ioComponent.angularResponse, 0.05f, 0.1f, 100.f, "%.2f /s");
-	fieldTooltip("How fast the rotation rate follows the controls: higher is snappier.");
+	prop::DragFloat("Angular Response", &ioComponent.angularResponse, 0.05f, 0.f, 100.f, "%.2f /s");
+	fieldTooltip("How fast the rotation rate follows the controls: higher is snappier; 0 turns at the commanded rate "
+				 "at once and stops on release (no rotational inertia).");
 	prop::DragFloat("Assist Damping", &ioComponent.assistDamping, 0.01f, 0.f, 100.f, "%.2f /s");
 	fieldTooltip("Strength of the dampers of the flight assist on the velocity no thruster pushes.");
+	prop::DragFloat("Level Rate", &ioComponent.levelRate, 0.01f, 0.f, 100.f, "%.2f /s");
+	fieldTooltip("With the flight assist, how fast the wings roll back level with the world up once the roll is "
+				 "released; 0 keeps the roll.");
+	{
+		float degrees = math::degrees(ioComponent.maxPitch);
+		if (prop::DragFloat("Max Pitch", &degrees, 0.5f, 0.f, 90.f, "%.1f deg"))
+			ioComponent.maxPitch = math::radians(std::clamp(degrees, 0.f, 90.f));
+	}
+	fieldTooltip("Arcade flight above 0: the yaw turns about the world up, as a first-person view does, and the nose "
+				 "stays within this angle of the horizon; 0 turns freely about the ship's own axes.");
+	prop::DragFloat("Throttle Rate", &ioComponent.throttleRate, 0.01f, 0.f, 100.f, "%.2f /s");
+	fieldTooltip("Persistent throttle above 0: ship_thrust (W / S, the triggers) moves the throttle at this rate and "
+				 "the ship holds the commanded share of its max speed once released; 0 thrusts only while held.");
+	if (ioComponent.throttleRate > 0.f) {
+		prop::DragFloat("Min Throttle", &ioComponent.minThrottle, 0.01f, -1.f, 0.f, "%.2f");
+		fieldTooltip("Lowest persistent throttle: -1 allows full reverse, 0 none.");
+	}
 	prop::Checkbox("Capture Cursor", &ioComponent.captureCursor);
-	fieldTooltip("Clicking the view hides and locks the cursor for mouse steering (Esc frees it).");
+	fieldTooltip("Clicking the view hides and locks the cursor for mouse steering or the game's aim (Esc frees it).");
+	prop::Checkbox("Mouse Steer", &ioComponent.mouseSteer);
+	fieldTooltip("The captured mouse pitches and yaws the ship; off leaves the mouse to the game (an aim circle) and "
+				 "only the look action turns the ship.");
 }
 
 void renderProps(DayNightCycle& ioComponent) {

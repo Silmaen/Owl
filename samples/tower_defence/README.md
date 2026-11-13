@@ -18,18 +18,18 @@ build a tower on the glowing pad, call a wave early, raise the tower, sell it, r
 tutorial on the briefing (pad B, Backspace) or in the pause window skips it for good; finished or skipped, it is not
 shown again until **Reset tutorial** in the settings.
 
-| #  | Level           | Land                          | Night waves        | Modifiers           | Brings                 |
-|----|-----------------|-------------------------------|--------------------|---------------------|------------------------|
-| 1  | Greenmarch Ford | Meadows, a ford               | 4, 8               |                     | Goblins, grunts, ogres |
-| 2  | Thornwood Pass  | Woods between two plateaus    | 3, 6, 9, 10        | Fog                 | Wolf riders            |
-| 3  | Stonebridge     | Two gates, a long bridge      | 3, 4, 7, 8, 10     |                     | Trolls                 |
-| 4  | Mirefen Marsh   | Two rivers, four bridges      | 3, 6, 9, 10        | Fog                 | Goblin sappers         |
-| 5  | Frostmere       | Snow, a plateau gate          | 3, 6, 9, 10        | Blizzard            | Ogre mages             |
-| 6  | Highpeak Watch  | Snow, two ramps down a cliff  | 3, 4, 7, 8, 11     | Gale                | Orc berserkers         |
-| 7  | Sunscorch Flats | Sand, two gates               | 5, 10              | Drought             |                        |
-| 8  | Ashfall Ridge   | Ash, a ridge climbed and left | 2, 4, 6, 8, 10, 11 | Blood moon          |                        |
-| 9  | Ravenhold       | Ash, two winding roads        | 3, 4, 7, 8, 11, 12 | Plunder, long night |                        |
-| 10 | The Black Gate  | Ash, two gates                | 4, 8, 11, 12       | Blood moon          | The orc chieftain      |
+| #   | Level           | Land                          | Night waves        | Modifiers           | Brings                 |
+|-----|-----------------|-------------------------------|--------------------|---------------------|------------------------|
+| 1   | Greenmarch Ford | Meadows, a ford               | 4, 8               |                     | Goblins, grunts, ogres |
+| 2   | Thornwood Pass  | Woods between two plateaus    | 3, 6, 9, 10        | Fog                 | Wolf riders            |
+| 3   | Stonebridge     | Two gates, a long bridge      | 3, 4, 7, 8, 10     |                     | Trolls                 |
+| 4   | Mirefen Marsh   | Two rivers, four bridges      | 3, 6, 9, 10        | Fog                 | Goblin sappers         |
+| 5   | Frostmere       | Snow, a plateau gate          | 3, 6, 9, 10        | Blizzard            | Ogre mages             |
+| 6   | Highpeak Watch  | Snow, two ramps down a cliff  | 3, 4, 7, 8, 11     | Gale                | Orc berserkers         |
+| 7   | Sunscorch Flats | Sand, two gates               | 5, 10              | Drought             |                        |
+| 8   | Ashfall Ridge   | Ash, a ridge climbed and left | 2, 4, 6, 8, 10, 11 | Blood moon          |                        |
+| 9   | Ravenhold       | Ash, two winding roads        | 3, 4, 7, 8, 11, 12 | Plunder, long night |                        |
+| 10  | The Black Gate  | Ash, two gates                | 4, 8, 11, 12       | Blood moon          | The orc chieftain      |
 
 | Tower  | Price | Does                                                    | Level 2                      | Level 3                    | By day       | By night          |
 |--------|-------|---------------------------------------------------------|------------------------------|----------------------------|--------------|-------------------|
@@ -144,14 +144,15 @@ defaults** puts the volumes, the size and the accessibility back.
 |--------------------------------|--------------------------------------------------------------------------------------------------------------|
 | `scenes/`                      | `title`, `world_map`, `upgrades`, `level_01` to `level_10`, `settings`, `victory`, `game_over`               |
 | `models/td/`, `models/castle/` | Tiles (green and snow), towers and weapons of the Tower Defense Kit, keep of the Castle Kit (Kenney, CC0)    |
+| `materials/`                   | The material graphs of the tiles: water, ground, snow (`generate_materials.py`)                              |
 | `fonts/`                       | `Cinzel` (titles) and `MedievalSharp` (labels), OFL                                                          |
 | `prefabs/`                     | Enemies, towers (one per level and power-up), projectiles with their trails, fire, spawned by the script     |
 | `tables/`                      | `towers` and `enemies` (the values of each kind), `waves_01` to `waves_10` (a row per wave): data tables     |
 | `dialogues/`                   | `briefing_01` to `briefing_10`: the words of the captain and the answers of each briefing                    |
 | `sounds/`                      | Effects (`game/`, `ui/`) and the two music loops (`music/`), home-made                                       |
-| `scripts/game/defence.lua`     | The properties and the hooks of a level: it requires the rules of `scripts/game/td/`                         |
+| `scripts/game/defence.owlvs`   | The properties and the hooks of a level: it requires the rules of `scripts/game/td/`                         |
 | `scripts/game/td/`             | The rules by subject: `towers`, `enemies`, `waves`, `effects`, `wheel`, `briefing`, `tutorial`, `economy`... |
-| `scripts/ui/`                  | The menus, `world_map.lua`, `upgrades.lua`; `parade.lua` marches the Horde under the menus                   |
+| `scripts/ui/`                  | The menus, `world_map.owlvs`, `upgrades.owlvs`; `parade.owlvs` marches the Horde under the menus             |
 | `huds/play.owlhud`             | Gold, lives, wave, day or night, minimap, spells, Call wave / Speed / Menu, pause, briefing window           |
 
 A level mixes the rendering styles of the engine: the terrain, the towers and the keep are 3D meshes lit by the sun
@@ -168,12 +169,13 @@ is a `RenderTarget`, and the world map is a 2D scene: an inked map at 80 pixels 
 
 Duplicate `scenes/level_01.owl` in Owl Nest. Move or replace the tiles of `Terrain` (models of `models/td/`), the
 `Pad` entities under `Pads`, the `Gate` and the `Keep`, and the points of the `Road` spline (`Road B` for a second
-gate): the enemies walk it from the gate to the keep, at its height, in its seven lanes. Duplicate a waves table of
+gate): the enemies walk it from the gate to the keep, at its height, in its seven lanes, each one on the steering
+agent of its prefab (it follows the point of its lane, keeps its distance and steps around the others). Duplicate a waves table of
 `tables/` (a row per wave: its groups `kind count gap [road]` separated by `;`, `"goblin 8 0.8; grunt 2 1.5 b"`, and
 whether it is fought at night) and a briefing of `dialogues/` (the words of the captain; keep the two answers). On the
 `Game` entity set `level_number`, `level_name`, `scene_path`, `waves_table`, `briefing_dialogue`, `modifiers` (keys of
-`defence.lua`: `fog`, `blizzard`, `blood_moon`, `drought`, `gale`, `plunder`, `long_night`) and `new_enemies` (named in
-the briefing). The day and night effects are the `time_effects` list of `defence.lua` (`"archer night range 0.85"`:
+`defence.owlvs`: `fog`, `blizzard`, `blood_moon`, `drought`, `gale`, `plunder`, `long_night`) and `new_enemies` (named in
+the briefing). The day and night effects are the `time_effects` list of `defence.owlvs` (`"archer night range 0.85"`:
 subject, phase, stat, factor). `start_towers` lists the towers standing at the start (`"pad kind level [power]"`, pads
 counted row by row from the north-west). The values of the towers and of the enemies are the rows of
 `tables/towers.owltable` and `tables/enemies.owltable`, the same for every level. Add the level to the `levels` and

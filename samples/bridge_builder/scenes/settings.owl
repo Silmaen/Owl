@@ -1,0 +1,1934 @@
+Scene: settings
+FormatVersion: 7
+EnabledRenderers:
+  - {Name: world, Enabled: false}
+  - {Name: mesh_world, Enabled: true}
+  - {Name: ui, Enabled: false}
+Entities:
+  - Entity: 7310000559431000001
+    Tag:
+      tag: Sun
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [-0.75, -0.55, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Light: {type: Directional, enabled: true, color: [1, 0.95, 0.85], intensity: 100000, castShadows: true, shadowDistance: 60, cascadeCount: 2, shadowResolution: 2048, shadowBias: 1.5}
+  - Entity: 7310000559431000002
+    Tag:
+      tag: Sky
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Environment: {hdri: '', ambient: [1, 1, 1], intensity: 9000, rotation: 0, showSky: true}
+    ProceduralSky: {enabled: true, sunDirection: [-0.4, 0.6, 0.7], turbidity: 3, groundColor: [0.32, 0.36, 0.26], nightColor: [0.42, 0.48, 0.66], nightBrightness: 0.02, stars: 0, discSize: 2.5, resolution: 256}
+  - Entity: 7310000559431000003
+    Tag:
+      tag: River
+    Transform:
+      translation: [6, -11.5, -20]
+      rotation: [0, 0, 0]
+      scale: [92, 1, 60]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:e33fd9616e61b57a:models/water.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000004
+    Tag:
+      tag: Mountain
+    Transform:
+      translation: [-100.114, -12, -114.528]
+      rotation: [0, 0, 0]
+      scale: [43.0014, 30.7153, 30.7153]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:f84f03231e2876f1:models/mountain.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000005
+    Tag:
+      tag: Mountain
+    Transform:
+      translation: [-77.1308, -12, -105.9707]
+      rotation: [0, 0, 0]
+      scale: [52.7042, 37.6459, 37.6459]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:f84f03231e2876f1:models/mountain.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000006
+    Tag:
+      tag: Mountain
+    Transform:
+      translation: [-51.304, -12, -96.1249]
+      rotation: [0, 0, 0]
+      scale: [51.9874, 37.1338, 37.1338]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:f84f03231e2876f1:models/mountain.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000007
+    Tag:
+      tag: Mountain
+    Transform:
+      translation: [-20.7963, -12, -97.7214]
+      rotation: [0, 0, 0]
+      scale: [40.9604, 29.2574, 29.2574]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:f84f03231e2876f1:models/mountain.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000008
+    Tag:
+      tag: Mountain
+    Transform:
+      translation: [5.0942, -12, -98.7141]
+      rotation: [0, 0, 0]
+      scale: [60.0367, 42.8833, 42.8833]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:f84f03231e2876f1:models/mountain.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000009
+    Tag:
+      tag: Mountain
+    Transform:
+      translation: [28.6789, -12, -123.4313]
+      rotation: [0, 0, 0]
+      scale: [55.0113, 39.2938, 39.2938]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:f84f03231e2876f1:models/mountain.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000010
+    Tag:
+      tag: Mountain
+    Transform:
+      translation: [58.9252, -12, -124.2877]
+      rotation: [0, 0, 0]
+      scale: [49.1963, 35.1402, 35.1402]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:f84f03231e2876f1:models/mountain.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000011
+    Tag:
+      tag: Mountain
+    Transform:
+      translation: [78.559, -12, -103.6883]
+      rotation: [0, 0, 0]
+      scale: [60.8334, 43.4524, 43.4524]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:f84f03231e2876f1:models/mountain.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000012
+    Tag:
+      tag: Mountain
+    Transform:
+      translation: [105.7311, -12, -104.2545]
+      rotation: [0, 0, 0]
+      scale: [42.1684, 30.1203, 30.1203]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:f84f03231e2876f1:models/mountain.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000013
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [-4.4733, 0, -7.3817]
+      rotation: [0, 0, 0]
+      scale: [3.6424, 3.6424, 3.6424]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000014
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [-15.1459, 0, -5.0728]
+      rotation: [0, 0, 0]
+      scale: [2.6256, 2.6256, 2.6256]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000015
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [-13.9139, 0, -17.9901]
+      rotation: [0, 0, 0]
+      scale: [3.5634, 3.5634, 3.5634]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000016
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [28.0535, 0, -9.3958]
+      rotation: [0, 0, 0]
+      scale: [3.4064, 3.4064, 3.4064]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000017
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [-18.7759, 0, -14.3396]
+      rotation: [0, 0, 0]
+      scale: [2.9882, 2.9882, 2.9882]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000018
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [35.0033, 0, -9.1829]
+      rotation: [0, 0, 0]
+      scale: [3.9589, 3.9589, 3.9589]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000019
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [-4.8336, 0, -17.6285]
+      rotation: [0, 0, 0]
+      scale: [3.3362, 3.3362, 3.3362]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000020
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [-24.3985, 0, -21.3163]
+      rotation: [0, 0, 0]
+      scale: [3.3434, 3.3434, 3.3434]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000021
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [-20.3497, 0, -19.7586]
+      rotation: [0, 0, 0]
+      scale: [3.6461, 3.6461, 3.6461]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000022
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [22.1629, 0, -12.9401]
+      rotation: [0, 0, 0]
+      scale: [3.2004, 3.2004, 3.2004]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000023
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [15.6503, 0, -8.8589]
+      rotation: [0, 0, 0]
+      scale: [2.6872, 2.6872, 2.6872]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000024
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [-3.4561, 0, -15.6483]
+      rotation: [0, 0, 0]
+      scale: [3.903, 3.903, 3.903]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000025
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [20.8303, 0, -16.0357]
+      rotation: [0, 0, 0]
+      scale: [3.2716, 3.2716, 3.2716]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000026
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [-24.5756, 0, -14.9966]
+      rotation: [0, 0, 0]
+      scale: [3.2109, 3.2109, 3.2109]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000027
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [15.4149, 0, -6.3281]
+      rotation: [0, 0, 0]
+      scale: [4.0365, 4.0365, 4.0365]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000028
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [-11.5495, 0, -12.9371]
+      rotation: [0, 0, 0]
+      scale: [4.3336, 4.3336, 4.3336]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000029
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [-12.7805, 0, -19.9009]
+      rotation: [0, 0, 0]
+      scale: [3.5989, 3.5989, 3.5989]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000030
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [34.7356, 0, -11.4753]
+      rotation: [0, 0, 0]
+      scale: [3.0568, 3.0568, 3.0568]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000031
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [30.3854, 0, -8.1535]
+      rotation: [0, 0, 0]
+      scale: [3.2609, 3.2609, 3.2609]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000032
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [-6.2292, 0, -8.2]
+      rotation: [0, 0, 0]
+      scale: [2.9639, 2.9639, 2.9639]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000033
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [33.9462, 0, -9.0748]
+      rotation: [0, 0, 0]
+      scale: [2.8647, 2.8647, 2.8647]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000034
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [-12.0547, 0, -14.1941]
+      rotation: [0, 0, 0]
+      scale: [3.2385, 3.2385, 3.2385]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000035
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [-18.5718, 0, -15.1167]
+      rotation: [0, 0, 0]
+      scale: [3.531, 3.531, 3.531]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000036
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [-12.9594, 0, -21.134]
+      rotation: [0, 0, 0]
+      scale: [4.242, 4.242, 4.242]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000037
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [23.5537, 0, -12.6674]
+      rotation: [0, 0, 0]
+      scale: [3.2882, 3.2882, 3.2882]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000038
+    Tag:
+      tag: Tree
+    Transform:
+      translation: [15.4939, 0, -7.7577]
+      rotation: [0, 0, 0]
+      scale: [2.6347, 2.6347, 2.6347]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7c28f343a1eaef9b:models/tree.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000039
+    Tag:
+      tag: CliffLeft
+    Transform:
+      translation: [-20, -10, 0]
+      rotation: [0, 0, 0]
+      scale: [40, 20, 30]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1a7f8771258d2426:models/cliff.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000040
+    Tag:
+      tag: CliffRight
+    Transform:
+      translation: [32, -10, 0]
+      rotation: [0, 0, 0]
+      scale: [40, 20, 30]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:1a7f8771258d2426:models/cliff.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000041
+    Tag:
+      tag: Deck
+    Transform:
+      translation: [1.5, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [3, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:2f091508dad725e4:models/road.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000042
+    Tag:
+      tag: Deck
+    Transform:
+      translation: [4.5, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [3, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:2f091508dad725e4:models/road.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000043
+    Tag:
+      tag: Deck
+    Transform:
+      translation: [7.5, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [3, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:2f091508dad725e4:models/road.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000044
+    Tag:
+      tag: Deck
+    Transform:
+      translation: [10.5, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [3, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:2f091508dad725e4:models/road.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000045
+    Tag:
+      tag: Truss
+    Transform:
+      translation: [0.75, -1, 0]
+      rotation: [0, 0, -0.9273]
+      scale: [2.5, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:980d0d4eec6ca762:models/steel.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000046
+    Tag:
+      tag: Truss
+    Transform:
+      translation: [2.25, -1, 0]
+      rotation: [0, 0, 0.9273]
+      scale: [2.5, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:980d0d4eec6ca762:models/steel.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000047
+    Tag:
+      tag: Chord
+    Transform:
+      translation: [3, -2, 0]
+      rotation: [0, 0, 0]
+      scale: [3, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7d2bdd4be0d7723f:models/wood.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000048
+    Tag:
+      tag: Truss
+    Transform:
+      translation: [3.75, -1, 0]
+      rotation: [0, 0, -0.9273]
+      scale: [2.5, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:980d0d4eec6ca762:models/steel.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000049
+    Tag:
+      tag: Truss
+    Transform:
+      translation: [5.25, -1, 0]
+      rotation: [0, 0, 0.9273]
+      scale: [2.5, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:980d0d4eec6ca762:models/steel.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000050
+    Tag:
+      tag: Chord
+    Transform:
+      translation: [6, -2, 0]
+      rotation: [0, 0, 0]
+      scale: [3, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7d2bdd4be0d7723f:models/wood.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000051
+    Tag:
+      tag: Truss
+    Transform:
+      translation: [6.75, -1, 0]
+      rotation: [0, 0, -0.9273]
+      scale: [2.5, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:980d0d4eec6ca762:models/steel.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000052
+    Tag:
+      tag: Truss
+    Transform:
+      translation: [8.25, -1, 0]
+      rotation: [0, 0, 0.9273]
+      scale: [2.5, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:980d0d4eec6ca762:models/steel.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000053
+    Tag:
+      tag: Chord
+    Transform:
+      translation: [9, -2, 0]
+      rotation: [0, 0, 0]
+      scale: [3, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7d2bdd4be0d7723f:models/wood.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000054
+    Tag:
+      tag: Truss
+    Transform:
+      translation: [9.75, -1, 0]
+      rotation: [0, 0, -0.9273]
+      scale: [2.5, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:980d0d4eec6ca762:models/steel.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000055
+    Tag:
+      tag: Truss
+    Transform:
+      translation: [11.25, -1, 0]
+      rotation: [0, 0, 0.9273]
+      scale: [2.5, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:980d0d4eec6ca762:models/steel.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000056
+    Tag:
+      tag: Bolt
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7289fbd1e6591458:models/node.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000057
+    Tag:
+      tag: Bolt
+    Transform:
+      translation: [3, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7289fbd1e6591458:models/node.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000058
+    Tag:
+      tag: Bolt
+    Transform:
+      translation: [6, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7289fbd1e6591458:models/node.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000059
+    Tag:
+      tag: Bolt
+    Transform:
+      translation: [9, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7289fbd1e6591458:models/node.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000060
+    Tag:
+      tag: Bolt
+    Transform:
+      translation: [12, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:7289fbd1e6591458:models/node.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000061
+    Tag:
+      tag: Car
+    Transform:
+      translation: [4.5, 0.62, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:27d0ce149b470fda:models/car.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7310000559431000062
+    Tag:
+      tag: ViewPivot
+    Transform:
+      translation: [6, -1, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    LuaScript:
+      scriptPath: gid:facccf03ab709e98:scripts/ui/backdrop.owlvs
+      properties:
+        - name: amplitude
+          type: float
+          value: 0.06
+  - Entity: 7310000559431000063
+    Tag:
+      tag: MenuCamera
+    Transform:
+      translation: [0, 1.5, 24]
+      rotation: [-0.06, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7310000559431000062
+    Camera:
+      camera:
+        projectionType: Perspective
+        perspectiveFOV: 0.85
+        perspectiveNear: 0.3
+        perspectiveFar: 800
+        orthographicSize: 8
+        orthographicNear: -1
+        orthographicFar: 10
+        toneMapping: Aces
+        postProcess: {ev100: 14, exposure: 0, autoExposure: false, bloom: true, bloomThreshold: 1, bloomKnee: 0.5, bloomIntensity: 0.05, bloomScatter: 0.7, vignette: true, vignetteIntensity: 0.25, vignetteSmoothness: 0.5, vignetteColor: [0, 0, 0]}
+      primary: true
+      fixedAspectRatio: false
+  - Entity: 7310000559431000064
+    Tag:
+      tag: MenuMusic
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SoundSource:
+      soundAsset: gid:e350ac9ff7502c12:sounds/music/menu.wav
+      category: Music
+      volume: 0.55
+      pitch: 1
+      loop: true
+      spatial: false
+      playOnStart: true
+      maxDistance: 50
+      rolloff: 1
+  - Entity: 7310000559431000065
+    Tag:
+      tag: SettingsCanvas
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Canvas:
+      space: ScreenOverlay
+      sortOrder: 0
+      referenceResolution: [1280, 720]
+      scaleMode: ScaleWithHeight
+    LuaScript:
+      scriptPath: gid:c3c3bf840ae8ada0:scripts/ui/settings.owlvs
+  - Entity: 7310000559431000066
+    Tag:
+      tag: SettingsList
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7310000559431000065
+    UiRect:
+      anchorMin: [0.5, 0]
+      anchorMax: [0.5, 0]
+      pivot: [0.5, 0]
+      size: [1.28, 0.94]
+      sizeUnit: [ScreenHeight, ScreenHeight]
+      offset: [0, 0.03]
+      offsetUnit: [ScreenHeight, ScreenHeight]
+    UiLayout:
+      arrangement: Row
+      crossAlign: Center
+      spacing: 16
+      padding: 0
+      columns: 1
+      cellSize: [0, 0]
+  - Entity: 7310000559431000067
+    Tag:
+      tag: RightColumn
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7310000559431000066
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.48, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiLayout:
+      arrangement: Column
+      crossAlign: Center
+      spacing: 6
+      padding: 0
+      columns: 1
+      cellSize: [0, 0]
+  - Entity: 7310000559431000068
+    Tag:
+      tag: LeftColumn
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7310000559431000066
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.48, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiLayout:
+      arrangement: Column
+      crossAlign: Center
+      spacing: 5
+      padding: 0
+      columns: 1
+      cellSize: [0, 0]
+  - Entity: 7310000559431000069
+    Tag:
+      tag: ToggleButton2
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7310000559431000067
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 0.085]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.28, 0.18, 0.1, 1]
+      hoverColor: [0.42, 0.28, 0.15, 1]
+      pressedColor: [0.52, 0.34, 0.18, 1]
+      disabledColor: [0.1, 0.1, 0.1, 0.5]
+      onClickCallback: on_toggle_2_clicked
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.12, 0.06, 0.02, 1]
+      text: ''
+      color: [1, 0.95, 0.85, 1]
+      fontSize: 28
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: OpenSans-ExtraBold
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [1, 0.62, 0.25, 1]
+      highlightThickness: 3
+  - Entity: 7310000559431000070
+    Tag:
+      tag: ToggleButton2Frame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7310000559431000069
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: gid:c6abe7ad01937320:textures/ui/frame.png
+  - Entity: 7310000559431000071
+    Tag:
+      tag: ToggleButton1
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7310000559431000067
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 0.085]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.28, 0.18, 0.1, 1]
+      hoverColor: [0.42, 0.28, 0.15, 1]
+      pressedColor: [0.52, 0.34, 0.18, 1]
+      disabledColor: [0.1, 0.1, 0.1, 0.5]
+      onClickCallback: on_toggle_1_clicked
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.12, 0.06, 0.02, 1]
+      text: ''
+      color: [1, 0.95, 0.85, 1]
+      fontSize: 28
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: OpenSans-ExtraBold
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [1, 0.62, 0.25, 1]
+      highlightThickness: 3
+  - Entity: 7310000559431000072
+    Tag:
+      tag: ToggleButton1Frame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7310000559431000071
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: gid:c6abe7ad01937320:textures/ui/frame.png
+  - Entity: 7310000559431000073
+    Tag:
+      tag: GameTitle
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7310000559431000067
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 0.08]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.12, 0.06, 0.02, 1]
+      text: 'GAME'
+      color: [1, 0.62, 0.25, 1]
+      fontSize: 30
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: OpenSans-ExtraBold
+  - Entity: 7310000559431000074
+    Tag:
+      tag: SubtitlesButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7310000559431000067
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 0.085]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.28, 0.18, 0.1, 1]
+      hoverColor: [0.42, 0.28, 0.15, 1]
+      pressedColor: [0.52, 0.34, 0.18, 1]
+      disabledColor: [0.1, 0.1, 0.1, 0.5]
+      onClickCallback: on_subtitles_clicked
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.12, 0.06, 0.02, 1]
+      text: ''
+      color: [1, 0.95, 0.85, 1]
+      fontSize: 28
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: OpenSans-ExtraBold
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [1, 0.62, 0.25, 1]
+      highlightThickness: 3
+  - Entity: 7310000559431000075
+    Tag:
+      tag: SubtitlesButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7310000559431000074
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: gid:c6abe7ad01937320:textures/ui/frame.png
+  - Entity: 7310000559431000076
+    Tag:
+      tag: MotionButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7310000559431000067
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 0.085]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.28, 0.18, 0.1, 1]
+      hoverColor: [0.42, 0.28, 0.15, 1]
+      pressedColor: [0.52, 0.34, 0.18, 1]
+      disabledColor: [0.1, 0.1, 0.1, 0.5]
+      onClickCallback: on_motion_clicked
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.12, 0.06, 0.02, 1]
+      text: ''
+      color: [1, 0.95, 0.85, 1]
+      fontSize: 28
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: OpenSans-ExtraBold
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [1, 0.62, 0.25, 1]
+      highlightThickness: 3
+  - Entity: 7310000559431000077
+    Tag:
+      tag: MotionButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7310000559431000076
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: gid:c6abe7ad01937320:textures/ui/frame.png
+  - Entity: 7310000559431000078
+    Tag:
+      tag: ColourButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7310000559431000067
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 0.085]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.28, 0.18, 0.1, 1]
+      hoverColor: [0.42, 0.28, 0.15, 1]
+      pressedColor: [0.52, 0.34, 0.18, 1]
+      disabledColor: [0.1, 0.1, 0.1, 0.5]
+      onClickCallback: on_colour_clicked
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.12, 0.06, 0.02, 1]
+      text: ''
+      color: [1, 0.95, 0.85, 1]
+      fontSize: 28
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: OpenSans-ExtraBold
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [1, 0.62, 0.25, 1]
+      highlightThickness: 3
+  - Entity: 7310000559431000079
+    Tag:
+      tag: ColourButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7310000559431000078
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: gid:c6abe7ad01937320:textures/ui/frame.png
+  - Entity: 7310000559431000080
+    Tag:
+      tag: AccessTitle
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7310000559431000067
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 0.08]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.12, 0.06, 0.02, 1]
+      text: 'ACCESSIBILITY'
+      color: [1, 0.62, 0.25, 1]
+      fontSize: 30
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: OpenSans-ExtraBold
+  - Entity: 7310000559431000081
+    Tag:
+      tag: BackButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7310000559431000068
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 0.085]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.28, 0.18, 0.1, 1]
+      hoverColor: [0.42, 0.28, 0.15, 1]
+      pressedColor: [0.52, 0.34, 0.18, 1]
+      disabledColor: [0.1, 0.1, 0.1, 0.5]
+      onClickCallback: go_back
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.12, 0.06, 0.02, 1]
+      text: 'BACK'
+      color: [1, 0.95, 0.85, 1]
+      fontSize: 28
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: OpenSans-ExtraBold
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [1, 0.62, 0.25, 1]
+      highlightThickness: 3
+  - Entity: 7310000559431000082
+    Tag:
+      tag: BackButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7310000559431000081
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: gid:c6abe7ad01937320:textures/ui/frame.png
+  - Entity: 7310000559431000083
+    Tag:
+      tag: ResetButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7310000559431000068
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 0.085]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.28, 0.18, 0.1, 1]
+      hoverColor: [0.42, 0.28, 0.15, 1]
+      pressedColor: [0.52, 0.34, 0.18, 1]
+      disabledColor: [0.1, 0.1, 0.1, 0.5]
+      onClickCallback: on_reset_clicked
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.12, 0.06, 0.02, 1]
+      text: 'RESET DEFAULTS'
+      color: [1, 0.95, 0.85, 1]
+      fontSize: 28
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: OpenSans-ExtraBold
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [1, 0.62, 0.25, 1]
+      highlightThickness: 3
+  - Entity: 7310000559431000084
+    Tag:
+      tag: ResetButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7310000559431000083
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: gid:c6abe7ad01937320:textures/ui/frame.png
+  - Entity: 7310000559431000085
+    Tag:
+      tag: UiScaleSlider
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7310000559431000068
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 0.032]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiSlider:
+      value: 0.2
+      minValue: 0
+      maxValue: 1
+      trackColor: [0.22, 0.17, 0.13, 0.96]
+      fillColor: [1, 0.95, 0.85, 1]
+      handleColor: [1, 0.62, 0.25, 1]
+      onValueChangedCallback: on_ui_scale_changed
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [1, 0.62, 0.25, 1]
+      highlightThickness: 3
+  - Entity: 7310000559431000086
+    Tag:
+      tag: UiScaleLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7310000559431000068
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 0.062]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.12, 0.06, 0.02, 1]
+      text: ''
+      color: [0.85, 0.82, 0.75, 1]
+      fontSize: 24
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 7310000559431000087
+    Tag:
+      tag: SfxVolSlider
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7310000559431000068
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 0.032]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiSlider:
+      value: 1
+      minValue: 0
+      maxValue: 1
+      trackColor: [0.22, 0.17, 0.13, 0.96]
+      fillColor: [1, 0.95, 0.85, 1]
+      handleColor: [1, 0.62, 0.25, 1]
+      onValueChangedCallback: on_sfx_vol_changed
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [1, 0.62, 0.25, 1]
+      highlightThickness: 3
+  - Entity: 7310000559431000088
+    Tag:
+      tag: SfxVolLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7310000559431000068
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 0.062]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.12, 0.06, 0.02, 1]
+      text: ''
+      color: [0.85, 0.82, 0.75, 1]
+      fontSize: 24
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 7310000559431000089
+    Tag:
+      tag: MusicVolSlider
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7310000559431000068
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 0.032]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiSlider:
+      value: 0.8
+      minValue: 0
+      maxValue: 1
+      trackColor: [0.22, 0.17, 0.13, 0.96]
+      fillColor: [1, 0.95, 0.85, 1]
+      handleColor: [1, 0.62, 0.25, 1]
+      onValueChangedCallback: on_music_vol_changed
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [1, 0.62, 0.25, 1]
+      highlightThickness: 3
+  - Entity: 7310000559431000090
+    Tag:
+      tag: MusicVolLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7310000559431000068
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 0.062]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.12, 0.06, 0.02, 1]
+      text: ''
+      color: [0.85, 0.82, 0.75, 1]
+      fontSize: 24
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 7310000559431000091
+    Tag:
+      tag: MasterVolSlider
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7310000559431000068
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 0.032]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiSlider:
+      value: 1
+      minValue: 0
+      maxValue: 1
+      trackColor: [0.22, 0.17, 0.13, 0.96]
+      fillColor: [1, 0.95, 0.85, 1]
+      handleColor: [1, 0.62, 0.25, 1]
+      onValueChangedCallback: on_master_vol_changed
+    UiFocus:
+      focusable: true
+      initial: true
+      onFocusCallback: ''
+      highlightColor: [1, 0.62, 0.25, 1]
+      highlightThickness: 3
+  - Entity: 7310000559431000092
+    Tag:
+      tag: MasterVolLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7310000559431000068
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 0.062]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.12, 0.06, 0.02, 1]
+      text: ''
+      color: [0.85, 0.82, 0.75, 1]
+      fontSize: 24
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 7310000559431000093
+    Tag:
+      tag: TitleText
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7310000559431000068
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 0.12]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.12, 0.06, 0.02, 1]
+      text: 'SETTINGS'
+      color: [1, 0.95, 0.85, 1]
+      fontSize: 56
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: OpenSans-ExtraBold

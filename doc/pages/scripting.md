@@ -310,9 +310,10 @@ the scene with the tag as an array (the iso town indexes its trees by cell with 
 `scene.spawn_prefab(path, [x, y, z])` instantiates a `.owlprefab` asset (read from the open pack, then the asset
 folders) and returns the id of its root, placed at the position when one is given (0 when the prefab cannot be
 read). Its scripts are created and get `on_create` at the next safe point of the frame (before or after the scripts
-of the frame), never inside the call; its bodies join the physics world, its animations play and its timer triggers
-start. A spawned entity is destroyed like any other with `scene.destroy_entity`; one destroyed in the frame it was
-spawned never starts. `entity.add_component(id, key)` adds a component with its default values by YAML key:
+of the frame), never inside the call; its bodies join the physics world, its animations play, its timer triggers
+start and its `playOnStart` sounds play. A spawned entity is destroyed like any other with `scene.destroy_entity`;
+one destroyed in the frame it was spawned never starts. The export packs every prefab whose path is quoted in a script, one of its modules or a script
+property. `entity.add_component(id, key)` adds a component with its default values by YAML key:
 
 ```lua
 local WAVE = { "prefabs/enemy.owlprefab", "prefabs/enemy.owlprefab", "prefabs/boss.owlprefab" }

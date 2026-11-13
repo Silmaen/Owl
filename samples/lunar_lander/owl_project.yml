@@ -1,0 +1,29 @@
+OwlProject:
+  name: OwlLunarLander
+  firstScene: scenes/title.owl
+  author: Silmaen
+  description: Lunar Lander, a sample game of the Owl Engine
+  icon: logo/logo_owl.png
+  gamepadMappings: input/gamecontrollerdb.txt
+  window:
+    width: 1280
+    height: 720
+    fullscreen: false
+    resizable: true
+  RendererStack:
+    - Type: Renderer2D
+      Name: world
+    - Type: RendererMesh
+      Name: mesh_world
+      DefaultConfig:
+        SunDirection: [-0.5, -0.4, -0.75]
+        Ambient: [0.04, 0.04, 0.05]
+    - Type: RendererPlanet
+      Name: planet_world
+      DefaultConfig:
+        SunDirection: [-0.5, -0.4, -0.75]
+        Ambient: [0.02, 0.02, 0.03]
+    - Type: Renderer2D
+      Name: ui
+    - Type: Renderer2D
+      Name: overlay

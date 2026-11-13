@@ -36,6 +36,7 @@ function Input.click()
     end
 end
 
+---@return nil
 function Input.hover_badge()
     if S.ring == nil or S.pad_mode then return end
     local badge = scene.pick_entity(nil, nil, "BuildChoice")
@@ -77,6 +78,7 @@ function Input.step_cursor(direction)
     S.cursor_pad = order[index]
 end
 
+---@return nil
 function Input.update_cursor()
     local mx, my = scene.get_viewport_mouse()
     if S.last_mouse_x ~= nil and (mx ~= S.last_mouse_x or my ~= S.last_mouse_y) then
@@ -98,6 +100,7 @@ function Input.update_cursor()
     gamestate.set("tower_hover_pad", shown_pad and shown_pad.index or 0)
 end
 
+---@return nil
 function Input.handle_input()
     if input.is_action_just_pressed("fast_forward") then on_speed_clicked() end
     if input.is_action_just_pressed("call_wave") then Waves.call_early() end

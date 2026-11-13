@@ -52,7 +52,7 @@ Entities:
     SoundListener:
       primary: true
     LuaScript:
-      scriptPath: gid:893b2068ea9674f0:scripts/game/player.lua
+      scriptPath: gid:893b2068ea9674f0:scripts/game/player.owlvs
       properties:
         - name: speed
           type: float
@@ -86,7 +86,7 @@ Entities:
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: gid:5e81c9cc6d265f5d:scripts/game/level.lua
+      scriptPath: gid:5e81c9cc6d265f5d:scripts/game/level.owlvs
       properties:
         - name: level
           type: int
@@ -204,7 +204,7 @@ Entities:
     Tag:
       tag: Minimap
     Transform:
-      translation: [96, 96, 0]
+      translation: [96, 211, 0]
       rotation: [0, 0, 0]
       scale: [5, 5, 1]
     Tilemap:
@@ -212,14 +212,14 @@ Entities:
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: gid:7c8b109aeb22a4f4:scripts/game/explore.lua
+      scriptPath: gid:7c8b109aeb22a4f4:scripts/game/explore.owlvs
     RendererTag:
       Name: overlay
   - Entity: 5380427348250680787
     Tag:
       tag: MinimapPlayer
     Transform:
-      translation: [96, 96, 0.1]
+      translation: [96, 211, 0.1]
       rotation: [0, 0, 0]
       scale: [6, 6, 1]
     CircleRenderer:
@@ -234,7 +234,7 @@ Entities:
     Tag:
       tag: MinimapFacing
     Transform:
-      translation: [102, 96, 0.2]
+      translation: [102, 211, 0.2]
       rotation: [0, 0, 0]
       scale: [3, 3, 1]
     CircleRenderer:
@@ -289,7 +289,7 @@ Entities:
     Hierarchy:
       parentId: 9185042235619550434
     LuaScript:
-      scriptPath: gid:128aeddd6600c94d:scripts/game/locked_door.lua
+      scriptPath: gid:128aeddd6600c94d:scripts/game/locked_door.owlvs
       properties:
         - name: key
           type: string
@@ -316,7 +316,7 @@ Entities:
     Hierarchy:
       parentId: 9185042235619550434
     LuaScript:
-      scriptPath: gid:128aeddd6600c94d:scripts/game/locked_door.lua
+      scriptPath: gid:128aeddd6600c94d:scripts/game/locked_door.owlvs
       properties:
         - name: key
           type: string
@@ -543,7 +543,7 @@ Entities:
     Hierarchy:
       parentId: 737525235450614734
     LuaScript:
-      scriptPath: gid:f5ecfc9bc14b376f:scripts/game/secret.lua
+      scriptPath: gid:f5ecfc9bc14b376f:scripts/game/secret.owlvs
     RaycastPushWall:
       tilesetPath: gid:d76bbf90720807dd:tilesets/wolf_walls.owltileset
       tileIndex: 1
@@ -564,7 +564,7 @@ Entities:
     Hierarchy:
       parentId: 737525235450614734
     LuaScript:
-      scriptPath: gid:f5ecfc9bc14b376f:scripts/game/secret.lua
+      scriptPath: gid:f5ecfc9bc14b376f:scripts/game/secret.owlvs
     RaycastPushWall:
       tilesetPath: gid:d76bbf90720807dd:tilesets/wolf_walls.owltileset
       tileIndex: 53
@@ -585,7 +585,7 @@ Entities:
     Hierarchy:
       parentId: 737525235450614734
     LuaScript:
-      scriptPath: gid:f5ecfc9bc14b376f:scripts/game/secret.lua
+      scriptPath: gid:f5ecfc9bc14b376f:scripts/game/secret.owlvs
     RaycastPushWall:
       tilesetPath: gid:d76bbf90720807dd:tilesets/wolf_walls.owltileset
       tileIndex: 22
@@ -624,7 +624,7 @@ Entities:
     Hierarchy:
       parentId: 6036425637632289772
     LuaScript:
-      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.owlvs
       properties:
         - name: item
           type: string
@@ -650,7 +650,7 @@ Entities:
     Hierarchy:
       parentId: 6036425637632289772
     LuaScript:
-      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.owlvs
       properties:
         - name: item
           type: string
@@ -676,7 +676,7 @@ Entities:
     Hierarchy:
       parentId: 6036425637632289772
     LuaScript:
-      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.owlvs
       properties:
         - name: item
           type: string
@@ -714,7 +714,7 @@ Entities:
     Hierarchy:
       parentId: 6036425637632289772
     LuaScript:
-      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.owlvs
       properties:
         - name: item
           type: string
@@ -740,7 +740,7 @@ Entities:
     Hierarchy:
       parentId: 6036425637632289772
     LuaScript:
-      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.owlvs
       properties:
         - name: item
           type: string
@@ -766,7 +766,7 @@ Entities:
     Hierarchy:
       parentId: 6036425637632289772
     LuaScript:
-      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.owlvs
       properties:
         - name: item
           type: string
@@ -792,7 +792,7 @@ Entities:
     Hierarchy:
       parentId: 6036425637632289772
     LuaScript:
-      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.owlvs
       properties:
         - name: item
           type: string
@@ -818,7 +818,7 @@ Entities:
     Hierarchy:
       parentId: 6036425637632289772
     LuaScript:
-      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.owlvs
       properties:
         - name: item
           type: string
@@ -844,7 +844,7 @@ Entities:
     Hierarchy:
       parentId: 6036425637632289772
     LuaScript:
-      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.owlvs
       properties:
         - name: item
           type: string
@@ -882,7 +882,7 @@ Entities:
     Hierarchy:
       parentId: 6036425637632289772
     LuaScript:
-      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.owlvs
       properties:
         - name: item
           type: string
@@ -908,7 +908,7 @@ Entities:
     Hierarchy:
       parentId: 6036425637632289772
     LuaScript:
-      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.owlvs
       properties:
         - name: item
           type: string
@@ -934,7 +934,7 @@ Entities:
     Hierarchy:
       parentId: 6036425637632289772
     LuaScript:
-      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.owlvs
       properties:
         - name: item
           type: string
@@ -960,7 +960,7 @@ Entities:
     Hierarchy:
       parentId: 6036425637632289772
     LuaScript:
-      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.owlvs
       properties:
         - name: item
           type: string
@@ -986,7 +986,7 @@ Entities:
     Hierarchy:
       parentId: 6036425637632289772
     LuaScript:
-      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.owlvs
       properties:
         - name: item
           type: string
@@ -1012,7 +1012,7 @@ Entities:
     Hierarchy:
       parentId: 6036425637632289772
     LuaScript:
-      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.owlvs
       properties:
         - name: item
           type: string
@@ -1038,7 +1038,7 @@ Entities:
     Hierarchy:
       parentId: 6036425637632289772
     LuaScript:
-      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.owlvs
       properties:
         - name: item
           type: string
@@ -1064,7 +1064,7 @@ Entities:
     Hierarchy:
       parentId: 6036425637632289772
     LuaScript:
-      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.lua
+      scriptPath: gid:876f1f4106f8ec9c:scripts/game/pickup.owlvs
       properties:
         - name: item
           type: string
@@ -1669,7 +1669,7 @@ Entities:
       offscreenIndicator: true
       edgeMargin: 40
     LuaScript:
-      scriptPath: gid:52ca3a542daadd52:scripts/game/exit.lua
+      scriptPath: gid:52ca3a542daadd52:scripts/game/exit.owlvs
       properties:
         - name: next_scene
           type: string
@@ -1706,7 +1706,7 @@ Entities:
     Visibility:
       gameVisible: true
     LuaScript:
-      scriptPath: gid:3bfbe497039c1361:scripts/game/elevator.lua
+      scriptPath: gid:3bfbe497039c1361:scripts/game/elevator.owlvs
     SequencePlayer:
       sequence: gid:94267f7f400725b5:sequences/elevator.owlseq
       camera: 6769693033558203204
@@ -1714,3 +1714,416 @@ Entities:
       loop: false
       speed: 1
       onFinished: on_ride_finished
+  - Entity: 7977669835077796578
+    Tag:
+      tag: Arsenal
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    LuaScript:
+      scriptPath: scripts/game/arsenal.owlvs
+      properties:
+        - name: floor_scene
+          type: string
+          value: scenes/level_2.owl
+  - Entity: 234645434387797218
+    Tag:
+      tag: Guard
+    Transform:
+      translation: [-3.5, -9.5, 0]
+      rotation: [0, 0, -1.5707963]
+      scale: [1, 1, 1]
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/guard/guard.png
+      columns: 8
+      rows: 7
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 1
+      loop: false
+    PhysicBody:
+      type: Dynamic
+      fixedRotation: true
+      colliderSize: [0.5, 0.5, 1]
+      density: 1
+      restitution: 0
+      friction: 0
+    BehaviourTreeAgent:
+      enabled: true
+      tree: scripts/game/guard.owlbt
+    Visibility:
+      gameVisible: true
+    LuaScript:
+      scriptPath: scripts/game/guard.owlvs
+      properties:
+        - name: patrol_c
+          type: int
+          value: 19
+        - name: patrol_r
+          type: int
+          value: 25
+    RendererTag:
+      Name: raycast_world
+  - Entity: 668912005960892748
+    Tag:
+      tag: Guard
+    Transform:
+      translation: [-11.5, -9.5, 0]
+      rotation: [0, 0, -1.5707963]
+      scale: [1, 1, 1]
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/guard/guard.png
+      columns: 8
+      rows: 7
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 1
+      loop: false
+    PhysicBody:
+      type: Dynamic
+      fixedRotation: true
+      colliderSize: [0.5, 0.5, 1]
+      density: 1
+      restitution: 0
+      friction: 0
+    BehaviourTreeAgent:
+      enabled: true
+      tree: scripts/game/guard.owlbt
+    Visibility:
+      gameVisible: true
+    LuaScript:
+      scriptPath: scripts/game/guard.owlvs
+      properties:
+        - name: patrol_c
+          type: int
+          value: 9
+        - name: patrol_r
+          type: int
+          value: 25
+    RendererTag:
+      Name: raycast_world
+  - Entity: 5350966033212659907
+    Tag:
+      tag: Guard
+    Transform:
+      translation: [-1.5, 0.5, 0]
+      rotation: [0, 0, -1.5707963]
+      scale: [1, 1, 1]
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/guard/guard.png
+      columns: 8
+      rows: 7
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 1
+      loop: false
+    PhysicBody:
+      type: Dynamic
+      fixedRotation: true
+      colliderSize: [0.5, 0.5, 1]
+      density: 1
+      restitution: 0
+      friction: 0
+    BehaviourTreeAgent:
+      enabled: true
+      tree: scripts/game/guard.owlbt
+    Visibility:
+      gameVisible: true
+    LuaScript:
+      scriptPath: scripts/game/guard.owlvs
+      properties:
+        - name: patrol_c
+          type: int
+          value: 17
+        - name: patrol_r
+          type: int
+          value: 15
+    RendererTag:
+      Name: raycast_world
+  - Entity: 9076471346306726973
+    Tag:
+      tag: Guard
+    Transform:
+      translation: [1.5, -3.5, 0]
+      rotation: [0, 0, 1.5707963]
+      scale: [1, 1, 1]
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/guard/guard.png
+      columns: 8
+      rows: 7
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 1
+      loop: false
+    PhysicBody:
+      type: Dynamic
+      fixedRotation: true
+      colliderSize: [0.5, 0.5, 1]
+      density: 1
+      restitution: 0
+      friction: 0
+    BehaviourTreeAgent:
+      enabled: true
+      tree: scripts/game/guard.owlbt
+    Visibility:
+      gameVisible: true
+    LuaScript:
+      scriptPath: scripts/game/guard.owlvs
+      properties:
+        - name: patrol_c
+          type: int
+          value: 14
+        - name: patrol_r
+          type: int
+          value: 19
+    RendererTag:
+      Name: raycast_world
+  - Entity: 4136829960104756255
+    Tag:
+      tag: Guard
+    Transform:
+      translation: [-3.5, 8.5, 0]
+      rotation: [0, 0, 3.1415927]
+      scale: [1, 1, 1]
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/guard/guard.png
+      columns: 8
+      rows: 7
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 1
+      loop: false
+    PhysicBody:
+      type: Dynamic
+      fixedRotation: true
+      colliderSize: [0.5, 0.5, 1]
+      density: 1
+      restitution: 0
+      friction: 0
+    BehaviourTreeAgent:
+      enabled: true
+      tree: scripts/game/guard.owlbt
+    Visibility:
+      gameVisible: true
+    LuaScript:
+      scriptPath: scripts/game/guard.owlvs
+    RendererTag:
+      Name: raycast_world
+  - Entity: 774087598539912303
+    Tag:
+      tag: Guard
+    Transform:
+      translation: [1.5, 5.5, 0]
+      rotation: [0, 0, 1.5707963]
+      scale: [1, 1, 1]
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/guard/guard.png
+      columns: 8
+      rows: 7
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 1
+      loop: false
+    PhysicBody:
+      type: Dynamic
+      fixedRotation: true
+      colliderSize: [0.5, 0.5, 1]
+      density: 1
+      restitution: 0
+      friction: 0
+    BehaviourTreeAgent:
+      enabled: true
+      tree: scripts/game/guard.owlbt
+    Visibility:
+      gameVisible: true
+    LuaScript:
+      scriptPath: scripts/game/guard.owlvs
+    RendererTag:
+      Name: raycast_world
+  - Entity: 133682042001879107
+    Tag:
+      tag: Guard
+    Transform:
+      translation: [6.5, -9.5, 0]
+      rotation: [0, 0, -1.5707963]
+      scale: [1, 1, 1]
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/guard/guard.png
+      columns: 8
+      rows: 7
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 1
+      loop: false
+    PhysicBody:
+      type: Dynamic
+      fixedRotation: true
+      colliderSize: [0.5, 0.5, 1]
+      density: 1
+      restitution: 0
+      friction: 0
+    BehaviourTreeAgent:
+      enabled: true
+      tree: scripts/game/guard.owlbt
+    Visibility:
+      gameVisible: true
+    LuaScript:
+      scriptPath: scripts/game/guard.owlvs
+      properties:
+        - name: patrol_c
+          type: int
+          value: 24
+        - name: patrol_r
+          type: int
+          value: 25
+    RendererTag:
+      Name: raycast_world
+  - Entity: 7772940785968667306
+    Tag:
+      tag: Guard
+    Transform:
+      translation: [11.5, -4.5, 0]
+      rotation: [0, 0, 3.1415927]
+      scale: [1, 1, 1]
+    AnimatedSpriteRenderer:
+      color: [1, 1, 1, 1]
+      texture: nam:textures/guard/guard.png
+      columns: 8
+      rows: 7
+      firstFrame: 0
+      lastFrame: 0
+      frameDuration: 1
+      loop: false
+    PhysicBody:
+      type: Dynamic
+      fixedRotation: true
+      colliderSize: [0.5, 0.5, 1]
+      density: 1
+      restitution: 0
+      friction: 0
+    BehaviourTreeAgent:
+      enabled: true
+      tree: scripts/game/guard.owlbt
+    Visibility:
+      gameVisible: true
+    LuaScript:
+      scriptPath: scripts/game/guard.owlvs
+    RendererTag:
+      Name: raycast_world
+  - Entity: 9163235807697432863
+    Tag:
+      tag: Ammo
+    Transform:
+      translation: [-9.5, -5.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/ammo.png
+    Trigger:
+      Type: LuaCallback
+      CallbackName: on_pickup
+    Visibility:
+      gameVisible: true
+    LuaScript:
+      scriptPath: scripts/game/pickup.owlvs
+      properties:
+        - name: item
+          type: string
+          value: Ammo
+    RendererTag:
+      Name: raycast_world
+  - Entity: 9222493335142275789
+    Tag:
+      tag: FirstAid
+    Transform:
+      translation: [-3.5, -13.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/health.png
+    Trigger:
+      Type: LuaCallback
+      CallbackName: on_pickup
+    Visibility:
+      gameVisible: true
+    LuaScript:
+      scriptPath: scripts/game/pickup.owlvs
+      properties:
+        - name: item
+          type: string
+          value: FirstAid
+    RendererTag:
+      Name: raycast_world
+  - Entity: 7883105775473625747
+    Tag:
+      tag: Ammo
+    Transform:
+      translation: [-3.5, 11.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/ammo.png
+    Trigger:
+      Type: LuaCallback
+      CallbackName: on_pickup
+    Visibility:
+      gameVisible: true
+    LuaScript:
+      scriptPath: scripts/game/pickup.owlvs
+      properties:
+        - name: item
+          type: string
+          value: Ammo
+    RendererTag:
+      Name: raycast_world
+  - Entity: 5207270750466423126
+    Tag:
+      tag: FirstAid
+    Transform:
+      translation: [10.5, -12.5, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    SpriteRenderer:
+      color: [1, 1, 1, 1]
+      tilingFactor: 1
+      texture: nam:textures/wolf3d/sprites/health.png
+    Trigger:
+      Type: LuaCallback
+      CallbackName: on_pickup
+    Visibility:
+      gameVisible: true
+    LuaScript:
+      scriptPath: scripts/game/pickup.owlvs
+      properties:
+        - name: item
+          type: string
+          value: FirstAid
+    RendererTag:
+      Name: raycast_world
+  - Entity: 3081550136709348528
+    Tag:
+      tag: Status
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    LuaScript:
+      scriptPath: scripts/game/status.owlvs

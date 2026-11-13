@@ -1,0 +1,519 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: glade_scene, type: string, default: scenes/glade.owl}
+    - {name: hotspots, type: strings, default: "moonstone pick, troll talk, sign look, garden look, stream look, to_glade exit glade_scene"}
+    - {name: munch_time, type: float, default: "1.6", min: 0}
+    - {name: adventure, type: float, default: "0", exposed: false}
+    - {name: ids, type: numbers, default: "", exposed: false}
+    - {name: munching, type: float, default: "0", exposed: false}
+    - {name: wants_pie, type: bool, default: "false", exposed: false}
+    - {name: x, type: float, default: "0", exposed: false}
+    - {name: y, type: float, default: "0", exposed: false}
+    - {name: z, type: float, default: "0", exposed: false}
+    - {name: paid, type: float, default: "0", exposed: false}
+    - {name: taken, type: float, default: "0", exposed: false}
+  functions:
+    - name: follow_troll
+      inputs: []
+      outputs: []
+      exported: true
+    - name: refresh
+      inputs: []
+      outputs: []
+      exported: true
+    - name: pay_toll
+      inputs: []
+      outputs: []
+      exported: true
+    - name: has_pie
+      inputs: []
+      outputs: [{name: result, type: any}]
+      exported: true
+    - name: act
+      inputs: [{name: id, type: any}, {name: verb, type: any}, {name: item, type: any}]
+      outputs: [{name: result, type: any}]
+      exported: true
+  customNodes:
+    - name: init_state
+      title: Init State
+      inputs: []
+      outputs: []
+      code: |
+        adventure = nil
+        ids = {}
+        munching = nil
+    - name: do_act
+      title: Act
+      inputs: [{name: id, type: any}, {name: verb, type: any}, {name: item, type: any}]
+      outputs: [{name: r1, type: any}]
+      code: |
+        if id == "troll" and verb ~= "look" then
+            if adventure.flag("troll_paid") then
+                adventure.say("say.bridge.troll_full")
+            elseif item == "pie" then
+                pay_toll()
+            elseif item == "berries" or item == "crust" then
+                adventure.say("say.bridge.troll_half")
+            elseif item ~= nil then
+                adventure.say("say.bridge.troll_item")
+            else
+                adventure.talk("dialogues/troll.owldlg")
+            end
+            return true
+        end
+        if id == "moonstone" and verb ~= "look" then
+            adventure.act_animation(function()
+                adventure.set_flag("moonstone_taken")
+                adventure.give("moonstone")
+                refresh()
+                adventure.say("say.bridge.moonstone")
+            end)
+            return true
+        end
+        return false
+    - name: do_on_create
+      title: On create
+      inputs: []
+      outputs: []
+      code: |
+        adventure = require("scripts.game.adventure")
+        ids.moonstone = scene.find_entity("Prop_moonstone")
+        ids.troll = scene.find_entity("Troll")
+        ids.aside = scene.find_entity("TrollAside")
+        ids.troll_spot = scene.find_entity("Hotspot_troll")
+        local tx, ty = transform.get_world_position(ids.troll)
+        local sx, sy = transform.get_world_position(ids.troll_spot)
+        ids.spot_dx, ids.spot_dy = sx - tx, sy - ty
+        adventure.start({ name = "bridge", hotspots = hotspots, act = act })
+        if adventure.flag("troll_paid") then
+            local x, y = transform.get_world_position(ids.aside)
+            local _, _, z = transform.get_position(ids.troll)
+            transform.set_position(ids.troll, x, y, z)
+        end
+        follow_troll()
+        refresh()
+    - name: do_on_update
+      title: On update
+      inputs: [{name: dt, type: any}]
+      outputs: []
+      code: |
+        adventure.update(dt)
+        if adventure.flag("troll_paid") then follow_troll() end
+        if wants_pie and not adventure.is_talking() then
+            wants_pie = false
+            pay_toll()
+        end
+        if munching ~= nil then
+            munching = munching - dt
+            if munching <= 0 then
+                munching = nil
+                adventure.set_flag("troll_paid")
+                adventure.say("say.bridge.troll_paid")
+                local x, y = transform.get_world_position(ids.aside)
+                walk.go_to(ids.troll, x, y)
+                refresh()
+            end
+        end
+  nodes:
+    - id: 5897500001
+      type: func.entry
+      position: [340, 0]
+      values:
+        function: follow_troll
+    - id: 5897500002
+      type: call.transform.get_world_position
+      position: [170, 160]
+      values:
+        split.xyz: "true"
+    - id: 5897500003
+      type: var.get
+      position: [170, 280]
+      values:
+        variable: ids
+    - id: 5897500004
+      type: table.get
+      position: [170, 400]
+      values:
+        Key: troll
+    - id: 5897500005
+      type: var.set
+      position: [680, 0]
+      values:
+        variable: x
+    - id: 5897500006
+      type: var.set
+      position: [1020, 0]
+      values:
+        variable: y
+    - id: 5897500007
+      type: call.transform.get_position
+      position: [850, 160]
+      values:
+        split.xyz: "true"
+    - id: 5897500008
+      type: var.get
+      position: [850, 280]
+      values:
+        variable: ids
+    - id: 5897500009
+      type: table.get
+      position: [850, 400]
+      values:
+        Key: troll_spot
+    - id: 5897500010
+      type: var.set
+      position: [1360, 0]
+      values:
+        variable: z
+    - id: 5897500011
+      type: call.transform.set_position
+      position: [1700, 0]
+      values:
+        split.xyz: "true"
+    - id: 5897500012
+      type: var.get
+      position: [1530, 160]
+      values:
+        variable: ids
+    - id: 5897500013
+      type: table.get
+      position: [1530, 280]
+      values:
+        Key: troll_spot
+    - id: 5897500014
+      type: var.get
+      position: [1530, 400]
+      values:
+        variable: x
+    - id: 5897500015
+      type: var.get
+      position: [1530, 520]
+      values:
+        variable: ids
+    - id: 5897500016
+      type: table.get
+      position: [1530, 640]
+      values:
+        Key: spot_dx
+    - id: 5897500017
+      type: math.add
+      position: [1530, 760]
+    - id: 5897500018
+      type: var.get
+      position: [1530, 880]
+      values:
+        variable: y
+    - id: 5897500019
+      type: var.get
+      position: [1530, 1000]
+      values:
+        variable: ids
+    - id: 5897500020
+      type: table.get
+      position: [1530, 1120]
+      values:
+        Key: spot_dy
+    - id: 5897500021
+      type: math.add
+      position: [1530, 1240]
+    - id: 5897500022
+      type: var.get
+      position: [1530, 1360]
+      values:
+        variable: z
+    - id: 5897500023
+      type: func.entry
+      position: [340, 1620]
+      values:
+        function: refresh
+    - id: 5897500024
+      type: lua.call
+      position: [680, 1620]
+      values:
+        module: scripts.game.adventure
+        function: flag
+        name: troll_paid
+    - id: 5897500025
+      type: var.set
+      position: [1020, 1620]
+      values:
+        variable: paid
+    - id: 5897500026
+      type: lua.call
+      position: [1360, 1620]
+      values:
+        module: scripts.game.adventure
+        function: flag
+        name: moonstone_taken
+    - id: 5897500027
+      type: var.set
+      position: [1700, 1620]
+      values:
+        variable: taken
+    - id: 5897500028
+      type: call.ui.set_visible
+      position: [2040, 1620]
+    - id: 5897500029
+      type: var.get
+      position: [1870, 1780]
+      values:
+        variable: ids
+    - id: 5897500030
+      type: table.get
+      position: [1870, 1900]
+      values:
+        Key: moonstone
+    - id: 5897500031
+      type: var.get
+      position: [1870, 2020]
+      values:
+        variable: paid
+    - id: 5897500032
+      type: var.get
+      position: [1870, 2140]
+      values:
+        variable: taken
+    - id: 5897500033
+      type: logic.not
+      position: [1870, 2260]
+    - id: 5897500034
+      type: logic.and
+      position: [1870, 2380]
+    - id: 5897500035
+      type: lua.call
+      position: [2380, 1620]
+      values:
+        module: scripts.game.adventure
+        function: set_hotspot_enabled
+        id: moonstone
+    - id: 5897500036
+      type: var.get
+      position: [2210, 1780]
+      values:
+        variable: paid
+    - id: 5897500037
+      type: var.get
+      position: [2210, 1900]
+      values:
+        variable: taken
+    - id: 5897500038
+      type: logic.not
+      position: [2210, 2020]
+    - id: 5897500039
+      type: logic.and
+      position: [2210, 2140]
+    - id: 5897500040
+      type: func.entry
+      position: [340, 2880]
+      values:
+        function: pay_toll
+    - id: 5897500041
+      type: lua.call
+      position: [680, 2880]
+      values:
+        module: scripts.game.adventure
+        function: take
+        item: pie
+    - id: 5897500042
+      type: call.sound.play
+      position: [1020, 2880]
+      values:
+        asset_path: sounds/munch.wav
+    - id: 5897500043
+      type: call.ui.show_subtitle
+      position: [1360, 2880]
+      values:
+        seconds: "2"
+    - id: 5897500044
+      type: call.locale.tr
+      position: [1700, 2880]
+      values:
+        key: subtitle.munch
+    - id: 5897500045
+      type: call.animator.trigger
+      position: [2040, 2880]
+      values:
+        name: talk
+    - id: 5897500046
+      type: var.get
+      position: [1870, 3040]
+      values:
+        variable: ids
+    - id: 5897500047
+      type: table.get
+      position: [1870, 3160]
+      values:
+        Key: troll
+    - id: 5897500048
+      type: var.get
+      position: [1870, 3280]
+      values:
+        variable: munch_time
+    - id: 5897500049
+      type: var.set
+      position: [2380, 2880]
+      values:
+        variable: munching
+    - id: 5897500050
+      type: func.entry
+      position: [340, 3840]
+      values:
+        function: has_pie
+    - id: 5897500051
+      type: lua.call
+      position: [680, 3840]
+      values:
+        module: scripts.game.adventure
+        function: has
+        item: pie
+    - id: 5897500052
+      type: func.return
+      position: [1020, 3840]
+      values:
+        function: has_pie
+    - id: 5897500053
+      type: event.custom
+      position: [340, 4140]
+      values:
+        function: on_troll_wants_pie
+    - id: 5897500054
+      type: var.set
+      position: [680, 4140]
+      values:
+        variable: wants_pie
+        Value: "true"
+    - id: 5897500055
+      type: func.entry
+      position: [340, 3540]
+      values:
+        function: act
+    - id: 5897500056
+      type: custom.call
+      position: [680, 3540]
+      values:
+        custom: do_act
+    - id: 5897500057
+      type: func.return
+      position: [1020, 3540]
+      values:
+        function: act
+    - id: 5897500058
+      type: event.on_create
+      position: [340, 4440]
+    - id: 5897500059
+      type: custom.call
+      position: [680, 4440]
+      values:
+        custom: do_on_create
+    - id: 5897500060
+      type: event.on_update
+      position: [340, 4740]
+    - id: 5897500061
+      type: custom.call
+      position: [680, 4740]
+      values:
+        custom: do_on_update
+    - id: 5897500062
+      type: custom.call
+      position: [170, 4440]
+      values:
+        custom: init_state
+    - id: 5897500063
+      type: logic.select
+      position: [1870, 2500]
+      values:
+        Condition: "true"
+    - id: 5897500064
+      type: logic.select
+      position: [1870, 2620]
+      values:
+        Condition: "true"
+    - id: 5897500065
+      type: logic.select
+      position: [2210, 2260]
+      values:
+        Condition: "true"
+    - id: 5897500066
+      type: logic.select
+      position: [2210, 2380]
+      values:
+        Condition: "true"
+  links:
+    - {from: 5897500003, fromPin: Value, to: 5897500004, toPin: Table}
+    - {from: 5897500004, fromPin: Result, to: 5897500002, toPin: entity_id}
+    - {from: 5897500002, fromPin: x, to: 5897500005, toPin: Value}
+    - {from: 5897500001, fromPin: Then, to: 5897500005, toPin: Exec}
+    - {from: 5897500002, fromPin: y, to: 5897500006, toPin: Value}
+    - {from: 5897500005, fromPin: Then, to: 5897500006, toPin: Exec}
+    - {from: 5897500008, fromPin: Value, to: 5897500009, toPin: Table}
+    - {from: 5897500009, fromPin: Result, to: 5897500007, toPin: entity_id}
+    - {from: 5897500007, fromPin: z, to: 5897500010, toPin: Value}
+    - {from: 5897500006, fromPin: Then, to: 5897500010, toPin: Exec}
+    - {from: 5897500012, fromPin: Value, to: 5897500013, toPin: Table}
+    - {from: 5897500013, fromPin: Result, to: 5897500011, toPin: entity_id}
+    - {from: 5897500015, fromPin: Value, to: 5897500016, toPin: Table}
+    - {from: 5897500014, fromPin: Value, to: 5897500017, toPin: A}
+    - {from: 5897500016, fromPin: Result, to: 5897500017, toPin: B}
+    - {from: 5897500017, fromPin: Result, to: 5897500011, toPin: x}
+    - {from: 5897500019, fromPin: Value, to: 5897500020, toPin: Table}
+    - {from: 5897500018, fromPin: Value, to: 5897500021, toPin: A}
+    - {from: 5897500020, fromPin: Result, to: 5897500021, toPin: B}
+    - {from: 5897500021, fromPin: Result, to: 5897500011, toPin: y}
+    - {from: 5897500022, fromPin: Value, to: 5897500011, toPin: z}
+    - {from: 5897500010, fromPin: Then, to: 5897500011, toPin: Exec}
+    - {from: 5897500023, fromPin: Then, to: 5897500024, toPin: Exec}
+    - {from: 5897500024, fromPin: result, to: 5897500025, toPin: Value}
+    - {from: 5897500024, fromPin: Then, to: 5897500025, toPin: Exec}
+    - {from: 5897500025, fromPin: Then, to: 5897500026, toPin: Exec}
+    - {from: 5897500026, fromPin: result, to: 5897500027, toPin: Value}
+    - {from: 5897500026, fromPin: Then, to: 5897500027, toPin: Exec}
+    - {from: 5897500029, fromPin: Value, to: 5897500030, toPin: Table}
+    - {from: 5897500030, fromPin: Result, to: 5897500028, toPin: entity_id}
+    - {from: 5897500032, fromPin: Value, to: 5897500063, toPin: "True"}
+    - {from: 5897500063, fromPin: Result, to: 5897500033, toPin: A}
+    - {from: 5897500031, fromPin: Value, to: 5897500064, toPin: "True"}
+    - {from: 5897500064, fromPin: Result, to: 5897500034, toPin: A}
+    - {from: 5897500033, fromPin: Result, to: 5897500034, toPin: B}
+    - {from: 5897500034, fromPin: Result, to: 5897500028, toPin: visible}
+    - {from: 5897500027, fromPin: Then, to: 5897500028, toPin: Exec}
+    - {from: 5897500037, fromPin: Value, to: 5897500065, toPin: "True"}
+    - {from: 5897500065, fromPin: Result, to: 5897500038, toPin: A}
+    - {from: 5897500036, fromPin: Value, to: 5897500066, toPin: "True"}
+    - {from: 5897500066, fromPin: Result, to: 5897500039, toPin: A}
+    - {from: 5897500038, fromPin: Result, to: 5897500039, toPin: B}
+    - {from: 5897500039, fromPin: Result, to: 5897500035, toPin: enabled}
+    - {from: 5897500028, fromPin: Then, to: 5897500035, toPin: Exec}
+    - {from: 5897500040, fromPin: Then, to: 5897500041, toPin: Exec}
+    - {from: 5897500041, fromPin: Then, to: 5897500042, toPin: Exec}
+    - {from: 5897500042, fromPin: Then, to: 5897500044, toPin: Exec}
+    - {from: 5897500044, fromPin: text, to: 5897500043, toPin: text}
+    - {from: 5897500044, fromPin: Then, to: 5897500043, toPin: Exec}
+    - {from: 5897500046, fromPin: Value, to: 5897500047, toPin: Table}
+    - {from: 5897500047, fromPin: Result, to: 5897500045, toPin: entity_id}
+    - {from: 5897500043, fromPin: Then, to: 5897500045, toPin: Exec}
+    - {from: 5897500048, fromPin: Value, to: 5897500049, toPin: Value}
+    - {from: 5897500045, fromPin: Then, to: 5897500049, toPin: Exec}
+    - {from: 5897500050, fromPin: Then, to: 5897500051, toPin: Exec}
+    - {from: 5897500051, fromPin: result, to: 5897500052, toPin: result}
+    - {from: 5897500051, fromPin: Then, to: 5897500052, toPin: Exec}
+    - {from: 5897500053, fromPin: Then, to: 5897500054, toPin: Exec}
+    - {from: 5897500055, fromPin: id, to: 5897500056, toPin: id}
+    - {from: 5897500055, fromPin: verb, to: 5897500056, toPin: verb}
+    - {from: 5897500055, fromPin: item, to: 5897500056, toPin: item}
+    - {from: 5897500055, fromPin: Then, to: 5897500056, toPin: Exec}
+    - {from: 5897500056, fromPin: r1, to: 5897500057, toPin: result}
+    - {from: 5897500056, fromPin: Then, to: 5897500057, toPin: Exec}
+    - {from: 5897500062, fromPin: Then, to: 5897500059, toPin: Exec}
+    - {from: 5897500060, fromPin: dt, to: 5897500061, toPin: dt}
+    - {from: 5897500060, fromPin: Then, to: 5897500061, toPin: Exec}
+    - {from: 5897500058, fromPin: Then, to: 5897500062, toPin: Exec}
+  groups:
+    - {id: 5897590000, title: follow_troll, position: [146, -52], size: [1850, 1560], color: Teal}
+    - {id: 5897590001, title: refresh, position: [316, 1568], size: [2360, 1200], color: Teal}
+    - {id: 5897590002, title: pay_toll, position: [316, 2828], size: [2360, 600], color: Teal}
+    - {id: 5897590003, title: has_pie, position: [316, 3788], size: [1000, 200], color: Teal}
+    - {id: 5897590004, title: on_troll_wants_pie, position: [316, 4088], size: [660, 200], color: Red}
+    - {id: 5897590005, title: act, position: [316, 3488], size: [1000, 200], color: Teal}
+    - {id: 5897590006, title: on_create, position: [146, 4388], size: [830, 200], color: Red}
+    - {id: 5897590007, title: on_update, position: [316, 4688], size: [660, 200], color: Red}

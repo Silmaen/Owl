@@ -1,0 +1,23 @@
+# Tower defence, with the visual scripts built as Play in Owl Nest builds them: Skip tutorial on the briefing of Greenmarch Ford (Backspace, pad B): the briefing dialogue offers it
+# beside To arms!, the level starts without it, and the restarted level offers only To arms!.
+scene: ../../../samples/tower_defence/scenes/level_01.owl
+debug_scripts: true
+steps:
+  - frames: 2
+  - expect: {gamestate: tower_tutorial_offered, equals: true}
+  - expect: {gamestate: tower_briefing_speaker, equals: "Captain of the keep"}
+  - expect: {gamestate: tower_briefing_answers, equals: 2}
+  - input: {key: Backspace, frames: 2}
+  - frames: 3
+  - expect: {gamestate: tower_briefing, equals: false}
+  - expect: {gamestate: tower_tutorial_step, equals: "off"}
+  - expect: {gamestate: tower_tutorial_state, equals: skipped}
+  - input: {key: Escape, frames: 2}
+  - frames: 3
+  - input: {key: Down, frames: 2}
+  - frames: 2
+  - input: {key: Enter, frames: 2}
+  - frames: 90
+  - expect: {gamestate: tower_briefing, equals: true}
+  - expect: {gamestate: tower_tutorial_offered, equals: false}
+  - expect: {gamestate: tower_briefing_answers, equals: 1}

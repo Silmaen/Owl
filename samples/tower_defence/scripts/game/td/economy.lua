@@ -19,11 +19,15 @@ function Eco.refund_of(tower)
     return math.floor(tower.spent * sell_share + 0.5)
 end
 
+---@param family any
+---@param level any
+---@return any result
 function Eco.tier(family, level)
     return (S.bought[family] or 0) >= level
 end
 
--- The values of the towers and the enemies, the tiers bought with the stars applied to the towers.
+--- The values of the towers and the enemies, the tiers bought with the stars applied to the towers.
+---@return nil
 function Eco.read_stats()
     for _, family in ipairs(C.UPGRADE_FAMILIES) do
         S.bought[family] = settings.get("tower_up_" .. family, 0)
@@ -109,6 +113,8 @@ function Eco.read_enemies()
     end
 end
 
+---@param kept any
+---@return any result
 function Eco.stars_for(kept)
     if kept >= 18 then return 3 end
     if kept >= 10 then return 2 end

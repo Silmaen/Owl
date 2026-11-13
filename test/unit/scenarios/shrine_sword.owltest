@@ -1,0 +1,12 @@
+# The Sunken Shrine, the armoury: the hero takes the sword from its stand (E) and strikes with it (Space); without the
+# key the door to the north stays shut.
+scene: ../../../samples/sunken_shrine/scenes/room_3.owl
+steps:
+  - frames: 5
+  - input: {key: W, frames: 30}
+  - input: {key: E, frames: 1}
+  - frames: 3
+  - expect: {gamestate: shrine_sword, equals: true}
+  - input: {key: Space, frames: 1}
+  - frames: 3
+  - expect: {entity: Door, exists: true}

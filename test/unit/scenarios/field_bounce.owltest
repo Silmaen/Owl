@@ -1,0 +1,11 @@
+# Asteroid Field: the fighter placed in front of a big rock and thrown at it bounces off instead of going through:
+# it rebounds, loses hull, and stays on its side of the rock.
+scene: ../../../samples/asteroid_field/scenes/mission.owl
+steps:
+  - frames: 10
+  - {command: entity.set_transform, args: {entity: Player, translation: [-1.8, 5.2, -168.0]}}
+  - frames: 2
+  - input: {key: W, frames: 60}
+  - expect: {gamestate: field_bounces, greater: 0}
+  - expect: {gamestate: field_hurt, greater: 0}
+  - expect: {entity: Player, translation.z: {greater: -183}}

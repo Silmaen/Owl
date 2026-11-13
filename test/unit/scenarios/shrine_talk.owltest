@@ -1,0 +1,19 @@
+# The Sunken Shrine, the hall: the hero walks up to the old man and uses him (E): the dialogue box shows his lines one
+# after the other, the hero stands still while he talks, and the talk ends after the last line.
+scene: ../../../samples/sunken_shrine/scenes/room_1.owl
+steps:
+  - frames: 5
+  - input: {key: W, frames: 40}
+  - input: {key: E, frames: 1}
+  - frames: 2
+  - expect: {gamestate: shrine_talking, equals: true}
+  - input: {key: E, frames: 1}
+  - frames: 2
+  - input: {key: E, frames: 1}
+  - frames: 2
+  - input: {key: E, frames: 1}
+  - frames: 2
+  - input: {key: E, frames: 1}
+  - frames: 2
+  - expect: {gamestate: shrine_talking, equals: false}
+  - expect: {gamestate: shrine_talked, equals: true}

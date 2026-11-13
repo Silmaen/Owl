@@ -1,0 +1,16 @@
+# Bridge Builder paused: Escape opens the pause window, the cursor no longer moves; Escape closes it.
+scene: ../../../samples/bridge_builder/scenes/level_1.owl
+steps:
+  - frames: 10
+  - input: {key: Escape, frames: 1}
+  - frames: 2
+  - expect: {gamestate: bridge_paused, equals: true}
+  - input: {key: D, frames: 1}
+  - frames: 2
+  - expect: {gamestate: bridge_cursor_x, equals: 0}
+  - input: {key: Escape, frames: 1}
+  - frames: 2
+  - expect: {gamestate: bridge_paused, equals: false}
+  - input: {key: D, frames: 1}
+  - frames: 2
+  - expect: {gamestate: bridge_cursor_x, equals: 1}

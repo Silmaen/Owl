@@ -33,18 +33,18 @@ flowchart LR
 - **Round coloured pins** carry values; a filled pin is linked. A link joins compatible types only: an integer feeds a
   number, an entity feeds an integer.
 
-| Colour | Type                    |
-|--------|-------------------------|
-| Red    | Boolean                 |
-| Teal   | Integer                 |
-| Green  | Number                  |
-| Pink   | String                  |
-| Blue   | Entity                  |
-| Gold   | Vector 3 (`x, y, z`)    |
-| Orange | Vector 2 (`x, y`)       |
-| Indigo | Color (`r, g, b, a`)    |
-| Violet | Table, list             |
-| Grey   | Any value               |
+| Colour | Type                 |
+|--------|----------------------|
+| Red    | Boolean              |
+| Teal   | Integer              |
+| Green  | Number               |
+| Pink   | String               |
+| Blue   | Entity               |
+| Gold   | Vector 3 (`x, y, z`) |
+| Orange | Vector 2 (`x, y`)    |
+| Indigo | Color (`r, g, b, a`) |
+| Violet | Table, list          |
+| Grey   | Any value            |
 
 - An unlinked input shows its value in a field on the node: a number, a text, a check box, a colour swatch or a
   vector. An empty field uses the default; an empty entity means the entity running the script.
@@ -90,7 +90,10 @@ number or `true` / `false` stays one, any other text is a string, and text in do
 
 - `Get Field` reads a key (`t.key` when the key is a name), `Set Field` writes one; `Get Item` reads a list at an index
   from 1, `Add Item` and `Remove Item` change a list, `List Length` counts it, `Contains` looks a value up.
-- `For Each` runs its `Body` once per item of a list with the `Index` and the `Item`, then `Completed`.
+- `For Each` runs its `Body` once per item of a list with the `Index` and the `Item`, then `Completed`; `For Each
+  Pair` runs it once per key of a table with the `Key` and the `Value`, in no set order.
+- `While Loop` runs its `Body` while its condition holds, checked before each run; `For Loop` counts by its `Step`
+  (1 when empty, negative to count down). `Break` leaves the loop it runs in, `Continue` starts its next run.
 - `Split` cuts a text at a separator into a list, `Format` builds a text from up to four values (`%d / %d blocks`).
 - Variables of type `numbers` and `strings` are lists, their default typed as `1, 2, 3`.
 - In the **Node** tab and the **Variables** tab, a list is edited item by item: change one, move it up, remove it,
@@ -102,10 +105,10 @@ number or `true` / `false` stays one, any other text is a string, and text in do
 
 ## Panels
 
-| Panel                     | Content                                                                                       |
-|---------------------------|-----------------------------------------------------------------------------------------------|
-| **Nodes** (Hierarchy)     | Every node by group, with a search field: click one to add it in the view, or drag it in      |
-| **Graph** (Properties)    | **Variables**, **Functions**, **Custom** and **Node** tabs                                    |
+| Panel                  | Content                                                                                  |
+|------------------------|------------------------------------------------------------------------------------------|
+| **Nodes** (Hierarchy)  | Every node by group, with a search field: click one to add it in the view, or drag it in |
+| **Graph** (Properties) | **Variables**, **Functions**, **Custom** and **Node** tabs                               |
 
 - **Variables**: one section per variable with its name, type and default, **Min**, **Max** and **Step** for a number
   (the bounds of its inspector field, empty for none) and **Exposed**: an exposed variable is a script property, the
@@ -118,7 +121,8 @@ number or `true` / `false` stays one, any other text is a string, and text in do
 - The toolbar switches the document between **Graph** (the nodes), **Split** (the nodes and the generated Lua side by
   side, the divider drags) and **Lua** (the generated Lua alone). The Lua is coloured and read-only.
 - The toolbar shows **Compiles to Lua** or the number of errors: click it to list them, then click one to centre its
-  node. A node with an error has a red frame and a warning icon.
+  node. A node with an error has a red frame and a warning icon; a link ending on a pin its node does not have (a
+  pin renamed or removed since) is one.
 - **Check** compiles the graph and type-checks its Lua against the engine API, as the code editor does for a Lua
   script: it lists the problems (an unknown function in the Lua of a custom node, a wrong argument), marks their
   nodes until the next edit, and a click centres the node.
@@ -134,9 +138,9 @@ Dropping a link on the background opens it too, with only the nodes that take th
 | Group                            | Nodes                                                                                                                                                                                                                                                                                            |
 |----------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Events                           | `On Create`, `On Update`, `On Tick`, `On Destroy`, `On Collision`, the trigger events, `Custom Event` (a function of a chosen name, e.g. a trigger `CallbackName`)                                                                                                                               |
-| Flow                             | `Branch`, `Sequence`, `For Loop`, `For Each` (the items of a list, with their index), `Reroute`                                                                                                                                                                                                  |
+| Flow                             | `Branch`, `Sequence`, `For Loop` (with a `Step`), `While Loop`, `For Each` (the items of a list, with their index), `For Each Pair` (the keys and values of a table), `Break`, `Continue`, `Reroute`                                                                                             |
 | Variables                        | `Get Variable`, `Set Variable`                                                                                                                                                                                                                                                                   |
-| Constant                         | `Self`, `Nil` (no value, to clear a variable), and a number, integer, boolean, text, vector, colour, table, transform or matrix typed on the node                                                                                                                                                |
+| Constant                         | `Self`, `Nil` (no value, to clear a variable), and a number, integer, boolean, text, vector, colour, table, transform or matrix typed on the node; `Widget Values` (`ui`): the slider value, the list row and selection, the button clicked of a widget handler                                  |
 | Math                             | Arithmetic, `Floor`, `Ceil`, `Round`, `Fraction`, `Sign`, `Min`, `Max`, `Clamp`, `Lerp`, `Square`, `Square Root`, `Power`, `Exponential`, `Logarithm`, `Logarithm 10`, `Logarithm Base`, trigonometry and its inverses, `To Degrees`, `To Radians`, `Distance`, `Pi`, `Random`, `Random Integer` |
 | Compare, Logic                   | Comparisons, `And`, `Or`, `Not`, `Select` (one of two values), `Or Default`, `Is Set` (not nil)                                                                                                                                                                                                  |
 | Text                             | `Concatenate`, `Join Text`, `Format`, `Text Length`, `Split`, `To Number`, `To Text`, `Contains Text`, `Substring`, `Upper Case`, `Lower Case`                                                                                                                                                   |

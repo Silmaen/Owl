@@ -1,0 +1,741 @@
+Scene: game_over
+FormatVersion: 7
+EnabledRenderers:
+  - {Name: world, Enabled: false}
+  - {Name: mesh_world, Enabled: true}
+  - {Name: planet_world, Enabled: true}
+  - {Name: ui, Enabled: false}
+Entities:
+  - Entity: 7330000030968000001
+    Tag:
+      tag: Sun
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [-0.35, 0.9, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Light: {type: Directional, enabled: true, color: [1, 0.97, 0.92], intensity: 3600, castShadows: false}
+  - Entity: 7330000030968000002
+    Tag:
+      tag: Sky
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Environment: {hdri: textures/sky/starfield.hdr, ambient: [0.05, 0.05, 0.06], intensity: 9000, rotation: 0.2, showSky: true}
+  - Entity: 7330000030968000003
+    Tag:
+      tag: Earth
+    Transform:
+      translation: [-26000, 9000, -32000]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    WorldPosition: {position: [-26000, 9000, -32000]}
+    Planet:
+      graph: ''
+      seed: 3
+      heightResolution: 128
+      radius: 6000
+      heightScale: 90
+      seaLevel: 0.55
+      detailAmplitude: 0.3
+      detailFrequency: 5
+      maxLevel: 6
+      lodFactor: 2
+      chunkResolution: 16
+      seaColor: [0.05, 0.18, 0.45]
+      lowColor: [0.25, 0.45, 0.25]
+      highColor: [0.6, 0.55, 0.45]
+      peakColor: [0.95, 0.95, 0.97]
+      atmosphere: true
+      atmosphereHeight: 400
+      rayleighDepth: [0.046, 0.108, 0.265]
+      mieDepth: 0.02
+      scatteringIntensity: 3
+      scaledSpaceDistance: 0
+  - Entity: 7330000030968000004
+    Tag:
+      tag: Moon
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:51c4939e982e0cee:models/moon.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7330000030968000005
+    Tag:
+      tag: Pad1
+    Transform:
+      translation: [157.668, 27.8011, 0]
+      rotation: [1.3963, 1.5708, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    MeshRenderer:
+      mesh: gid:4356bae256236839:models/pad.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+      materials:
+        - {overrides: {emissiveLuminance: 3000}}
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7330000030968000006
+    Tag:
+      tag: ParkedLander
+    Transform:
+      translation: [0, 1.6, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7330000030968000005
+    MeshRenderer:
+      mesh: gid:7e21e7a3c0377b9c:models/lander_hull.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7330000030968000007
+    Tag:
+      tag: ParkedLeg1
+    Transform:
+      translation: [0.7425, -0.75, 0.7425]
+      rotation: [0, 2.3562, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7330000030968000006
+    MeshRenderer:
+      mesh: gid:d9e545019f52222e:models/lander_leg.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7330000030968000008
+    Tag:
+      tag: ParkedLeg2
+    Transform:
+      translation: [-0.7425, -0.75, 0.7425]
+      rotation: [0, 0.7854, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7330000030968000006
+    MeshRenderer:
+      mesh: gid:d9e545019f52222e:models/lander_leg.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7330000030968000009
+    Tag:
+      tag: ParkedLeg3
+    Transform:
+      translation: [-0.7425, -0.75, -0.7425]
+      rotation: [0, -0.7854, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7330000030968000006
+    MeshRenderer:
+      mesh: gid:d9e545019f52222e:models/lander_leg.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7330000030968000010
+    Tag:
+      tag: ParkedLeg4
+    Transform:
+      translation: [0.7425, -0.75, -0.7425]
+      rotation: [0, -2.3562, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7330000030968000006
+    MeshRenderer:
+      mesh: gid:d9e545019f52222e:models/lander_leg.glb
+      color: [1, 1, 1, 1]
+      transparent: false
+    RendererTag:
+      Name: mesh_world
+  - Entity: 7330000030968000011
+    Tag:
+      tag: ViewPivot
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0.12, -0.25, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    LuaScript:
+      scriptPath: gid:c7e589e34ca446af:scripts/ui/backdrop.owlvs
+      properties:
+        - name: speed
+          type: float
+          value: 0.02
+  - Entity: 7330000030968000012
+    Tag:
+      tag: MenuCamera
+    Transform:
+      translation: [30, 60, 260]
+      rotation: [-0.14, 0.12, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7330000030968000011
+    Camera:
+      camera:
+        projectionType: Perspective
+        perspectiveFOV: 0.9
+        perspectiveNear: 0.1
+        perspectiveFar: 400000
+        orthographicSize: 8
+        orthographicNear: -1
+        orthographicFar: 10
+        toneMapping: Aces
+        postProcess: {ev100: 10, exposure: 0, autoExposure: false, bloom: true, bloomThreshold: 1.6, bloomKnee: 0.5, bloomIntensity: 0.1, bloomScatter: 0.7, vignette: true, vignetteIntensity: 0.3, vignetteSmoothness: 0.5, vignetteColor: [0, 0, 0]}
+      primary: true
+      fixedAspectRatio: false
+  - Entity: 7330000030968000013
+    Tag:
+      tag: MenuMusic
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    SoundSource:
+      soundAsset: gid:9f6538310c1c7fe1:sounds/music/menu.wav
+      category: Music
+      volume: 0.55
+      pitch: 1
+      loop: true
+      spatial: false
+      playOnStart: true
+      maxDistance: 50
+      rolloff: 1
+  - Entity: 7330000030968000014
+    Tag:
+      tag: ResultCanvas
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Canvas:
+      space: ScreenOverlay
+      sortOrder: 0
+      referenceResolution: [1280, 720]
+      scaleMode: ScaleWithHeight
+    LuaScript:
+      scriptPath: gid:6899372dfed2c7b2:scripts/ui/result.owlvs
+      properties:
+        - name: victory
+          type: bool
+          value: false
+        - name: retry_scene
+          type: string
+          value: scenes/landing_1.owl
+        - name: best_key
+          type: string
+          value: lander_best
+        - name: prefix
+          type: string
+          value: lander
+  - Entity: 7330000030968000015
+    Tag:
+      tag: ResultGroup
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7330000030968000014
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1.1, 0.92]
+      sizeUnit: [ScreenHeight, ScreenHeight]
+      offset: [0.06, 0.04]
+      offsetUnit: [ScreenHeight, ScreenHeight]
+    UiLayout:
+      arrangement: Column
+      crossAlign: Center
+      spacing: 4
+      padding: 0
+      columns: 1
+      cellSize: [0, 0]
+  - Entity: 7330000030968000016
+    Tag:
+      tag: ButtonRow
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7330000030968000015
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 0.11]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiLayout:
+      arrangement: Row
+      crossAlign: Center
+      spacing: 16
+      padding: 0
+      columns: 1
+      cellSize: [0, 0]
+  - Entity: 7330000030968000017
+    Tag:
+      tag: MenuButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7330000030968000016
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.42, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.07, 0.08, 0.12, 1]
+      hoverColor: [0.16, 0.18, 0.26, 1]
+      pressedColor: [0.24, 0.27, 0.36, 1]
+      disabledColor: [0.1, 0.1, 0.1, 0.5]
+      onClickCallback: on_menu_clicked
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.02, 0.03, 0.08, 1]
+      text: '   TITLE'
+      color: [0.9, 0.93, 1, 1]
+      fontSize: 24
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+    UiFocus:
+      focusable: true
+      initial: false
+      onFocusCallback: ''
+      highlightColor: [1, 0.72, 0.25, 1]
+      highlightThickness: 2
+  - Entity: 7330000030968000018
+    Tag:
+      tag: MenuButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7330000030968000017
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: gid:d53aede94aae8467:textures/ui/frame.png
+  - Entity: 7330000030968000019
+    Tag:
+      tag: RetryButton
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7330000030968000016
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.42, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiButton:
+      normalColor: [0.07, 0.08, 0.12, 1]
+      hoverColor: [0.16, 0.18, 0.26, 1]
+      pressedColor: [0.24, 0.27, 0.36, 1]
+      disabledColor: [0.1, 0.1, 0.1, 0.5]
+      onClickCallback: on_retry_clicked
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.02, 0.03, 0.08, 1]
+      text: '   RETRY'
+      color: [0.9, 0.93, 1, 1]
+      fontSize: 24
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+    UiFocus:
+      focusable: true
+      initial: true
+      onFocusCallback: ''
+      highlightColor: [1, 0.72, 0.25, 1]
+      highlightThickness: 2
+  - Entity: 7330000030968000020
+    Tag:
+      tag: RetryButtonFrame
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7330000030968000019
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiImage:
+      tint: [1, 1, 1, 1]
+      texture: gid:d53aede94aae8467:textures/ui/frame.png
+  - Entity: 7330000030968000021
+    Tag:
+      tag: BestLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7330000030968000015
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 0.065]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.02, 0.03, 0.08, 1]
+      text: ''
+      color: [1, 0.72, 0.25, 1]
+      fontSize: 26
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 7330000030968000022
+    Tag:
+      tag: ScoreLabel
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7330000030968000015
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 0.1]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.02, 0.03, 0.08, 1]
+      text: ''
+      color: [0.9, 0.93, 1, 1]
+      fontSize: 36
+      horizontalAlignment: Center
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 7330000030968000023
+    Tag:
+      tag: StatLine6
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7330000030968000015
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.8, 0.06]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.02, 0.03, 0.08, 1]
+      text: ''
+      color: [0.7, 0.75, 0.85, 1]
+      fontSize: 24
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 7330000030968000024
+    Tag:
+      tag: StatLine5
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7330000030968000015
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.8, 0.06]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.02, 0.03, 0.08, 1]
+      text: ''
+      color: [0.7, 0.75, 0.85, 1]
+      fontSize: 24
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 7330000030968000025
+    Tag:
+      tag: StatLine4
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7330000030968000015
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.8, 0.06]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.02, 0.03, 0.08, 1]
+      text: ''
+      color: [0.7, 0.75, 0.85, 1]
+      fontSize: 24
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 7330000030968000026
+    Tag:
+      tag: StatLine3
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7330000030968000015
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.8, 0.06]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.02, 0.03, 0.08, 1]
+      text: ''
+      color: [0.7, 0.75, 0.85, 1]
+      fontSize: 24
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 7330000030968000027
+    Tag:
+      tag: StatLine2
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7330000030968000015
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.8, 0.06]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.02, 0.03, 0.08, 1]
+      text: ''
+      color: [0.7, 0.75, 0.85, 1]
+      fontSize: 24
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 7330000030968000028
+    Tag:
+      tag: StatLine1
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: false
+    Hierarchy:
+      parentId: 7330000030968000015
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [0.8, 0.06]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.02, 0.03, 0.08, 1]
+      text: ''
+      color: [0.7, 0.75, 0.85, 1]
+      fontSize: 24
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: JetBrainsMono-Regular
+  - Entity: 7330000030968000029
+    Tag:
+      tag: ResultTitle
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy:
+      parentId: 7330000030968000015
+    UiRect:
+      anchorMin: [0, 0]
+      anchorMax: [0, 0]
+      pivot: [0, 0]
+      size: [1, 0.15]
+      sizeUnit: [ParentWidth, ParentHeight]
+      offset: [0, 0]
+    UiText:
+      outlineWidth: 2
+      outlineColor: [0.02, 0.03, 0.08, 1]
+      text: 'MISSION LOST'
+      color: [1, 0.45, 0.4, 1]
+      fontSize: 64
+      horizontalAlignment: Left
+      verticalAlignment: Middle
+      kerning: 0
+      lineSpacing: 0
+      wrap: false
+      fit: Shrink
+      minFontSize: 12
+      font: Inter-SemiBold

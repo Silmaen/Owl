@@ -670,3 +670,179 @@ TEST(VisualScriptCodegen, SelectAndDefaultPickAValue) {
 	EXPECT_EQ(instance.getPropertyString("clip").value_or(""), "coin.wav");
 	core::Log::invalidate();
 }
+
+TEST(VisualScriptCodegen, LoopNodesStepWhileWalkPairsAndBreak) {
+	core::Log::init(core::Log::Level::Off);
+	VisualScript script;
+	for (const auto* name: {"total", "count", "keys"})
+		script.variables.push_back({.name = name,
+									.type = ScriptPropertyType::Float,
+									.defaultValue = "0",
+									.min = {},
+									.max = {},
+									.step = {},
+									.exposed = true});
+	const auto create = addNode(script, "event.on_create");
+	// for i = 10, 1, -3: total = total + i
+	const auto loop = addNode(script, "flow.for", {{"First", "10"}, {"Last", "1"}, {"Step", "-3"}});
+	const auto total = addNode(script, "var.get", {{"variable", "total"}});
+	const auto add = addNode(script, "math.add");
+	const auto setTotal = addNode(script, "var.set", {{"variable", "total"}});
+	link(script, create, "Then", loop, "Exec");
+	link(script, loop, "Body", setTotal, "Exec");
+	link(script, total, "Value", add, "A");
+	link(script, loop, "Index", add, "B");
+	link(script, add, "Result", setTotal, "Value");
+	// while count < 100: count = count + 1, break at 5
+	const auto whileLoop = addNode(script, "flow.while");
+	const auto count = addNode(script, "var.get", {{"variable", "count"}});
+	const auto less = addNode(script, "compare.less", {{"B", "100"}});
+	const auto count2 = addNode(script, "var.get", {{"variable", "count"}});
+	const auto inc = addNode(script, "math.add", {{"B", "1"}});
+	const auto setCount = addNode(script, "var.set", {{"variable", "count"}});
+	const auto count3 = addNode(script, "var.get", {{"variable", "count"}});
+	const auto atFive = addNode(script, "compare.greater_equal", {{"B", "5"}});
+	const auto branch = addNode(script, "flow.branch");
+	const auto stop = addNode(script, "flow.break");
+	link(script, loop, "Completed", whileLoop, "Exec");
+	link(script, count, "Value", less, "A");
+	link(script, less, "Result", whileLoop, "Condition");
+	link(script, whileLoop, "Body", setCount, "Exec");
+	link(script, count2, "Value", inc, "A");
+	link(script, inc, "Result", setCount, "Value");
+	link(script, setCount, "Then", branch, "Exec");
+	link(script, count3, "Value", atFive, "A");
+	link(script, atFive, "Result", branch, "Condition");
+	link(script, branch, "True", stop, "Exec");
+	// for key, value in pairs({a = 2, b = 3}): keys = keys + value, skipping nothing
+	const auto pairs = addNode(script, "flow.for_each_pair");
+	const auto table = addNode(script, "value.table", {{"Value", "a = 2, b = 3"}});
+	const auto keys = addNode(script, "var.get", {{"variable", "keys"}});
+	const auto sum = addNode(script, "math.add");
+	const auto setKeys = addNode(script, "var.set", {{"variable", "keys"}});
+	const auto skip = addNode(script, "flow.continue");
+	link(script, whileLoop, "Completed", pairs, "Exec");
+	link(script, table, "Result", pairs, "Table");
+	link(script, pairs, "Body", setKeys, "Exec");
+	link(script, keys, "Value", sum, "A");
+	link(script, pairs, "Value", sum, "B");
+	link(script, sum, "Result", setKeys, "Value");
+	link(script, setKeys, "Then", skip, "Exec");
+	const auto lua = compile(script);
+	ASSERT_TRUE(lua.has_value()) << lua.error().front().message;
+	EXPECT_TRUE(lua->contains("for i = 10, 1, -3 do")) << *lua;
+	EXPECT_TRUE(lua->contains("while count < 100 do")) << *lua;
+	EXPECT_TRUE(lua->contains("break")) << *lua;
+	EXPECT_TRUE(lua->contains("in pairs(")) << *lua;
+	EXPECT_TRUE(lua->contains("continue")) << *lua;
+	auto scn = mkShared<scene::Scene>();
+	ScriptInstance instance;
+	instance.setScene(scn.get());
+	ASSERT_TRUE(load(instance, script, "loops.owlvs"));
+	instance.onCreate();
+	EXPECT_NEAR(instance.getPropertyFloat("total").value_or(0.f), 22.f, 1e-5f);
+	EXPECT_NEAR(instance.getPropertyFloat("count").value_or(0.f), 5.f, 1e-5f);
+	EXPECT_NEAR(instance.getPropertyFloat("keys").value_or(0.f), 5.f, 1e-5f);
+	core::Log::invalidate();
+}
+
+TEST(VisualScriptCodegen, ASideThatEndsIsNoMergeOfItsBranch) {
+	core::Log::init(core::Log::Level::Off);
+	// if a then hit() elseif b then hit() end -- with the second test's False side linked to nothing.
+	VisualScript script;
+	script.variables.push_back({.name = "hits",
+								.type = ScriptPropertyType::Float,
+								.defaultValue = "0",
+								.min = {},
+								.max = {},
+								.step = {},
+								.exposed = true});
+	script.functions.push_back({.name = "check",
+								.inputs = {},
+								.outputs = {},
+								.macro = false,
+								.exits = {"Then"},
+								.exported = false,
+								.category = {},
+								.pure = false});
+	const auto create = addNode(script, "event.on_create");
+	const auto call = addNode(script, "func.call", {{"function", "check"}});
+	const auto entry = addNode(script, "func.entry", {{"function", "check"}});
+	link(script, create, "Then", call, "Exec");
+	const auto first = addNode(script, "flow.branch", {{"Condition", "false"}});
+	const auto second = addNode(script, "flow.branch", {{"Condition", "false"}});
+	const auto hits = addNode(script, "var.get", {{"variable", "hits"}});
+	const auto add = addNode(script, "math.add", {{"B", "1"}});
+	const auto hit = addNode(script, "var.set", {{"variable", "hits"}});
+	link(script, entry, "Then", first, "Exec");
+	link(script, first, "True", hit, "Exec");
+	link(script, first, "False", second, "Exec");
+	link(script, second, "True", hit, "Exec");
+	link(script, hits, "Value", add, "A");
+	link(script, add, "Result", hit, "Value");
+	const auto lua = compile(script);
+	ASSERT_TRUE(lua.has_value()) << lua.error().front().message;
+	auto scn = mkShared<scene::Scene>();
+	ScriptInstance instance;
+	instance.setScene(scn.get());
+	ASSERT_TRUE(load(instance, script, "ends.owlvs"));
+	instance.onCreate();
+	EXPECT_NEAR(instance.getPropertyFloat("hits").value_or(-1.f), 0.f, 1e-5f) << *lua;
+	core::Log::invalidate();
+}
+
+TEST(VisualScriptCodegen, TheDebugBuildKeepsTheShortCircuitOfAndOrSelect) {
+	core::Log::init(core::Log::Level::Off);
+	// found = (box ~= nil) and box.closed; label = box and box.name or "none" -- with box nil.
+	VisualScript script;
+	script.variables.push_back({.name = "box",
+								.type = ScriptPropertyType::Numbers,
+								.defaultValue = "",
+								.min = {},
+								.max = {},
+								.step = {},
+								.exposed = false});
+	script.variables.push_back({.name = "found",
+								.type = ScriptPropertyType::Bool,
+								.defaultValue = "true",
+								.min = {},
+								.max = {},
+								.step = {},
+								.exposed = true});
+	const auto create = addNode(script, "event.on_create");
+	const auto clear = addNode(script, "var.set", {{"variable", "box"}});
+	const auto none = addNode(script, "value.nil");
+	const auto box = addNode(script, "var.get", {{"variable", "box"}});
+	const auto isSet = addNode(script, "logic.is_set");
+	const auto box2 = addNode(script, "var.get", {{"variable", "box"}});
+	const auto field = addNode(script, "table.get", {{"Key", "closed"}});
+	const auto both = addNode(script, "logic.and");
+	const auto box3 = addNode(script, "var.get", {{"variable", "box"}});
+	const auto field2 = addNode(script, "table.get", {{"Key", "open"}});
+	const auto pick = addNode(script, "logic.select", {{"False", "false"}});
+	const auto either = addNode(script, "logic.or");
+	const auto setFound = addNode(script, "var.set", {{"variable", "found"}});
+	link(script, create, "Then", clear, "Exec");
+	link(script, none, "Result", clear, "Value");
+	link(script, clear, "Then", setFound, "Exec");
+	link(script, box, "Value", isSet, "Value");
+	link(script, isSet, "Result", both, "A");
+	link(script, box2, "Value", field, "Table");
+	link(script, field, "Result", both, "B");
+	link(script, isSet, "Result", pick, "Condition");
+	link(script, box3, "Value", field2, "Table");
+	link(script, field2, "Result", pick, "True");
+	link(script, both, "Result", either, "A");
+	link(script, pick, "Result", either, "B");
+	link(script, either, "Result", setFound, "Value");
+	const auto debug = compileForDebug(script);
+	ASSERT_TRUE(debug.has_value()) << debug.error().front().message;
+	auto scn = mkShared<scene::Scene>();
+	const ScriptInstance instance;
+	instance.setScene(scn.get());
+	ASSERT_TRUE(instance.createFromBuffer(toBytes(debug->lua), "short_circuit.lua", 0)) << debug->lua;
+	for (const auto& property: instance.getDeclaredProperties()) instance.setProperty(property);
+	instance.onCreate();
+	EXPECT_FALSE(instance.getPropertyBool("found").value_or(true)) << debug->lua;
+	core::Log::invalidate();
+}

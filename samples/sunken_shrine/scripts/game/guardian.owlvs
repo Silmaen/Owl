@@ -1,0 +1,365 @@
+FormatVersion: 1
+VisualScript:
+  variables:
+    - {name: hits, type: float, default: 10, min: 1}
+    - {name: half_width, type: float, default: 6.2}
+    - {name: half_height, type: float, default: 3.2}
+    - {name: phase, type: int, default: 1, exposed: false}
+  nodes:
+    - id: 6720000000010000001
+      type: event.on_update
+      position: [0, 0]
+    - id: 6720000000010000002
+      type: call.entity.get_name
+      position: [1140, 300]
+    - id: 6720000000010000003
+      type: text.concat
+      position: [1300, 150]
+      values:
+        A: shrine_hit_
+    - id: 6720000000010000004
+      type: call.transform.get_position
+      position: [540, 300]
+    - id: 6720000000010000005
+      type: math.break_vector3
+      position: [700, 150]
+    - id: 6720000000010000006
+      type: call.scene.find_entity
+      position: [140, 150]
+      values:
+        name: Player
+    - id: 6720000000010000007
+      type: call.bt.set_value
+      position: [300, 0]
+      values:
+        key: player
+    - id: 6720000000010000008
+      type: var.get
+      position: [440, 150]
+      values:
+        variable: half_width
+    - id: 6720000000010000009
+      type: var.get
+      position: [440, 230]
+      values:
+        variable: half_height
+    - id: 6720000000010000010
+      type: lua.call
+      position: [600, 0]
+      values:
+        function: keep_inside
+        module: scripts.game.shrine
+    - id: 6720000000010000011
+      type: text.concat
+      position: [740, 230]
+      values:
+        A: shrine_x_
+    - id: 6720000000010000012
+      type: call.gamestate.set
+      position: [900, 0]
+    - id: 6720000000010000013
+      type: call.entity.get_name
+      position: [840, 300]
+    - id: 6720000000010000014
+      type: text.concat
+      position: [1000, 150]
+      values:
+        A: shrine_y_
+    - id: 6720000000010000015
+      type: call.gamestate.set
+      position: [1200, 0]
+    - id: 6720000000010000016
+      type: call.gamestate.get
+      position: [1500, 0]
+      values:
+        default: false
+    - id: 6720000000010000017
+      type: flow.branch
+      position: [1800, 0]
+    - id: 6720000000010000018
+      type: call.entity.get_name
+      position: [1740, 300]
+    - id: 6720000000010000019
+      type: text.concat
+      position: [1900, 150]
+      values:
+        A: shrine_hit_
+    - id: 6720000000010000020
+      type: call.gamestate.set
+      position: [2100, 0]
+      values:
+        value: false
+    - id: 6720000000010000021
+      type: var.get
+      position: [2040, 300]
+      values:
+        variable: hits
+    - id: 6720000000010000022
+      type: math.subtract
+      position: [2200, 150]
+      values:
+        B: 1
+    - id: 6720000000010000023
+      type: var.set
+      position: [2400, 0]
+      values:
+        variable: hits
+    - id: 6720000000010000024
+      type: call.bt.set_value
+      position: [2700, 0]
+      values:
+        key: hurt
+        value: true
+    - id: 6720000000010000025
+      type: call.sound.play
+      position: [3000, 0]
+      values:
+        asset_path: sounds/game/hit.wav
+    - id: 6720000000010000026
+      type: var.get
+      position: [2940, 300]
+      values:
+        variable: hits
+    - id: 6720000000010000027
+      type: compare.less_equal
+      position: [3100, 150]
+      values:
+        B: 0
+    - id: 6720000000010000028
+      type: flow.branch
+      position: [3300, 0]
+    - id: 6720000000010000029
+      type: call.gamestate.get
+      position: [3600, 0]
+      values:
+        default: 0
+        key: shrine_kills
+    - id: 6720000000010000030
+      type: math.add
+      position: [3740, 150]
+      values:
+        B: 1
+    - id: 6720000000010000031
+      type: call.gamestate.set
+      position: [3900, 0]
+      values:
+        key: shrine_kills
+    - id: 6720000000010000032
+      type: call.sound.play
+      position: [4200, 0]
+      values:
+        asset_path: sounds/game/defeat.wav
+    - id: 6720000000010000033
+      type: call.gamestate.set
+      position: [4500, 0]
+      values:
+        key: shrine_guardian
+        value: true
+    - id: 6720000000010000034
+      type: call.ui.show_subtitle
+      position: [4800, 0]
+      values:
+        seconds: 2
+        text: '[the guardian falls]'
+    - id: 6720000000010000035
+      type: call.scene.destroy_entity
+      position: [5100, 0]
+    - id: 6720000000010000036
+      type: var.get
+      position: [4800, 450]
+      values:
+        variable: hits
+    - id: 6720000000010000037
+      type: compare.less_equal
+      position: [4960, 300]
+      values:
+        B: 6
+    - id: 6720000000010000038
+      type: var.get
+      position: [4800, 530]
+      values:
+        variable: phase
+    - id: 6720000000010000039
+      type: compare.equal
+      position: [4960, 380]
+      values:
+        B: 1
+    - id: 6720000000010000040
+      type: logic.and
+      position: [5160, 150]
+    - id: 6720000000010000041
+      type: flow.branch
+      position: [5400, 0]
+    - id: 6720000000010000042
+      type: var.set
+      position: [5700, 0]
+      values:
+        Value: 2
+        variable: phase
+    - id: 6720000000010000043
+      type: call.steer.set_max_speed
+      position: [6000, 0]
+      values:
+        speed: 3.4
+    - id: 6720000000010000044
+      type: call.sound.play
+      position: [6300, 0]
+      values:
+        asset_path: sounds/game/roar.wav
+    - id: 6720000000010000045
+      type: call.ui.show_subtitle
+      position: [6600, 0]
+      values:
+        seconds: 1.5
+        text: '[a roar]'
+    - id: 6720000000010000046
+      type: var.get
+      position: [6300, 450]
+      values:
+        variable: hits
+    - id: 6720000000010000047
+      type: compare.less_equal
+      position: [6460, 300]
+      values:
+        B: 3
+    - id: 6720000000010000048
+      type: var.get
+      position: [6300, 530]
+      values:
+        variable: phase
+    - id: 6720000000010000049
+      type: compare.equal
+      position: [6460, 380]
+      values:
+        B: 2
+    - id: 6720000000010000050
+      type: logic.and
+      position: [6660, 150]
+    - id: 6720000000010000051
+      type: flow.branch
+      position: [6900, 0]
+    - id: 6720000000010000052
+      type: var.set
+      position: [7200, 0]
+      values:
+        Value: 3
+        variable: phase
+    - id: 6720000000010000053
+      type: call.steer.set_max_speed
+      position: [7500, 0]
+      values:
+        speed: 4.8
+    - id: 6720000000010000054
+      type: call.entity.set_tint
+      position: [7800, 0]
+      values:
+        rgba: '1, 0.55, 0.5, 1'
+    - id: 6720000000010000055
+      type: call.sound.play
+      position: [8100, 0]
+      values:
+        asset_path: sounds/game/roar.wav
+    - id: 6720000000010000056
+      type: event.on_tick
+      position: [0, 420]
+    - id: 6720000000010000057
+      type: call.steer.get_velocity
+      position: [-300, 870]
+    - id: 6720000000010000058
+      type: math.break_vector3
+      position: [-140, 720]
+    - id: 6720000000010000059
+      type: math.make_vector2
+      position: [60, 570]
+    - id: 6720000000010000060
+      type: call.physics.set_velocity
+      position: [300, 420]
+    - id: 6720000000010000061
+      type: event.on_create
+      position: [0, 840]
+    - id: 6720000000010000062
+      type: call.settings.get
+      position: [300, 840]
+      values:
+        default: false
+        key: shrine_gentle
+    - id: 6720000000010000063
+      type: flow.branch
+      position: [600, 840]
+    - id: 6720000000010000064
+      type: call.steer.set_max_speed
+      position: [900, 840]
+      values:
+        speed: 1.4
+  links:
+    - {from: 6720000000010000002, fromPin: name, to: 6720000000010000003, toPin: B}
+    - {from: 6720000000010000004, fromPin: xyz, to: 6720000000010000005, toPin: Value}
+    - {from: 6720000000010000006, fromPin: entity_id, to: 6720000000010000007, toPin: value}
+    - {from: 6720000000010000008, fromPin: Value, to: 6720000000010000010, toPin: half_width}
+    - {from: 6720000000010000009, fromPin: Value, to: 6720000000010000010, toPin: half_height}
+    - {from: 6720000000010000002, fromPin: name, to: 6720000000010000011, toPin: B}
+    - {from: 6720000000010000011, fromPin: Result, to: 6720000000010000012, toPin: key}
+    - {from: 6720000000010000005, fromPin: X, to: 6720000000010000012, toPin: value}
+    - {from: 6720000000010000013, fromPin: name, to: 6720000000010000014, toPin: B}
+    - {from: 6720000000010000014, fromPin: Result, to: 6720000000010000015, toPin: key}
+    - {from: 6720000000010000005, fromPin: Y, to: 6720000000010000015, toPin: value}
+    - {from: 6720000000010000001, fromPin: Then, to: 6720000000010000007, toPin: Exec}
+    - {from: 6720000000010000007, fromPin: Then, to: 6720000000010000010, toPin: Exec}
+    - {from: 6720000000010000010, fromPin: Then, to: 6720000000010000012, toPin: Exec}
+    - {from: 6720000000010000012, fromPin: Then, to: 6720000000010000015, toPin: Exec}
+    - {from: 6720000000010000003, fromPin: Result, to: 6720000000010000016, toPin: key}
+    - {from: 6720000000010000016, fromPin: value, to: 6720000000010000017, toPin: Condition}
+    - {from: 6720000000010000015, fromPin: Then, to: 6720000000010000016, toPin: Exec}
+    - {from: 6720000000010000016, fromPin: Then, to: 6720000000010000017, toPin: Exec}
+    - {from: 6720000000010000018, fromPin: name, to: 6720000000010000019, toPin: B}
+    - {from: 6720000000010000019, fromPin: Result, to: 6720000000010000020, toPin: key}
+    - {from: 6720000000010000021, fromPin: Value, to: 6720000000010000022, toPin: A}
+    - {from: 6720000000010000022, fromPin: Result, to: 6720000000010000023, toPin: Value}
+    - {from: 6720000000010000017, fromPin: True, to: 6720000000010000020, toPin: Exec}
+    - {from: 6720000000010000020, fromPin: Then, to: 6720000000010000023, toPin: Exec}
+    - {from: 6720000000010000023, fromPin: Then, to: 6720000000010000024, toPin: Exec}
+    - {from: 6720000000010000024, fromPin: Then, to: 6720000000010000025, toPin: Exec}
+    - {from: 6720000000010000026, fromPin: Value, to: 6720000000010000027, toPin: A}
+    - {from: 6720000000010000027, fromPin: Result, to: 6720000000010000028, toPin: Condition}
+    - {from: 6720000000010000025, fromPin: Then, to: 6720000000010000028, toPin: Exec}
+    - {from: 6720000000010000029, fromPin: value, to: 6720000000010000030, toPin: A}
+    - {from: 6720000000010000030, fromPin: Result, to: 6720000000010000031, toPin: value}
+    - {from: 6720000000010000028, fromPin: True, to: 6720000000010000029, toPin: Exec}
+    - {from: 6720000000010000029, fromPin: Then, to: 6720000000010000031, toPin: Exec}
+    - {from: 6720000000010000031, fromPin: Then, to: 6720000000010000032, toPin: Exec}
+    - {from: 6720000000010000032, fromPin: Then, to: 6720000000010000033, toPin: Exec}
+    - {from: 6720000000010000033, fromPin: Then, to: 6720000000010000034, toPin: Exec}
+    - {from: 6720000000010000034, fromPin: Then, to: 6720000000010000035, toPin: Exec}
+    - {from: 6720000000010000036, fromPin: Value, to: 6720000000010000037, toPin: A}
+    - {from: 6720000000010000038, fromPin: Value, to: 6720000000010000039, toPin: A}
+    - {from: 6720000000010000037, fromPin: Result, to: 6720000000010000040, toPin: A}
+    - {from: 6720000000010000039, fromPin: Result, to: 6720000000010000040, toPin: B}
+    - {from: 6720000000010000040, fromPin: Result, to: 6720000000010000041, toPin: Condition}
+    - {from: 6720000000010000028, fromPin: False, to: 6720000000010000041, toPin: Exec}
+    - {from: 6720000000010000041, fromPin: True, to: 6720000000010000042, toPin: Exec}
+    - {from: 6720000000010000042, fromPin: Then, to: 6720000000010000043, toPin: Exec}
+    - {from: 6720000000010000043, fromPin: Then, to: 6720000000010000044, toPin: Exec}
+    - {from: 6720000000010000044, fromPin: Then, to: 6720000000010000045, toPin: Exec}
+    - {from: 6720000000010000046, fromPin: Value, to: 6720000000010000047, toPin: A}
+    - {from: 6720000000010000048, fromPin: Value, to: 6720000000010000049, toPin: A}
+    - {from: 6720000000010000047, fromPin: Result, to: 6720000000010000050, toPin: A}
+    - {from: 6720000000010000049, fromPin: Result, to: 6720000000010000050, toPin: B}
+    - {from: 6720000000010000050, fromPin: Result, to: 6720000000010000051, toPin: Condition}
+    - {from: 6720000000010000041, fromPin: False, to: 6720000000010000051, toPin: Exec}
+    - {from: 6720000000010000051, fromPin: True, to: 6720000000010000052, toPin: Exec}
+    - {from: 6720000000010000052, fromPin: Then, to: 6720000000010000053, toPin: Exec}
+    - {from: 6720000000010000053, fromPin: Then, to: 6720000000010000054, toPin: Exec}
+    - {from: 6720000000010000054, fromPin: Then, to: 6720000000010000055, toPin: Exec}
+    - {from: 6720000000010000057, fromPin: xyz, to: 6720000000010000058, toPin: Value}
+    - {from: 6720000000010000058, fromPin: X, to: 6720000000010000059, toPin: X}
+    - {from: 6720000000010000058, fromPin: Y, to: 6720000000010000059, toPin: Y}
+    - {from: 6720000000010000059, fromPin: Result, to: 6720000000010000060, toPin: velocity}
+    - {from: 6720000000010000056, fromPin: Then, to: 6720000000010000060, toPin: Exec}
+    - {from: 6720000000010000062, fromPin: value, to: 6720000000010000063, toPin: Condition}
+    - {from: 6720000000010000061, fromPin: Then, to: 6720000000010000062, toPin: Exec}
+    - {from: 6720000000010000062, fromPin: Then, to: 6720000000010000063, toPin: Exec}
+    - {from: 6720000000010000063, fromPin: True, to: 6720000000010000064, toPin: Exec}
+  groups:
+    - {id: 6720000000010000065, title: on_update, position: [-40, -60], size: [8440, 580], color: Red}
+    - {id: 6720000000010000066, title: on_tick, position: [-180, 360], size: [6780, 500], color: Red}
+    - {id: 6720000000010000067, title: on_create, position: [-340, 780], size: [1540, 230], color: Red}

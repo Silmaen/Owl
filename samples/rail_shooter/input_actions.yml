@@ -1,6 +1,6 @@
 FormatVersion: 1
 # Actions of Ring Runner, on top of the built-in ones (the `ui_*` actions drive the menus). Read by
-# scripts/game/rail.lua.
+# scripts/game/rail.owlvs.
 actions:
   - name: steer
     type: vector

@@ -34,8 +34,8 @@ interface size.
 | Path                            | Content                                                                             |
 |---------------------------------|-------------------------------------------------------------------------------------|
 | `scenes/`                       | `title`, `level_select`, `level_1` to `level_5`, `settings`, `victory`, `game_over` |
-| `scripts/game/`                 | `game.lua` (rules, power-ups, bursts, saves), `paddle.lua`, `ball.lua`, `brick.lua` |
-| `scripts/ui/`                   | The neon menus; `neon_bricks.lua` lights the brick wall behind them                 |
+| `scripts/game/`                 | `game.owlvs` (rules, power-ups, bursts, saves), `paddle`, `ball`, `brick` graphs    |
+| `scripts/ui/`                   | The arcade menus; `neon_bricks.owlvs` lights the brick wall behind them             |
 | `prefabs/brick.owlprefab`       | A brick: static body, sprite, script; the levels hold its instances                 |
 | `prefabs/brick_burst.owlprefab` | The sparks and the flash of light of a broken brick, tinted in its colour           |
 | `prefabs/power_*.owlprefab`     | The falling capsules of the power-ups, with their glow                              |
@@ -43,8 +43,9 @@ interface size.
 
 The art, the sounds and the first layout of the levels come from `tools/samples/breakout/` (`generate_assets.py`,
 `generate_levels.py`, `generate_menus.py`); edit the levels in Owl Nest afterwards (move, add or delete bricks, change
-their properties). The menus are arcade neon: a wall of bricks lit in a wave, a ball and a paddle playing by themselves
-on the title, neon buttons and magenta wipes between the screens. In play the ball leaves a neon trail and lights the
+their properties). The menus are an arcade cabinet: a lit marquee with the title and the high score, a wall of bricks
+lit in a wave, a ball and a paddle playing by themselves on the title, hollow neon tube buttons filling with magenta
+under the cursor, pixel labels and magenta wipes between the screens. In play the ball leaves a neon trail and lights the
 bricks around it (2D lights), the paddle glows, a broken brick bursts into sparks of its colour, and the camera
 blooms the bright parts.
 The `next_scene` property of the `Game` entity names the level that follows (`scenes/victory.owl` after the last one):

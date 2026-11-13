@@ -1,0 +1,7 @@
+# Lunar Lander pads: the deck of each of the five pads rests on the ground of the moon, neither floating over it nor
+# sunk in it (the gap between the bottom of a deck and the ground just past its rim, measured by ray casts).
+scene: ../../../samples/lunar_lander/scenes/landing_1.owl
+steps:
+  - frames: 5
+  - expect: {gamestate: lander_pad_gap, less: 0.1}
+  - expect: {gamestate: lander_pad_gap, greater: -0.1}
