@@ -252,15 +252,20 @@ bench:
 # --- Drafts marked ready ---------------------------------------------------------------------------------------
 
 # A schedule of its own (Build > Pipeline schedules, `main`, every 10 minutes, `READY_WATCH` = `true`) runs this job
-# alone: it starts the pipeline of each draft marked ready since its draft pipeline (`ReadyPipelines`).
+# alone: it starts the pipeline of each draft marked ready since its draft pipeline (`ReadyPipelines`). No tag: every
+# runner with "Run untagged jobs" takes it, the Docker ones in the build image, a shell one (Windows) directly; the
+# script reads the same in bash and PowerShell.
 ready-watch:
-  extends: .linux
+  image: $LINUX_IMAGE
   stage: style
+  variables:
+    # As in `.windows`: MSYS2's Python makes a venv Poetry cannot use.
+    POETRY_VIRTUALENVS_USE_POETRY_PYTHON: "true"
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule" && $READY_WATCH == "true"
   interruptible: false
   script:
-    - poetry run python3 ci_action.py ReadyPipelines linux-clang-release
+    - poetry run python ci_action.py ReadyPipelines linux-clang-release
 
 # --- Nightly ----------------------------------------------------------------------------------------------------
 

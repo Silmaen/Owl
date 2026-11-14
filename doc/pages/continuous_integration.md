@@ -137,7 +137,8 @@ Code Style and Linux Clang Release run on documentation-only merge requests beca
 ## Runners and secrets
 
 Jobs take tagged runners: `linux` + `docker` + `amd64` (an arm64 runner never takes an x64 image), `windows`, and
-`bench` (one machine, so timings stay comparable). The runner configuration provides `CONAN_HOME` and `CCACHE_DIR` on persistent volumes, `SYS_PTRACE` and
+`bench` (one machine, so timings stay comparable). `ready-watch` has no tag: every runner with *Run untagged jobs*
+takes it, in the build image or, on Windows, directly. The runner configuration provides `CONAN_HOME` and `CCACHE_DIR` on persistent volumes, `SYS_PTRACE` and
 `seccomp=unconfined` for the sanitizers, and qemu-user (`binfmt_misc`) for the arm64 tests; the YAML sets none of them. The YAML sets `CCACHE_MAXSIZE` to 20 GiB, since every preset of a runner shares the one cache.
 Conan's cache takes one writer at a time, so each concurrent slot of a runner uses its own `$CONAN_HOME/slot-<n>`.
 

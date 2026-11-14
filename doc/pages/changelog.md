@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- CI: `ready-watch` runs untagged on any runner, Windows and arm64 included, so its schedule no longer piles up pending pipelines behind the builds.
+
 ## [0.7.0] - 2026-11-15
 
 ### Added
