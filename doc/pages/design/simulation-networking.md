@@ -92,14 +92,16 @@ Planned with the networking:
 - **Latency:** server-side lag compensation (hitboxes rewound to the time of the shot)
 - **Performance floor:** a minimum hardware profile, checked when a multiplayer match starts
 
-## Networking and multiplayer
+## Networking and multiplayer {#networking-multiplayer}
 
 Planned. Two network models: an authoritative server with client prediction (action games), and lockstep on the
-cross-platform deterministic simulation (management games, strategy), with desync detection by world hash. Desktop and
-Android; no networking on the Web (a browser opens no UDP socket).
+cross-platform deterministic simulation (management games, strategy), with desync detection by world hash. UDP on
+desktop and Android; in the browser, which opens no UDP socket, a WebSocket transport joins a native server.
 
 - Transport: UDP-based reliable messaging, client-server with an authoritative server; connect, disconnect,
   reconnect, timeout
+- Web transport: the same messages over a WebSocket, a server on desktop accepting UDP and WebSocket clients in one
+  session; the Web client never hosts
 - Replication: components marked as replicated, interpolation and prediction, server-owned and client-owned entities;
   interest management (relevance areas and priorities, a client receives only the entities near it)
 - RPC: Lua `rpc_server(func, args)`, `rpc_client(func, args)`, `rpc_all(func, args)`; reliable and unreliable channels

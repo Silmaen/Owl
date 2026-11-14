@@ -27,18 +27,12 @@ hold.
 
 - ![To evaluate][evaluate] WASM game modules and compiled mods: C++, Rust or Zig built once, run by the runner on every
   target ([Modding and platforms](design/modding-platforms.md))
-- ![To evaluate][evaluate] Android App Bundle (AAB) for Google Play
-  ([Game export](design/game-export.md#game-export-signing))
-- ![To evaluate][evaluate] Linux AppImage and Flatpak next to the portable archive
-  ([Game export](design/game-export.md#game-export-targets))
-- ![To evaluate][evaluate] Networking on the Web: a WebSocket or WebRTC transport
-  ([Networking](design/simulation-networking.md))
 - ![To evaluate][evaluate] Owl Nest in several languages, on the string tables of the games
   ([Localisation](design/localisation.md))
 - ![To evaluate][evaluate] Hot reload of a C++ game module ([Content pipeline](design/content-pipeline.md#hot-reload))
 - ![To evaluate][evaluate] macOS (Metal) ([Modding and platforms](design/modding-platforms.md))
-- ![To evaluate][evaluate] Plugins: script plugins on every target, native plugins shipped built by their authors,
-  Owl Nest plugins ([Modding and platforms](design/modding-platforms.md#modding-plugins))
+- ![To evaluate][evaluate] Native plugins shipped built by their authors
+  ([Modding and platforms](design/modding-platforms.md#modding-plugins))
 
 ## v1.0.0 -- Expected 2026-12-31
 
@@ -59,25 +53,10 @@ below, validated and proven through the hardening phase ([details](design/stable
 
 ## v0.9.0 -- Expected 2026-12-15
 
-**Goal:** The 1.0 release candidate: networked multiplayer on the v0.7.0 deterministic simulation, then the freeze of
-the API and of the formats, the SDK and everything a third party needs; followed by the 0.9.x hardening phase
-([networking](design/simulation-networking.md), [stable release](design/stable-release.md)). Critical path: transport
-and replication, the freezes, the SDK.
+**Goal:** The 1.0 release candidate: the freeze of the API and of the formats, the SDK and everything a third party
+needs, on an engine whose every public module served a full cycle; followed by the 0.9.x hardening phase
+([stable release](design/stable-release.md)). Critical path: the freezes, the SDK.
 
-- ![Planned][planned] Network transport layer (reliable UDP, authoritative server, connection management), on desktop
-  and Android
-- ![Planned][planned] Entity replication (replicated components, interpolation, prediction, authority)
-- ![Planned][planned] Lockstep network model on the bit-exact simulation, desync detection by world hash
-  ([Networking](design/simulation-networking.md))
-- ![Planned][planned] Fair matches: input type in the lobby, server-side lag compensation, minimum hardware profile
-  ([Fair play](design/simulation-networking.md#networking-fairness))
-- ![Planned][planned] RPC system (Lua `rpc_server` / `rpc_client` / `rpc_all`, reliable and unreliable)
-- ![Planned][planned] Lobby and session management
-- ![Planned][planned] Network debugging tools (latency / loss simulation, stats overlay)
-- ![Planned][planned] Interest management: relevance areas and priorities, a client receives only what is near it
-  ([Large worlds](design/large-worlds.md))
-- ![To evaluate][evaluate] Sample games from the pool, picked once the features of the release are done: e.g. a
-  networked Bomberman ([Pool](design/sample-games.md#sample-games-pool))
 - ![Planned][planned] Public API freeze, semantic versioning and deprecation policy, ABI check in CI — release candidate
 - ![Planned][planned] Versioned scene and save formats with tested migrations
 - ![Planned][planned] Project upgrade assistant: a project of an earlier version migrated after a backup
@@ -86,8 +65,10 @@ and replication, the freezes, the SDK.
   consumer test in CI
 - ![Planned][planned] Windows SDK compatible with MSVC (clang-cl), next to MinGW
   ([Platforms](design/modding-platforms.md#platforms-msvc))
-- ![Planned][planned] Owl Nest and the runners signed for Windows: a certificate provider for the signing of the
-  `Package` action ([Game export](design/game-export.md#game-export-signing))
+- ![Planned][planned] Owl Nest and the runners signed for Windows with a Certum open-source code-signing certificate
+  ([Game export](design/game-export.md#game-export-signing))
+- ![To evaluate][evaluate] Sample games from the pool, picked once the features of the release are done
+  ([Pool](design/sample-games.md#sample-games-pool))
 - ![Planned][planned] Fuzzers on every file loader
 - ![Planned][planned] Performance budgets verified in CI on every target platform
 - ![Planned][planned] Complete user documentation: tutorials, Lua and visual-scripting references
@@ -96,11 +77,12 @@ and replication, the freezes, the SDK.
 
 ## v0.8.0 -- Expected 2026-12-06
 
-**Goal:** Ship a game everywhere: every target exported from every Owl Nest host, Android and the Web as new
-platforms, mods and a local crash reporter
-([game export](design/game-export.md), [modding and platforms](design/modding-platforms.md)). Critical path: the build
-image,
-the templates, the shaders per target, Android and the Web.
+**Goal:** Ship a game everywhere and play it together: every target exported from every Owl Nest host, Android and
+the Web as new platforms, networked multiplayer on the v0.7.0 deterministic simulation, mods and plugins on one
+extension mechanism, the gaps of the sample-game pool closed
+([game export](design/game-export.md), [modding and platforms](design/modding-platforms.md),
+[networking](design/simulation-networking.md)). Critical path: the build image, the network transport, the shaders
+per target, Android and the Web.
 
 - ![Planned][planned] Build image with the Android NDK, emsdk, xwin and a headless browser, extended by the maintainer
   ([Game export](design/game-export.md#game-export-templates))
@@ -113,6 +95,8 @@ the templates, the shaders per target, Android and the Web.
 - ![Planned][planned] Signing at export: Authenticode from a `.pfx` or a custom command, APK v2 / v3, debug and release
   keystores ([Game export](design/game-export.md#game-export-signing))
 - ![Planned][planned] Exported Windows games carry their project icon in the executable, not only on the window
+- ![Planned][planned] Linux AppImage and Flatpak next to the portable archive, Android App Bundle (AAB) for Google Play
+  ([Game export](design/game-export.md#game-export-targets))
 - ![Planned][planned] Export report: size per target, baked shaders, unused assets, warnings
   ([Game export](design/game-export.md#game-export-report))
 - ![Planned][planned] Smoke test of every exported target in CI, Android on a tablet at night
@@ -127,9 +111,32 @@ the templates, the shaders per target, Android and the Web.
   ([Input](design/windowing-input.md))
 - ![Planned][planned] Crash reporter: a local report to attach to a GitHub issue, nothing sent
   ([Crash reporter](design/crash-reporter.md))
+- ![Planned][planned] Network transport layer (reliable UDP, authoritative server, connection management), on desktop
+  and Android ([Networking](design/simulation-networking.md#networking-multiplayer))
+- ![Planned][planned] Network transport in the browser: WebSocket to a native server, a Web client in every networked
+  game ([Networking](design/simulation-networking.md#networking-multiplayer))
+- ![Planned][planned] Entity replication (replicated components, interpolation, prediction, authority)
+- ![Planned][planned] Lockstep network model on the bit-exact simulation, desync detection by world hash
+  ([Networking](design/simulation-networking.md#networking-multiplayer))
+- ![Planned][planned] Fair matches: input type in the lobby, server-side lag compensation, minimum hardware profile
+  ([Fair play](design/simulation-networking.md#networking-fairness))
+- ![Planned][planned] RPC system (Lua `rpc_server` / `rpc_client` / `rpc_all`, reliable and unreliable)
+- ![Planned][planned] Lobby and session management
+- ![Planned][planned] Network debugging tools (latency / loss simulation, stats overlay)
+- ![Planned][planned] Interest management: relevance areas and priorities, a client receives only what is near it
+  ([Large worlds](design/large-worlds.md))
+- ![Planned][planned] Extension packs: one format and one loader for game mods and for data and script plugins
+  ([Modding and platforms](design/modding-platforms.md#modding-plugins))
 - ![Planned][planned] Mod loading system (`.owlmod` packs, manifest, load order, asset overrides)
 - ![Planned][planned] Lua mod API (custom components, game event hooks, sandboxed)
 - ![Planned][planned] In-game mod manager (enable / disable / reorder, conflict detection)
+- ![Planned][planned] Data and script plugins: material and script nodes, templates, game rules, shared by a project
+  on every target ([Plugins](design/modding-platforms.md#modding-plugins))
+- ![Planned][planned] Owl Nest plugins: panels, commands, inspector drawers, document types, importers
+  ([Plugins](design/modding-platforms.md#modding-plugins))
+- ![Planned][planned] Every open engine gap of the sample games closed (Lua voxel table, saved procedural chunks,
+  voxel edits without a captured cursor, tilemap switch, saved raycast walls, isometric zoom), and the pool audited
+  against the engine ([Gaps](design/sample-games.md#sample-games-gaps))
 
 ## v0.7.0 -- 2026-11-15
 

@@ -35,7 +35,7 @@ Design of the planned modding support, the new platforms and the plugins. The ne
 - Emscripten build target, HTML5 template with loading screen
 - Async asset loading adapted for the web
 - A local HTTP server for "run in browser"
-- No networking on the Web ([networking](simulation-networking.md))
+- Networking over WebSocket to a native server ([networking](simulation-networking.md#networking-multiplayer))
 
 ### Other
 
@@ -53,7 +53,9 @@ Besides MinGW (kept), a Windows build with the MSVC ABI so the SDK links from Vi
 
 ## Plugins {#modding-plugins}
 
-To be evaluated after 1.0. Plugins extend the engine and Owl Nest; teams of developers and designers share them.
+Plugins extend the engine and Owl Nest; teams of developers and designers share them. Mods and plugins are one
+mechanism: an extension pack (manifest, version, dependencies, load order) that a game loads as a mod, a project or
+Owl Nest as a plugin. Data, script and Owl Nest plugins are planned; native plugins are to be evaluated after 1.0.
 
 | Kind     | What it adds                                                                     | Targets                          |
 |----------|----------------------------------------------------------------------------------|----------------------------------|

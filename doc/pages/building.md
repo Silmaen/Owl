@@ -214,6 +214,8 @@ Ways to get a certificate:
 - **Azure Trusted Signing** (Microsoft, about 10 $ a month, identity validation of an organisation or, in some
   countries, an individual): `signtool` with its dlib, no key to keep; reputation as for OV.
 - **SignPath Foundation** (free for open-source projects that qualify): signs in their cloud from the CI artefact.
+- **Certum open-source code signing** (an individual open-source developer, the key on a card or in Certum's
+  cloud): the certificate Owl signs its own binaries with.
 
 Until then a user starts the unsigned program through **More info** > **Run anyway** (see
 [Getting Started](getting_started.md)).

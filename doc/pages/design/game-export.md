@@ -123,7 +123,7 @@ Design of the export for the five targets; the platforms themselves are in
   per export.
 - Every host exports every target.
 - A Linux game is a portable tar.gz with its libraries bundled and found through `$ORIGIN`, built on the Ubuntu 26.04
-  glibc (no older glibc).
+  glibc (no older glibc); an AppImage and a Flatpak are exported next to it.
 - Release runners only, no debug runner: diagnostics come from the `runner.yml` log level and console, the crash
   reporter ([Crash reporter](crash-reporter.md)) and Play in the Nest.
 - A Windows game carries its project icon in its executable (PE resource patch at export).
@@ -170,10 +170,10 @@ Owl never signs a game for its developer.
 | Windows         | The export signs the game executable from any host: Authenticode in C++ on OpenSSL with a `.pfx`, or a custom signing command (covers cloud services); last step, after the icon patch |
 | Android debug   | APK signature schemes v2 and v3 in C++ (no JDK); the Nest generates a debug keystore on the first Android export, kept in the Nest settings, never in the project                      |
 | Android release | Keystore provided by the developer, path in the Nest settings outside the project; password asked at export or kept in the OS keychain (libsecret, Windows Credential Manager)         |
-| Google Play     | AAB: after 1.0                                                                                                                                                                         |
+| Google Play     | AAB, signed with the release keystore                                                                                                                                                  |
 
-- Signing Owl's own binaries (Nest, runners): the provider is chosen separately (SignPath Foundation, OV certificate;
-  Azure Artifact Signing excludes individuals outside the US and Canada); it blocks no code.
+- Owl's own binaries (Nest, runners) are signed with a Certum open-source code-signing certificate; it blocks no
+  code.
 
 ### Game code {#game-export-game-code}
 
