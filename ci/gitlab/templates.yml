@@ -7,8 +7,9 @@
 # Runners take tagged jobs only. Their configuration gives CONAN_HOME and CCACHE_DIR on persistent volumes, and the
 # Linux ones `SYS_PTRACE` + `seccomp=unconfined` for the sanitizers and qemu-user (binfmt_misc) for the arm64 tests,
 # so these files never set them. Secrets are project CI/CD variables, masked: OWL_DEPLOY_URL, OWL_DEPLOY_LOGIN,
-# OWL_DEPLOY_PASSWORD, OWL_CONAN_CACHE_URL, CONAN_LOGIN_USERNAME_OWL_CACHE, CONAN_PASSWORD_OWL_CACHE and
-# OWL_GITLAB_API_TOKEN (a project access token with `read_api`, for the coverage reference and the nightly gate).
+# OWL_DEPLOY_PASSWORD, OWL_CONAN_CACHE_URL, CONAN_LOGIN_USERNAME_OWL_CACHE, CONAN_PASSWORD_OWL_CACHE,
+# OWL_GITLAB_API_TOKEN (a project access token with `read_api`, for the coverage reference and the nightly gate) and
+# OWL_GITLAB_PIPELINE_TOKEN (`api`, Developer, protected: `ready-watch` starts merge request pipelines with it).
 
 variables:
   # In the project directory so that GitLab's cache carries the virtual environment.
@@ -16,6 +17,8 @@ variables:
   LINUX_IMAGE: registry.argawaen.net/builder/builder-ubuntu2604
   # The Conan binary cache is filled with every binary a job builds; skipped when OWL_CONAN_CACHE_URL is unset.
   OWL_CONAN_CACHE_UPLOAD: "ON"
+  # Every preset of a runner shares one ccache: at the 5 GiB default it evicted itself and rebuilt from scratch.
+  CCACHE_MAXSIZE: 20G
   BENCH_CALIBRATE: "false"
   BENCH_ROUNDS: "5"
 
@@ -103,6 +106,8 @@ default:
     PRESET: linux-clang-tidy
     GIT_DEPTH: 0
   script:
+    # The same commit only: the verdict of a merge request reads its diff from the merge base.
+    - poetry run python3 ci_action.py Reuse "$PRESET" -- --same_commit && exit 0 || true
     - poetry run python3 ci_action.py Clean "$PRESET"
     - poetry run python3 ci_action.py Build "$PRESET" -- --configure_only
     - >-
@@ -122,6 +127,7 @@ default:
   variables:
     PRESET: linux-bench
   script:
+    - poetry run python3 ci_action.py Reuse "$PRESET" && exit 0 || true
     - poetry run python3 ci_action.py Clean "$PRESET"
     - poetry run python3 ci_action.py Build "$PRESET"
     - poetry run python3 ci_action.py Bench "$PRESET" -- "--calibrate=$BENCH_CALIBRATE" "--rounds=$BENCH_ROUNDS"

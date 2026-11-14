@@ -68,7 +68,7 @@ struct LuaBinding {
 	std::string_view table;
 	/// Function name in the table (`get_position`).
 	std::string_view name;
-	/// The C function, under `LuaEngine::callGuarded`; it calls `luaL_check*` before creating any C++ object.
+	/// The C function, under `LuaEngine::callGuarded`; a Lua error it raises unwinds its C++ objects.
 	LuaFunction function{nullptr};
 	/// One-sentence description.
 	std::string_view description;

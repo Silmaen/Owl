@@ -22,6 +22,7 @@
 #include <ostream>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <utility>
 #include <vector>
 
@@ -63,6 +64,13 @@ auto readFile(const std::filesystem::path& iPath) -> std::string {
 	std::stringstream ss;
 	ss << in.rdbuf();
 	return ss.str();
+}
+
+/// The end of a runner log, where a sanitizer report or a fatal error lands: the CI keeps no log file.
+auto getLogTail(const std::string& iLog) -> std::string_view {
+	constexpr size_t maxTail = 12000;
+	const std::string_view log{iLog};
+	return log.size() > maxTail ? log.substr(log.size() - maxTail) : log;
 }
 
 auto getEnv(const char* iName) -> std::string {
@@ -168,7 +176,7 @@ TEST_P(RenderImage, matchesReference) {
 	// NOLINTNEXTLINE(bugprone-command-processor) The runner must run in its own process (one GPU context).
 	const int status = std::system(command.c_str());
 	const auto log = readFile(logFile);
-	ASSERT_EQ(status, 0) << "OwlRunner failed, log: " << logFile;
+	ASSERT_EQ(status, 0) << "OwlRunner failed, log: " << logFile << "\n" << getLogTail(log);
 	EXPECT_NE(log.find("llvmpipe"), std::string::npos) << "Not rendered by a software driver, log: " << logFile;
 	EXPECT_EQ(log.find("VUID-"), std::string::npos) << "Vulkan validation messages, log: " << logFile;
 	EXPECT_EQ(log.find("could not start, falling back"), std::string::npos)
@@ -492,7 +500,7 @@ TEST_P(RenderPick, entityUnderEachPixel) {
 	// NOLINTNEXTLINE(bugprone-command-processor) The runner must run in its own process (one GPU context).
 	const int status = std::system(command.c_str());
 	const auto log = readFile(logFile);
-	ASSERT_EQ(status, 0) << "OwlRunner failed, log: " << logFile;
+	ASSERT_EQ(status, 0) << "OwlRunner failed, log: " << logFile << "\n" << getLogTail(log);
 	EXPECT_EQ(log.find("VUID-"), std::string::npos) << "Vulkan validation messages, log: " << logFile;
 	for (const auto& [pixel, tag]: picks)
 		EXPECT_NE(log.find(std::format("FrameBench: Pick {},{} -> {}.", pixel.x(), pixel.y(), tag)), std::string::npos)
@@ -560,7 +568,7 @@ TEST(RenderFallback, vulkanWithoutDeviceRendersWithOpenGl) {
 	// NOLINTNEXTLINE(bugprone-command-processor) The runner must run in its own process (one GPU context).
 	const int status = std::system(command.c_str());
 	const auto log = readFile(logFile);
-	ASSERT_EQ(status, 0) << "OwlRunner failed, log: " << logFile;
+	ASSERT_EQ(status, 0) << "OwlRunner failed, log: " << logFile << "\n" << getLogTail(log);
 	EXPECT_NE(log.find("The Vulkan renderer could not start, falling back to OpenGL"), std::string::npos)
 			<< "No fallback logged, log: " << logFile;
 	const auto actual = renderer::decodeImageFile(actualFile, 4);

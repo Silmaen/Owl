@@ -15,6 +15,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <functional>
 #include <optional>
 #include <span>
 #include <string_view>
@@ -138,10 +139,12 @@ struct OWL_API EnvironmentMap {
 	 * @param[in] iImage The equirectangular radiance.
 	 * @param[in] iLevelCount Number of prefiltered levels, at least 1 (at most until a level would be under 8x4).
 	 * @param[in] iSampleCount GGX importance samples per texel of the filtered levels.
-	 * @return The environment.
+	 * @param[in] iCancelled Asked between rows of the filtered levels, from any thread: true when nobody wants the
+	 *  result anymore (the scene that asked for it was left), the build then stops early. Empty: never cancelled.
+	 * @return The environment; without levels when cancelled.
 	 */
-	[[nodiscard]] static auto build(const FloatImage& iImage, uint32_t iLevelCount = 6, uint32_t iSampleCount = 64)
-			-> EnvironmentMap;
+	[[nodiscard]] static auto build(const FloatImage& iImage, uint32_t iLevelCount = 6, uint32_t iSampleCount = 64,
+									const std::function<bool()>& iCancelled = {}) -> EnvironmentMap;
 };
 
 /// Widest level 0 of an environment, in pixels (2:1 aspect).

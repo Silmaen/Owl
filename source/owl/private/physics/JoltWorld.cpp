@@ -721,11 +721,11 @@ void JoltWorld::setPose(const uint32_t iBody, const BodyPose& iPose) {
 											 planeRotation(iPose.angle), JPH::EActivation::Activate);
 }
 
-void JoltWorld::setPositionQuietly(const uint32_t iBody, const math::vec2f& iPosition) {
+void JoltWorld::shiftQuietly(const uint32_t iBody, const math::vec3f& iShift) {
 	auto& bodies = mp_impl->bodies();
 	const auto id = toBodyId(iBody);
-	const auto z = bodies.GetPosition(id).GetZ();
-	bodies.SetPosition(id, JPH::RVec3(iPosition.x(), iPosition.y(), z), JPH::EActivation::DontActivate);
+	bodies.SetPosition(id, bodies.GetPosition(id) - JPH::RVec3(iShift.x(), iShift.y(), iShift.z()),
+					   JPH::EActivation::DontActivate);
 }
 
 auto JoltWorld::getLinearVelocity(const uint32_t iBody) const -> math::vec2f {

@@ -150,7 +150,7 @@ TEST(Renderer3D, SkinnedShaderCompilesAndReadsThePaletteAtTheInstanceBinding) {
 	const auto resources = compiler.get_shader_resources();
 	ASSERT_EQ(resources.storage_buffers.size(), 1u);
 	EXPECT_EQ(compiler.get_decoration(resources.storage_buffers[0].id, spv::DecorationBinding),
-			  renderer::Renderer3D::g_skinBinding);
+			  uint32_t{renderer::Renderer3D::g_skinBinding});
 	EXPECT_EQ(resources.stage_inputs.size(), 8u);
 	core::Log::invalidate();
 }

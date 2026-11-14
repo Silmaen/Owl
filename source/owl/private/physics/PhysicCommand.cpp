@@ -263,15 +263,17 @@ public:
 		}
 	}
 
-	void shiftOrigin(const math::vec2f& iShift) {
+	// A body in space moves by the whole shift, a body of the plane in (x, y) only: its Jolt z stays the plane's.
+	void shiftOrigin(const math::vec3f& iShift) {
+		const math::vec2f planeShift{iShift.x(), iShift.y()};
+		const math::vec3f flatShift{iShift.x(), iShift.y(), 0.f};
 		for (const auto body: bodies | std::views::values)
-			jolt->setPositionQuietly(body, jolt->getPose(body).position - iShift);
-		const math::vec3f spaceShift{iShift.x(), iShift.y(), 0.f};
+			jolt->shiftQuietly(body, spaceBodies.contains(body) ? iShift : flatShift);
 		for (auto& tracked: synced) {
-			tracked.previous.position -= iShift;
-			tracked.current.position -= iShift;
-			tracked.previousSpace.position -= spaceShift;
-			tracked.currentSpace.position -= spaceShift;
+			tracked.previous.position -= planeShift;
+			tracked.current.position -= planeShift;
+			tracked.previousSpace.position -= iShift;
+			tracked.currentSpace.position -= iShift;
 		}
 	}
 
@@ -442,6 +444,8 @@ public:
 		const uint64_t bodyId = nextId++;
 		bodies[bodyId] = *body;
 		bodyOwners[*body] = iOwner.getUUID();
+		if (iDescription.dimension == scene::SceneBody::Dimension::Space)
+			spaceBodies.insert(*body);
 		if (iDescription.sensor) {
 			sensorBodies.insert(*body);
 			sensorOwners.insert(static_cast<uint64_t>(iOwner.getUUID()));
@@ -462,6 +466,7 @@ public:
 				bodyOwners.erase(owner);
 			}
 			heldBodies.erase(it->second);
+			spaceBodies.erase(it->second);
 			jolt->destroyBody(it->second);
 			bodies.erase(it);
 		}
@@ -1114,6 +1119,8 @@ public:
 	std::map<std::pair<uint64_t, uint64_t>, uint32_t> touching;
 	std::unordered_set<uint32_t> sensorBodies;
 	std::unordered_set<uint64_t> sensorOwners;
+	// Bodies in space (`SceneBody::Dimension::Space`), shifted in z too by a move of the world origin.
+	std::unordered_set<uint32_t> spaceBodies;
 	std::vector<PhysicCommand::CollisionEvent> collisionEvents;
 	std::vector<entt::entity> pendingJoints;
 	size_t frameEventsStart = 0;
@@ -1342,7 +1349,7 @@ void PhysicCommand::syncSimulatedTransforms(scene::Scene& ioScene) {
 		world->writeTransforms(ioScene, 1.f);
 }
 
-void PhysicCommand::shiftOrigin(scene::Scene& ioScene, const math::vec2f& iShift) {
+void PhysicCommand::shiftOrigin(scene::Scene& ioScene, const math::vec3f& iShift) {
 	OWL_PROFILE_FUNCTION()
 
 	if (auto* const world = ioScene.getPhysicsWorld(); world != nullptr)

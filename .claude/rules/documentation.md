@@ -62,8 +62,9 @@ If an SVG already exists, keep it alongside the mermaid version for Doxygen comp
 
 - **Only the roadmap and the changelog carry history.** Every other page (`doc/pages/*.md`, README, CONTRIBUTING,
   SECURITY, the sample READMEs, `.claude/rules/`, `CLAUDE.md`) describes the current state: no "since v0.x",
-  "formerly", "(new)"; a future version is a link to the roadmap or a design page. Design pages keep their plan,
-  status and decision tables, without narrative; `doc/audit/` is a dated archive, left as is.
+  "formerly", "(new)"; a future version is a link to the roadmap or a design page. Design pages hold the design that
+  exists and a short specification of each item still on the roadmap: no plan history, no status tables, no superseded
+  options; a page whose work is done and documented elsewhere is deleted. `doc/audit/` is a dated audit, kept apart.
 
 ### Root files (`ROADMAP.md`, `CHANGELOG.md`)
 
@@ -89,9 +90,10 @@ If an SVG already exists, keep it alongside the mermaid version for Doxygen comp
 
 ### Design pages (`doc/pages/design/*.md`)
 
-- One page per work item (e.g. `foundations.md`, `owl-rhi.md`, `isometric.md`), anchor `{#page-design-<name>}`,
+- One page per subsystem or work item (e.g. `owl-rhi.md`, `isometric.md`), anchor `{#page-design-<name>}`,
   `[TOC]`, relative `.md` links (`../roadmap.md`)
-- They hold every specification removed from the roadmap; nothing is dropped when an item is condensed
+- They hold the specification of every roadmap item that needs more than its line; once the item is done, the page
+  keeps only what still describes the code
 - File names without dots (the help bundle derives page ids from the name up to its first dot) and distinct from
   the `doc/pages/*.md` names (the help bundle flattens them)
 

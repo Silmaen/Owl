@@ -17,7 +17,7 @@ Arguments: `<package-name>` and optionally `<version>` and `<linkage>` (static/s
    header-only.
    - If the version is not specified, ask the user.
    - If the linkage is not specified, ask the user (static, shared, or header-only).
-3. Regenerate `conan.lock` (`conan lock create` commands of `doc/pages/design/conan-migration.md`).
+3. Regenerate `conan.lock` (`conan lock create` commands of `doc/pages/design/dependencies.md`).
 4. Add the `owl_target_link_libraries()` call in the appropriate `CMakeLists.txt`:
    ```cmake
    owl_target_link_libraries(<target> PRIVATE <package_name> REQUIRED)
@@ -33,4 +33,4 @@ Arguments: `<package-name>` and optionally `<version>` and `<linkage>` (static/s
    ./docker_run.sh cmake --preset linux-clang-release -S .
    ```
    Third-party headers that raise warnings get a wrapper in `source/owl/private/core/external/`.
-6. Add the dependency to the inventory of `doc/pages/design/conan-migration.md`, then report success/failure.
+6. Add the dependency to the inventory of `doc/pages/design/dependencies.md`, then report success/failure.

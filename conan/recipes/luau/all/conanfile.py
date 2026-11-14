@@ -43,8 +43,7 @@ class LuauConan(ConanFile):
         tc.cache_variables["LUAU_WERROR"] = False
         tc.cache_variables["LUAU_STATIC_CRT"] = False
         tc.cache_variables["LUAU_NATIVE"] = bool(self.options.native_code_gen)
-        # Errors unwind with longjmp, like the reference Lua: a host catching std::exception never swallows them.
-        tc.preprocessor_definitions["LUA_USE_LONGJMP"] = 1
+        # LUA_USE_LONGJMP stays 0: a Lua error is a C++ exception, which runs the destructors of the frames it unwinds.
         tc.generate()
 
     def build(self):

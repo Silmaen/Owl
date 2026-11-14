@@ -80,6 +80,17 @@ TEST_F(UserDirectoryTest, testsRunInTheirOwnDirectory) {
 	EXPECT_TRUE(getUserDirectory().string().starts_with(std::filesystem::temp_directory_path().string()));
 }
 
+TEST_F(UserDirectoryTest, cacheDirectory) {
+	const auto previous = owl::core::getEnv("OWL_CACHE_DIR");
+	setUserDirectory(m_dir / "user");
+	owl::core::setEnv("OWL_CACHE_DIR", "");
+	EXPECT_EQ(getCacheDirectory(), m_dir / "user" / "cache");
+	owl::core::setEnv("OWL_CACHE_DIR", (m_dir / "shared").string());
+	EXPECT_EQ(getCacheDirectory(), m_dir / "shared");
+	EXPECT_EQ(getUserDirectory(), m_dir / "user");
+	owl::core::setEnv("OWL_CACHE_DIR", previous);
+}
+
 TEST(UserDirectory, executableDirectory) {
 	const auto directory = getExecutableDirectory();
 	EXPECT_TRUE(std::filesystem::is_directory(directory));

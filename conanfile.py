@@ -9,7 +9,7 @@ Two uses:
   against it: `find_package(OwlEngine)` on the installed CMake config and a program linked to `Owl::OwlEngine`.
 
 Recipes come from ConanCenter; the few that are missing there live in `conan/recipes/` (a local-recipes-index
-remote registered by `cmake/Conan.cmake`). See `doc/pages/design/conan-migration.md` for the inventory, the
+remote registered by `cmake/Conan.cmake`). See `doc/pages/design/dependencies.md` for the inventory, the
 version choices and the commands.
 """
 

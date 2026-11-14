@@ -77,20 +77,27 @@
 #include "sound/SoundSystem.h"
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <format>
+#include <functional>
+#include <iterator>
 #include <limits>
 #include <mutex>
 #include <numbers>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <tuple>
 #include <utility>
+#include <vector>
 
 namespace owl::scene {
 
@@ -151,6 +158,120 @@ constexpr size_t g_ParallelChunkEntities = 1024;
 
 // Roots below which the subtrees are too few to share between workers.
 constexpr size_t g_ParallelMinRoots = 16;
+
+// Largest procedural sky rendered for the Null backend, which never samples it.
+constexpr uint32_t g_headlessSkyWidth = 64;
+
+// Prefiltered levels an environment builds: the Null backend never samples the GGX ones (a CPU minute in Debug).
+auto environmentLevelCount() -> uint32_t {
+	return renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::Null ? 1u : 6u;
+}
+
+// Environments the scenes of the process share, most recent first: a level change never filters the sky again.
+constexpr size_t g_builtEnvironmentCount = 2;
+
+using EnvironmentResult = shared<std::optional<renderer::EnvironmentMap>>;
+
+struct BuiltEnvironment {
+	std::string key;
+	// While its worker runs: owned by the scenes waiting for it, the worker stops once none is left.
+	weak<std::optional<renderer::EnvironmentMap>> building;
+	size_t task = 0;
+	// Once a scene uploaded it: kept for the next scenes.
+	EnvironmentResult map;
+};
+
+struct BuiltEnvironments {
+	std::mutex mutex;
+	std::vector<BuiltEnvironment> entries;
+};
+
+auto builtEnvironments() -> BuiltEnvironments& {
+	static BuiltEnvironments environments;
+	return environments;
+}
+
+// Identity of a source: the HDRI file found (time and size tell an edit) or the sky; empty, never kept, when missing.
+auto environmentKey(const std::filesystem::path& iHdri, const bool iProcedural, const std::array<float, 16>& iSky)
+		-> std::string {
+	std::string key = std::format("{}:", environmentLevelCount());
+	if (iProcedural) {
+		for (const float value: iSky) key += std::format("{},", value);
+		return key;
+	}
+	const auto& app = app::Application::get();
+	if (const std::string packed = iHdri.generic_string(); app.hasOpenPack() && app.packContains(packed))
+		return key + "pack:" + packed;
+	std::vector<std::filesystem::path> candidates;
+	if (iHdri.is_relative()) {
+		for (const auto& [title, assetsPath]: app.getAssetDirectories()) candidates.push_back(assetsPath / iHdri);
+	}
+	candidates.push_back(iHdri);
+	for (const auto& candidate: candidates) {
+		std::error_code ec;
+		const auto time = std::filesystem::last_write_time(candidate, ec);
+		const auto size = ec ? 0 : std::filesystem::file_size(candidate, ec);
+		if (!ec)
+			return std::format("{}{}:{}:{}", key, candidate.generic_string(), time.time_since_epoch().count(), size);
+	}
+	return {};
+}
+
+// An environment a scene waits for: ready when `loading` is false and the result holds a map.
+struct EnvironmentRequest {
+	EnvironmentResult result;
+	size_t task = 0;
+	bool loading = false;
+};
+
+using EnvironmentBuilder =
+		std::function<std::optional<renderer::EnvironmentMap>(const std::function<bool()>& iCancelled)>;
+
+// The environment another scene built or builds, else `iBuild` on a worker, stopped once no scene waits for it.
+auto requestEnvironment(const std::string& iKey, EnvironmentBuilder iBuild) -> EnvironmentRequest {
+	if (!app::Application::instanced())
+		return {.result = mkShared<std::optional<renderer::EnvironmentMap>>(iBuild({}))};
+	auto& [mutex, environments] = builtEnvironments();
+	const std::scoped_lock<std::mutex> lock(mutex);
+	if (const auto found =
+				iKey.empty() ? environments.end() : std::ranges::find(environments, iKey, &BuiltEnvironment::key);
+		found != environments.end()) {
+		std::rotate(environments.begin(), found, std::next(found));
+		const auto& entry = environments.front();
+		if (entry.map)
+			return {.result = entry.map};
+		if (auto building = entry.building.lock(); building)
+			return {.result = std::move(building), .task = entry.task, .loading = true};
+		environments.erase(environments.begin());
+	}
+	auto result = mkShared<std::optional<renderer::EnvironmentMap>>();
+	const weak<std::optional<renderer::EnvironmentMap>> wanted = result;
+	const auto task = app::Application::get().getTaskScheduler().pushTask(
+			core::task::Task{[wanted, build = std::move(iBuild)]() -> void {
+				if (wanted.expired())
+					return;
+				auto map = build([&wanted]() -> bool { return wanted.expired(); });
+				if (const auto target = wanted.lock(); target)
+					*target = std::move(map);
+			}});
+	if (!iKey.empty()) {
+		environments.insert(environments.begin(), {.key = iKey, .building = wanted, .task = task, .map = nullptr});
+		if (environments.size() > g_builtEnvironmentCount)
+			environments.resize(g_builtEnvironmentCount);
+	}
+	return {.result = std::move(result), .task = task, .loading = true};
+}
+
+// Keep a map a scene just uploaded for the next scenes that ask for the same source.
+void keepEnvironment(const std::string& iKey, const EnvironmentResult& iResult) {
+	if (iKey.empty())
+		return;
+	auto& [mutex, environments] = builtEnvironments();
+	const std::scoped_lock<std::mutex> lock(mutex);
+	if (const auto found = std::ranges::find(environments, iKey, &BuiltEnvironment::key);
+		found != environments.end() && found->building.lock() == iResult)
+		found->map = iResult;
+}
 
 auto unpackChunkKey(const uint64_t iKey) -> math::vec3i {
 	const auto dec = [](const uint64_t iBits) -> int32_t {
@@ -1966,17 +2087,19 @@ void Scene::recordEnvironmentPass(renderer::RenderGraph& ioGraph, const renderer
 	} else if (state.procedural || state.hdri != environment->hdri) {
 		state = {};
 		state.hdri = environment->hdri;
-		state.result = mkShared<std::optional<renderer::EnvironmentMap>>();
-		const auto build = [result = state.result, path = state.hdri]() -> void {
-			if (const auto image = renderer::loadHdrAsset(path); image)
-				*result = renderer::EnvironmentMap::build(*image);
-		};
-		if (app::Application::instanced()) {
-			state.task = app::Application::get().getTaskScheduler().pushTask(core::task::Task{build});
-			state.loading = true;
-		} else {
-			build();
-		}
+		const auto key =
+				app::Application::instanced() ? environmentKey(state.hdri, false, state.skyKey) : std::string{};
+		auto [result, task, loading] = requestEnvironment(
+				key,
+				[path = state.hdri, levels = environmentLevelCount()](
+						const std::function<bool()>& iCancelled) -> std::optional<renderer::EnvironmentMap> {
+					if (const auto image = renderer::loadHdrAsset(path); image)
+						return renderer::EnvironmentMap::build(*image, levels, 64, iCancelled);
+					return std::nullopt;
+				});
+		state.result = std::move(result);
+		state.task = task;
+		state.loading = loading;
 	}
 	if (state.loading && app::Application::instanced() &&
 		app::Application::get().getTaskScheduler().isTaskFinished(state.task))
@@ -1996,6 +2119,8 @@ void Scene::recordEnvironmentPass(renderer::RenderGraph& ioGraph, const renderer
 			state.lighting.levels[level] = std::move(texture);
 		}
 		state.lighting.irradiance = map.irradiance;
+		if (app::Application::instanced())
+			keepEnvironment(environmentKey(state.hdri, state.procedural, state.skyKey), state.result);
 		state.result.reset();
 		requestReflectionProbeCapture();
 	}
@@ -2064,17 +2189,19 @@ void Scene::requestProceduralSky(const component::ProceduralSky& iSky) {
 											 .nightBrightness = iSky.nightBrightness,
 											 .stars = iSky.stars,
 											 .discSize = iSky.discSize};
-	const math::vec2ui size{iSky.resolution, std::max(iSky.resolution / 2, 1u)};
-	state.result = mkShared<std::optional<renderer::EnvironmentMap>>();
-	const auto build = [result = state.result, parameters, size]() -> void {
-		*result = renderer::EnvironmentMap::build(renderer::renderProceduralSky(parameters, size));
-	};
-	if (app::Application::instanced()) {
-		state.task = app::Application::get().getTaskScheduler().pushTask(core::task::Task{build});
-		state.loading = true;
-	} else {
-		build();
-	}
+	const uint32_t levels = environmentLevelCount();
+	const uint32_t width = levels == 1 ? std::min(iSky.resolution, g_headlessSkyWidth) : iSky.resolution;
+	const math::vec2ui size{width, std::max(width / 2, 1u)};
+	auto [result, task, loading] = requestEnvironment(
+			environmentKey({}, true, key),
+			[parameters, size,
+			 levels](const std::function<bool()>& iCancelled) -> std::optional<renderer::EnvironmentMap> {
+				return renderer::EnvironmentMap::build(renderer::renderProceduralSky(parameters, size), levels, 64,
+													   iCancelled);
+			});
+	state.result = std::move(result);
+	state.task = task;
+	state.loading = loading;
 }
 
 void Scene::useShadowMaps(const renderer::RenderGraph::PassContext& iContext) {

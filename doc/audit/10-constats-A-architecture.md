@@ -1,17 +1,21 @@
 # Audit Owl — constats de l'axe A : architecture du moteur
 
-> Périmètre : `source/owl/public` et `source/owl/private`, revu le 2026-10-20 sur `main` 4e1a6a10. Lecture seule ;
-> mesures via `./docker_run.sh` sur `output/build/linux-clang-release`. « confirmé » = vérifié dans le code ou mesuré.
-> Contexte et méthode : `00-cadrage.md`.
+> Périmètre : `source/owl/public` et `source/owl/private` (197 k lignes), revu le 2026-11-12 sur
+> `Feature/sample-games-new` b4281d72. Lecture seule ; préprocesseur mesuré via `./docker_run.sh` (sans arbre de build,
+> rayon de recompilation non remesuré). « confirmé » = vérifié dans le code ou mesuré. Contexte et méthode :
+> `00-cadrage.md`.
 
 ## Résumé
 
-- Frontière publique/privée tenue : seuls EnTT et ImGui sont visibles des headers publics (A-06).
-- `Scene` (1 446 + 2 339 lignes) porte encore des règles de jeu (A-02, A-16).
-- ~25 singletons à cycle de vie dispersé, `Application::get()` omniprésent (A-07, A-08, A-20).
-- Fuites de l'abstraction GPU et ownership `shared<>` par défaut (A-09, A-11) ; coût de header élevé (A-12).
-- Registre de composants ouvert mais alimenté par listes manuelles (A-05) ; pile de rendu extensible (A-15).
-- Pistes : contexte moteur explicite, gameplay hors de `Scene`, registre sans liste, conventions GPU centralisées.
+- Frontière publique/privée tenue : seuls EnTT et ImGui sont visibles des headers publics, Jolt et Luau compris (A-06).
+- `Scene` a doublé (4 723 + 3 127 lignes, 116 membres) : elle porte désormais aussi ~1 900 lignes de rendu (ombres,
+  sondes, frame graph) en plus des règles de jeu (A-02) ; trois agrégateurs dépassent 4 700 lignes (A-16).
+- `EngineContext` possède une partie des services orphelins, mais rendu, son, input et log restent statiques et
+  `Application::get()` reste le chemin d'accès (A-07, A-08).
+- Clip-space centralisé (`ClipSpace.h`) : la fuite GPU se réduit à `UiLayer` (A-09) ; coût de header en hausse (A-12).
+- Registre de composants toujours alimenté par quatre listes manuelles, 83 composants (A-05) ; deux bibliothèques
+  YAML cohabitent (A-22).
+- Pistes : sortir le rendu et le gameplay de `Scene`, finir `EngineContext`, registre sans liste.
 
 ## Constats
 
@@ -20,122 +24,140 @@ Format : ID · nature · gravité · statut. `Reco` = recommandation et effort.
 ### Gravité haute
 
 **A-02** · faiblesse · haute · confirmé
-Scene cumule conteneur ECS, hiérarchie, ordonnancement des sous-systèmes et rendu, plus des règles de jeu
-(victoire/mort) ; les systèmes sont enregistrés par phase mais le gameplay reste dans le moteur.
-Preuve : `source/owl/private/scene/Scene.cpp` (2 339 l.), `public/scene/Scene.h` (1 446 l.), Scene.h:610-611,
-Scene.cpp:557-585, `SystemSchedule.h`.
-Reco : corriger, M (Scene = données + hiérarchie ; gameplay vers un module ou le sample).
+`Scene` cumule conteneur ECS, hiérarchie, ordonnancement, replay, streaming voxel, index spatial, origine flottante,
+règles de jeu (Victory/Death) et maintenant l'orchestration du rendu (cascades d'ombres, ombres locales, sondes de
+réflexion, environnement, post-process, frame graph) : 116 membres, 47 includes dans le header.
+Preuve : `private/scene/Scene.cpp` (4 723 l., 125 méthodes), `public/scene/Scene.h` (3 127 l.) ; rendu
+Scene.cpp:1072-2987 (`renderWithStack`, `recordLightPasses`, `recordReflectionProbePasses`, `render2D`,
+`renderMeshes`…) ; Victory/Death Scene.h:1011-1012, Scene.cpp:653, 847-880.
+Reco : corriger, L (Scene = données + hiérarchie ; rendu vers les couches de la pile, gameplay vers un module ou le
+jeu) ; croiser B-26.
 
 **A-06** · force · haute · confirmé
-Aucun include Box2D, Lua, Taskflow, spdlog, yaml-cpp, Vulkan, glad, GLFW ni AL dans le public (pimpl, façades) ;
-remplacer une de ces dépendances ne casse pas l'API.
-Preuve : grep des includes de `source/owl/public` ; pimpl `PhysicCommand.h`, `ScriptEngine.h`, `Serializer.h`,
-`Scheduler` ; spdlog confiné à `private/core/Log.cpp` ; `private/core/external/`.
+Aucun include Jolt, Luau, Taskflow, spdlog, yaml-cpp, rapidyaml, Vulkan, VMA, glad, GLFW ni AL dans le public (pimpl,
+façades) ; seuls EnTT et ImGui (`transitive_headers=True`) traversent l'API.
+Preuve : grep des includes `<…>` de `source/owl/public` (seuls `entt/` et `imgui.h` sont tiers) ; pimpl
+`public/physics/PhysicCommand.h`, `core/Serializer.h:37` ; `private/physics/JoltWorld.h` ; `private/core/external/`
+(`ryml.h`) ; `conanfile.py:125, 161`.
 Reco : garder.
 
 ### Gravité moyenne
 
 **A-05** · faiblesse · moyenne · confirmé
-Le registre de composants est ouvert aux projets aval, mais les composants du moteur sont déclarés par des listes
-manuelles à synchroniser avec lui.
-Preuve : `public/scene/ComponentRegistry.h`, `public/scene/component/components.h`.
+Le registre de composants est ouvert aux projets aval, mais les 83 composants du moteur sont déclarés par quatre
+listes manuelles (concept `isComponent`, tuples `Copiable`, `Serializable`, `Optional`) à synchroniser entre elles et
+avec l'inspecteur.
+Preuve : `public/scene/component/components.h:7-230`, `private/scene/ComponentRegistry.cpp:30-33`,
+`public/gui/component/render.h` (81 `renderProps`).
 Reco : corriger, S/M (alimenter le registre depuis la déclaration de chaque composant).
 
 **A-07** · faiblesse · moyenne · confirmé
-L'Application sert de localisateur de services implicite (assets, polices, fenêtre, pack, scheduler) ; la résolution
-d'asset se fait par nom avec parcours récursif, « premier trouvé gagne ». `AssetLibrary` met les noms en cache : le
-parcours n'a lieu qu'au premier chargement ou dans `list()`.
-Preuve : 79 `Application::get()` dans 32 fichiers ; Application.h:176 (aucun contrôle) ; `public/data/assets/AssetLibrary.h`.
-Reco : corriger, M (service AssetFileSystem indexé, injection explicite) ; coordonner avec les références d'assets
-par GUID (axe K).
+Les références sérialisées passent par GUID (`gid:<guid>:<hint>`, registre et sidecars `.owlmeta`), mais
+`AssetLibrary::find` résout encore par nom avec parcours récursif « premier trouvé gagne », et l'Application reste le
+localisateur de services implicite (assets, polices, pack, scheduler, `EngineContext`).
+Preuve : `public/data/assets/AssetReference.h:46-97`, `private/data/assets/AssetRegistry.cpp:232` ;
+`public/data/assets/AssetLibrary.h:250-310` ; 104 `Application::get()` dans 39 fichiers du moteur, 172 dans l'éditeur ;
+Application.h:191 (aucun contrôle).
+Reco : corriger, M (résolution par le registre GUID dans `AssetLibrary`, injection explicite du contexte).
 
 **A-08** · faiblesse · moyenne · confirmé
-~25 singletons ou classes statiques ; ordre d'init/destruction explicite seulement pour rendu/son/fenêtre (A-20), le
-reste vit jusqu'à la destruction statique, avec fuites d'état entre tests et réentrance. 13 membres statiques
-nommés `m_` au lieu de `s_` (`.claude/rules/cpp-style.md:68`).
-Preuve : Log.h:149-153, Application.h:420, Input.h:122-124, RenderCommand.h:283, Renderer.h:194-198,
-SoundCommand.h:222, SettingsManager.h:201-205, SaveManager.h:117, ScreenTransition.h:214-228, UiInputSystem.h:51-53 ;
-`g_Data`/`g_state` dans Renderer2D.cpp:117, Renderer3D.cpp:38, RendererVoxel.cpp:43, RendererRaycast.cpp:83,
-RendererTilemap.cpp:59, BackgroundRenderer.cpp:39 ; cycle de vie : EntryPoint.h, Application.cpp:128-312,
-Scene.cpp:366/417/504 ; aucun propriétaire pour SettingsManager, ScreenTransition, UiInputSystem, RenderLayerFactory.
-Reco : corriger, M (`EngineContext` qui possède et ordonne les sous-systèmes).
+`EngineContext` (possédé par l'Application) prend désormais réglages, transitions, caches de meshes et de matériaux,
+bibliothèques HUD, dialogues, séquences, arbres de comportement ; mais rendu, son, input et log restent des classes
+statiques, 16 renderers gardent un état global de fichier, et 16 membres statiques sont nommés `m_` au lieu de `s_`
+(`.claude/rules/cpp-style.md`).
+Preuve : `public/app/EngineContext.h`, Application.h:486, 668 ; Renderer.h:202-224 (dont `RenderGraph`),
+RenderCommand.h:416-420, SoundCommand.h:251-253, Input.h:236-238, SoundSystem.h:96-99, Log.h:209-213 ;
+`g_Data`/`g_state` dans 16 fichiers de `private/renderer/` (Renderer2D.cpp:224, Renderer3D.cpp:206,
+RendererRaycast.cpp:142, RendererTilemap.cpp:107, RendererParticles.cpp:99, RendererIsometric.cpp:382…) ; singletons
+Vulkan `VulkanCore`, `VulkanHandler`, `MemoryAllocator`, `FrameProfiler`, `Descriptors`.
+Reco : corriger, M (faire entrer rendu, son, input dans `EngineContext`, puis l'injecter).
 
-**A-09** · faiblesse · moyenne · confirmé
-L'abstraction GPU fuit : la correction clip-space Vulkan existe en trois copies (dont une inverse aussi `(1,3)`, sans
-effet pour une ortho symétrique) et `UiLayer` connaît Vulkan ; 9 `switch` de backend dans les factories.
-Preuve : `private/renderer/CameraOrtho.cpp:30-37`, `private/scene/SceneCamera.cpp:50-56`,
-`private/renderer/CameraEditor.cpp:84-90` ; `private/gui/UiLayer.cpp:19` (VulkanHandler.h, 6 tests de backend l.115-209) ;
-`private/renderer/gpu/*.cpp`.
-Reco : corriger, S (`RenderAPI::clipSpaceCorrection()`, interface `GuiBackend`) ; croiser avec l'axe B (B-07).
-
-**A-12** · faiblesse · moyenne · confirmé
-Tout header Owl paie ~78 k lignes (Core.h → Assert.h → Log.h → `<format>`) ; `Scene.h` ~170 k ; modifier
-`Application.h` ou `RenderLayer.h` recompile ~30 % de l'arbre ; la PCH ne profite pas aux consommateurs du paquet.
-Preuve : `clang++ -E -H` : Core.h 276 headers / 77 953 l., Scene.h 168 483 l. (74 EnTT), owl.h 197 543 l. ;
-`ninja -t deps` (rayon de recompilation, objets) : Core.h 409, vectors.h 408, Texture.h 166, Application.h 125 (sur 393),
-RenderLayer.h 122, Scene.h 87 ; `private/owlpch.h` sur 367 objets.
-Reco : corriger à faible coût, S (Assert.h sans Log.h complet, déclarations anticipées) ; mesure de build par l'axe G.
+**A-12** · faiblesse · moyenne · confirmé (préprocesseur mesuré), rayon de recompilation non remesuré
+Tout header Owl paie ~80 k lignes (Core.h → Assert.h → Log.h → `<format>`) ; `Scene.h` ~184 k (+9 % depuis 2026-10) ;
+la PCH ne profite pas aux consommateurs du paquet.
+Preuve : `clang++ -std=c++23 -E` dans l'image : Core.h 79 504 l., Scene.h 183 853 l. ; Core.h:146, Assert.h:11,
+Log.h:14 ; Scene.h : 47 includes. Rayon de 2026-10 (`ninja -t deps`) : Core.h 409 objets, Application.h 125,
+Scene.h 87.
+Reco : corriger à faible coût, S (Assert.h sans Log.h complet, déclarations anticipées, Scene.h allégé avec A-02).
 
 **A-14** · force · moyenne · confirmé
-Dossier == namespace respecté (exceptions voulues : Core.h, expected.h, `linux64`) ; `OWL_API` systématique sur les
-classes non templates.
-Preuve : script `ns.py`.
+Dossier == namespace respecté (exceptions voulues : Core.h, Macros.h, expected.h, math.h, EntryPoint.h, `linux64` ;
+écart : `debug/TrackerClient.h`) ; `OWL_API` systématique sur les classes non templates.
+Preuve : script de comparaison dossier / `namespace owl::<dossier>` sur `source/owl/public`.
 Reco : garder.
 
 **A-15** · force · moyenne · confirmé
-La pile de rendu est le seul vrai point d'extension ouvert : couche déclarée par clé, configurée par scène, ordonnée ;
-embryon de render graph. Scene.cpp la contourne encore en partie.
-Preuve : `public/renderer/RenderLayerFactory.h`, `RenderStack.h` ; Scene.cpp:19, Scene.h:572-609.
-Reco : garder et généraliser (modèle pour les systèmes ECS, A-02).
+La pile de rendu reste le point d'extension ouvert (couche déclarée par clé, configurée par scène, ordonnée) et
+s'appuie maintenant sur un vrai frame graph (B-22). Mais les passes 3D (ombres, sondes, environnement, post-process)
+sont enregistrées par `Scene`, pas par des couches.
+Preuve : `public/renderer/RenderLayerFactory.h:31, 67`, `RenderStack.cpp:183-263`, `public/renderer/RenderGraph.h` ;
+Scene.cpp:1072-1180.
+Reco : garder et généraliser (passes 3D en couches, modèle pour les systèmes ECS, A-02).
 
-**A-16** · force · moyenne · confirmé (heuristique)
-Hors Scene et quelques chargeurs, fonctions courtes ; la dette de taille tient à 4 agrégateurs (scène, inspecteur,
-bindings, raycaster).
-Preuve : `Scene::onUpdateRuntime` (Scene.cpp:423) la plus longue ; Scene.cpp 2 339, LuaBindings.cpp 2 277,
-gui/component/render.cpp 1 662, RendererRaycast.cpp 1 195.
-Reco : garder ; traiter les agrégateurs avec A-02.
+**A-16** · faiblesse · moyenne · confirmé (comptage)
+La dette de taille se concentre dans trois agrégateurs qui ont doublé depuis 2026-10 : bindings Lua 5 615 l., inspecteur
+5 302 l., scène 4 723 l. (+ header 3 127) ; suivent le compilateur de scripts visuels (2 152) et `PhysicCommand.cpp`
+(1 948).
+Preuve : `wc -l` : `private/script/LuaBindings.cpp`, `private/gui/component/render.cpp`, `private/scene/Scene.cpp`,
+`private/script/visual/VisualScriptCompiler.cpp`, `private/physics/PhysicCommand.cpp`.
+Reco : corriger, M (découpage par domaine : un fichier de bindings et d'inspecteur par module, avec A-02 et A-05).
 
 ### Gravité basse
 
+**A-09** · faiblesse · basse · confirmé
+La correction clip-space est centralisée (`toActiveClipSpace`, Z inversé), mais `UiLayer` inclut les internes Vulkan
+et teste le backend une dizaine de fois.
+Preuve : `public/renderer/ClipSpace.h`, `private/scene/SceneCamera.cpp:71` ; `private/gui/UiLayer.cpp:21-22, 390-503`.
+Reco : corriger, S (interface `GuiBackend` derrière `RenderAPI`) ; croiser B-07.
+
 **A-11** · faiblesse · basse · confirmé (comptage) / opinion (diagnostic)
-`shared<>` est l'ownership par défaut, y compris pour des propriétaires uniques (état de renderer, application,
-couches) : ownership illisible, comptages atomiques inutiles, aucune référence faible vers les assets. Pas de défaut
-fonctionnel ni de coût mesuré.
-Preuve : public 180 `shared<` / 30 `uniq<` / 1 `weak<` ; privé 111 `mkShared` / 38 `mkUniq` ; Renderer2D.cpp:117,
-Renderer3D.cpp:38, RendererRaycast.cpp:83, RenderLayerFactory.h:14 ; `.claude/rules/cpp-style.md:173-181`.
+`shared<>` reste l'ownership par défaut, y compris pour des propriétaires uniques (état de renderer, couches) :
+ownership illisible, comptages atomiques inutiles, une seule référence faible. Pas de défaut fonctionnel ni de coût
+mesuré.
+Preuve : public 310 `shared<` / 39 `uniq<` / 1 `weak<` ; privé 168 `mkShared` / 59 `mkUniq` ; Renderer2D.cpp:224,
+Renderer3D.cpp:206, RenderLayerFactory.h:31.
 Reco : corriger progressivement, M (uniq par défaut, shared pour les assets) ; mesurer avant les chemins chauds.
 
 **A-20** · force · basse · confirmé
-Pour ce qu'elle possède, l'Application a un ordre de démarrage/arrêt explicite avec repli sur le son Null ; base de
-l'`EngineContext` (A-08).
-Preuve : `private/app/Application.cpp`, l.200-208.
-Reco : garder et étendre aux sous-systèmes orphelins.
+L'Application a un ordre de démarrage/arrêt explicite avec repli sur le son Null, et possède `EngineContext` (A-08).
+Preuve : `private/app/Application.cpp:156-209, 368-386`.
+Reco : garder et étendre aux sous-systèmes statiques.
 
 **A-21** · étrangeté · basse · plausible
 Noms et structures identiques à Hazel (`Application::get()`, `Layer`/`LayerStack`, `RenderCommand`/`RenderAPI`
 statiques, `ScriptableEntity`, `Timestep`, `OWL_CORE_ASSERT`) : Owl en a hérité simplicité et limites (Scene
 monolithique, singletons), et s'en écarte en bien (pimpl, A-06) comme en mal (A-02). Filiation déduite, non déclarée.
-Preuve : EntryPoint.h, `scene/component/NativeScript.h:20`, `mp_imGuiLayer`.
+Preuve : EntryPoint.h, `scene/component/NativeScript.h:11`, Application.h:622, 642.
 Reco : surveiller (contexte, pas d'action).
+
+**A-22** · étrangeté · basse · confirmé
+Deux bibliothèques YAML cohabitent : rapidyaml lit scènes, prefabs et snapshots (`YamlNode`), yaml-cpp écrit tout,
+fusionne les prefabs et sert l'interface `Serializer` des composants ; la sauvegarde ré-émet par yaml-cpp ce qu'elle
+vient de sérialiser (C-13).
+Preuve : `conanfile.py:137, 141` ; `private/core/YamlNode.h:4` (44 fichiers) ; `YAML::` dans 129 fichiers ;
+`PrefabSerializer.cpp:97, 341-357` ; `SaveManager.cpp:179, 202`.
+Reco : surveiller, M (finir la bascule vers une seule bibliothèque, côté écriture compris : cf. C-10).
 
 ### Récapitulatif
 
 | Gravité | Force | Faiblesse | Étrangeté | Total |
 |---------|-------|-----------|-----------|-------|
 | haute   | 1     | 1         | 0         | 2     |
-| moyenne | 3     | 5         | 0         | 8     |
-| basse   | 1     | 1         | 1         | 3     |
-| total   | 5     | 7         | 1         | 13    |
+| moyenne | 2     | 5         | 0         | 7     |
+| basse   | 1     | 2         | 2         | 5     |
+| total   | 4     | 8         | 2         | 14    |
 
 ## Pistes pour l'avenir (axe K)
 
-- **K-A2 Contexte moteur explicite** (M, sans prérequis) : `EngineContext` possédant Log, rendu, son, input, assets,
-  scheduler (A-07, A-08).
-- **K-A4 Scene = données + systèmes** (L, après K-A2) : gameplay sorti, systèmes par phase, systèmes parallèles (A-02).
+- **K-A2 Contexte moteur explicite** (M, entamé : `EngineContext`) : y faire entrer rendu, son, input, log, puis
+  l'injecter au lieu de `Application::get()` (A-07, A-08).
+- **K-A4 Scene = données + systèmes** (L, après K-A2) : rendu en couches, gameplay sorti, systèmes par phase (A-02,
+  A-15, B-26).
 - **K-A5 Registre de types sans liste** (M) : clé, sérialisation, copie, inspecteur et binding Lua depuis la
-  déclaration du composant (A-05).
-- **K-A7 Assets par service et GUID** (M/L, après K-A2) : AssetFileSystem puis références par GUID (A-07).
-- **K-A8 Conventions GPU centralisées** (S, axe B) : clip-space et backend ImGui derrière `RenderAPI` (A-09).
+  déclaration du composant (A-05, A-16).
+- **K-A7 Assets par GUID jusqu'au chargement** (M, entamé : registre, références `gid:`) : `AssetLibrary` résout par
+  le registre (A-07).
+- **K-A8 Backend ImGui derrière `RenderAPI`** (S, axe B) : dernier reste de la fuite GPU (A-09, B-07).
 - **K-A9 Hygiène des headers** (S/M) : Assert sans `<format>`, déclarations anticipées (A-12).
 
-Ordre conseillé (opinion) : K-A8 et K-A9, puis K-A2 → K-A5, puis K-A4 et K-A7 en chantiers de version.
+Ordre conseillé (opinion) : K-A8 et K-A9, puis K-A2 → K-A5, puis K-A4 en chantier de version.

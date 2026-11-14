@@ -11,12 +11,14 @@
 #include <core/YamlNode.h>
 #include <data/assets/cook/AssetCooker.h>
 #include <data/assets/cook/CookCache.h>
+#include <data/geometry/MeshLod.h>
 #include <renderer/TextureDecoder.h>
 
 #include <cstdint>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <iterator>
 #include <string>
 #include <vector>
 
@@ -117,6 +119,26 @@ TEST(AssetCook, OtherAssetsAreCopied) {
 	ASSERT_TRUE(cooked);
 	EXPECT_EQ(*cooked, lua);
 	EXPECT_FALSE(describe(CookError::EncodeFailed).empty());
+}
+
+TEST(AssetCook, MeshWithLevelsOfDetailBecomesACookedMesh) {
+	std::ifstream file(test::getTestAssetsPath("render_tests") / "meshes" / "sphere.glb", std::ios::binary);
+	const std::vector<uint8_t> glb{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
+	ASSERT_FALSE(glb.empty());
+	AssetMeta meta{.guid = AssetGuid{3}, .importer = Importer::Mesh, .texture = {}, .mesh = {}};
+	const auto plain = cookAsset(meta, glb, "models/sphere.glb");
+	ASSERT_TRUE(plain);
+	EXPECT_EQ(*plain, glb);
+	meta.mesh.lods = 2;
+	const auto cooked = cookAsset(meta, glb, "models/sphere.glb");
+	ASSERT_TRUE(cooked);
+	ASSERT_TRUE(data::geometry::isCookedMesh(*cooked));
+	const auto read = data::geometry::readCookedMesh(*cooked);
+	ASSERT_TRUE(read.has_value());
+	EXPECT_EQ(read->source.size(), glb.size());
+	EXPECT_FALSE(read->lods.empty());
+	const std::vector<uint8_t> broken{'n', 'o', 't', ' ', 'a', ' ', 'm', 'e', 's', 'h'};
+	EXPECT_FALSE(cookAsset(meta, broken, "models/broken.glb"));
 }
 
 TEST(AssetCook, CacheKeyFollowsBytesAndSettings) {

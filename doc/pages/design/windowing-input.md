@@ -2,13 +2,11 @@
 
 [TOC]
 
-Design page for platform windowing (Wayland), the SDL3 evaluation and input actions, summarised in the
-[Roadmap](../roadmap.md).
+Platform windowing (Wayland and X11), the choice of GLFW, and input frames, gamepads and actions.
 
-## Wayland (v0.3.0, platform correctness) — Done
+## Wayland and X11
 
-Goal: full Wayland support for the editor and the runner, X11 kept as an option; the Owl icon on Wayland; editor
-multi-window behaving on both; tested on GNOME and KDE, with a CI smoke test under a headless compositor if feasible.
+Editor and runner run on Wayland and X11 alike, tested on GNOME and KDE.
 
 ### Platform selection
 
@@ -48,89 +46,40 @@ falls back to `auto` with a warning instead of aborting. The platform in use is 
    container's `$HOME` and the icon stays generic. KDE may need a second launch (or `kbuildsycoca6`) to notice a new
    entry.
 2. `eglSwapInterval(1)` waits for the compositor frame callback, which never comes while the surface is not shown
-   (minimised, another workspace, locked session): the main loop froze after one frame and could not even process
-   the close request. The compositor never tears, so interval 0 plus a sleep to the refresh period keeps vsync's
-   pacing without the hang.
+   (minimised, another workspace, locked session), so the main loop would stop, close request included. The compositor never tears, so interval 0 plus a sleep to the refresh period keeps vsync's
+   pacing without blocking.
 
 ### Present modes
 
-| Request                    | Vulkan                                         | OpenGL                  |
-|----------------------------|------------------------------------------------|-------------------------|
-| vsync on                   | FIFO                                           | swap interval 1         |
-| vsync on, Wayland          | MAILBOX + sleep to the refresh period          | interval 0 + same sleep |
-| vsync on, low latency      | MAILBOX (FIFO when not offered), no sleep      | as vsync on             |
-| vsync off                  | IMMEDIATE, else MAILBOX, else FIFO             | swap interval 0         |
+| Request               | Vulkan                                    | OpenGL                  |
+|-----------------------|-------------------------------------------|-------------------------|
+| vsync on              | FIFO                                      | swap interval 1         |
+| vsync on, Wayland     | MAILBOX + sleep to the refresh period     | interval 0 + same sleep |
+| vsync on, low latency | MAILBOX (FIFO when not offered), no sleep | as vsync on             |
+| vsync off             | IMMEDIATE, else MAILBOX, else FIFO        | swap interval 0         |
 
 The sleep is a `core::FramePacer` in the GLFW window; `Application` keeps a second one for `frameRateLimit`. MAILBOX
 never blocks: without a pacer the GPU renders frames the display drops (90 % GPU load on an idle editor).
 
-### Diagnosis of the "frozen first frame" (October 2026)
+### Hidden windows and shutdown
 
-Reported as `OwlRunner` freezing at the first frame in `./docker_run.sh --gui`. Measured on a KDE Plasma 6.6 session
-(Intel RPL-S + NVIDIA RTX 5000 Ada, PRIME offload), **with the session locked**, frames presented in 15 s:
-
-| Run (OwlRunner, vsync on)            | Before the fix                     | After the fix       |
-|--------------------------------------|------------------------------------|---------------------|
-| Wayland, OpenGL, Intel or NVIDIA     | 1 frame, then blocked, kill needed | ~850-970 (60 Hz)    |
-| Wayland, Vulkan, Intel or NVIDIA     | runs (mailbox)                     | 6400-6800           |
-| X11 (XWayland), OpenGL, both GPUs    | ~20 (XWayland throttles to ~1 Hz)  | same, exits on TERM |
-| X11 (XWayland), Vulkan, NVIDIA       | ~20                                | same                |
-| X11 (XWayland), Vulkan, Intel        | runs (mailbox)                     | 5500                |
-| X11 on a private Xvfb, Vulkan NVIDIA | —                                  | ~60 fps, scene OK   |
-
-Owl Nest opens, runs and closes cleanly on `SIGTERM` in the same eight combinations (Wayland / X11 × Vulkan /
-OpenGL × Intel / NVIDIA). Hidden on XWayland it runs unthrottled on Intel (~130 fps) but stays at ~1 Hz on NVIDIA,
-whose PRIME presents wait for the X server whatever the swap interval.
-
-- **Cause: presentation, not Docker.** The compositor does not present hidden surfaces: native Wayland stops frame
-  callbacks altogether, XWayland completes presents at about 1 Hz. Any vsync'ed swap then blocks; `vkcube` shows the
-  same throttling on XWayland. Without vsync nothing blocks, which matches the frame-bench observations.
-- **Engine part (fixed):** OpenGL under Wayland paces itself instead of blocking in `eglSwapBuffers`;
-  `SIGINT` / `SIGTERM` request a clean shutdown (a second signal kills), so a throttled loop still exits; the window
-  logs `GLFW: Window closed after N presented frames.` and `Window::getPresentedFrames()` exposes the count.
-- **Docker part:** the socket, `WAYLAND_DISPLAY`, `XAUTHORITY` and `/dev/dri` were already right. `./docker_run.sh`
-  gained `--gpu=intel|nvidia` (Vulkan ICD, EGL and GLX vendor, PRIME offload), `--platform=wayland|x11`, and warns
-  when the desktop session is locked.
-- **Not fixed:** X11 + vsync still crawls at ~1 Hz while the window is hidden — that is the X server's throttling.
-  OpenGL on llvmpipe (Xvfb without a GPU) crashes on the missing `glSpecializeShader` (no `GL_ARB_gl_spirv`), and
-  Mesa's Intel Vulkan driver crashes on Xvfb; neither is a supported target.
-
-### Manual check on a visible desktop (October 2026)
-
-Owl Nest on KDE Plasma 6.6 (Wayland session, Intel + NVIDIA), native and in `./docker_run.sh`, in five combinations:
-Wayland / X11 (XWayland) × Vulkan / OpenGL × Intel / NVIDIA. Platform selection, fractional scales (125 %, 150 %, text
-blurry as expected until the DPI work), fullscreen, cursor capture, hidden / locked window, clean close (button,
-Alt+F4, `SIGTERM`), detached panels (inside the window on Wayland, native windows on X11), keyboard (AZERTY, accents,
-shortcuts), clipboard, file drag and drop and the file dialog all pass.
-
-| Combination                     | Frames per second (vsync on) |
-|---------------------------------|------------------------------|
-| Native, Wayland, Vulkan         | ~100 (mailbox)               |
-| Native, Wayland, OpenGL         | 60 (monitor rate)            |
-| Native, X11 (XWayland), Vulkan  | ~30                          |
-| Docker, Wayland, Vulkan, Intel  | ~250 (mailbox)               |
-| Docker, Wayland, OpenGL, Intel  | 60                           |
-| Docker, Wayland, Vulkan, NVIDIA | ~350 (mailbox)               |
-| Docker, X11, Vulkan, NVIDIA     | 60                           |
-
-- On the **first** launch KDE shows the window under the launching application (the IDE) and the generic icon, in
-  the task bar only: the desktop entry is written during that launch and KWin reads it from the next one. From the
-  second launch the icon, the Alt+Tab entry and the application id are right.
-- Inside Docker, OpenAL Soft logs `Failed to create PipeWire event context` and falls back to PulseAudio (sound works):
-  the build image lacks PipeWire's client configuration (`libpipewire-0.3-common`).
-
-GNOME (Mutter) passes the same checks.
+The compositor does not present hidden surfaces (minimised, another workspace, locked session): native Wayland stops
+frame callbacks, XWayland completes presents at about 1 Hz, so any vsync'ed swap blocks. OpenGL under Wayland
+therefore paces itself (note 2 above); X11 with vsync still crawls while hidden, the X server's throttling.
+`SIGINT` / `SIGTERM` request a clean shutdown (a second signal kills), so a throttled loop still exits; the window logs
+`GLFW: Window closed after N presented frames.` and `Window::getPresentedFrames()` exposes the count.
+`./docker_run.sh --gui` takes `--gpu=intel|nvidia` (Vulkan ICD, EGL and GLX vendor, PRIME offload) and
+`--platform=wayland|x11`, and warns when the desktop session is locked. On KDE the icon and application id show from
+the second launch: the desktop entry is written during the first one.
 
 ### CI smoke test
 
 `test/unit/wayland_smoke.sh` (CTest `owl_wayland_smoke`, labels `render` and `wayland`) starts a headless weston (pixman
 renderer, private `XDG_RUNTIME_DIR`), then plays 30 frames of `test/unit/test_helper/assets/render_tests/scenes/sprites.owl` with
 `OwlRunner --frame-bench` on the Wayland platform, Vulkan on lavapipe then OpenGL on llvmpipe; it fails when the
-runner crashes, logs an error or did not pick Wayland. Without `weston` it reports *Skipped*. It found that GLFW 3.4
-dereferenced a missing `wl_seat` (a compositor without input devices): the local recipe patched it until GLFW 3.5.1
-fixed it upstream.
+runner crashes, logs an error or did not pick Wayland. Without `weston` it reports *Skipped*.
 
-### Known GLFW 3.5.1 limits under Wayland
+### GLFW limits under Wayland
 
 - **No window icon.** `glfwSetWindowIcon` is still unavailable under Wayland in 3.5.1: GLFW does not implement
   `xdg-toplevel-icon-v1` (KWin 6 supports it, `wayland-protocols` 1.45 in the image ships it) and does not expose its
@@ -144,101 +93,51 @@ fixed it upstream.
   `wp_viewporter` when `GLFW_SCALE_FRAMEBUFFER` is on (its default). Owl Engine turns that hint off because the swapchain,
   the viewports and ImGui are sized from the window size: the buffer stays at 1× and the compositor upscales it
   (correct size, slightly soft at 125 % or 150 %). Turning it on needs framebuffer-size resize events, ImGui's
-  `DisplayFramebufferScale` and picking in framebuffer pixels: engine work, not a GLFW gap, done with the Phase E
-  text scale / DPI item.
+  `DisplayFramebufferScale` and picking in framebuffer pixels: engine work, not a GLFW gap.
 - **Vsync on hidden surfaces.** GLFW 3.5.1 does not block: under Wayland it drives the swap interval itself, waiting
-  for the frame callback with a 20 ms timeout. Owl Engine still paces OpenGL itself: on the headless weston of the smoke
-  test, interval 1 gives irregular frames (median 13.3 ms, p95 20.8 ms, the timeout firing every other frame) where
-  the pacer holds 16.67 ms ± 0.1 ms. To be measured again on a visible desktop before switching.
+  for the frame callback with a 20 ms timeout. Owl Engine still paces OpenGL itself: with interval 1 the timeout gives
+  irregular frames where the pacer holds the refresh period.
 - **libdecor loads GTK.** With libdecor, `glfwInit` loads its GTK plugin (GTK, Pango, the glycin image loader and its
   threads) even when the compositor draws the decorations itself. The engine asks the compositor first
-  (`zxdg_decoration_manager_v1`, KWin, wlroots, COSMIC) and tells GLFW to skip libdecor then: start-up drops from
-  309 ms to 279 ms on KDE Plasma 6 (Vulkan, warm, median of 3). GNOME and weston have no server-side decorations
-  and keep libdecor.
+  (`zxdg_decoration_manager_v1`, KWin, wlroots, COSMIC) and tells GLFW to skip libdecor then, which shortens start-up.
+  GNOME and weston have no server-side decorations and keep libdecor.
 
-## SDL3 evaluation (v0.3.0, Done): rejected
+## GLFW, not SDL3
 
-- ![Done][done] Evaluation of SDL3 for windowing, input, dialogues and audio, possibly SDL GPU as an Owl RHI backend
-- **Decision (October 2026): Owl Engine stays on GLFW. SDL3 is rejected for the window, the input, the dialogues and the
-  gamepads alike; OpenAL Soft is kept; SDL GPU is rejected.** Another alternative may be looked at later, not SDL3.
+Owl Engine stays on GLFW for the window, the input, the gamepads and (with NFD) the dialogues; OpenAL Soft stays the
+audio backend; SDL GPU is not an RHI backend.
 
-Why:
+- The Wayland gaps left (window icon, global positions) are protocol limits SDL3 shares or depends on the compositor
+  for; fractional scaling and non-blocking vsync exist in GLFW 3.5.1.
+- The native modal file dialogues of NFD (portal, GTK, Win32) fit the editor's Open / Save As flow better than SDL's
+  asynchronous `SDL_Show*Dialog`.
+- Gamepads use `glfwGetGamepadState` with the SDL-compatible mapping database (`glfwUpdateGamepadMappings`).
+- SDL audio has no 3D positioning, EFX or HRTF; SDL GPU has no OpenGL backend and its own shader model, a third RHI
+  path for no missing feature.
 
-- GLFW 3.5.1 closes most of the Wayland gaps the evaluation started from: fractional scaling exists (Owl Engine's choice to
-  turn it off, see above), vsync does not hang on hidden surfaces. The remaining ones (window icon, global
-  positions) are protocol limits SDL3 shares or depends on the compositor for.
-- The native modal file dialogues of NFD (portal, GTK, Win32) are preferred over SDL's asynchronous
-  `SDL_Show*Dialog`, which would change the editor's Open / Save As flow.
-- Gamepads stay on GLFW too (`glfwGetGamepadState`, SDL-compatible mapping database through
-  `glfwUpdateGamepadMappings`); rumble and hot-plug details are not worth a second windowing library.
-- A backend swap of about 12 files plus a release with two backends to test, for no feature Owl Engine lacks.
+## Input actions and gamepad
 
-### What SDL3 would have brought
+- **Fixed simulation tick**: systems and Lua get an `on_tick` at a fixed step set in the project (60 Hz by default),
+  beside the variable `on_update`; physics always runs on this fixed clock. Input is sampled per tick, so edges are
+  not lost when the frame rate and the tick differ.
+- **Input frames**: a plain-data `InputFrame` (previous and current `InputState`: keys, mouse buttons, cursor, wheel,
+  gamepads) per tick and per frame, `isKeyJustPressed` / `isKeyJustReleased` and the mouse equivalents; injection
+  lives in the input layer, so scenarios, editor Play and the MCP server inject on GLFW too.
+- **Gamepad**: GLFW `glfwGetGamepadState` for pads 0–15, connect / disconnect events, an optional project mapping file
+  passed to `glfwUpdateGamepadMappings`, Null backend injection for tests, Lua `input.is_gamepad_connected` /
+  `get_gamepad_name`; radial dead zone per binding (0.15 by default) and a response-curve exponent.
+- **Action map**: actions are buttons, 1D axes or 2D axes; a binding is a device (key, mouse button, gamepad button,
+  gamepad axis), a code and a scale, 2D actions also take key composites; `evaluate(map, previous, current)` is a pure
+  function producing an `ActionFrame`, the stream replays can record.
+- The map lives in `input_actions.yml` with its `DocumentFormat`, packed with the game like `game_settings.yml`; Lua
+  `input.is_action_pressed`, `is_action_just_pressed`, `is_action_just_released`, `get_action_value`,
+  `get_action_vector`; `input.is_key_pressed` is kept and deprecated; scenarios have an `actions:` step; engine
+  systems and the Engine Demo scripts read actions.
+- **Editor**: an action map document with its own undo stack, opened from the Content Browser, the ribbon or Project
+  Settings; "press a key" capture; the built-in map in every project template; a live action monitor
+  ([Action map editor](../editor_documents.md#editor-action-map)).
 
-| Owl pain (GLFW)                 | SDL 3.4                                                                                        | GLFW 3.5.1                                   |
-|---------------------------------|------------------------------------------------------------------------------------------------|----------------------------------------------|
-| No Wayland window icon          | `SDL_SetWindowIcon` uses `xdg-toplevel-icon-v1` (needs a compositor that has it: KWin, Mutter) | Not supported: desktop entry                 |
-| Fractional scaling              | `wp_fractional_scale_v1` + `wp_viewporter`; `SDL_GetWindowPixelDensity` / `DisplayScale`       | Same protocols with `GLFW_SCALE_FRAMEBUFFER` |
-| Blocking vsync on hidden window | frame-callback swap with a timeout                                                             | Same since 3.5.1 (20 ms timeout)             |
-| Window placement                | Same protocol limit: no global position under Wayland (`SDL_GetWindowPosition` is relative)    | Same limit                                   |
-| Gamepad (I-03, D-25)            | Joystick / gamepad API, mapping database, rumble and hot-plug built in                         | Gamepad API and mapping database, no rumble  |
-| File dialogs                    | `SDL_ShowOpenFileDialog` / `SaveFileDialog` / `OpenFolderDialog`, asynchronous                 | None: NFD, modal (kept)                      |
-| Text input, IME, clipboard      | Built in (IME and composition are better than GLFW)                                            | Char callback and clipboard                  |
-
-SDL audio is a stream API without 3D positioning, EFX or HRTF: it never was a replacement for OpenAL Soft.
-
-### Prototype (scratchpad, throwaway)
-
-SDL 3.4.16 compiled through Conan in the build image (profile `linux-clang`, Release, shared). With the Wayland
-driver forced under headless weston 14: window created with `SDL_WINDOW_VULKAN | HIGH_PIXEL_DENSITY`, driver
-`wayland`, pixel density 1.0, events pumped, clean quit. `SDL_SetWindowIcon` failed with *required
-xdg_toplevel_icon_v1 protocol not supported*: weston 14 lacks the protocol.
-
-### Cost that was weighed
-
-- `libSDL3.so` is 3.8 MB in Release with Wayland, X11, OpenGL, Vulkan and dbus (GLFW is well under 1 MB, NFD small).
-- Recipe options to tune (`pulseaudio`, `alsa`, `sndio`, `libusb` off), `libudev-dev` in the build image for
-  joystick hot-plug.
-- About 12 files behind the `window`, `input` and `GraphContext` seams, the ImGui backend, the key-code translation,
-  and a release with both backends.
-
-### SDL GPU: rejected
-
-SDL GPU has no OpenGL backend and its own shader and resource model: it would be a third RHI path next to the
-existing OpenGL and Vulkan ones, for no feature Owl Engine lacks. The Owl RHI work (Phase C) stays on Vulkan and OpenGL.
-
-## Input actions and basic gamepad (v0.4.0) — Done
-
-Pull requests SIM1 and IN1 to IN4 of [Isometric worlds](isometric-worlds.md). Before them input was polling only,
-without "just pressed" edges nor gamepad, and injection worked on the Null backend only (both fixed by IN1); keys were
-hard-coded in engine systems (`ScenePlayer`, `VoxelPlayerSystem`, doors and push-walls) and Lua read raw key
-codes until IN3.
-
-- **Fixed simulation tick** (SIM1, Done): systems and Lua get an `on_tick` at a fixed step set in the project (60 Hz by
-  default), beside the variable `on_update`; physics always runs on this fixed clock. Input is sampled per tick, so
-  edges are not lost when the frame rate and the tick differ
-- **Input frames** (IN1, Done): a plain-data `InputFrame` (previous and current `InputState`: keys, mouse buttons,
-  cursor, wheel) per tick and per frame, `isKeyJustPressed` / `isKeyJustReleased` and the mouse equivalents;
-  injection lives in the input layer, so scenarios, editor Play and the MCP server inject on GLFW too; gamepad states
-  join the frame with IN2. Details below
-- **Gamepad** (IN2, Done): GLFW `glfwGetGamepadState` for pads 0–15, connect / disconnect events, an optional
-  project mapping file passed to `glfwUpdateGamepadMappings`, Null backend injection for tests, Lua
-  `input.is_gamepad_connected` / `get_gamepad_name`; the gamepad of the README becomes true (I-03, D-25). Details
-  below
-- **Dead zone and curve** (IN2, Done): radial dead zone per binding (0.15 by default) and a
-  response-curve exponent
-- **Action map** (IN3, Done, details below): actions are buttons, 1D axes or 2D axes; a binding is a device (key, mouse button, gamepad
-  button, gamepad axis), a code and a scale, 2D actions also take key composites; `evaluate(map, previous, current)`
-  is a pure function producing an `ActionFrame`, the stream v0.7.0 records for replays (K-30)
-- The map lives in `input_actions.yml` with its `DocumentFormat`, packed with the game like `game_settings.yml`, with
-  room for a user override layer; Lua `input.is_action_pressed`, `is_action_just_pressed`, `is_action_just_released`,
-  `get_action_value`, `get_action_vector`; `input.is_key_pressed` kept and deprecated; scenarios gain an `actions:`
-  step; engine systems and the Engine Demo scripts move to actions
-- **Editor** (IN4, Done): an action map document with its own undo stack, opened from the Content Browser, the ribbon
-  or Project Settings; "press a key" capture; the built-in map in every project template; a live action monitor
-  ([Action map editor](../editor_documents.md#editor-action-map))
-
-### Input frames (IN1) {#input-frames-in1}
+### Input frames {#input-frames-in1}
 
 `input::Input::readState()` merges the device back-end (GLFW, or Null without device) with the injected input; the
 wheel comes from the `MouseScrolledEvent`s the application adds between two `Input::beginFrame()` calls. Each running
@@ -263,7 +162,7 @@ flowchart LR
 - `onStartRuntime()` starts both frames from the held state: a key held when the scene starts gives no edge.
 - `input.is_key_pressed` and `Input::isKeyPressed` stay live polls (device or injection).
 
-### Gamepads (IN2) {#gamepads-in2}
+### Gamepads {#gamepads-in2}
 
 ```mermaid
 flowchart LR
@@ -288,9 +187,9 @@ flowchart LR
   so a changed file adds to the previous one until restart.
 - `AxisResponse` (dead zone, curve, custom exponent clamped to [0.1, 10]) shapes the length past the dead zone,
   rescaled to [0, 1]: continuous at the edge, 1 at full deflection. Lua `get_gamepad_stick` uses it with a linear
-  curve and an optional dead zone; IN3 bindings carry their own.
+  curve and an optional dead zone; action bindings carry their own.
 
-### Action map (IN3) {#action-map-in3}
+### Action map {#action-map-in3}
 
 ```mermaid
 flowchart LR
@@ -306,12 +205,12 @@ flowchart LR
 - **Pure data.** `input::ActionMap` (actions in file order) holds `ActionDefinition`s (name, `Button` / `Axis` /
   `Vector`, bindings); an `ActionBinding` is a source (key, mouse button, gamepad button, axis or stick), a code, a pad
   slot (any when negative), a vector component, a scale and an `AxisResponse`. The map loads from and saves to YAML
-  with a `FormatVersion` (`ActionMap::format()`, no migration yet); the in-memory form is what the IN4 editor document
+  with a `FormatVersion` (`ActionMap::format()`); the in-memory form is what the editor document
   edits (`setAction`, `removeAction`, `==` for the dirty state), and the key names are shared through
   `input/InputNames.h`.
 - **Pure evaluation.** `sampleAction(action, InputState)` reads one sample, `evaluateAction(action, InputFrame)` adds
-  the edges between the two samples; `ActionFrame` holds one `ActionState` per action, ready to be recorded by the
-  v0.7.0 replays (K-30). It allocates nothing after the first frame.
+  the edges between the two samples; `ActionFrame` holds one `ActionState` per action, ready to be recorded by
+  replays. It allocates nothing after the first frame.
 - **Combination.** The bindings of an action add up, then the result is clamped to [-1, 1], or to the unit disc for a
   vector (a diagonal is not faster). A button is held when a binding reads past half; an axis or a vector is held
   past half deflection, so `ui_*`-style tests work on them.
@@ -326,17 +225,16 @@ flowchart LR
 - **Doors and pushwalls** carry `interactionAction` (a button action name, empty to disable) instead of a key code;
   an `interactionKey: 0` read from a file disables the built-in path.
 
-## Gamepad improvements (v0.8.0)
+## Gamepad improvements (planned)
 
-- Controller remapping UI, on the v0.4.0 HUD widgets and action map
+- Controller remapping UI, on the HUD widgets and the action map
 - Haptic feedback / vibration API (GLFW has none: to study)
 - Joysticks and throttles: raw GLFW joystick axes and buttons (`glfwGetJoystickAxes`) bound in the action map, beyond
   the six axes of a gamepad
 
-## Touch screen input (v0.8.0)
+## Touch screen input (planned)
 
-Found on 2026-10-19 on a Raspberry Pi with a touch screen: the arm64 package works with keyboard and mouse, touch is
-unusable (never tried before). Needed by the Web target of the same release.
+Needed by the Web target and by touch screens (Raspberry Pi), where only keyboard and mouse work today.
 
 - Touch points as pointer events: a tap clicks, a drag moves, under GLFW (which reports touch as an emulated mouse at
   best: to study, else a native path per platform)
@@ -344,5 +242,3 @@ unusable (never tried before). Needed by the Web target of the same release.
 - HUD: buttons, sliders, lists and windows usable by touch (larger hit areas, no hover-only state)
 - Owl Nest usable on a touch screen for the common gestures (select, move, pan, zoom)
 - Scenario support: injected touch points in `.owltest` files, a scenario per gesture
-
-[done]: https://img.shields.io/badge/-Done-2ea043?style=flat-square

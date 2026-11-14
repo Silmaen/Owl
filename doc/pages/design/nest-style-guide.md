@@ -2,8 +2,8 @@
 
 [TOC]
 
-Rules every Owl Nest panel follows, so that a new panel looks like the others without a review round. The plan
-that produced them is in [Nest UI](nest-ui.md); the editor itself is described in [Editor](../editor.md).
+Rules every Owl Nest panel follows, so that a new panel looks like the others without a review round. The design
+of the interface is in [Nest UI](nest-ui.md); the editor itself is described in [Editor](../editor.md).
 
 ## Principles
 
@@ -60,7 +60,7 @@ never a raw font size:
 Write property labels in Title Case, as the inspector does ("Fixed Aspect Ratio"), button labels as a verb ("Add
 Component"), and end a hint, a tooltip or a notice with a period.
 
-Owl Nest will be translated after 1.0 ([Localisation](localisation.md)), so a label must survive a text 30 % longer:
+A label must survive a text 30 % longer, for a translated Owl Nest ([Localisation](localisation.md)):
 
 - A width comes from the measured text (`CalcTextSize`) with a minimum, never from a constant sized for English; the
   ribbon scrolls sideways under the wheel when its groups outgrow the window.

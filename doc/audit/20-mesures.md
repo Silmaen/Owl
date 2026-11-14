@@ -1,31 +1,34 @@
 # Mesures de performance du moteur
 
-> Revu le 2026-10-20 sur `main` 4e1a6a10. Instantané : campagne du 2026-10-05 (§1 à §8), chantier du 2026-10-09 (§9) ;
-> le §9 fait foi quand il redonne une mesure.
+> Revu le 2026-11-12 sur `Feature/sample-games-new` b4281d72. Instantané : campagne du 2026-10-05 (§1 à §8), chantier
+> du 2026-10-09 (§9), campagne du 2026-11-12 (§3.1, §3.4, §3.6), physique du 2026-11-13 (§3.7), même protocole ;
+> la mesure la plus récente fait foi.
 > Harnais : `test/bench/` (`owl_bench`, option CMake `OWL_BENCHMARK`, `test/bench/README.md`), baseline CI dans
 > `test/bench/baseline/linux-bench.json`. Données brutes (`results/`, `callgrind/`) : non versionnées.
 
 ## 1. Résumé
 
 1. Le harnais est maison (médiane, quartiles, CSV / JSON) ; deux campagnes complètes concordent (écart médian 0,5 %).
-2. ECS : itération d'une vue à 2 composants 2,6 ns/entité, `findEntityByUUID` 9 à 23 ns, `Scene::copy` (passage en
-   Play) 3 ms pour 10 000 entités.
+2. ECS : itération d'une vue à 2 composants 2,6 à 3,2 ns/entité, `findEntityByUUID` 11 à 25 ns, `Scene::copy`
+   (passage en Play) 3,1 ms pour 10 000 entités.
 3. Frame 2D : 0,33 ms pour 10 000 sprites (backend Null), 0,46 ms en forêt de hiérarchies ; un cache dense des
    matrices monde remplace les tables de hachage par frame (§9.5).
 4. Renderer2D : un draw call pour 20 000 quads, 9,4 ns par quad sur le chemin `worldIndex`, 14 à 24 ns sur le chemin
    transitoire (§9.5).
-5. Le point le plus lent est l'écriture YAML : 23 µs par entité (yaml-cpp), contre 7,3 µs au chargement (rapidyaml,
-   §9.7) ; un snapshot d'undo coûte 26 µs à l'écriture et 3 à 14 µs à la relecture.
+5. Le point le plus lent est l'écriture YAML : 24 µs par entité (yaml-cpp), contre 3,5 à 8,3 µs au chargement
+   (rapidyaml) et 1,9 à 3,9 µs depuis le binaire cuit ; un snapshot d'undo coûte 20 µs à l'écriture.
 6. Voxel : 350 µs de maillage par chunk 16³ de terrain (1,7 ms au pire), sur les workers avec un upload budgété (pic de
    frame en streaming 0,35 ms, §3.10) ; aucun raccourci pour les chunks uniformes.
-7. Lua : 44 ns par `on_update` vide, 140 ns avec `get_position` + `set_position`, 28 µs et ~9 Ko par `ScriptInstance`
-   (un `lua_State` par entité).
-8. Box2D 3.1.1 sur un pool de tâches (`SolverTaskPool`) : 5 000 corps au contact coûtent 1,68 ms par pas à 8 workers
-   (SSE2), 1,44 ms en AVX2 optionnel (`OWL_PHYSICS_AVX2`, §9.4).
+7. Luau : 71 ns par `on_update` vide, 189 ns avec `get_position` + `set_position`, mais 46 µs et **126 Kio** par
+   `ScriptInstance` (un `lua_State` par entité, P-11).
+8. Jolt en 2D : 1,27 ms par pas pour 1 000 boîtes qui tombent (5,6 fois Box2D v3), 0,61 ms à 4 workers, 0,81 ms avec
+   un seul pas de collision ; 5 000 boîtes : 1,31 ms à 4 workers avec un pas de collision (P-12).
 9. Slang 2026.19 : 165 ms à froid, 21 à 35 ms par shader en Release ; shaders du moteur précompilés au build
    (`OwlShaderBake`, §9.6).
 10. Frame bench GPU (§8) : le runner Vulkan ne vide pas la file (0 vidage, 1 soumission par frame) ; sur NVIDIA, frame
     Vulkan 0,48 à 0,79 ms contre 0,33 à 0,59 ms en OpenGL (§9.3).
+11. Simulation et IA : le hash du monde coûte 28 µs par corps et une frame enregistrée +37 % (P-13) ; une volée de
+    1 000 agents prend 9,8 ms par frame (P-14).
 
 ## 2. Protocole
 
@@ -39,7 +42,7 @@
 | Échantillons     | 2 de chauffe puis 15 mesurés ; lot calibré pour qu'un échantillon dure au moins 10 ms                            |
 | Statistiques     | médiane par appel, IQR (p75 - p25) en % de la médiane, minimum ; « par item » = médiane / nombre d'items         |
 | Reproductibilité | deux campagnes (run1, run2) : écart médian 0,5 %, p90 2,5 %, maximum 10 % (`world_transform/*`)                  |
-| Charge           | machine partagée avec d'autres agents : load average 10,7 à 11,2                                                 |
+| Charge           | machine partagée avec d'autres agents : load average 10,7 à 11,2 ; 15 à 18 le 2026-11-12 (§3.7 : jusqu'à 285)    |
 
 Les campagnes du §9 répètent chaque configuration 3 fois (médiane des médianes) à load average 3 à 12.
 
@@ -58,22 +61,27 @@ de 100 enfants).
 
 ### 3.1 Scène et ECS
 
+Campagne du 2026-11-12 (`linux-bench`, `taskset -c 6`, load average 16 à 18).
+
 | Cas                                          | Médiane | Par item | IQR   | Remarque                                    |
 |----------------------------------------------|---------|----------|-------|---------------------------------------------|
-| `scene/create_entities/1000`                 | 109 µs  | 109 ns   | 1,6 % | 5 composants + UUID + index UUID            |
-| `scene/create_entities/100000`               | 13,8 ms | 138 ns   | 1,0 % |                                             |
-| `scene/memory/bytes_per_sprite_entity`       | 278 o   |          |       | delta `mallinfo2`, scène de 100 000 sprites |
-| `scene/view_iterate/transform_sprite/10000`  | 25,6 µs | 2,6 ns   | 0,4 % | vue EnTT à 2 composants                     |
-| `scene/view_iterate/transform_sprite/100000` | 277 µs  | 2,8 ns   | 0,3 % |                                             |
-| `scene/find_entity_by_uuid/1000`             | 9,4 µs  | 9,4 ns   | 0,7 % | `unordered_map` UUID → entité               |
-| `scene/find_entity_by_uuid/100000`           | 2,28 ms | 22,8 ns  | 0,6 % | sorties de cache                            |
-| `scene/copy/1000`                            | 248 µs  | 248 ns   | 4,4 % | `Scene::copy` (Play), forêt                 |
-| `scene/copy/10000`                           | 2,97 ms | 297 ns   | 3,0 % |                                             |
-| `scene/prepare_world_transforms/flat10000`   | 139 µs  | 13,9 ns  |       | passe par frame (§9.5)                      |
-| `scene/prepare_world_transforms/forest10000` | 272 µs  | 27,2 ns  |       |                                             |
-| `scene/world_transform/forest10000_all`      | 352 µs  | 35,2 ns  |       | `getWorldTransform` hors frame              |
-| `scene/world_transform/chain1000_all`        | 5,57 ms | 5,6 µs   |       | O(profondeur) par lecture                   |
-| `scene/set_parent/chain1000_build`           | 5,71 ms | 5,7 µs   |       |                                             |
+| `scene/create_entities/1000`                 | 112 µs  | 112 ns   | 1,8 % | 5 composants + UUID + index UUID            |
+| `scene/create_entities/100000`               | 15,1 ms | 151 ns   | 7,3 % |                                             |
+| `scene/memory/bytes_per_sprite_entity`       | 295 o   |          |       | delta `mallinfo2`, scène de 100 000 sprites |
+| `scene/view_iterate/transform_sprite/10000`  | 25,8 µs | 2,6 ns   | 2,3 % | vue EnTT à 2 composants                     |
+| `scene/view_iterate/transform_sprite/100000` | 319 µs  | 3,2 ns   | 2,1 % |                                             |
+| `scene/find_entity_by_uuid/1000`             | 11,0 µs | 11,0 ns  | 0,7 % | `unordered_map` UUID → entité               |
+| `scene/find_entity_by_uuid/100000`           | 2,51 ms | 25,1 ns  | 3,8 % | sorties de cache                            |
+| `scene/copy/1000`                            | 270 µs  | 270 ns   | 4,8 % | `Scene::copy` (Play), forêt                 |
+| `scene/copy/10000`                           | 3,14 ms | 314 ns   | 1,4 % |                                             |
+| `scene/prepare_world_transforms/flat10000`   | 205 µs  | 20,5 ns  | 1,0 % | passe par frame (§9.5)                      |
+| `scene/prepare_world_transforms/forest10000` | 454 µs  | 45,4 ns  | 4,2 % |                                             |
+| `scene/world_transform/forest10000_all`      | 398 µs  | 39,8 ns  | 2,9 % | `getWorldTransform` hors frame              |
+| `scene/world_transform/chain1000_all`        | 5,99 ms | 6,0 µs   | 0,9 % | O(profondeur) par lecture                   |
+| `scene/set_parent/chain1000_build`           | 6,20 ms | 6,2 µs   | 2,8 % |                                             |
+
+La passe par frame `prepare_world_transforms` coûte 1,5 à 1,7 fois sa valeur du 2026-10-05 (139 et 272 µs), à charge
+comparable ; cause non profilée, à surveiller.
 
 ### 3.2 Frame complète (backend Null)
 
@@ -107,24 +115,29 @@ tous les 20 000 quads ; il paie l'écriture d'une mat4 de 64 o par quad.
 
 ### 3.4 Sérialisation YAML, undo, prefab
 
+Campagne du 2026-11-12, sauf `prefab/*` (2026-10-05).
+
 | Cas                                          | Médiane | Par entité | Remarque                             |
 |----------------------------------------------|---------|------------|--------------------------------------|
-| `serialize/scene_to_string/10000`            | 229 ms  | 22,9 µs    | écriture yaml-cpp                    |
-| `serialize/scene_from_string/10000`          | 73 ms   | 7,3 µs     | lecture rapidyaml                    |
-| `serialize/scene_from_string/1000`           | 2,8 ms  | 2,8 µs     |                                      |
-| `serialize/scene_parse_only/10000`           | 59 ms   | 5,9 µs     | `parseBuffer` seul                   |
-| `serialize/entity_to_string/scene1`          | 25,8 µs |            | snapshot d'undo, 218 o               |
-| `serialize/entity_to_string/scene10000`      | 26,3 µs |            | indépendant de la taille de la scène |
-| `serialize/entity_from_string/scene1`        | 2,9 µs  |            | restauration d'une entité            |
-| `serialize/entity_from_string/scene10000`    | 14,3 µs |            |                                      |
+| `serialize/scene_to_string/10000`            | 241 ms  | 24,1 µs    | écriture yaml-cpp                    |
+| `serialize/scene_from_string/10000`          | 82,6 ms | 8,3 µs     | lecture rapidyaml                    |
+| `serialize/scene_from_string/1000`           | 3,5 ms  | 3,5 µs     |                                      |
+| `serialize/scene_parse_only/10000`           | 65 ms   | 6,5 µs     | `parseBuffer` seul                   |
+| `serialize/scene_from_binary/10000`          | 39 ms   | 3,9 µs     | binaire cuit (`toBinary`), 2,3 Mo    |
+| `serialize/scene_from_binary/1000`           | 1,9 ms  | 1,9 µs     |                                      |
+| `serialize/entity_to_string/scene1`          | 20,5 µs |            | snapshot d'undo, 202 o               |
+| `serialize/entity_to_string/scene10000`      | 20,6 µs |            | indépendant de la taille de la scène |
+| `serialize/entity_from_string/scene1`        | 3,4 µs  |            | restauration d'une entité            |
+| `serialize/entity_from_string/scene10000`    | 22,4 µs |            | IQR 17 %                             |
 | `prefab/instantiate/10_entities/scene0`      | 49 µs   | 4,9 µs     |                                      |
-| `prefab/instantiate/10_entities/scene10000`  | 58 µs   | 5,8 µs     |                                      |
 | `prefab/instantiate/100_entities/scene10000` | 388 µs  | 3,9 µs     | indépendant de la scène cible        |
-| `sample/load/voxel_terrain`                  | 26 µs   |            | scène de la démo                     |
-| `sample/load/world_map`                      | 75 µs   |            |                                      |
-| `sample/load/main_menu`                      | 90 µs   |            |                                      |
-| `sample/load/platformer_house`               | 198 µs  |            |                                      |
-| `sample/load/raycast_demo`                   | 408 µs  |            | plus grosse scène de la démo         |
+| `sample/load/voxel_terrain`                  | 81 µs   |            | scène de la démo                     |
+| `sample/load/main_menu`                      | 493 µs  |            |                                      |
+| `sample/load/raycast_demo`                   | 1,05 ms |            |                                      |
+| `sample/load/world_map`                      | 1,27 ms |            |                                      |
+| `sample/load/tavern`                         | 1,75 ms |            |                                      |
+| `sample/load/platformer_house`               | 1,79 ms |            |                                      |
+| `sample/load/iso_town`                       | 3,90 ms |            | plus grosse scène de la démo         |
 
 L'écriture reste en yaml-cpp : `YAML::Emitter::Write` pèse l'essentiel de `serializeEntityToString`
 (`IsValidPlainScalar` teste chaque chaîne par expressions régulières). Mécanisme de la lecture : §9.7.
@@ -148,58 +161,50 @@ Un chunk stocke 16 Ko (blocs + métadonnées, 2 × 4 096 × 2 o). Un sommet `Vox
 avec les indices : le maillage d'un chunk de surface pèse 3,4 fois ses données. Profil de `terrain_surface/ao` :
 `Chunk::getBlock` (non inline, avec contrôle de bornes) 18,9 % et `BlockRegistry::isOpaque` 13,9 % des instructions.
 
-### 3.6 Lua
+### 3.6 Luau
 
-| Cas                                                | Médiane | Par instance |
-|----------------------------------------------------|---------|--------------|
-| `script/create_instance/empty_script`              | 28,1 µs |              |
-| `script/memory/bytes_per_instance`                 | 9 020 o |              |
-| `script/on_update/empty/1_instance`                | 43,8 ns | 43,8 ns      |
-| `script/on_update/empty/1000_instances`            | 80,1 µs | 80,1 ns      |
-| `script/on_update/get_set_position/1_instance`     | 140 ns  | 140 ns       |
-| `script/on_update/get_set_position/1000_instances` | 258 µs  | 258 ns       |
-| `script/on_update/arith_100/1000_instances`        | 615 µs  | 615 ns       |
+Campagne du 2026-11-12 (Luau 0.746).
 
-À 1 000 instances, le coût par appel double presque : chaque instance a son propre `lua_State`
-(`ScriptInstance.cpp:41`), donc ses données sont dispersées en mémoire. La mémoire est un delta `mallinfo2` avec un
-script vide ; la sonde M1 de `10-constats-D-sous-systemes.md` annonçait 24-25 Kio avec une autre méthode : à
-réconcilier. Mécanisme : §9.2.
+| Cas                                                | Médiane   | Par instance |
+|----------------------------------------------------|-----------|--------------|
+| `script/create_instance/empty_script`              | 46,1 µs   |              |
+| `script/memory/bytes_per_instance`                 | 129 041 o |              |
+| `script/on_update/empty/1_instance`                | 71,2 ns   | 71,2 ns      |
+| `script/on_update/empty/1000_instances`            | 215 µs    | 215 ns       |
+| `script/on_update/get_set_position/1_instance`     | 189 ns    | 189 ns       |
+| `script/on_update/get_set_position/1000_instances` | 521 µs    | 521 ns       |
+| `script/on_update/arith_100/1000_instances`        | 789 µs    | 789 ns       |
 
-### 3.7 Physique (Box2D 3.1.1)
+Chaque instance a son propre `lua_State` (`ScriptInstance.cpp:46-48`) : la mémoire est un delta `mallinfo2` sur 1 000
+instances d'un script vide, bindings compris ; à 1 000 instances le coût par appel triple (données dispersées).
 
-Boîtes dynamiques 1 × 1 en grille de 200 colonnes, sol statique ; `PhysicCommand::frame` à pas fixe de 16,7 ms.
-`step_falling` : les 60 premières frames après `init` ; `step_settled` : 60 frames après 600 frames de stabilisation.
-Mono-thread (`taskset -c 6`) :
+### 3.7 Physique (Jolt 5.6.0, 2D)
 
-| Cas                    | 100 corps | 1 000 corps | 5 000 corps |
-|------------------------|-----------|-------------|-------------|
-| `physics/init` (total) | 54 µs     | 586 µs      | 3,33 ms     |
-| `physics/step_falling` | 22,9 µs   | 228 µs      | 1,12 ms     |
-| `physics/step_settled` | 2,9 µs    | 28 µs       | 4,88 ms     |
+Boîtes dynamiques 1 × 1 en grille de 200 colonnes, sol statique, corps 2D verrouillés dans le plan
+(`EAllowedDOFs::Plane2D`) ; `PhysicCommand::frame` à pas fixe de 16,7 ms. `step_falling` : les 60 premières frames
+après `init` ; `step_settled` : 60 frames après 600 frames de stabilisation. Campagne du 2026-11-13 : un thread sur
+`taskset -c 6`, les workers sur `taskset -c 2,4,6,8,10` (un thread par P-core), load average 3 à 15 ; `init` et
+`step_settled` du 2026-11-12. Box2D 3.1.1 : même cas, même protocole, 2026-10-05.
 
-À 5 000 corps, la pile de 25 rangées ne s'endort pas et reste en contact : 4,9 ms par pas. Profil de
-`step_falling/1000` : `b2World_Step` 87,6 %, boucle de synchronisation vers les `Transform` 12,4 %.
+| Cas (par pas)                          | 100 corps | 500 corps | 1 000 corps | 5 000 corps | Box2D (100 / 1 000 / 5 000) |
+|----------------------------------------|-----------|-----------|-------------|-------------|-----------------------------|
+| `physics/init` (total)                 | 182 µs    |           | 859 µs      | 3,55 ms     | 54 µs / 586 µs / 3,33 ms    |
+| `step_falling`, 1 thread, 2 pas        | 109 µs    | 690 µs    | 1,27 ms     | 3,51 ms     | 22,9 µs / 228 µs / 1,12 ms  |
+| `step_falling`, 4 workers, 2 pas       | 100 µs    | 349 µs    | 0,61 ms     | 2,12 ms     |                             |
+| `step_falling`, 1 thread, 1 pas        |           |           | 0,81 ms     | 2,29 ms     |                             |
+| `step_falling`, 4 workers, 1 pas       |           |           | 0,37 ms     | 1,31 ms     |                             |
+| `step_settled`, 1 thread, 2 pas        | 4,0 µs    | 13 µs     | 25 µs       | 8,2 ms      | 2,9 µs / 28 µs / 4,88 ms    |
 
-#### 3.7.1 Pas fixe et solveur multi-thread
-
-Machine chargée (load average 5 à 12) : chiffres relatifs. `physics/frame_empty` (0 corps) : 284 ns à 60 Hz, 132 ns à
-144 Hz. Une frame sans pas (144 Hz, 60 % des frames) ne coûte que la boucle d'interpolation ; une frame vide à 60 Hz
-coûte le `b2World_Step` d'un monde vide (~280 ns). Synchronisation et interpolation de 5 000 `Transform` : 0,13 ms par
-frame ; événements de contact : 5 à 12 µs par pas.
-
-Multi-thread (`workerCount` réglé, SSE2), `taskset -c 6,8,10,12,14` (cinq cœurs physiques) :
-
-| Cas                        | 1 thread | 2 workers | 4 workers | 8 workers |
-|----------------------------|----------|-----------|-----------|-----------|
-| `step_falling/100_bodies`  | 23,5 µs  | 47,3 µs   | 46,5 µs   | 49,3 µs   |
-| `step_settled/100_bodies`  | 2,1 µs   | 4,7 µs    | 3,6 µs    | 5,0 µs    |
-| `step_falling/1000_bodies` | 227 µs   | 212 µs    | 208 µs    | 193 µs    |
-| `step_settled/1000_bodies` | 19,2 µs  | 20,3 µs   | 20,6 µs   | 21,9 µs   |
-| `step_falling/5000_bodies` | 1,11 ms  | 890 µs    | 726 µs    | 738 µs    |
-| `step_settled/5000_bodies` | 5,14 ms  | 3,85 ms   | 3,18 ms   | 2,86 ms   |
-
-Le gain n'apparaît qu'au-delà de quelques milliers de corps ; en dessous, la distribution des tâches coûte plus qu'elle
-ne rapporte, d'où le seuil automatique de 2 000 corps dynamiques. AVX2 et décomposition du pas : §9.4.
+Profil callgrind de `step_falling/1000_bodies` (Ir) : Jolt 96 % du pas (recherche des collisions 39 % dont EPA 11 %,
+solveur de vitesses 32 %, de positions 14 %, broad phase 10 %, sommeil et boîtes 10 %), copie des poses vers les
+entités 3 %, contacts et champs de gravité moins de 1 %. Une boîte 2D est une dalle 3D : le contact de deux faces
+garde quatre points, deux pour Box2D. Réglages essayés sans gain mesurable : suppression renforcée des arêtes
+internes, réduction de variété, distance spéculative, durée avant sommeil, itérations de position ; 6 itérations de
+vitesse au lieu de 10 : -12 %. Un pas de collision au lieu de deux : -36 %, mais la simulation change (hash de
+référence, replay de la démo, quatre tests) : le défaut reste à 2, `solverSubSteps` se règle par scène. Le seuil du
+nombre automatique de workers passe à 250 corps dynamiques : 4 workers divisent le pas par 2 dès 500 corps, sans effet
+à 100 (le résultat ne dépend pas du nombre de workers). `physics/frame_empty` : 2,2 µs par frame à 60 Hz, 1,2 µs à
+144 Hz.
 
 ### 3.8 Scènes de `engine_demo/` (backend Null)
 
@@ -270,7 +275,7 @@ ID             : P-03
 Axe            : C
 Nature         : faiblesse
 Gravité        : basse
-Preuve         : Scene.cpp:1887-1910 (`isEffectivelyVisible`) ; frame/editor_update/chain1000 = 38,7 µs (§9.5).
+Preuve         : Scene.cpp:4074-4105 (`isEffectivelyVisible`) ; frame/editor_update/chain1000 = 38,7 µs (§9.5).
 Constat        : Pendant une passe de mise à jour, la visibilité héritée est précalculée par entité dans
                  `prepareWorldTransforms` (un bit par mode). Hors passe, `isEffectivelyVisible` remonte la chaîne de
                  parents (un contrôle de visibilité par niveau), en O(profondeur).
@@ -299,16 +304,14 @@ ID             : P-07
 Axe            : C / E (sérialisation, undo, prefab)
 Nature         : faiblesse
 Gravité        : basse
-Preuve         : serialize/scene_to_string/10000 = 22,9 µs par entité (yaml-cpp), scene_from_string/10000 = 7,3 µs
-                 (rapidyaml) ; entity_to_string 26 µs, entity_from_string 2,9-14 µs ; PrefabSerializer.cpp:321-347
-                 (fusion YAML d'une entité de prefab avec son instance) ; §9.7.
-Constat        : La lecture est rapide depuis rapidyaml, mais l'écriture reste en yaml-cpp : le snapshot d'undo, la
-                 sauvegarde et la fusion de prefab paient 23 à 26 µs par entité. Le format de scène reste du texte ;
-                 aucun format binaire cuit n'existe pour le runtime et le .owlpack.
+Preuve         : serialize/scene_to_string/10000 = 24,1 µs par entité (yaml-cpp), scene_from_string/10000 = 8,3 µs
+                 (rapidyaml), scene_from_binary/10000 = 3,9 µs ; entity_to_string 20,5 µs (§3.4, 2026-11-12).
+Constat        : La lecture est rapide (rapidyaml, binaire cuit dans le .owlpack), mais l'écriture reste en yaml-cpp :
+                 le snapshot d'undo, la sauvegarde et la fusion de prefab paient 20 à 24 µs par entité, 3 à 6 fois la
+                 lecture.
 Comparaison    : Godot sérialise en texte (.tscn) mais cuit en binaire (.scn) à l'export ; Bevy instancie depuis un
                  monde en mémoire.
-Recommandation : surveiller, effort M à L : format binaire cuit pour le runtime et le .owlpack (v0.6.0), YAML gardé
-                 comme format d'édition.
+Recommandation : surveiller, effort M : émetteur rapidyaml ou maison pour l'undo et la sauvegarde (C-10, A-22).
 Statut         : confirmé (mesuré)
 ```
 
@@ -317,8 +320,8 @@ ID             : P-08
 Axe            : C
 Nature         : force
 Gravité        : basse
-Preuve         : scene/view_iterate = 2,6-2,8 ns par entité ; find_entity_by_uuid 9-23 ns ; scene/copy/10000 = 2,97 ms ;
-                 create_entities 109-138 ns.
+Preuve         : scene/view_iterate = 2,6-3,2 ns par entité ; find_entity_by_uuid 11-25 ns ; scene/copy/10000 = 3,14 ms ;
+                 create_entities 112-151 ns (§3.1, 2026-11-12).
 Constat        : Les primitives ECS sont au niveau attendu d'EnTT ; le passage en Play (Scene::copy) coûte 3 ms pour
                  10 000 entités, sans aller-retour YAML.
 Comparaison    : Conforme aux ordres de grandeur publiés par EnTT pour l'itération de vues (à sourcer).
@@ -332,7 +335,8 @@ Axe            : D (voxel)
 Nature         : faiblesse
 Gravité        : basse
 Preuve         : voxel/mesh_by_kind : 282-350 µs (surface), 395-476 µs (chunk plein, 6 quads), 1,67 ms (damier) ;
-                 callgrind : Chunk::getBlock (Chunk.cpp:32, non inline) 18,9 %, BlockRegistry::isOpaque 13,9 % ;
+                 callgrind (2026-10-05) : Chunk::getBlock (data/voxel/Chunk.h:133, non inline) 18,9 %,
+                 BlockRegistry::isOpaque 13,9 % ;
                  voxel/streaming : pic de frame 0,35 ms (§3.10).
 Constat        : Un chunk uniforme (plein ou souterrain) coûte autant qu'un chunk de surface, faute de raccourci. Le
                  maillage tourne sur les workers avec un upload budgété : il ne pèse pas sur le thread principal.
@@ -348,8 +352,8 @@ ID             : P-10
 Axe            : D (voxel)
 Nature         : faiblesse
 Gravité        : basse
-Preuve         : ChunkMesher.h:28-39 (VoxelVertex = 40 o) ; voxel/mesh_by_kind/terrain_surface/mesh_bytes = 55 Ko pour
-                 16 Ko de données ; RendererVoxel.cpp:73-87 (recopie en Mesh3DVertex à l'upload).
+Preuve         : data/voxel/ChunkMesher.h:32-45 (VoxelVertex = 44 o avec le champ `surface`) ;
+                 voxel/mesh_by_kind/terrain_surface/mesh_bytes = 55 Ko pour 16 Ko de données (2026-10-05).
 Constat        : Le format de sommet est large (positions et normales en float, UV en float) et il est recopié une fois
                  de plus à l'upload : 184 o par quad sur CPU, davantage sur GPU.
 Comparaison    : Les moteurs voxel compressent couramment un sommet en 4 à 8 octets (position entière dans le chunk,
@@ -361,16 +365,72 @@ Statut         : confirmé (mesuré)
 ```text
 ID             : P-11
 Axe            : D (script)
-Nature         : force
-Gravité        : basse
-Preuve         : script/on_update/empty = 43,8 ns (1 instance), 80 ns (1 000) ; get_set_position 140-258 ns ;
-                 create_instance 28,1 µs ; 9 020 o par instance ; ScriptInstance.cpp:41 (un lua_State par entité).
-Constat        : Le coût d'appel Lua est faible : 1 000 entités scriptées coûtent 0,1 à 0,3 ms par frame. Le modèle
-                 « un lua_State par entité » isole bien, mais coûte ~9 Ko et 28 µs par instance, et disperse la mémoire
-                 (coût par appel presque doublé à 1 000 instances).
-Comparaison    : Opinion : Defold et la plupart des moteurs Lua partagent une VM et isolent par environnement ; à
-                 10 000 entités scriptées, le modèle actuel coûte ~90 Mo et 0,3 s de création.
-Recommandation : garder, surveiller au-delà de quelques milliers d'entités scriptées.
+Nature         : faiblesse
+Gravité        : moyenne
+Preuve         : script/memory/bytes_per_instance = 129 041 o ; create_instance 46,1 µs ; on_update/empty 71 ns
+                 (1 instance), 215 ns (1 000) ; get_set_position 189-521 ns (§3.6, 2026-11-12, Luau 0.746) ;
+                 ScriptInstance.cpp:46-48 (un LuaEngine, donc un lua_State, par instance) ; Lua 5.5 le 2026-10-05 :
+                 9 020 o et 28 µs.
+Constat        : L'appel reste bon marché, mais un lua_State Luau par entité coûte 126 Kio, 14 fois l'état Lua 5.5
+                 qu'il remplace : 1 000 entités scriptées pèsent 126 Mo, 10 000 en pèsent 1,26 Go. Le coût par appel
+                 triple à 1 000 instances (données dispersées).
+Comparaison    : Luau est conçu pour une VM partagée avec un thread et un environnement bac à sable par script
+                 (lua_newthread + luaL_sandboxthread, modèle Roblox) ; Defold partage aussi une VM.
+Recommandation : surveiller, effort S ; décidé le 2026-11-12 : un lua_State par entité est gardé (isolation) ;
+                 mesurer ce qui pèse dans les 126 Kio (bindings recopiés par état ?) pour le réduire.
+Statut         : confirmé (mesuré)
+```
+
+```text
+ID             : P-12
+Axe            : D (physique)
+Nature         : faiblesse
+Gravité        : moyenne
+Preuve         : §3.7 (2026-11-13) : step_falling 109 µs / 1,27 ms / 3,51 ms pour 100 / 1 000 / 5 000 boîtes 2D sur un
+                 thread, contre 22,9 µs / 228 µs / 1,12 ms avec Box2D 3.1.1 (même cas) ; 0,61 ms / 2,12 ms à
+                 4 workers ; avec un pas de collision 0,81 ms / 2,29 ms, 1,31 ms à 5 000 corps et 4 workers ; Jolt
+                 fait 96 % du pas ; recette Jolt sans AVX ni FMA (conan/recipes/joltphysics/all/conanfile.py:57-61).
+Constat        : Jolt, seul moteur physique, fait la 2D avec des corps 3D verrouillés dans un plan : une scène 2D
+                 dynamique coûte 3 à 6 fois plus par pas qu'avec Box2D sur un thread, le contact de deux dalles
+                 gardant quatre points. La cible « pas < 1,5 ms à 5 000 corps » n'est tenue qu'à 4 workers avec un
+                 pas de collision (1,31 ms) ; au défaut (2 pas) : 2,12 ms à 4 workers, 3,5 ms sur un thread. Une
+                 pile endormie reste aussi rapide (25 µs à 1 000 corps).
+Comparaison    : Godot garde un moteur 2D dédié à côté du 3D ; le déterminisme multiplateforme de Jolt est rare.
+Recommandation : surveiller ; décidé le 2026-11-12 : Jolt reste le moteur 2D. Profil fait (§3.7) : aucun réglage
+                 de Jolt ne gagne sans changer la simulation, hors nombre de workers (seuil automatique à 250 corps) ;
+                 une scène 2D dense règle `solverSubSteps` à 1. Cibles : 1 000 corps < 1,5 ms sur un thread,
+                 5 000 corps < 1,5 ms à 4 workers avec un pas de collision.
+Statut         : confirmé (mesuré)
+```
+
+```text
+ID             : P-13
+Axe            : D (simulation, replay)
+Nature         : faiblesse
+Gravité        : moyenne
+Preuve         : `owl_bench` (`test/bench/cases/Cases.h`, `runReplayBenches`, 2026-11-13) : `replay/world_hash/1000_bodies`
+                 28 ms (28 µs par corps, budget 5 ms) ; `replay/live`, `replay/record` et `replay/playback` à 100 corps :
+                 132 µs, 180 µs et 179 µs par frame.
+Constat        : `computeWorldHash` sérialise chaque entité en YAML pour la hacher : 28 µs par corps. Le hachage revient
+                 toutes les 60 ticks pendant l'enregistrement et la relecture, donc à chaque Play dans l'éditeur (~3 ms
+                 à 100 corps) ; une frame enregistrée ou rejouée coûte 37 % de plus qu'une frame vivante (budget : 10 %).
+Comparaison    : les moteurs à relecture déterministe hachent l'état binaire des composants, pas une forme texte.
+Recommandation : corriger, effort M : hacher l'état binaire des composants au lieu du YAML (change les hachages de
+                 référence des scénarios rejoués).
+Statut         : confirmé (mesuré)
+```
+
+```text
+ID             : P-14
+Axe            : D (IA)
+Nature         : faiblesse
+Gravité        : moyenne
+Preuve         : `owl_bench` (`runAiBenches`, 2026-11-13) : `ai/steering/flock/1000_agents` 9,8 ms par frame (budget
+                 2 ms) ; `scene/systems/SteeringSystems.cpp`.
+Constat        : la cellule de la grille de voisinage vient de la portée d'évitement (~10 m) : chaque agent parcourt et
+                 trie environ 400 voisins, alors que le rayon de voisinage de la volée est bien plus petit.
+Comparaison    : les boids sur grille uniforme prennent une cellule égale au rayon de voisinage.
+Recommandation : corriger, effort S : cellule tirée du rayon de voisinage, k plus proches voisins sans tri complet.
 Statut         : confirmé (mesuré)
 ```
 
@@ -381,7 +441,7 @@ Statut         : confirmé (mesuré)
   charge de la machine au début et à la fin.
 - `test/bench/cases/*.cpp` : un fichier par groupe (`SceneBench`, `SerializeBench`, `Renderer2DBench`, `FrameBench`,
   `VoxelBench`, `VoxelStreamingBench`, `ScriptBench`, `PhysicsBench`, `SampleBench`, `SlangBench`, `HudBench`,
-  `IsometricBench`, `TilemapBench`, `PathBench`, `McpBench`).
+  `IsometricBench`, `TilemapBench`, `PathBench`, `McpBench`, `AiBench`, `ReplayBench`, …).
 - `CodeStyle` scanne `test/bench` (`SOURCE_ROOTS`, `ci/actions/code_style.py`).
 - Google Benchmark n'est pas utilisé : un paquet Conan `benchmark` n'apporterait que `--benchmark_repetitions`, les
   compteurs utilisateur et la comparaison de runs (`compare.py`).
@@ -402,7 +462,7 @@ Statut         : confirmé (mesuré)
 
 1. **Voxel par frame** (M5, M6) : coût GPU de l'upload et mémoire GPU par chunk (le CPU est au §3.10).
 2. **Debug + couverture** : `slang/compile_cold` dans `linux-clang-debug`.
-3. **Mémoire** : pic et allocations par frame (heaptrack absent de l'image) ; `OWL_ENABLE_MEMORY_TRACKER` (M10).
+3. **Mémoire** : pic et allocations par frame (heaptrack absent de l'image), contenu des 126 Kio d'un état Luau (P-11) ; `OWL_ENABLE_MEMORY_TRACKER` (M10).
 4. **Lua** : `find_entity` depuis un script (M1).
 5. **Physique** : 10 000 corps, corps dans une hiérarchie, tilemap collidable (M3).
 6. **Chargement** : ouverture et extraction d'un `.owlpack` (M8), premier et second lancement réels.
@@ -415,16 +475,16 @@ Statut         : confirmé (mesuré)
 
 ### 8.1 Protocole
 
-| Élément      | Valeur                                                                                                            |
-|--------------|-------------------------------------------------------------------------------------------------------------------|
-| Outil        | `OwlRunner --frame-bench <scène> --backend <b> --frames 1000 --warmup 120 --out <json>` (`test/bench/README.md`)  |
-| Build        | `linux-clang-release` dans `./docker_run.sh --gui`, clang 22, `-O3`                                               |
-| Machine      | i9-13950HX, portable hybride : Intel UHD (RPL-S) principal, RTX 5000 Ada Laptop en PRIME offload                  |
-| Affichage    | session Wayland (`WAYLAND_DISPLAY=wayland-0`), fenêtre GLFW via XWayland, 1280 × 720                              |
-| Épinglage    | `taskset -c 2-7` (P-cores), processus entier                                                                      |
-| Déterminisme | pas fixe 16,667 ms, entrées null, caméra primaire de la scène, son null                                           |
-| Présentation | Vulkan `immediate` (vsync coupée), OpenGL `swap-interval-0`                                                       |
-| Répétitions  | 3 à 5 par configuration, 1 000 frames mesurées chacune ; médiane des médianes                                     |
+| Élément      | Valeur                                                                                                           |
+|--------------|------------------------------------------------------------------------------------------------------------------|
+| Outil        | `OwlRunner --frame-bench <scène> --backend <b> --frames 1000 --warmup 120 --out <json>` (`test/bench/README.md`) |
+| Build        | `linux-clang-release` dans `./docker_run.sh --gui`, clang 22, `-O3`                                              |
+| Machine      | i9-13950HX, portable hybride : Intel UHD (RPL-S) principal, RTX 5000 Ada Laptop en PRIME offload                 |
+| Affichage    | session Wayland (`WAYLAND_DISPLAY=wayland-0`), fenêtre GLFW via XWayland, 1280 × 720                             |
+| Épinglage    | `taskset -c 2-7` (P-cores), processus entier                                                                     |
+| Déterminisme | pas fixe 16,667 ms, entrées null, caméra primaire de la scène, son null                                          |
+| Présentation | Vulkan `immediate` (vsync coupée), OpenGL `swap-interval-0`                                                      |
+| Répétitions  | 3 à 5 par configuration, 1 000 frames mesurées chacune ; médiane des médianes                                    |
 
 Sélection du GPU, vérifiée par le champ `device` de chaque rapport :
 
@@ -501,29 +561,26 @@ tableaux du §3 et du §8.2 ; chaque sous-section décrit ce qui les produit. D�
 
 ### 9.1 Cibles et état
 
-| Cible                                  | Valeur courante                                                  | Statut             |
-|----------------------------------------|------------------------------------------------------------------|--------------------|
-| Frame à 10 000 sprites                 | 0,33 ms, 0,46 ms en forêt (§9.5)                                 | tenue              |
-| Coût par quad Renderer2D < 10 ns       | 9,4 ns sur `worldIndex`, 14 à 24 ns hors `worldIndex` (§9.5)     | gardée en l'état   |
-| 0 vidage de file par frame             | 0 dans le runner (§8.2) et dans l'éditeur (§9.10)                | tenue              |
-| Frame runner Vulkan ≤ OpenGL           | 0,03 à 0,11 ms de travail CPU au-dessus d'OpenGL (§9.3)          | acceptée en l'état |
-| Chargement de scène < 10 µs par entité | 7,3 µs à 10 000 entités (§9.7)                                   | tenue              |
-| Pas Box2D < 1,5 ms, 5 000 corps        | 1,68 ms à 8 workers en SSE2, 1,44 ms en AVX2 optionnel (§9.4)    | écart accepté      |
-| Lua, coût par instance                 | 28 µs, 9 020 o, 44 ns par appel vide (§9.2)                      | tenue              |
-| Démarrage à froid jusqu'à la 1re frame | 270 à 440 ms, indépendant du cache de shaders (§9.6, §9.8)       | tenue              |
-| SPIR-V stocké                          | validé avant le pilote, recompilé au besoin (§9.8)               | validée            |
+| Cible                                  | Valeur courante                                               | Statut             |
+|----------------------------------------|---------------------------------------------------------------|--------------------|
+| Frame à 10 000 sprites                 | 0,33 ms, 0,46 ms en forêt (§9.5)                              | tenue              |
+| Coût par quad Renderer2D < 10 ns       | 9,4 ns sur `worldIndex`, 14 à 24 ns hors `worldIndex` (§9.5)  | gardée en l'état   |
+| 0 vidage de file par frame             | 0 dans le runner (§8.2) et dans l'éditeur (§9.10)             | tenue              |
+| Frame runner Vulkan ≤ OpenGL           | 0,03 à 0,11 ms de travail CPU au-dessus d'OpenGL (§9.3)       | acceptée en l'état |
+| Chargement de scène < 10 µs par entité | 8,3 µs à 10 000 entités, 3,9 µs en binaire (§3.4)             | tenue              |
+| Pas physique 2D, 1 000 corps < 1,5 ms  | 1,27 ms sur un thread, 0,61 ms à 4 workers (§3.7)             | tenue              |
+| Pas physique 2D, 5 000 corps < 1,5 ms  | 1,31 ms à 4 workers et 1 pas de collision, 2,12 ms au défaut  | tenue (P-12)       |
+| Hash du monde, 1 000 corps < 5 ms      | 28 ms, 28 µs par corps (P-13)                                 | non tenue (P-13)   |
+| Frame enregistrée ou rejouée ≤ +10 %   | +37 % à 100 corps (P-13)                                      | non tenue (P-13)   |
+| Volée de 1 000 agents < 2 ms par frame | 9,8 ms (P-14)                                                 | non tenue (P-14)   |
+| Script, coût par instance              | 46 µs, 126 Kio, 71 ns par appel vide (§3.6)                   | acceptée (P-11)    |
+| Démarrage à froid jusqu'à la 1re frame | 270 à 440 ms, indépendant du cache de shaders (§9.6, §9.8)    | tenue              |
+| SPIR-V stocké                          | validé avant le pilote, recompilé au besoin (§9.8)            | validée            |
 
-### 9.2 Lua
+### 9.2 Luau
 
-Coût par instance et par appel : §3.6. Ce qui le fixe, mesuré par callgrind (`--toggle-collect` sur
-`ScriptInstance::onUpdate`, puis sur la création) : Lua 5.5.0 ; chaque binding est une fonction C légère
-`guarded<fn>`, sans allocation (une closure par binding coûterait 70 allocations de 64 o, soit 4,5 Kio par état) ;
-`coroutine.wrap` est en C sur le `coroutine.resume` du bac à sable (un chunk Lua compilé par état coûterait 16 % des
-instructions de la création) ; la scène liée et le delta vivent dans le `Quota` de l'état (plus de
-`lua_getfield(REGISTRY, "owl_scene")` par binding) ; les noms de callbacks (16 au plus) sont internés une fois, en
-référence de registre ; le gestionnaire d'erreur est poussé avant la fonction et le contexte d'erreur n'est formaté
-qu'en cas d'erreur. Quotas, chien de garde, traceback et bac à sable restent actifs. Le `Quota` élargi ajoute 55 o par
-instance.
+Le profil callgrind du 2026-10-09 portait sur Lua 5.5 et n'est pas refait sous Luau. Mécanismes encore en place : bindings
+en fonctions C légères `guarded<fn>`, scène liée et delta dans le `Quota` de l'état, noms de callbacks internés une fois.
 
 ### 9.3 Vulkan contre OpenGL au frame bench
 
@@ -546,25 +603,6 @@ Images de référence inchangées (`ctest -L render`), validation sans message s
 Vulkan reste 0,03 à 0,11 ms au-dessus d'OpenGL (sauf `voxel_terrain` NVIDIA). Pistes si la cible devait être tenue :
 la mesurer sur le travail (hors attente de présentation), ou alléger la cible principale Vulkan (profondeur et
 identifiant seulement quand un calque les utilise).
-
-### 9.4 Box2D, 5 000 corps au contact
-
-Box2D 3.2 n'existe pas (ni sur ConanCenter ni en amont, dernière étiquette `v3.1.1`) ; la recette ConanCenter 3.1.1 n'a
-pas d'option AVX2, d'où une recette locale (`conan/recipes/box2d`, la même plus `avx2`). Décomposition du pas
-(`b2World_GetProfile` et chronos dans `PhysicCommand::frame`, 60 pas de `step_settled_mt8`) : 1,36 ms de `b2World_Step`
-(paires 0,29, narrow phase 0,33, solveur 0,74 dont contraintes 0,48) et 0,10 ms de copie des poses vers l'ECS, en
-série. La pile « tassée » ne l'est pas : après 600 pas, les colonnes de 25 caisses se sont effondrées (vitesse max
-25 m/s, 5 000 corps éveillés), d'où des paires nouvelles et une île coupée à chaque pas.
-
-Réglages : Box2D en AVX2 sur x86_64 (`OWL_PHYSICS_AVX2`, option `box2d/*:avx2`, sans objet sur arm64), avec contrôle du
-CPU à `PhysicCommand::init` (sans AVX2 : erreur au journal et monde non créé) ; deux threads de plus que `workerCount`
-dans l'exécuteur, car la reconstruction d'arbre et la coupe d'île tournent à côté des tâches du solveur, qui s'attendent ;
-copie des poses (`captureCurrent`, `writeTransforms`) répartie sur l'exécuteur au-delà de 1 024 corps, les enfants
-d'une hiérarchie restant en série. `PhysicMultiThread` et `PhysicFixedStep` restent déterministes (3 passes identiques).
-
-Valeurs, 5 000 corps, `taskset -c 0-15`, load average 5,6 à 5,8 : `step_settled` 4,46 ms mono-thread, 3,28 / 2,00 /
-1,44 ms à 2 / 4 / 8 workers en AVX2 ; `step_falling_mt8` 450 µs ; en SSE2, `step_settled_mt8` 1,68 ms. Le nombre
-automatique de workers reste plafonné à 4 (2,00 ms) ; le relever est à trancher par le mainteneur.
 
 ### 9.5 Frame à 10 000 sprites et Renderer2D
 
@@ -673,12 +711,12 @@ veille du GPU NVIDIA (D3cold) ajoute ~2 s à la fenêtre ; la médiane écarte c
 `startup_ms` (`engine_ready` / `first_frame`, ms), `taskset -c 2-7`, 300 frames, 3 répétitions (5 pour OpenGL), médiane ;
 « froid » : `bin/cache/shader` vidé :
 
-| Configuration   | Froid       | Chaud       |
-|-----------------|-------------|-------------|
-| Vulkan / NVIDIA | 394 / 414   | 399 / 420   |
-| OpenGL / NVIDIA | 324 / 353   | 314 / 342   |
-| Vulkan / Intel  | 252 / 279   | 252 / 282   |
-| OpenGL / Intel  | 278 / 302   | 279 / 305   |
+| Configuration   | Froid     | Chaud     |
+|-----------------|-----------|-----------|
+| Vulkan / NVIDIA | 394 / 414 | 399 / 420 |
+| OpenGL / NVIDIA | 324 / 353 | 314 / 342 |
+| Vulkan / Intel  | 252 / 279 | 252 / 282 |
+| OpenGL / Intel  | 278 / 302 | 279 / 305 |
 
 La recompilation au besoin ne coûte rien au démarrage nominal ; l'écart NVIDIA restant relève du pilote, pas des
 pipelines.
@@ -688,11 +726,10 @@ pipelines.
 | Cible                            | Décision                                                                                                             |
 |----------------------------------|----------------------------------------------------------------------------------------------------------------------|
 | Frame runner Vulkan ≤ OpenGL     | Acceptée en l'état : plancher de présentation PRIME sous Wayland, travail hors attente 0,03-0,11 ms au-dessus (§9.3) |
-| Pas Box2D < 1,5 ms, 5 000 corps  | Écart accepté : 1,68 ms à 8 workers en SSE2 par défaut, 1,44 ms en AVX2 optionnel (§9.4)                             |
 | SPIR-V stocké                    | Validé : le cache est lu avant le SPIR-V précompilé, un précompilé refusé ne l'est qu'une fois (§9.8)                |
 | Coût par quad Renderer2D < 10 ns | Gardé : les quads hors `worldIndex` restent à 14-24 ns, sans TRS passé au shader ni API non possédante (§9.5)        |
 
-Les autres cibles sont tenues. Le tableau des cibles de `doc/pages/design/foundations.md` porte ces statuts.
+Les autres cibles sont tenues.
 
 ### 9.10 Vidages GPU dans l'éditeur (2026-10-10)
 

@@ -22,6 +22,7 @@
 #include <set>
 #include <span>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <utility>
 #include <variant>
@@ -730,5 +731,20 @@ void BehaviourTreeInstance::setValue(const std::string_view iKey, BlackboardValu
 auto BehaviourTreeInstance::getTree() const -> const shared<const BehaviourTree>& { return mp_impl->tree; }
 
 auto BehaviourTreeInstance::getTickCount() const -> uint64_t { return mp_impl->ticks; }
+
+void BehaviourTreeInstance::shiftOrigin(const math::vec3& iShift) {
+	for (auto& state: mp_impl->states) state.goal = state.goal - iShift;
+	std::set<std::string_view> pointKeys;
+	for (const auto& node: mp_impl->nodes)
+		if (node.op == Op::Distance || node.op == Op::MoveTo || node.op == Op::Steer)
+			pointKeys.insert(node.key);
+	for (const auto key: pointKeys) {
+		const auto found = mp_impl->blackboard.find(key);
+		if (found == mp_impl->blackboard.end())
+			continue;
+		if (auto* point = std::get_if<math::vec3>(&found->second); point != nullptr)
+			*point = *point - iShift;
+	}
+}
 
 }// namespace owl::scene::ai

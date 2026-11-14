@@ -1,6 +1,6 @@
 # Audit Owl — confrontation à l'état de l'art
 
-> **Revu le 2026-10-20 sur `main` 4e1a6a10.** Livrable du §6 de [`00-cadrage.md`](00-cadrage.md).
+> **Revu le 2026-11-12 sur `Feature/sample-games-new` b4281d72.** Livrable du §6 de [`00-cadrage.md`](00-cadrage.md).
 > **Règle** : chiffres externes **publiés uniquement**, avec source et date ; aucun moteur tiers construit.
 > Métadonnées de dépôts (version, licence, activité) : API GitHub du 2026-10-05 (`gh api repos/<owner>/<repo>`).
 > **Légende** : **[F]** fait sourcé, **[C]** constaté dans le dépôt Owl (`chemin`), **[O]** opinion de l'auditeur.
@@ -115,46 +115,37 @@ runtime ; Owl fait de même pour ses shaders et garde le compilateur pour l'édi
 Sources : <https://www.khronos.org/news/press/khronos-group-launches-slang-initiative-hosting-open-source-compiler-contributed-by-nvidia> (2024-11-21) ;
 <https://github.com/shader-slang/slang/releases> ; <https://moonside.games/posts/introducing-sdl-shadercross/>.
 
-## Fiche 4 — Script : Lua 5.5 avec bindings manuels
+## Fiche 4 — Script : Luau avec bindings manuels
 
-**Choix Owl** [C] : Lua 5.5.0 (`conanfile.py`), API C directe (`source/owl/private/script/LuaBindings.cpp`,
-2 277 lignes, pas de sol2), un `lua_State` par `ScriptInstance`, bac à sable.
+**Choix Owl** [C] : Luau 0.746 (`conanfile.py`, recette locale `conan/recipes/luau`), API C directe
+(`source/owl/private/script/LuaBindings.cpp`, 5 615 lignes, pas de sol2), un `lua_State` par `ScriptInstance`
+(`ScriptInstance.cpp:46-48`), bac à sable et quotas ; types vérifiés dans l'éditeur (`ScriptTypeChecker.cpp`) à partir
+de déclarations générées du registre de liaisons. Les visual scripts (`.owlvs`) sont compilés en Luau.
 
-**Faits** [F] :
+**Faits** [F] (relevés le 2026-10-05, non revérifiés) :
 
-- Lua 5.5.0 publiée le **2025-12-22** ; nouveautés : déclarations de globales, collectes majeures
-  incrémentales, tableaux plus compacts (« large arrays use about 60% less memory »), variables de boucle
-  `for` en lecture seule.
-- LuaJIT : rolling release sans tags (version = horodatage du commit), dernier commit 2026-09-08 ; reste
-  compatible **Lua 5.1** seulement.
-- Luau (Roblox) : 0.741 le 2026-10-02, MIT, typage graduel, bac à sable natif ; se dit « noticeably faster
-  than Lua 5.x (including Lua 5.4) » et capable d'égaler l'interpréteur LuaJIT sur certaines charges, JIT
-  optionnel x64/arm64 ; **aucun benchmark tête-à-tête publié** sur la page performance.
-- sol2 : dernière release v3.3.0 (2022-06-25), dernier push 2025-03-07 — support de Lua 5.5 non annoncé.
-- Wren : dernière release 0.4.0 (2021-04-09). AngelScript : miroir GitHub archivé (développement sur SVN).
-- C# : Coral (hôte .NET de StudioCherno, MIT) actif (push 2026-09-28), sans release taguée.
+- Luau (Roblox) : MIT, typage graduel, bac à sable natif ; se dit « noticeably faster than Lua 5.x (including Lua 5.4) »
+  et capable d'égaler l'interpréteur LuaJIT sur certaines charges, JIT optionnel x64/arm64 ; **aucun benchmark
+  tête-à-tête publié** sur la page performance.
+- Lua 5.5.0 publiée le 2025-12-22. LuaJIT : rolling release, compatible **Lua 5.1** seulement.
+- sol2 : dernière release v3.3.0 (2022-06-25). C# : Coral (hôte .NET de StudioCherno, MIT), sans release taguée.
 
-| Option             | Perf (publiée)                                      | Typage   | Maintenance              | Coût de migration depuis Lua 5.5 |
-|--------------------|-----------------------------------------------------|----------|--------------------------|----------------------------------|
-| Lua 5.5            | référence                                           | non      | PUC-Rio, lente mais sûre | —                                |
-| LuaJIT             | JIT, très rapide (pas de chiffre récent sourcé ici) | non      | rolling, 5.1 figé        | M : perte des features 5.4/5.5   |
-| Luau               | > Lua 5.4 (affirmation qualitative)                 | graduel  | Roblox, très actif       | M : API C proche, sandbox natif  |
-| C# (.NET)          | JIT/AOT                                             | fort     | Microsoft + Coral        | L : nouvelle chaîne, hot reload  |
-| Wren / AngelScript | —                                                   | — / fort | faible                   | L, non recommandé                |
+**Mesure** [C] : sur le runner de bench GitLab (2026-11-09, `test/bench/thresholds.json`), un `on_update` vide coûte
+120 ns par appel et 300 µs pour 1 000 instances sous Luau, contre 88 ns et 188 µs sous Lua 5.5 : l'interpréteur n'est
+pas plus rapide sur ce micro-cas, le gain vient du typage et du bac à sable.
 
-**Verdict : GARDER Lua 5.5 ; SURVEILLER Luau.** Lua 5.5 est à jour ; le binding manuel évite sol2, dont la maintenance
-ralentit. Luau devient intéressant si l'axe « script typé + débogueur + perf » du §5 est priorisé (effort M). [O] Ne pas
-viser LuaJIT (5.1 figé).
+**Verdict : GARDER Luau.** Le binding manuel évite sol2. Le modèle « un `lua_State` par entité » est gardé (décision du
+2026-11-12, P-11) malgré ses 126 Kio par instance. Ne pas viser LuaJIT (5.1 figé).
 
-Sources : <https://www.lua.org/work/> et <https://www.lua.org/manual/5.5/readme.html> ;
-<https://luajit.org/status.html> ; <https://luau.org/performance> ; <https://github.com/ThePhD/sol2> ;
-<https://github.com/StudioCherno/Coral>.
+Sources : <https://luau.org/performance> ; <https://www.lua.org/work/> ; <https://luajit.org/status.html> ;
+<https://github.com/ThePhD/sol2> ; <https://github.com/StudioCherno/Coral>.
 
 ## Fiche 5 — Sérialisation : yaml-cpp
 
-**Choix Owl** [C] : yaml-cpp **0.9.0** pour l'écriture des scènes, prefabs, sauvegardes, réglages **et**
+**Choix Owl** [C] : yaml-cpp **0.9.0** pour l'écriture des scènes, prefabs, sauvegardes, réglages, replays **et**
 snapshots undo (`EntitySnapshot` via `serializeEntityToString`) ; rapidyaml 0.15.2 pour leur lecture
-(`core::YamlNode`, `core/external/ryml.h`) ; 71 fichiers de `source/owl/private` utilisent `YAML::`.
+(`core::YamlNode`, `core/external/ryml.h`) ; 120 fichiers `.cpp` de `source/owl/private` utilisent `YAML::`. Le cook
+convertit le YAML en binaire (`core::YamlDocument::toBinary`, `serialize/scene_from_binary`) pour le `.owlpack`.
 
 **Faits** [F] :
 
@@ -169,51 +160,41 @@ snapshots undo (`EntitySnapshot` via `serializeEntityToString`) ; rapidyaml 0.15
 
 **Critères** [O] : YAML est un bon format **source** (lisible, diffable, éditable à la main) et un mauvais format
 **interne** : l'undo par aller-retour YAML paie parsing et allocations à chaque opération. La lecture par rapidyaml
-coûte 7,3 µs par entité (`20-mesures.md`, §9.7) ; l'écriture, en yaml-cpp, 23 µs.
+coûte 7,3 µs par entité (`20-mesures.md`, §9.7) ; l'écriture, en yaml-cpp, 23 µs ; la lecture du binaire cuit environ
+deux fois moins que celle du texte (`20-mesures.md`, §3.4).
 
-**Verdict : SURVEILLER.**
-1. Écriture : migrer vers rapidyaml ou un émetteur maison si le coût des snapshots d'undo devient gênant. Effort **M**.
-2. Long terme : format « cooké » binaire dans `.owlpack` (v0.6.0), YAML réservé aux fichiers d'édition. Effort **M–L**.
+**Verdict : SURVEILLER.** Écriture : migrer vers rapidyaml ou un émetteur maison si le coût des snapshots d'undo devient
+gênant. Effort **M**. Le binaire cuit du `.owlpack` est en place ; YAML reste le format d'édition.
 
 Sources : <https://rapidyaml.readthedocs.io/latest/sphinx_is_it_rapid.html> ;
 <https://github.com/jbeder/yaml-cpp/releases> ; <https://github.com/simdjson/simdjson> ;
 <https://github.com/stephenberry/glaze> ; <https://github.com/google/flatbuffers>.
 
-## Fiche 6 — Physique : Box2D v3 (et la 3D future)
+## Fiche 6 — Physique : Jolt en 2D et en 3D
 
-**Choix Owl** [C] : Box2D **3.1.1**, dernière release (2025-06-04) [F] (recette locale `conan/recipes/box2d`, option
-`avx2`) ; solveur multi-thread (`SolverTaskPool`, `workerCount`).
+**Choix Owl** [C] : Jolt Physics **5.6.0** (recette locale `conan/recipes/joltphysics`), construit
+`CROSS_PLATFORM_DETERMINISTIC` (`conanfile.py` de la recette, l. 57 et 97), seul moteur physique : la 2D est faite de
+corps verrouillés dans un plan sur l'interface physique commune (`source/owl/private/physics/JoltWorld.cpp`, 1 111
+lignes). Les tâches Jolt passent par Taskflow (`TaskflowJobSystem`, `JoltWorld.cpp:158`).
 
-**Chiffres publiés** [F] — Erin Catto, « SIMD Matters » (2024-08-19), scène *large pyramid* (5 050 corps,
-14 950 paires de contact), 4 workers, AMD 7950X / Apple M2 :
-
-| Jeu d'instructions | fps  | ms / pas |
-|--------------------|------|----------|
-| AVX2 (7950X)       | 1117 | 0,90     |
-| SSE2 (7950X)       | 982  | 1,02     |
-| Neon (M2)          | 1058 | 0,95     |
-| Scalaire (7950X)   | 524  | 1,91     |
-| Scalaire (M2)      | 679  | 1,47     |
-
-[O] AVX2 est opt-in (`OWL_PHYSICS_AVX2`, x64 uniquement) ; sans lui, ~×1,1 est laissé sur la table
-(`20-mesures.md`, §9.4).
-
-**3D future** [F] :
+**Faits** [F] (relevés le 2026-10-05, non revérifiés) :
 
 | Moteur | Version             | Licence | Références publiques                                              |
 |--------|---------------------|---------|-------------------------------------------------------------------|
 | Jolt   | v5.6.0 (2026-07-11) | MIT     | Horizon Forbidden West, Death Stranding 2 ; Godot 4.4+ en option  |
-| Box3D  | v0.1.0 (2026-06-30) | MIT     | annoncé 2026-07 par Erin Catto ; s&box ; C17, API proche de Box2D |
+| Box2D  | v3.1.1 (2025-06-04) | MIT     | 5 050 corps en 0,90 à 1,91 ms par pas selon le SIMD (Catto, 2024) |
+| Box3D  | v0.1.0 (2026-06-30) | MIT     | annoncé 2026-07 par Erin Catto ; C17, API proche de Box2D         |
 
-[O] Box3D séduit (même auteur, même API C, même modèle mental que Box2D v3) mais est en 0.1. Jolt est le choix sûr et
-documenté (`Docs/PerformanceTest.md` publie des courbes de passage à l'échelle multicœur).
+[O] Un seul moteur pour la 2D et la 3D simplifie l'interface et le déterminisme (une seule bibliothèque à figer), au
+prix d'un solveur 3D pour des scènes 2D : mesuré, un pas de 1 000 boîtes 2D qui tombent coûte 1,28 ms sous Jolt contre
+228 µs sous Box2D 3.1.1 sur le même cas (`20-mesures.md` §3.7, P-12). La recette plafonne le SIMD à SSE4.2 (AVX, AVX2, AVX-512,
+FMA coupés, recette l. 58-61) : choix assumé pour la simulation bit-exacte, sans variante AVX2 optionnelle.
 
-**Verdict : GARDER Box2D v3 ; pour la 3D, SURVEILLER Box3D et partir sur Jolt si la 3D arrive avant
-qu'il n'atteigne une 1.0.** Coût d'intégration 3D : **M** (nouveau module, synchronisation transforms).
+**Verdict : GARDER Jolt en 2D et en 3D** (décision du 2026-11-12) ; profiler et régler le pas 2D, réviser la cible
+(P-12). Box3D à revoir à sa 1.0.
 
-Sources : <https://box2d.org/posts/2024/08/simd-matters/> ; <https://github.com/erincatto/box2d/releases> ;
-<https://github.com/erincatto/box3d> ; <https://gamefromscratch.com/box2d-enters-the-3rd-dimension-box3d-released/> (2026-07-06) ;
-<https://github.com/jrouwe/JoltPhysics/blob/master/Docs/PerformanceTest.md>.
+Sources : <https://github.com/jrouwe/JoltPhysics/blob/master/Docs/PerformanceTest.md> ;
+<https://box2d.org/posts/2024/08/simd-matters/> ; <https://github.com/erincatto/box3d>.
 
 ## Fiche 7 — Tâches : Taskflow
 
@@ -247,8 +228,9 @@ Sources : <https://arxiv.org/abs/2004.10908> ; <https://github.com/taskflow/task
 ## Fiche 8 — Dépendances : Conan 2
 
 **Choix Owl** [C] : Conan 2 seul fournisseur (`conanfile.py`, `conan.lock`), ~40 `requires`, ConanCenter
-d'abord, recettes locales dans `conan/recipes/` (box2d, entt, glfw, imgui-color-text-edit, imguizmo, libmp3lame,
-msdf-atlas-gen, msdfgen, nativefiledialog-extended, openal-soft, slang, taskflow, tinyobjloader, ufbx).
+d'abord, recettes locales dans `conan/recipes/` (entt, glfw, imgui-color-text-edit, imguizmo, joltphysics, ktx,
+libmp3lame, luau, msdf-atlas-gen, msdfgen, nativefiledialog-extended, openal-soft, slang, taskflow, tinyobjloader,
+ufbx).
 
 | Outil     | Version (2026-10-05) | Licence | Modèle                                              | Étoiles |
 |-----------|----------------------|---------|-----------------------------------------------------|---------|
@@ -259,41 +241,34 @@ msdf-atlas-gen, msdfgen, nativefiledialog-extended, openal-soft, slang, taskflow
 **Critères** [O] :
 - Portabilité : Linux x64/arm64 et MinGW, moins bien servi par ConanCenter, d'où des recettes locales.
 - Reproductibilité : `conan.lock` fige les versions ; tout tiers passe par Conan, jamais vendoré.
-- Coût : recettes locales à maintenir (Slang, Box2D, OpenAL Soft).
+- Coût : seize recettes locales à maintenir (Slang, Jolt, Luau, OpenAL Soft…).
 
 **Verdict : GARDER.** Un contributeur externe construit Owl avec ConanCenter et les recettes du dépôt.
 
 Sources : <https://github.com/microsoft/vcpkg> ; <https://github.com/conan-io/conan> ;
 <https://github.com/cpm-cmake/CPM.cmake>.
 
-## Fiche 9 — CI : TeamCity + wrapper Python
+## Fiche 9 — CI : GitLab CI auto-hébergé + wrapper Python
 
-**Choix Owl** [C] : TeamCity en Kotlin DSL (`.teamcity/`), wrapper `ci_action.py`, plugin GitHub maison ;
-aucun `.github/workflows`. Le dépôt GitHub `Silmaen/Owl` est public (MIT).
+**Choix Owl** [C] : GitLab CI sur l'instance du mainteneur (`.gitlab-ci.yml`, `ci/gitlab/templates.yml`,
+`ci/gitlab/nightly.yml`), runners du mainteneur (GPU, Windows, bench), wrapper `ci_action.py` (`BuildAndTest`,
+`NightlyGate`) ; la fusion attend le dernier pipeline (`.gitlab-ci.yml:16-17`). Le dépôt GitHub public reste la
+vitrine ; aucun `.github/workflows`.
 
-**Faits** [F] :
-- TeamCity Professional est gratuit (3 agents, 100 configurations) ; une licence Enterprise gratuite
-  renouvelable annuellement existe pour les projets open source non commerciaux.
-- GitHub Actions : runners standards gratuits et illimités pour les dépôts publics ; baisse des prix des
-  runners hébergés au 2026-01-01 ; la taxe de 0,002 $/min sur les runners auto-hébergés annoncée en
-  2025-12 a été reportée sine die.
+**Faits** [F] (relevés le 2026-10-05, non revérifiés) : GitHub Actions offre des runners standards gratuits et
+illimités aux dépôts publics.
 
-| Critère                  | TeamCity auto-hébergé                      | GitHub Actions                                   |
-|--------------------------|--------------------------------------------|--------------------------------------------------|
-| Coût                     | gratuit, mais serveur + agents à maintenir | gratuit (dépôt public)                           |
-| Visibilité contributeurs | faible (serveur privé, statut via plugin)  | native dans la PR                                |
-| GPU / matériel réel      | oui (agents du mainteneur)                 | non sur runners standards (self-hosted possible) |
-| Puissance                | DSL Kotlin, chaînes de builds, cache local | YAML, matrice, cache distant limité              |
-| Bus factor               | serveur et plugin maison                   | aucun service à maintenir                        |
+| Critère                  | GitLab CI auto-hébergé                         | GitHub Actions                                   |
+|--------------------------|------------------------------------------------|--------------------------------------------------|
+| Coût                     | gratuit, instance et runners à maintenir       | gratuit (dépôt public)                           |
+| Visibilité contributeurs | instance du mainteneur, hors du dépôt GitHub   | native dans la PR                                |
+| GPU / matériel réel      | oui (runners du mainteneur)                    | non sur runners standards (self-hosted possible) |
+| Puissance                | YAML, pipelines enfants, règles, cache local   | YAML, matrice, cache distant limité              |
+| Bus factor               | instance et runners maison, sans plugin maison | aucun service à maintenir                        |
 
-**Verdict : SURVEILLER.** [O] TeamCity se justifie par le matériel réel (GPU, sanitizers lourds) et l'investissement
-existant ; le wrapper Python est portable vers tout CI. Option à faible coût : un workflow GitHub Actions minimal
-(build + tests backend Null + CodeStyle) pour la visibilité publique, TeamCity gardant les jobs lourds. Effort **S**.
-
-Sources : <https://www.jetbrains.com/help/teamcity/licensing-policy.html> ;
-<https://www.jetbrains.com/legal/docs/teamcity/license/> ;
-<https://github.blog/changelog/2025-12-16-coming-soon-simpler-pricing-and-a-better-experience-for-github-actions/> ;
-<https://resources.github.com/actions/2026-pricing-changes-for-github-actions/>.
+**Verdict : GARDER.** [O] La migration supprime le plugin GitHub maison et le DSL Kotlin ; le wrapper Python reste
+portable. La visibilité pour un contributeur externe tient à la publication des statuts côté GitHub (décision
+ouverte, synthèse §4).
 
 ## Fiche 10 — Audio : OpenAL Soft
 
@@ -343,7 +318,7 @@ Sources : <https://github.com/wolfpld/tracy> (manuel `tracy.pdf`, section « Fea
 
 | Moteur        | Langage | Licence          | Dernière version                        | Taille d'équipe publiée                          | Architecture notable                              |
 |---------------|---------|------------------|-----------------------------------------|--------------------------------------------------|---------------------------------------------------|
-| Owl           | C++23   | MIT              | 0.4.0 (0.5.0 en développement)          | 1 auteur (420 commits, `git log`)                | EnTT, GL+Vulkan maison, Slang, Lua 5.5            |
+| Owl           | C++23   | MIT              | 0.7.0 (2026-11-13)                      | 1 auteur (`git log`)                             | EnTT, GL+Vulkan maison, Slang, Luau, Jolt         |
 | Hazel         | C++     | Apache-2.0       | public figé (dernier commit 2023-10-27) | Cherno + équipe Patreon (version privée)         | EnTT, Vulkan, C# ; ADN visible dans Owl           |
 | Godot 4       | C++     | MIT              | 4.7.2 (2026-08-18)                      | « well over 300 contributors », > 1 600 PR (4.7) | nœuds/scène, RD (Vulkan/D3D12/Metal), GDScript/C# |
 | Bevy          | Rust    | MIT/Apache-2.0   | 0.19.1 (2026-08-13)                     | 261 contributeurs, 1 185 PR (0.19, 2026-06-19)   | ECS archétypes, wgpu, pas d'éditeur complet       |
@@ -353,11 +328,11 @@ Sources : <https://github.com/wolfpld/tracy> (manuel `tracy.pdf`, section « Fea
 | Defold        | C/Lua   | Defold License   | 1.13.2 (2026-09-29)                     | Defold Foundation, équipe salariée               | Lua (LuaJIT), focalisé 2D/mobile/Web              |
 
 **Ce que les autres font mieux** [O] :
-- Plateformes : Godot, Bevy, Defold, raylib ciblent le Web ; Owl ne cible ni Web ni macOS.
+- Plateformes : Godot, Bevy, Defold, raylib ciblent le Web ; Owl ne cible ni Web ni macOS (Web et Android prévus en v0.8.0).
 - Rendu : Wicked Engine (solo aussi) montre qu'un auteur seul peut porter un rendu GPU-driven moderne en
   abandonnant OpenGL et en n'ayant qu'une abstraction mince sur D3D12/Vulkan.
-- Assets : Godot/O3DE importent et « cookent » hors-ligne, références par UID/GUID ; Owl référence ses
-  assets par chemin (GUID prévu en v0.6.0).
+- Assets : Godot/O3DE importent et « cookent » hors-ligne, références par UID/GUID ; Owl a ses GUID (`.owlmeta`) et
+  son cook depuis la v0.6.0.
 - Outils : les moteurs établis s'appuient sur des profileurs externes temps réel (Tracy, Superluminal) ; Owl dispose du backend Tracy.
 
 **Ce qu'Owl fait différemment (et défendable)** [O] :
@@ -372,18 +347,18 @@ Sources : <https://godotengine.org/releases/4.7/> ; <https://bevy.org/news/bevy-
 
 ## Synthèse
 
-| Fiche              | Verdict                                                   | Coût estimé si action     |
-|--------------------|-----------------------------------------------------------|---------------------------|
-| 1 ECS EnTT         | Garder                                                    | —                         |
-| 2 RHI GL+Vulkan    | Surveiller (OpenGL gelé, Vulkan prioritaire)              | L pour une RHI tierce     |
-| 3 Shaders Slang    | Garder (précompilé au build, compilé au besoin)           | —                         |
-| 4 Script Lua 5.5   | Garder ; surveiller Luau                                  | M si Luau                 |
-| 5 Sérialisation    | Surveiller (écriture yaml-cpp, binaire cuit en v0.6.0)    | M puis M–L                |
-| 6 Box2D v3         | Garder ; Jolt/Box3D pour la 3D                            | M (3D)                    |
-| 7 Taskflow         | Garder                                                    | M si job system frame     |
-| 8 Conan 2          | Garder                                                    | —                         |
-| 9 TeamCity         | Surveiller ; ajouter un GitHub Actions minimal            | S                         |
-| 10 OpenAL Soft     | Surveiller ; miniaudio au chantier audio                  | S–M                       |
-| 11 Profileur       | Garder (façade `OWL_PROFILE_*`, backend Tracy)            | —                         |
+| Fiche             | Verdict                                                | Coût estimé si action  |
+|-------------------|--------------------------------------------------------|------------------------|
+| 1 ECS EnTT        | Garder                                                 | —                      |
+| 2 RHI GL+Vulkan   | Surveiller (OpenGL gelé, Vulkan prioritaire)           | L pour une RHI tierce  |
+| 3 Shaders Slang   | Garder (précompilé au build, compilé au besoin)        | —                      |
+| 4 Script Luau     | Garder, un `lua_State` par entité                      | —                      |
+| 5 Sérialisation   | Surveiller (écriture yaml-cpp ; binaire cuit en place) | M                      |
+| 6 Jolt (2D et 3D) | Garder ; régler le pas 2D (P-12)                       | S–M (profil, réglages) |
+| 7 Taskflow        | Garder                                                 | M si job system frame  |
+| 8 Conan 2         | Garder                                                 | —                      |
+| 9 GitLab CI       | Garder ; statuts visibles côté GitHub à décider        | S                      |
+| 10 OpenAL Soft    | Surveiller ; miniaudio au chantier audio               | S–M                    |
+| 11 Profileur      | Garder (façade `OWL_PROFILE_*`, backend Tracy)         | —                      |
 
-À garder sans hésiter : EnTT, Box2D v3, Slang (le langage), Conan 2.
+À garder sans hésiter : EnTT, Slang (le langage), Conan 2.

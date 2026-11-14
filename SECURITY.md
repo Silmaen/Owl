@@ -6,7 +6,7 @@ Only the latest minor release gets fixes; nothing is backported to older lines.
 
 | Version                | Supported |
 |------------------------|-----------|
-| 0.6.x (latest release) | Yes       |
+| 0.7.x (latest release) | Yes       |
 | older                  | No        |
 
 ## Reporting a Vulnerability

@@ -135,6 +135,15 @@ public:
 	 */
 	[[nodiscard]] auto getTickCount() const -> uint64_t;
 
+	/**
+	 * @brief
+	 *  Follow a move of the world origin: the walk goals and the vectors of the keys a node reads as a point
+	 *  (`condition.distance`, `action.move_to`, `action.steer`) move by the opposite of the shift; the other vectors,
+	 *  directions as much as points, stay.
+	 * @param[in] iShift The move of the origin, in the old frame.
+	 */
+	void shiftOrigin(const math::vec3& iShift);
+
 private:
 	/// Forward-declared implementation.
 	struct Impl;

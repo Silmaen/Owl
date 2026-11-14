@@ -15,16 +15,20 @@ baseline on these axes; each release is expected to move the needle forward. The
 
 ## Code quality
 
-- Keep clang-tidy / clang-format clean (no new warnings, no `// NOLINT` without justification)
+- Keep clang-tidy / clang-format clean (no new warnings, no `// NOLINT` without a comment saying why)
 - Refactor away duplication and dead code as it appears (no abstractions for hypothetical needs)
 - Respect the conventions in `.claude/rules/cpp-style.md` (naming, trailing return types, smart-pointer aliases,
   `@brief` on every public API)
 - Treat every PR as an opportunity to leave the touched files cleaner than found
+- Prefer modern C++23 idioms: `std::optional`, structured bindings, `if constexpr`, `std::format`, early returns,
+  `constexpr` / `noexcept` where they apply
 
 ## Test coverage
 
 - Grow coverage alongside every new feature (no new public API without tests)
 - Maintain coverage trend upward, never downward — use `poetry run python ci_action.py Coverage <preset>` to measure
+  (`linux-gcc-debug` or `linux-clang-debug`); the Linux GCC build of a merge request and the nightly Clang Debug build
+  fail when the line coverage (`gcovr.cfg`) drops more than one point below their last successful build
 - Unit tests for pure logic, integration tests for systems that cross module boundaries
 - Fill gaps in existing modules opportunistically (backfill tests for untested paths)
 - Every bug fix lands with its regression test
@@ -72,7 +76,9 @@ that gap as a regression of the same severity as a missing test or missing publi
 The same holds for scripts ([Editor reach](editor-reach.md)): every script a scene runs and every Lua function the
 engine calls (hooks, HUD handlers, trigger and timer callbacks) is visible where it is bound, marked defined or not,
 with a button opening the code editor at its line; a value a designer tunes is a script property or a component
-field, never a constant at the top of a script.
+field, never a constant at the top of a script; a behaviour found in two scripts becomes an engine component.
+
+Pre-merge check: the new object can be authored end-to-end in Owl Nest alone, without docs, YAML, Lua or a shell.
 
 ## Every edit gesture is an editor command
 

@@ -11,6 +11,7 @@
 #include <renderer/EnvironmentMap.h>
 
 #include <array>
+#include <atomic>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -175,6 +176,17 @@ TEST(EnvironmentMap, BuildDownsamplesWideInput) {
 	const auto env = EnvironmentMap::build(makeConstantImage(4096, 2048, {1.f, 2.f, 3.f}), 1);
 	ASSERT_EQ(env.levels.size(), 1u);
 	EXPECT_EQ(env.levels[0].size, (math::vec2ui{renderer::g_maxEnvironmentWidth, renderer::g_maxEnvironmentWidth / 2}));
+}
+
+TEST(EnvironmentMap, BuildStopsWhenCancelled) {
+	const auto image = makeConstantImage(64, 32, {1.f, 1.f, 1.f});
+	// Asked from the worker threads of the rows.
+	std::atomic<size_t> asked{0};
+	const auto cancelled = EnvironmentMap::build(image, 6, 4, [&asked]() -> bool { return ++asked > 0; });
+	EXPECT_TRUE(cancelled.levels.empty());
+	EXPECT_GT(asked.load(), 0u);
+	const auto kept = EnvironmentMap::build(image, 6, 4, []() -> bool { return false; });
+	EXPECT_EQ(kept.levels.size(), 4u);
 }
 
 TEST(EnvironmentMap, BuildRejectsEmptyImage) {

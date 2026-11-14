@@ -19,11 +19,13 @@
 
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <format>
 #include <fstream>
+#include <functional>
 #include <iterator>
 #include <optional>
 #include <span>
@@ -163,16 +165,32 @@ void writeCachedAtlas(const std::filesystem::path& iPath, const std::string& iSt
 			name.size() == iStem.size() + 1 + 16 + 9)
 			std::filesystem::remove(entry.path(), error);
 	}
-	std::ofstream out(iPath, std::ios::binary | std::ios::trunc);
-	out.write(g_atlasCacheMagic.data(), g_atlasCacheMagic.size());
-	writeValue(out, g_atlasCacheVersion);
-	writeValue(out, iKey);
-	writeValue(out, iBitmap.size.x());
-	writeValue(out, iBitmap.size.y());
-	out.write(reinterpret_cast<const char*>(iBitmap.pixels.data()),
-			  static_cast<std::streamsize>(iBitmap.pixels.size()));
-	if (!out)
-		OWL_CORE_WARN("Font: Cannot write the atlas cache '{}'.", iPath.string())
+	// Written aside then renamed: processes sharing a cache directory never read a half-written atlas.
+	auto temporary = iPath;
+	temporary += std::format(".{:x}.tmp",
+							 std::hash<std::thread::id>{}(std::this_thread::get_id()) ^
+									 static_cast<size_t>(std::chrono::steady_clock::now().time_since_epoch().count()));
+	{
+		std::ofstream out(temporary, std::ios::binary | std::ios::trunc);
+		out.write(g_atlasCacheMagic.data(), g_atlasCacheMagic.size());
+		writeValue(out, g_atlasCacheVersion);
+		writeValue(out, iKey);
+		writeValue(out, iBitmap.size.x());
+		writeValue(out, iBitmap.size.y());
+		out.write(reinterpret_cast<const char*>(iBitmap.pixels.data()),
+				  static_cast<std::streamsize>(iBitmap.pixels.size()));
+		if (!out) {
+			OWL_CORE_WARN("Font: Cannot write the atlas cache '{}'.", iPath.string())
+			out.close();
+			std::filesystem::remove(temporary, error);
+			return;
+		}
+	}
+	std::filesystem::rename(temporary, iPath, error);
+	if (error) {
+		OWL_CORE_WARN("Font: Cannot write the atlas cache '{}': {}.", iPath.string(), error.message())
+		std::filesystem::remove(temporary, error);
+	}
 }
 
 auto generationThreadCount() -> int {
@@ -291,7 +309,7 @@ Font::~Font() {
 	}
 }
 
-auto Font::getAtlasCacheDirectory() -> std::filesystem::path { return platform::getUserDirectory() / "cache" / "font"; }
+auto Font::getAtlasCacheDirectory() -> std::filesystem::path { return platform::getCacheDirectory() / "font"; }
 
 auto Font::getPackedAtlasPath(const std::filesystem::path& iCacheFile) -> std::filesystem::path {
 	return std::filesystem::path{"cache"} / "font" / iCacheFile.filename();

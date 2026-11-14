@@ -1057,11 +1057,11 @@
       "items": 100,
       "batch": 1,
       "samples": 15,
-      "median_ns": 1047645.0,
-      "p25_ns": 1045200.5,
-      "p75_ns": 1048798.0,
-      "min_ns": 1044223.0,
-      "max_ns": 1057004.0
+      "median_ns": 2363282.0,
+      "p25_ns": 2230000.0,
+      "p75_ns": 2400000.0,
+      "min_ns": 2190000.0,
+      "max_ns": 2600000.0
     },
     {
       "name": "prefab/instantiate/100_entities/scene10000",
@@ -2668,6 +2668,193 @@
       "p75_ns": 139334.8,
       "min_ns": 139122.4,
       "max_ns": 139437.9
+    },
+    {
+      "name": "ai/behaviour_tree/tick/1000_agents",
+      "items": 1000,
+      "batch": 100,
+      "samples": 15,
+      "median_ns": 269252.2,
+      "p25_ns": 268847.4,
+      "p75_ns": 269810.5,
+      "min_ns": 267815.3,
+      "max_ns": 270536.8
+    },
+    {
+      "name": "ai/steering/flock/1000_agents",
+      "items": 10,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 275816499.8,
+      "p25_ns": 275140762.9,
+      "p75_ns": 277051711.8,
+      "min_ns": 274583886.5,
+      "max_ns": 277723864.0
+    },
+    {
+      "name": "physics/articulated/chain_step/10x20_links",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 39836347.9,
+      "p25_ns": 39752629.8,
+      "p75_ns": 39876881.4,
+      "min_ns": 39602837.1,
+      "max_ns": 40119046.4
+    },
+    {
+      "name": "physics/compound/assembly_step/50x8_parts",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 11103694.5,
+      "p25_ns": 11025629.1,
+      "p75_ns": 11175180.3,
+      "min_ns": 10855829.6,
+      "max_ns": 11209039.0
+    },
+    {
+      "name": "physics/compound/detach_attach/8_parts",
+      "items": 1,
+      "batch": 1310,
+      "samples": 15,
+      "median_ns": 16787.3,
+      "p25_ns": 16767.7,
+      "p75_ns": 16825.0,
+      "min_ns": 16690.5,
+      "max_ns": 16985.0
+    },
+    {
+      "name": "physics/gravity/fields_step/100_bodies_4_sources",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 5863915.4,
+      "p25_ns": 5846763.1,
+      "p75_ns": 5880102.0,
+      "min_ns": 5822122.1,
+      "max_ns": 5997986.8
+    },
+    {
+      "name": "physics/gravity/predict/1000_steps_4_sources",
+      "items": 1000,
+      "batch": 374,
+      "samples": 15,
+      "median_ns": 69552.0,
+      "p25_ns": 69520.0,
+      "p75_ns": 69600.0,
+      "min_ns": 69500.0,
+      "max_ns": 70020.0
+    },
+    {
+      "name": "physics/rollback/restore_state/1000_bodies",
+      "items": 1000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 369243.4,
+      "p25_ns": 365173.4,
+      "p75_ns": 378381.4,
+      "min_ns": 363408.5,
+      "max_ns": 420355.2
+    },
+    {
+      "name": "physics/rollback/save_state/1000_bodies",
+      "items": 1000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 268710.7,
+      "p25_ns": 263686.0,
+      "p75_ns": 281809.6,
+      "min_ns": 257797.5,
+      "max_ns": 352537.9
+    },
+    {
+      "name": "physics/step_falling_cs1/1000_bodies",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 90162856.2,
+      "p25_ns": 89943202.0,
+      "p75_ns": 90372550.9,
+      "min_ns": 89789528.0,
+      "max_ns": 90543917.3
+    },
+    {
+      "name": "physics/time_warp/hand_off/100_bodies",
+      "items": 10,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 4230931.5,
+      "p25_ns": 4205568.0,
+      "p75_ns": 4241203.6,
+      "min_ns": 4198680.5,
+      "max_ns": 4280198.9
+    },
+    {
+      "name": "physics/time_warp/rails_frame/100_bodies",
+      "items": 10,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 6576280.1,
+      "p25_ns": 6554533.4,
+      "p75_ns": 6602366.0,
+      "min_ns": 6500185.9,
+      "max_ns": 6638806.4
+    },
+    {
+      "name": "replay/live/100_bodies",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 14604231.2,
+      "p25_ns": 14576110.2,
+      "p75_ns": 14639776.1,
+      "min_ns": 14540237.8,
+      "max_ns": 14822002.1
+    },
+    {
+      "name": "replay/playback/100_bodies",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 21477768.0,
+      "p25_ns": 21442288.0,
+      "p75_ns": 21525263.0,
+      "min_ns": 21387696.0,
+      "max_ns": 21666244.0
+    },
+    {
+      "name": "replay/record/100_bodies",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 21573734.0,
+      "p25_ns": 21498048.0,
+      "p75_ns": 21622340.0,
+      "min_ns": 21467904.0,
+      "max_ns": 21830382.0
+    },
+    {
+      "name": "replay/rewind/60_frames_100_bodies",
+      "items": 60,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 27874040.0,
+      "p25_ns": 27838966.0,
+      "p75_ns": 27928843.0,
+      "min_ns": 27826302.0,
+      "max_ns": 28195468.0
+    },
+    {
+      "name": "replay/world_hash/1000_bodies",
+      "items": 1000,
+      "batch": 1,
+      "samples": 15,
+      "median_ns": 65626899.0,
+      "p25_ns": 65530875.7,
+      "p75_ns": 65652670.3,
+      "min_ns": 65467122.5,
+      "max_ns": 65805992.5
     }
   ],
   "metrics": [

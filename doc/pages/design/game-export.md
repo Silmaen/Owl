@@ -2,14 +2,9 @@
 
 [TOC]
 
-Design page for exporting a game authored in Owl Nest, summarised in the [Roadmap](../roadmap.md).
+How a game authored in Owl Nest is exported, and the design of the export to every target.
 
-## v0.3.0 — export that works end to end (correctness)
-
-Phase A of [Foundations](foundations.md). **Done**: the export has one implementation, a command line, and a test
-that plays the exported Engine Demo.
-
-### One export path
+## One export path
 
 `data::assets::pack::GameExporter` (engine) does the whole export; Owl Nest *Pack Game*, `OwlNest --export` and the
 tests call it:
@@ -34,7 +29,7 @@ flowchart LR
 - `OwlNest --export <project dir or owl_project.yml> <output dir>` runs it headless (Null backends) from the
   executable folder, so the engine assets are found whatever the current directory; exit code 0 on success.
 
-### Headless runner
+## Headless runner
 
 - `--headless` starts the runner on the Null window, renderer and sound backends.
 - `--smoke-test [frames]` plays the first scene, then every other scene of the pack, `frames` frames each (60 by
@@ -42,42 +37,22 @@ flowchart LR
   failed to load (`LogBuffer::getErrorCount`, `Application::setExitCode`).
 - The runner also exits with code 1 when `runner.yml` or the first scene is missing.
 
-### Automated test
+## Automated test
 
-`test/unit/export_tests` (CTest label `export`, about one second):
+`test/unit/export_tests` (CTest label `export`):
 
 - unit tests of `GameExporter` on a synthetic project: file layout, `runner.yml` round trip with `:` in the name,
   `pat:` relocation, stale library replacement, every `ExportError`;
 - end to end: `OwlNest --export engine_demo`, check that every scene, tileset, tilemap and script is in the
   pack without absolute path, move the game folder elsewhere, run `launch.sh --headless --smoke-test 60` from
-  another directory, and fail on a non-zero exit code or any warning / error in `Owl.log`; since v0.4.0 the same
-  run covers every `samples/*/owl_project.yml` (`GameExportEndToEnd.PlaysFromItsExportFolder`, one case per project, run in parallel).
+  another directory, and fail on a non-zero exit code or any warning / error in `Owl.log`; the same run covers every
+  sample game and project template (`GameExportEndToEnd.PlaysFromItsExportFolder`, one case per project, run in
+  parallel shards by CTest).
+- The exported binaries keep the build-tree RPATH after `$ORIGIN`; harmless, since `$ORIGIN` comes first.
 
-### Defects found by the first real export
+## What the pack holds {#game-export-content}
 
-| Defect                                                                                          | Fix                                                       |
-|-------------------------------------------------------------------------------------------------|-----------------------------------------------------------|
-| 71 sprite textures of `raycast_demo.owl` saved as absolute `pat:` paths of a developer checkout | `Texture` saves files inside an asset directory as `nam:` |
-| Same paths absent from the pack                                                                 | Export rewrites absolute `pat:` to the packed entry       |
-| `VoxelWorld` tileset and its atlas not scanned: voxel scene untextured in the game              | `AssetScanner` follows `VoxelWorld.Tileset`               |
-| Project icon only searched in the project folder (`logo/logo_owl.png` is an engine asset)       | Icon also searched in the asset directories               |
-| `runner.yml` written by hand: a `:` or `#` in the game name corrupts it                         | YAML emitter                                              |
-| Re-export kept the stale `.so` of the previous export                                           | Libraries always replaced                                 |
-| `launch.sh` added the current directory to `LD_LIBRARY_PATH` when it was empty                  | Separator only when the variable is set                   |
-| Runner returned 0 on a fatal error; missing tilemap / tileset silently ignored                  | Exit code 1, warning on missing tilemap / tileset         |
-
-### Left after v0.3.0
-
-- Rendering of the exported game: covered since Phase B by the image tests on lavapipe / llvmpipe.
-- Shaders: precompiled at build time and embedded in the pack (v0.3.0), no Slang compile at first run.
-- The exported binaries keep the build-tree RPATH after `$ORIGIN`; harmless (`$ORIGIN` comes first) but not clean.
-
-## v0.6.0 — a game ships only its content
-
-### What the pack holds {#game-export-content}
-
-Status: done. On the shipped projects a pack is about 3.3 MiB smaller than one holding every engine file (Breakout
-1.5 MiB against 4.8, Engine Demo 46 against 49): no engine font beyond the default, no viewport gizmo, no owl logo, no
+A game packs only the engine files it uses: no engine font beyond the default, no viewport gizmo, no owl logo, no
 shader of an unused renderer.
 
 | Content       | Packed                                                                                              |
@@ -87,18 +62,18 @@ shader of an unused renderer.
 | Engine images | None in the pack; the window icon is copied beside the game, the Owl logo when the project has none |
 | Owl Nest      | Nothing: icons and logos are never collected                                                        |
 
-| Decision           | Choice                                                                                                                           |
-|--------------------|----------------------------------------------------------------------------------------------------------------------------------|
-| Renderer families  | `RendererSet`: 2D family always, raycast, isometric, `Renderer3D` (mesh and voxel layers)                                        |
-| Families of a game | Layer types of its stack, plus `Renderer3D` when a scene holds an `Environment` (sky, lights)                                    |
-| Runtime            | `Renderers` in `runner.yml` → `AppParams::renderers` → `Renderer::initShaders` and layer factory                                 |
-| Shader sources     | Kept: the SPIR-V cache key hashes the source, and the runner recompiles a rejected binary (v0.8.0 removes Slang from the runner) |
-| ImGui              | Project setting `imGui` (off): `ImGui` in `runner.yml` → `AppParams::hasGui`, fonts `g_UiFontFiles`                              |
-| Checks             | `RendererSet_test`, `ExportPacksOnlyTheEngineFilesOfTheGame`; every shipped project smoke-tested on lavapipe and llvmpipe        |
+| Decision           | Choice                                                                                                                    |
+|--------------------|---------------------------------------------------------------------------------------------------------------------------|
+| Renderer families  | `RendererSet`: 2D family always, raycast, isometric, `Renderer3D` (mesh and voxel layers)                                 |
+| Families of a game | Layer types of its stack, plus `Renderer3D` when a scene holds an `Environment` (sky, lights)                             |
+| Runtime            | `Renderers` in `runner.yml` → `AppParams::renderers` → `Renderer::initShaders` and layer factory                          |
+| Shader sources     | Kept: the SPIR-V cache key hashes the source, and the runner recompiles a rejected binary                                 |
+| ImGui              | Project setting `imGui` (off): `ImGui` in `runner.yml` → `AppParams::hasGui`, fonts `g_UiFontFiles`                       |
+| Checks             | `RendererSet_test`, `ExportPacksOnlyTheEngineFilesOfTheGame`; every shipped project smoke-tested on lavapipe and llvmpipe |
 
-### Reading in the pack {#game-export-in-memory}
+## Reading in the pack {#game-export-in-memory}
 
-Status: done. The runner opens the pack and every loader reads its entries in memory; nothing is extracted, and
+The runner opens the pack and every loader reads its entries in memory; nothing is extracted, and
 nothing is written next to the game (no `assets/`, no `cache/`).
 
 | Item         | Choice                                                                                                    |
@@ -113,9 +88,9 @@ nothing is written next to the game (no `assets/`, no `cache/`).
 The lavapipe run of `GameExportEndToEnd` fails on any warning, on any shader compiled at start and on any file
 written next to the game.
 
-### Project shaders {#game-export-project-shaders}
+## Project shaders {#game-export-project-shaders}
 
-Status: done. A project shader (`<project>/shaders/<renderer>/<name>.slang`, which replaces the engine shader of the
+A project shader (`<project>/shaders/<renderer>/<name>.slang`, which replaces the engine shader of the
 same name) is compiled by the export for Vulkan and OpenGL; the game compiles no shader at start.
 
 | Item    | Choice                                                                                                    |
@@ -126,9 +101,9 @@ same name) is compiled by the export for Vulkan and OpenGL; the game compiles no
 | Failure | A shader that does not compile stops the export (`ExportError::CookFailed`)                               |
 | Report  | `ExportReport::shadersBaked`                                                                              |
 
-## v0.8.0 — export to every target
+## Export to every target (planned)
 
-Plan of the export for the five targets, summarised in the [Roadmap](../roadmap.md); the platforms themselves are in
+Design of the export for the five targets; the platforms themselves are in
 [Modding and platforms](modding-platforms.md).
 
 | Item                   | Subject                                                | Anchor                    |
@@ -157,8 +132,7 @@ Plan of the export for the five targets, summarised in the [Roadmap](../roadmap.
 
 - Every Nest package bundles the five release runners: no download, no template manager, no signed manifest; the
   versions are coupled by construction.
-- Size: about 10 MB compressed per runner once Slang is removed (measured: Linux runner and libraries 71 MB, of which
-  Slang 43 MB).
+- Size: about 10 MB compressed per runner once Slang leaves the runner (Slang is most of the runner's libraries).
 - Release pipeline: each runner is built once, then each Nest package is assembled with all of them; the Android,
   Web and arm64 runners are built at night and at release, on a pull request only when its diff touches their backend.
 - Build image: the Android NDK, emsdk, xwin with `clang-cl` and `lld-link`, and a headless browser join the build image
@@ -183,12 +157,9 @@ Rules:
   `OwlShaderBake` and the tests.
 - The runner links no Slang and fails with a clear error on a missing shader.
 
-Current state:
-
-- `OwlShaderBake` bakes the engine shaders only (SPIR-V for Vulkan and OpenGL).
-- `GameExporter` compiles the project shaders ([Project shaders](#game-export-project-shaders)); the runner still
-  links Slang to recompile a SPIR-V its driver rejects.
-- The only macro is `BACKEND_<api>`, so the variant set is finite.
+Today `OwlShaderBake` bakes the engine shaders (SPIR-V for Vulkan and OpenGL), `GameExporter` the project shaders
+([Project shaders](#game-export-project-shaders)), and the runner still links Slang to recompile a SPIR-V its driver
+rejects. The only macro is `BACKEND_<api>`, so the variant set is finite.
 
 ### Signing {#game-export-signing}
 

@@ -38,6 +38,7 @@
 #include <system_error>
 #include <thread>
 #include <tuple>
+#include <typeinfo>
 #include <utility>
 #include <vector>
 
@@ -397,10 +398,39 @@ auto currentSlot() -> CallSlot& {
 	return registerCurrentThread();
 }
 
-void panicHandler(lua_State* iState, [[maybe_unused]] const int iErrorCode) {
-	const char* message = lua_tostring(iState, -1);
-	OWL_CORE_CRITICAL("Lua: Unprotected Lua error: {}.", message != nullptr ? message : "(not a string)")
+// The type of the C++ exception a Lua error is (internal to Luau): read once from an error raised on a probe state.
+auto luaErrorType() -> const std::type_info& {
+	static const std::type_info& type = []() -> const std::type_info& {
+		lua_State* probe = luaL_newstate();
+		if (probe == nullptr)
+			return typeid(void);
+		const std::type_info* thrown = &typeid(void);
+		try {
+			lua_pushliteral(probe, "probe");
+			lua_error(probe);
+		} catch (const std::exception& exception) { thrown = &typeid(exception); }
+		lua_close(probe);
+		return *thrown;
+	}();
+	return type;
 }
+
+// Restores the memory enforcement of a state when the scope ends, an error unwinding it included.
+class EnforcementLift final {
+public:
+	explicit EnforcementLift(LuaEngine::Quota& ioQuota) : m_quota{ioQuota}, m_enforced{ioQuota.enforced} {
+		m_quota.enforced = false;
+	}
+	EnforcementLift(const EnforcementLift&) = delete;
+	EnforcementLift(EnforcementLift&&) = delete;
+	auto operator=(const EnforcementLift&) -> EnforcementLift& = delete;
+	auto operator=(EnforcementLift&&) -> EnforcementLift& = delete;
+	~EnforcementLift() { m_quota.enforced = m_enforced; }
+
+private:
+	LuaEngine::Quota& m_quota;
+	bool m_enforced;
+};
 
 auto messageHandler(lua_State* iState) -> int {
 	auto* quota = quotaOf(iState);
@@ -638,7 +668,6 @@ LuaEngine::LuaEngine(const ScriptQuotas& iQuotas)
 		return;
 	}
 	auto* callbacks = lua_callbacks(mp_state);
-	callbacks->panic = panicHandler;
 	callbacks->debugbreak = breakCallback;
 	openSandboxedLibraries(mp_state);
 	lua_pushcfunction(mp_state, messageHandler);
@@ -692,24 +721,16 @@ void LuaEngine::restartCallClock(lua_State* iState) {
 }
 
 auto LuaEngine::callGuarded(lua_State* iState, int (*iFunction)(lua_State*)) -> int {
-	auto* quota = quotaOf(iState);
-	const bool enforced = quota->enforced;
-	quota->enforced = false;
-	bool failed = false;
-	int results = 0;
+	const EnforcementLift lift{*quotaOf(iState)};
 	try {
-		results = iFunction(iState);
+		return iFunction(iState);
 	} catch (const std::exception& exception) {
+		// A Lua error goes on unchanged (status, error object): Luau catches it at the protected call.
+		if (typeid(exception) == luaErrorType())
+			throw;
 		lua_pushfstring(iState, "C++ exception: %s", exception.what());
-		failed = true;
-	} catch (...) {
-		lua_pushliteral(iState, "unknown C++ exception");
-		failed = true;
-	}
-	quota->enforced = enforced;
-	if (failed)
-		lua_error(iState);
-	return results;
+	} catch (...) { lua_pushliteral(iState, "unknown C++ exception"); }
+	lua_error(iState);
 }
 
 void LuaEngine::registerTable(lua_State* iState, const char* iTableName, const luaL_Reg* iFunctions, const int iCount) {

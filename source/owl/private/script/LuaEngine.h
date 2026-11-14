@@ -155,9 +155,9 @@ public:
 	 * @brief
 	 *  Register C functions as a global table, each wrapped in the exception trampoline.
 	 *
-	 * The trampoline catches any C++ exception thrown by the function and raises it as a Lua error once
-	 * the C++ frames are gone, and lifts the memory ceiling while the function runs, so that only an
-	 * argument check (`luaL_check*`, raised before any non-trivial local exists) can unwind its frame.
+	 * The trampoline raises any other C++ exception thrown by the function as a Lua error (`C++ exception: ...`),
+	 * lets a Lua error (`luaL_check*`, `luaL_error`, itself a C++ exception) go on unchanged, and lifts the memory
+	 * ceiling while the function runs. Either way the destructors of the function's objects run.
 	 * @param[in] iState The Lua state.
 	 * @param[in] iTableName Name of the global table.
 	 * @param[in] iFunctions Null-terminated list of functions.

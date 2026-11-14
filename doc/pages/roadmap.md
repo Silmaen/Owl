@@ -131,7 +131,7 @@ the templates, the shaders per target, Android and the Web.
 - ![Planned][planned] Lua mod API (custom components, game event hooks, sandboxed)
 - ![Planned][planned] In-game mod manager (enable / disable / reorder, conflict detection)
 
-## v0.7.0 -- Expected 2026-11-22
+## v0.7.0 -- 2026-11-15
 
 **Goal:** Physics, simulation and AI — 2D and 3D physics and AI as optional modules outside `Scene`, on a
 deterministic simulation with input replay and rewind; articulated bodies, gravity and time warp for worlds of any
@@ -189,88 +189,6 @@ deterministic simulation and replay, Jolt, gravity fields.
 - ![Done][done] Asteroid field sample game ([Asteroid field](design/sample-games.md#sample-games-asteroid-field))
 - ![Done][done] One-room Zelda-like sample game ([Zelda-like](design/sample-games.md#sample-games-zelda-like))
 - ![Done][done] Tower defence, rail shooter and point-and-click on steering and NavMesh
-  ([Updates](design/sample-games.md#sample-games-updates-v070))
-
-## v0.6.0 -- 2026-11-03
-
-**Goal:** Produce content at scale and script games without C++: offline asset pipeline, animation and effects,
-procedural graphs, tile tools, Lua editor scripts, Blueprints-style visual scripting compiled to Lua; then the content
-side of large worlds, audio, dialogue and cutscenes, accessibility ([large worlds](design/large-worlds.md),
-[gameplay systems](design/gameplay-systems.md)).
-
-- ![Done][done] CI: one GCC build (Debug, tests, coverage), a fast first stage, a quick check for agents
-  ([CI streamlining](design/ci-streamlining.md#ci-streamlining-cost-review))
-- ![Done][done] Offline asset pipeline: cook, content-addressed cache, asset GUIDs, KTX2 BC7/ASTC texture compression
-  ([Content](design/content-pipeline.md))
-- ![Done][done] Binary runtime scene format produced by the cook
-- ![Done][done] A game packs only what it uses: shaders of its renderer stack, its fonts, no Owl Nest asset
-  ([Game export](design/game-export.md#game-export-content))
-- ![Done][done] Games read their assets from the pack in memory, with a parallel `readEntry`; nothing extracted to disk
-  ([Game export](design/game-export.md#game-export-in-memory))
-- ![Done][done] Project shaders baked by the cook, no shader compiled at the first run of a game
-  ([Game export](design/game-export.md#game-export-project-shaders))
-- ![Done][done] Localisation of games: string tables edited in Owl Nest, `tr()` in Lua, fonts per language
-  ([Localisation](design/localisation.md))
-- ![Done][done] World positions in double with a floating origin, through scene, physics, audio and Owl Nest
-  ([Large worlds](design/large-worlds.md))
-- ![Done][done] Spline component and its editor: paths, lanes, rails ([Large worlds](design/large-worlds.md#large-worlds-splines))
-- ![Done][done] Data tables: typed records edited in a grid in Owl Nest, read from Lua
-  ([Large worlds](design/large-worlds.md#large-worlds-data-tables))
-- ![Done][done] Mesh sockets: named attachment points, entities assembled at runtime
-  ([Skeletal animation](design/skeletal-animation.md))
-- ![Done][done] World partition: streaming cells on world coordinates, additive scenes loaded around the player
-  ([World partition](design/large-worlds.md#world-partition))
-- ![Done][done] Planetary terrain layer: cube-sphere quadtree LOD from PCG graphs, atmospheric scattering, scaled
-  space ([Large worlds](design/large-worlds.md#planetary-terrain))
-- ![Done][done] Skeletal animation (skinning, blending, state machine) and mesh LODs
-  ([Skeletal animation](design/skeletal-animation.md))
-- ![Done][done] GPU particle system with editor preview and trails, emissive materials and lens flares
-  ([Effects](design/gpu-effects.md))
-- ![Done][done] Audio mixer (buses, per-bus volume, crossfades) ([Gameplay systems](design/gameplay-systems.md))
-- ![Done][done] Audio effects (reverb zones, low / high-pass filters, Doppler) and adaptive music driven by game
-  states ([Gameplay systems](design/gameplay-systems.md))
-- ![Done][done] Dialogue system with a visual editor (`.owldlg`) ([Gameplay systems](design/gameplay-systems.md))
-- ![Done][done] Camera tracks in the sequencer, for cutscenes ([Large worlds](design/large-worlds.md#large-worlds-sequences))
-- ![Done][done] HUD markers anchored to world entities, with off-screen indicators
-  ([HUD system](design/hud-system.md#world-markers))
-- ![Done][done] Accessibility: UI scale, colour-blind modes, subtitles, reduced motion
-  ([Accessibility](design/accessibility.md))
-- ![Done][done] HUD themes and skinned widgets: rounded corners, gradients, shadows, nine-slice, a skin for the Engine
-  Demo menus ([HUD system](design/hud-system.md#hud-themes))
-- ![Done][done] Settings, logs and caches stay in the application folder, with an import of the settings of a
-  previous version ([User directory](architecture.md#architecture-user-directory))
-- ![Done][done] Advanced post-processing (chromatic aberration, film grain, motion blur, depth of field)
-- ![Done][done] Angular radius of a directional light: soft shadows (PCSS), wider highlight, sun disc in the sky
-  ([3D core](design/3d-core.md#emissive-and-area-lights))
-- ![Done][done] Area lights (rectangle, disc, sphere) lighting through LTC, with soft shadows sharing the PCSS of the
-  sun ([3D core](design/3d-core.md#emissive-and-area-lights))
-- ![Done][done] Point and spot light shadows (cube and perspective shadow maps)
-  ([3D core](design/3d-core.md#emissive-and-area-lights))
-- ![Done][done] Local reflection probes: baked cube maps blended by volume, parallax-corrected, so metals reflect the
-  room ([3D core](design/3d-core.md#reflection-probes))
-- ![Done][done] Visual scripting MVP, event graphs compiled to Lua, node editing of assets
-  ([details](design/visual-scripting.md))
-- ![Done][done] Node-graph link waypoints, in visual scripts, PCG graphs and every node graph
-- ![Done][done] Scene Flow view removed: it showed few of the scene links of a real project
-- ![Done][done] Script debugging aids (breakpoint markers, live watch)
-- ![Done][done] Lua editor scripts and interactive Lua console ([Editor scripting](design/editor-scripting.md))
-- ![Done][done] Procedural generation graphs on `NodeCanvas`, first brick on tilemaps
-  ([PCG graphs](design/pcg-graphs.md))
-- ![Done][done] Tileset editor: compose the atlas from source images ([2D](design/2d-complete.md))
-- ![Done][done] Mipmapped pixel-art atlases: sharp texels up close, filtered mips far away, no bleeding between tiles,
-  for the voxel, raycast and tilemap atlases ([2D](design/2d-complete.md#pixel-art-atlases))
-- ![Done][done] Sound editor in Owl Nest: preview, trim, loop points, volume and pitch, random variants of one sound
-- ![Done][done] Engine Demo revamp: every scene reached from the world map and back, the isolated scenes folded
-  into the hub and the tavern, an observatory, a live main menu ([Engine Demo](design/sample-games.md#sample-games-demo-revamp))
-- ![Done][done] 2D walkable areas: polygons with holes, paths across them, scale by depth, edited in Owl Nest
-  ([2D](design/2d-complete.md#walkable-areas-2d))
-- ![Done][done] Rail shooter sample game ([Rail shooter](design/sample-games.md#sample-games-rail-shooter))
-- ![Done][done] Point-and-click sample game ([Point-and-click](design/sample-games.md#sample-games-point-and-click))
-- ![Done][done] Earlier sample games on the new features: particles, mixer buses, data tables, dialogues, HUD
-  markers, accessibility ([Improvements](design/sample-games.md#sample-games-improvements))
-- ![Done][done] Sample games picked from the pool: Ring Runner, the rail shooter
-  ([Rail shooter](design/sample-games.md#sample-games-rail-shooter)), and The Moon Lantern, the point-and-click
-  ([Point-and-click](design/sample-games.md#sample-games-point-and-click))
 
 ## Earlier versions
 

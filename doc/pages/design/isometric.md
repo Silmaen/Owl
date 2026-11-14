@@ -2,23 +2,13 @@
 
 [TOC]
 
-Design page for the v0.4.0 isometric renderer, summarised in the [Roadmap](../roadmap.md). The pull requests, their
-order and the budgets are in [Isometric worlds](isometric-worlds.md) (ISO1 to ISO5, on top of TM1 / TM2).
+Design of the isometric renderer, a rendering mode in the **Transport Tycoon Deluxe** tradition, mixable with the 2D,
+raycast, voxel and 3D layers through the renderer stack. It carries a Transport Tycoon-like game: large tile maps with
+slopes, tracks and roads on the tiles, buildings wider and taller than a tile, thousands of moving vehicles, zoom and
+smooth scroll. The user guide is in [Renderer > Isometric layer](../renderer.md#renderer-isometric); the 2D lights on
+the isometric sprites are in [2D complete](2d-complete.md).
 
-## Goal
-
-Add a third non-2D rendering mode — an isometric renderer in the **Transport Tycoon Deluxe** tradition — slotted
-between the existing 2D / raycast / voxel options and mixable with them through the renderer stack. The target is an
-engine able to carry a Transport Tycoon-like game: large tile maps with slopes, tracks and roads on the tiles,
-buildings wider and taller than a tile, thousands of moving vehicles, zoom and smooth scroll, and modern rendering
-later (lights, day / night, shadows, 3D meshes under the same camera).
-
-The first step on the unmerged `Feature/KickoffIsometricRenderer` branch (2026-06) is **rewritten** on v0.3.0: only
-`worldToScreen` / `screenToWorld` and their tests are ported, then the branch is deleted.
-
-## Specification
-
-### Layer and camera
+## Layer and camera
 
 - `RendererIsometricLayer`, factory key `"RendererIsometric"`: scenes mix it with the other layers by listing it in
   `owl_project.yml` and tagging entities with the matching `RendererTag`. It draws from its own `onRender`, not from
@@ -33,12 +23,13 @@ The first step on the unmerged `Feature/KickoffIsometricRenderer` branch (2026-0
 - Layer config keys `TileWidth`, `TileHeight`, `ZStep` and `Zoom` (power-of-two level, −4 to 4). In Play the camera
   target is the scene camera's position, Z dropped; the editor hands its own `IsometricCamera`, used as is.
 
-### Draw order
+## Draw order
 
 - Depth test with alpha cutout: every sprite writes its isometric depth (diagonal, height, sub-layer), so opaque and
   cut-out sprites — the whole Transport Tycoon look — draw without sorting. Only translucent sprites (smoke, glass,
   previews) are sorted back to front on the CPU.
-- Terrain chunks have a static order and are never sorted per frame; they live in persistent GPU buffers (below).
+- Terrain chunks have a static order and are never sorted per frame; they live in persistent GPU buffers
+  ([Terrain](#isometric-terrain)).
 - Pre-rendered sprites are billboards anchored at their world foot point; they are never pushed through the dimetric
   matrix a second time. Each corner takes the depth of a plane through the foot: vertical, facing the viewer, for an
   upright sprite; the ground plane for a flat terrain tile. Tilemap layers are depth sub-layers a sixteenth of a view
@@ -52,7 +43,7 @@ The first step on the unmerged `Feature/KickoffIsometricRenderer` branch (2026-0
 - The foot of every sprite and tile snaps to whole screen pixels at an integer zoom (level 0 and above), so a moving
   sprite never shimmers; below zoom 1 the projection is left alone.
 
-### Objects
+## Objects
 
 - An object sheet is the `buildings.json` of the generator: for each building its footprint and one slice per footprint
   tile (`cell`, `rect` in the sheet, `anchor`, `box` = the 3D box of the slice in tiles). `renderer::IsometricObjectSet`
@@ -67,13 +58,12 @@ The first step on the unmerged `Feature/KickoffIsometricRenderer` branch (2026-0
   are undoable, and the entity is picked in the viewport through the entity id the slices write. A pack includes the
   sheet and the `.png` beside it.
 - Vehicles are plain `SpriteRenderer` / `AnimatedSpriteRenderer` entities: opaque ones leave the layer as compact
-  sprites. `tools/iso_atlas` writes `vehicles.png`, an 8 × 2 sheet of 64 × 64 cells (car and truck, one frame every 45° from +x
-  towards +y, so the front and the back are drawn right); the vehicle is centred on its tile, whose front corner is the
-  bottom centre of the cell and where the entity sits (`body + 0.5`). On screen +x runs to the lower right and +y to
-  the lower left, so the right hand of a heading `(dx, dy)` is `(-dy, dx)`: `iso_town_traffic.lua` keeps to the right with
-  that lane offset and turns corners on a quarter circle, picking the frame with `isometric.set_sprite_frame`.
+  sprites. The vehicle sheet of `tools/iso_atlas` is an 8 × 2 sheet of 64 × 64 cells (car and truck, one frame every
+  45° from +x towards +y); the vehicle is centred on its tile, whose front corner is the bottom centre of the cell and
+  where the entity sits (`body + 0.5`). On screen +x runs to the lower right and +y to the lower left, so the right hand
+  of a heading `(dx, dy)` is `(-dy, dx)`; a script picks the frame with `isometric.set_sprite_frame`.
 
-### Terrain
+## Terrain {#isometric-terrain}
 
 - Heights belong to the map: `TilemapAsset` holds a `(W+1)×(H+1)` grid of corner heights (`uint8_t` steps of 0.5
   world unit, 8 pixels at 2:1, empty while the map is flat); a cell's slope is derived from its four corners — 15
@@ -89,21 +79,39 @@ The first step on the unmerged `Feature/KickoffIsometricRenderer` branch (2026-0
   without a table is its own tile index) and holds the foundation sprites: a cell whose flag bit 0
   (`foundationFlag`) is set draws its foundation instead of the slope tile, under a building standing on a slope.
   A sloped tile is drawn on the lowest corner of its cell, so an isometric tileset has tiles taller than the diamond
-  (the sample uses 64×48, two steps of headroom).
-- Track and road overlays are the overlay ids of the tilemap cells (TM2): drawn right after the terrain of the same
-  cell, half a sub-layer above it, through the same (id, slope) table, so they follow the slope.
-- Map storage is the chunked format of TM2 (structure of arrays, binary chunks), version 3 with the corner heights
-  after the chunks, up to 1024² in v0.4.0; 4096² maps wait for the v0.6.0 content pipeline on the same storage interface.
+  (64×48 in the demo, two steps of headroom).
+- Track and road overlays are the overlay ids of the tilemap cells: drawn right after the terrain of the same cell,
+  half a sub-layer above it, through the same (id, slope) table, so they follow the slope.
+- Map storage is the chunked tilemap format (structure of arrays, binary chunks), version 3 with the corner heights
+  after the chunks.
+- Chunk buffers: per layer and 32 x 32 chunk, a persistent instance buffer of 32 bytes per tile (foot in map space,
+  height of the lowest corner, depth bias, texture rectangle; `tile.slang`). What the cells of a map share (origin,
+  sprite size, depth slope, entity id) is in the per-draw uniform block, so a moved map, a new camera or another
+  presentation rebuild nothing. `Scene::prepareTilemapRenderData` builds and uploads, before any layer draws, the
+  chunks whose cell generation, corner-height generation (`TilemapAsset::getChunkHeightGeneration`, stamped on the up to
+  four chunks around a changed corner) or tileset (layout, slope tables) changed: a static frame uploads nothing, a
+  one-cell edit one chunk, and the frame draws one instanced call per chunk in view. A map drawn without a prepare is
+  built at draw time and counted as a late build.
 
-### Picking
+## Road junctions
+
+The road overlay has 16 shapes, one per neighbour mask (bits N = -y, E = +x, S = +y, W = -x): ids 3 (E+W) and 11
+(N+S), then 12 alone, 13-16 dead ends N/E/S/W, 17-20 corners NE/ES/SW/WN, 21-24 T missing W/N/E/S (NES, ESW, SWN, WNE),
+25 cross. The asphalt fills the cell, an edge line closes every side that leads nowhere and the dashed centre line runs
+to every joined side. All of them exist on every slope: the pattern is drawn in world coordinates, so a junction on a
+ramp is as well defined as a straight piece. `iso_town.lua` tiles a cell from its mask and re-tiles the four neighbours
+when a road is built or bulldozed; the `navigation` rules of the scene list the arms of each tile (`exits` the arms,
+`enters` their opposites).
+
+## Picking
 
 - Tiles: `scene::terrain::pickTerrain` walks the cells under the screen ray (a 2D traversal clipped to the height range
   of the map) and intersects it with the two triangles of each candidate cell, split along the diagonal whose corners are
   the closest in height; it returns the cell, the nearest corner and the world point. Pure CPU, tested headless on the 19
-  slopes, 83 ns per pick on a 256² map with hills (bench `iso/pick`, budget 20 µs).
+  slopes, bench `iso/pick`.
 - Entities keep the entity-id framebuffer picking.
 
-### Editor
+## Editor
 
 - Isometric viewport mode when the scene's stack holds an isometric layer: dimetric projection locked in Edit,
   world-axis cursor, tile highlight; the gizmo receives the layer's view and projection.
@@ -111,105 +119,33 @@ The first step on the unmerged `Feature/KickoffIsometricRenderer` branch (2026-0
   overlay brush; `TilesetDocument`: kind and (terrain, slope) table. Every edit is undoable
   (`commands::ModifyTerrainHeightsCommand` keeps only the corners a gesture moved).
 
-### Assets and demo
+## Atlas generator
 
-- Procedural Python generator under `tools/` (Poetry, Pillow), seeded and deterministic, output committed: terrain ×
-  19 slopes, foundations, tracks and roads, a few sliced buildings, vehicles. It writes albedo plus normal and depth
-  atlases on the same grid, one set per zoom level or mips.
-- `engine_demo/scenes/iso_town.owl`: a Transport Tycoon-style town on a 24×24 sloped map (a hill, a one-step embankment under the north street), a ring
-  road and two streets along both axes, buildings from the generated sheet, three vehicles looping on the ring, a mouse
-  / keyboard / gamepad "build road" and bulldoze tool in Lua, its own `.owlhud`, and a 2D sky with clouds behind the
-  isometric layer. Game rules stay in Lua in the Engine Demo; the Lua `isometric` table (pick, cells, slope,
-  height) is the only engine support. A raycast or voxel layer cannot join the stack of this scene: both cast from a
-  first-person camera, the town has an orthographic one.
-
-### Tests
-
-Layer factory registration, scene round-trip with `EnabledRenderers: [{ Name: iso, Type: RendererIsometric }]`, the
-projection helpers on both Y conventions, slope derivation and picking on the 19 slopes, tileset and tilemap format
-migrations, image tests on lavapipe and llvmpipe with zero validation message, and the `iso/*` benches.
-
-## Status
-
-ISO1 (2026-10-14) shipped the layer, the camera, the billboards with depth and cutout, the translucent sort, the
-ported projection helpers, `Tileset::kind`, the isometric viewport mode of Owl Nest, an `iso_test.owl` demo scene (removed
-since, its map kept by the render tests) and the `isometric` image test on both backends. Isometric tilemaps keep one persistent GPU instance buffer per 32 x 32
-chunk and layer, uploaded in the prepare phase only when a chunk changed (see the ISO5 chunk buffers below).
-
-ISO2 (2026-10-15) added the corner heights (tilemap format 3), the 19 slopes, terraforming, the (terrain, slope) table
-and foundations of the tileset, overlays drawn along the slope, `pickTerrain` (bench `iso/pick`), the isometric preview
-and the terraforming tools of `TilemapDocument`, the slope table of `TilesetDocument`, and the sloped `iso_test.owl`
-(an 8×8 map with a hump under the house on a foundation, a ridge and a road climbing a ramp); the `isometric` image
-references show the sloped sample map.
-
-ISO3 (2026-10-15) added the atlas generator `tools/iso_atlas`, run from the repository root with
-`./docker_run.sh poetry run python -m tools.iso_atlas [--project engine_demo] [--seed 1] [--levels 1x,2x,half]` (default `1x`).
-It writes into `textures/iso/`, `tilesets/` and `tilemaps/` of the project:
+`tools/iso_atlas` is a seeded, deterministic Python generator (Poetry, Pillow), output committed, run from the
+repository root with `./docker_run.sh poetry run python -m tools.iso_atlas [--project engine_demo] [--seed 1]
+[--levels 1x,2x,half]` (default `1x`). It writes into `textures/iso/`, `tilesets/` and `tilemaps/` of the project:
 
 | Output                                 | Content                                                                                                                                    |
 |----------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------|
-| `tiles.png`                            | 16-column atlas of 64×48 tiles: 26 flat terrains (road shapes included), 18 slopes of 24 terrains, 2 foundation sets                       |
-| `buildings.png`, `buildings.json`      | Per-footprint-tile slices (64×128) of five buildings, with each slice's 3D box and rectangle                                               |
+| `tiles.png`                            | 16-column atlas of 64×48 tiles: flat terrains (road shapes included), slopes, foundation sets                                              |
+| `buildings.png`, `buildings.json`      | Per-footprint-tile slices (64×128) of the buildings, with each slice's 3D box and rectangle                                                |
 | `cottage`, `tower`, `oak`, `pine`, `…` | Whole sprites, bottom centre on the front corner of the footprint                                                                          |
+| `vehicles.png`                         | The vehicle sheet                                                                                                                          |
 | `smoke.png`                            | Translucent puff                                                                                                                           |
 | `*_normal.png`, `*_depth.png`          | Same grid as the albedo; normals are world space (`n * 0.5 + 0.5`), depth is the height above the sprite's ground (`z / 8 * 255`)          |
 | `@2x`, `@0.5x` suffixes                | `--levels 2x,half`: atlases drawn natively at twice the size, and the mip at half the size, with their tilesets (the demo keeps `1x` only) |
 
-The same seed always gives the same pixels (pytest hash in `tools/tests/`); the sample map `iso_test.owltilemap` is
-written by the same run (the render tests keep it in `test/unit/test_helper/assets/render_tests`, the demo no longer has the scene). Nothing reads the normal and depth atlases yet (v0.5.0 lights).
+The same seed always gives the same pixels (pytest hash in `tools/tests/`).
 
-ISO4 (2026-10-15) added the objects: `IsometricObjectSet` and the `IsometricObject` component with its inspector, the
-compact `IsometricSprite` and `RendererIsometric::drawSprite` / `drawSprites` / `drawObject` (`sprite.slang`), pixel
-snapping at integer zoom in both shaders, the vehicle sheet of the generator, the `iso_test.owl` buildings from slices
-and three vehicles driven by `iso_vehicle.lua`, and the `isometric_objects` image test (640 × 360, both backends; the
-`isometric` references did not change). Measured on the Null backend (1920 × 1080, 512² map with hills, one P-core):
+## Demo and tests
 
-| Case                                             | Median  | Budget |
-|--------------------------------------------------|---------|--------|
-| Frame, zoom 1, no vehicle                        | 0.21 ms | < 1 ms |
-| Frame, zoom 1, 5 000 vehicles over the whole map | 0.26 ms | < 2 ms |
-| Frame, zoom 1, 5 000 vehicles in view            | 0.31 ms | < 2 ms |
-| Frame, zoomed out ×4 (51 200 cells in 3 chunks)  | 1.42 ms | < 4 ms |
-| 1 000 buildings of 3 slices (3 000 sprites)      | 63 µs   | -      |
+`engine_demo/scenes/iso_town.owl` is a Transport Tycoon-style town on a sloped map: a ring road and streets, buildings
+from the generated sheet, vehicles looping on the ring, a "build road" and bulldoze tool in Lua with its own `.owlhud`,
+and a 2D sky behind the isometric layer. Game rules stay in Lua; the Lua `isometric` table (pick, cells, slope, height)
+is the only engine support. A raycast or voxel layer cannot join the stack of this scene: both cast from a first-person
+camera, the town has an orthographic one.
 
-These entries entered `test/bench/baseline/linux-bench.json` as an estimate (this run scaled by the agent ratio of
-`renderer2d/quads_color`); the state of the baseline is kept in `test/bench/README.md`.
-
-ISO5 chunk buffers (2026-10-16): a tilemap of the isometric layer keeps, per layer and 32 x 32 chunk, a persistent
-instance buffer of 32 bytes per tile (foot in map space, height of the lowest corner, depth bias, texture rectangle;
-`tile.slang`). What the cells of a map share (origin, sprite size, depth slope, entity id) is in the per-draw uniform
-block, so a moved map, a new camera or another presentation rebuild nothing. `Scene::prepareTilemapRenderData` builds
-and uploads, before any layer draws, the chunks whose cell generation, corner-height generation
-(`TilemapAsset::getChunkHeightGeneration`, stamped on the up to four chunks around a changed corner) or tileset
-(layout, slope tables) changed: a static frame uploads 0 byte, a one-cell edit one chunk, and the frame draws one
-instanced call per chunk in view. A map drawn without a prepare is built at draw time and counted as a late build.
-Same Null-backend measures as above:
-
-| Case                                             | Before  | After  | Budget |
-|--------------------------------------------------|---------|--------|--------|
-| Frame, zoom 1, no vehicle                        | 218 µs  | 16 µs  | < 1 ms |
-| Frame, zoom 1, 5 000 vehicles over the whole map | 267 µs  | 125 µs | < 2 ms |
-| Frame, zoom 1, 5 000 vehicles in view            | 308 µs  | 178 µs | < 2 ms |
-| Frame, zoomed out ×4 (51 200 cells in 3 chunks)  | 1.43 ms | 17 µs  | < 4 ms |
-
-Road junctions (Experiment/RoadJunctions): the road overlay has 16 shapes, one per neighbour mask (bits N = -y, E = +x,
-S = +y, W = -x): ids 3 (E+W) and 11 (N+S) as before, then 12 alone, 13-16 dead ends N/E/S/W, 17-20 corners NE/ES/SW/WN,
-21-24 T missing W/N/E/S (NES, ESW, SWN, WNE), 25 cross. The asphalt fills the cell, an edge line closes every side that
-leads nowhere and the dashed centre line runs to every joined side. All of them exist on every slope: the pattern is
-drawn in world coordinates, so a junction on a ramp is as well defined as a straight piece (the tileset grows from 228
-to 494 tiles). `iso_town.lua` tiles a cell from its mask and re-tiles the four neighbours when a road is built or
-bulldozed; the `navigation` rules of the scene list the arms of each tile (`exits` the arms, `enters` their opposites).
-
-ISO5 demo (2026-10-16): `engine_demo/scenes/iso_town.owl` (**O** from the main menu), the road along Y, a `marker`
-prop and `iso_town.owltilemap` from the generator, `scripts/iso/iso_town.lua`, and `iso_town_traffic.lua`,
-`huds/iso_town.owlhud`, the `build`, `bulldoze`, `town_tool` and `cursor` actions, the Lua `isometric.*` functions and
-`ui.is_mouse_over_ui`, the `iso_town` and `iso_town_actions` scenarios and the `iso_town` image test (640 × 360, both
-backends).
-
-## Later
-
-- v0.5.0: normal-mapped isometric sprites under the 2D lights, from the generator's normal atlas; day / night as an
-  ambient tint (tile-graph pathfinding shipped in v0.4.0, see [Pathfinding](../pathfinding.md)).
-- v0.5.0: 3D meshes drawn under the same camera into the same depth buffer; shadows from the depth atlas or from
-  shadow maps.
-- v0.6.0: 4096² maps from the content pipeline; procedural terrain heights from the [PCG graphs](pcg-graphs.md).
+Tests cover the layer factory registration, the scene round-trip with
+`EnabledRenderers: [{ Name: iso, Type: RendererIsometric }]`, the projection helpers on both Y conventions, slope
+derivation and picking on the 19 slopes, tileset and tilemap format migrations, image tests on lavapipe and llvmpipe
+with zero validation message, and the `iso/*` benches.

@@ -2,10 +2,9 @@
 
 [TOC]
 
-Design page for the procedural content generation (PCG) graphs, summarised in the [Roadmap](../roadmap.md). The user
-guide is [PCG graphs](../pcg_graphs.md).
+Design of the procedural content generation (PCG) graphs. The user guide is [PCG graphs](../pcg_graphs.md).
 
-## v0.6.0 — what exists
+## Graphs
 
 A `.owlpcg` graph, edited on the `NodeCanvas` of Owl Nest, fills a region of a tilemap from a seed.
 
@@ -24,8 +23,5 @@ A `.owlpcg` graph, edited on the `NodeCanvas` of Owl Nest, fills a region of a t
 The graph is non-destructive and the output is regular tile content, so a generated tilemap can be edited by hand
 afterwards. The preview is drawn on the canvas of the tilemap document.
 
-## Later
-
-- Prefab and voxel outputs: placement of prefabs from points, voxel biomes and caves
-- Isometric terrain heights as an output (the planet height output exists)
-- Live preview of the generation in the scene viewport
+There are no prefab or voxel outputs, no isometric terrain height output (the planet height output exists) and no
+live preview of the generation in the scene viewport.

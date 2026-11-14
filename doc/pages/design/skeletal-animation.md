@@ -2,11 +2,9 @@
 
 [TOC]
 
-Design page of three v0.6.0 items of the [Roadmap](../roadmap.md): skeletal animation (skinning, blending, a state
-machine), mesh levels of detail produced by the cook, and mesh sockets. It details the *Animation* section of the
-[Content pipeline](content-pipeline.md) and the sockets of [Large worlds](large-worlds.md#assembly-and-articulated-bodies)
-(compound bodies, joints and the other physics parts of that section are v0.7.0). User guide:
-[Skinned meshes](../skinned_meshes.md).
+Design of skeletal animation (skinning, blending, a state machine), mesh levels of detail produced by the cook, and
+mesh sockets. Assembled parts, compound bodies and joints are in [Physics API](physics-api.md#physics-api-articulated-bodies).
+User guide: [Skinned meshes](../skinned_meshes.md).
 
 ```mermaid
 flowchart LR
@@ -21,20 +19,19 @@ flowchart LR
     K --> M["MeshResource LOD meshes<br/>picked by screen size"]
 ```
 
-## Delivery
+## Parts
 
-| Step              | Content                                                                                           | Status |
-|-------------------|---------------------------------------------------------------------------------------------------|--------|
-| 1. Animation data | `data::animation`: `Skeleton`, `Pose`, `SkeletalClip` sampling, pose blending, skin matrices      | Done   |
-| 2. Import         | `MeshLoader` reads the first glTF skin, its animations and the `socket_*` nodes into `LoadedMesh` | Done   |
-| 3. GPU skinning   | `skinned3d.slang`, `Renderer3D::createSkinnedMesh` / `drawSkinnedMesh`, palette at binding 5      | Done   |
-| 4. State machine  | `data::animation::StateMachine` and its player: states, parameters, conditions, cross-fades       | Done   |
-| 5. Animator       | `Animator` component and the `owl.animation` system, skinned draws of `MeshRenderer`              | Done   |
-| 6. Mesh LODs      | `data::geometry::buildMeshLods`, the mesh cook (`OWLM`), `MeshResource` LOD meshes, screen size   | Done   |
-| 7. Sockets        | `MeshSockets`, `SocketAttachment`, `Scene::attachToSocket`, the `owl.sockets` system              | Done   |
-| 8. Lua            | `animator.*` and `socket.*` tables                                                                | Done   |
-| 9. Owl Nest       | Skeleton view, clip timeline, LOD preview, inspectors, socket gizmo (`entity.set_socket`)         | Done   |
-| 10. Engine Demo   | Tavern: a barkeeper holding a tankard on a hand socket, a server walking a spline                 | Done   |
+| Part           | Content                                                                                           |
+|----------------|---------------------------------------------------------------------------------------------------|
+| Animation data | `data::animation`: `Skeleton`, `Pose`, `SkeletalClip` sampling, pose blending, skin matrices      |
+| Import         | `MeshLoader` reads the first glTF skin, its animations and the `socket_*` nodes into `LoadedMesh` |
+| GPU skinning   | `skinned3d.slang`, `Renderer3D::createSkinnedMesh` / `drawSkinnedMesh`, palette at binding 5      |
+| State machine  | `data::animation::StateMachine` and its player: states, parameters, conditions, cross-fades       |
+| Animator       | `Animator` component and the `owl.animation` system, skinned draws of `MeshRenderer`              |
+| Mesh LODs      | `data::geometry::buildMeshLods`, the mesh cook (`OWLM`), `MeshResource` LOD meshes, screen size   |
+| Sockets        | `MeshSockets`, `SocketAttachment`, `Scene::attachToSocket`, the `owl.sockets` system              |
+| Lua            | `animator.*` and `socket.*` tables                                                                |
+| Owl Nest       | Skeleton view, clip timeline, LOD preview, inspectors, socket gizmo (`entity.set_socket`)         |
 
 ## Decisions
 
@@ -55,7 +52,7 @@ flowchart LR
 | LODs by vertex clustering                        | Deterministic, O(n), keeps real corners (UV, normal, skin of a kept vertex); no new dependency     |
 | LOD corners reference the source triangles       | Data-layer form, independent of the renderer's vertex welding; skinned LODs keep their skin data   |
 | Cooked mesh = `OWLM` container                   | The source bytes and the LOD block in one pack entry under the same path, loaded transparently     |
-| LODs off by default (`.owlmeta` `Lods: 0`)       | Existing scenes draw the same; a project turns them on per mesh                                    |
+| LODs off by default (`.owlmeta` `Lods: 0`)       | A mesh draws its source unless the project turns LODs on for it                                    |
 | Uncooked meshes build their LODs at load         | Owl Nest previews what the game will draw, from the same settings                                  |
 | LOD picked from the main camera                  | Screen height fraction of the bounding sphere; shadow passes reuse the pick of the camera          |
 | Sockets: mesh `socket_*` nodes + component list  | Artists place them in the DCC tool; designers add them and move them with the viewport gizmo       |
@@ -70,7 +67,6 @@ flowchart LR
   submesh, the corner references (`triangle * 3 + corner` of the source mesh).
 - `Animator`, `MeshSockets` and `SocketAttachment` are scene components (see [Scene](../scene.md)).
 
-## Out of scope
+## Not supported
 
-- Morph targets, inverse kinematics, root motion and additive layers: after the v0.6.0 items
-- Compound rigid bodies and joints between assembled parts: v0.7.0, [Large worlds](large-worlds.md)
+Morph targets, inverse kinematics, root motion and additive layers.

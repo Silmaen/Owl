@@ -41,7 +41,7 @@ OWL_DIAG_POP
 namespace owl::renderer::utils {
 
 auto getCacheDirectory(const std::string& iRenderer, const std::string& iRendererApi) -> std::filesystem::path {
-	auto output = platform::getUserDirectory() / "cache" / "shader";
+	auto output = platform::getCacheDirectory() / "shader";
 	if (!iRenderer.empty())
 		output /= iRenderer;
 	if (!iRendererApi.empty())

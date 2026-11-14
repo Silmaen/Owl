@@ -1,141 +1,132 @@
 # Audit Owl — constats des axes G (build, dépendances, packaging) et I (documentation)
 
-> Périmètre : `CMakeLists.txt`, `cmake/`, presets, `conanfile.py`, `conan.lock`, `CPackConfig.cmake`, `doc/pages/*.md`,
-> `README.md`, `CHANGELOG.md`, `CONTRIBUTING.md`, `SECURITY.md`, `DoxyfileTemplate`. Revu le 2026-10-20 sur `main`
-> 4e1a6a10, lecture seule, outils via `./docker_run.sh`. **mesuré** = commande reproductible ; **constaté** = lu dans le
-> code ; **opinion** = jugement ; **confirmé** = vérifié. Dépendances : Conan 2 (`conanfile.py`, `conan.lock`).
+> Périmètre : `CMakeLists.txt`, `cmake/`, presets, `conanfile.py`, `conan.lock`, `conan/recipes/`, `CPackConfig.cmake`,
+> `doc/pages/*.md`, `README.md`, `CHANGELOG.md`, `DoxyfileTemplate`, `tools/doc/`. Revu le 2026-11-12 sur
+> `Feature/sample-games-new` b4281d72, lecture seule, outils via `./docker_run.sh`. **mesuré** = commande reproductible ;
+> **constaté** = lu dans le code ; **opinion** = jugement ; **confirmé** = vérifié. Dépendances : Conan 2
+> (`conanfile.py`, `conan.lock`).
 
 ## Résumé
 
-- CMake moderne (cibles, `FILE_SET`, presets en couches pilotant la CI) et `-Weverything -Werror` tenu à zéro (G-10, G-11).
-- Défauts mineurs de build : configure dépendant du réseau, `-rpath` dupliqué, DLL Windows codées en dur, headers
-  libpng / zlib système (G-09, G-15, G-16, G-17).
-- Documentation abondante et accessible depuis l'éditeur (I-10) ; dérives possibles de la référence Lua et des pages
-  (I-01, I-02) ; `@brief` de remplissage sur l'API publique (I-06).
-- 14 constats : 0 haut, 3 moyens, 11 bas ; 2 forces.
+- CMake moderne (cibles, `FILE_SET`, presets en couches pilotant la CI), `-Weverything -Werror` tenu à zéro, Conan 2
+  verrouillé et modulaire (G-10, G-11, G-23).
+- Défauts mineurs : DLL Windows copiées à la main, deux bibliothèques YAML, rendu mermaid maison qui peut casser le
+  configure (G-16, G-20, G-21).
+- Documentation abondante (77 pages + 34 pages de conception), référence Lua générée et gardée par un test, aide
+  contextuelle dans l'éditeur (I-10) ; `@brief` de remplissage (I-06), contradiction UUID / handle (I-11).
+- 12 constats : 0 haut, 4 moyens, 8 bas ; 3 forces, 2 faiblesses, 0 risque, 7 étrangetés.
 
 ## Constats — gravité moyenne
 
 ```text
 ID             : G-10 — force, moyenne, confirmé (build)
-Constat        : structure CMake moderne et cohérente : propriétés par cibles, ccache câblé, presets (5 fichiers en
-                 couches, métadonnées `vendor.silmaen` qui pilotent l'image Docker de la CI) comme source unique de la CI.
-                 Les commentaires expliquent les vrais pièges (MinGW `-mbig-obj`, `MAP_IMPORTED_CONFIG_DEBUG`, venv
-                 multi-architecture). Build complet en 60 s, configure en 5,3 s (`00-cadrage.md`).
-Preuve         : source/owl/CMakeLists.txt:44-59 ; cmake/BaseConfig.cmake:17-18 ; cmake/CompilerCache.cmake ;
-                 cmake/CMakePresets*.json.
+Constat        : structure CMake moderne et cohérente : propriétés par cibles, `FILE_SET HEADERS`, ccache câblé, presets
+                 (5 fichiers en couches, bloc `vendor.silmaen` lu par `BuildAndTest`) comme source unique de la CI. Les
+                 commentaires expliquent les vrais pièges (MinGW `-mbig-obj`, `MAP_IMPORTED_CONFIG_DEBUG`). Build complet
+                 en 60 s, configure en 5,3 s (`00-cadrage.md`, non remesuré).
+Preuve         : source/owl/CMakeLists.txt:77, 243 ; cmake/BaseConfig.cmake:208 ; cmake/CompilerCache.cmake ;
+                 CMakeLists.txt:84 ; cmake/CMakePresets*.json.
 Recommandation : garder
 ```
 
 ```text
 ID             : G-11 — étrangeté, moyenne, confirmé (build)
 Constat        : zéro warning sous `-Weverything -Werror` (force), mais chaque nouveau Clang casse le build tant qu'une
-                 exclusion n'est pas ajoutée (paliers 18, 20, 21) ; les headers tiers exigent des wrappers de
-                 suppression ; GCC et Clang ne voient pas le même jeu de warnings. Marquer les dépendances SYSTEM éviterait
-                 les wrappers.
-Preuve         : cmake/BaseConfig.cmake:97-123 ; core/external/*.h (`OWL_DIAG_DISABLE_CLANG`).
-Recommandation : surveiller, effort S (garder `-Weverything`, `-Werror` en CI seulement via `OWL_WARNINGS_AS_ERRORS`).
+                 exclusion n'est pas ajoutée (paliers 18, 20, puis les `-Wlifetime-safety-*`) ; les headers tiers exigent
+                 des wrappers de suppression ; GCC et Clang ne voient pas le même jeu de warnings. `-Werror` n'est pas
+                 débrayable pour un développeur.
+Preuve         : cmake/BaseConfig.cmake:83, 102-139 ; core/external/*.h (12 wrappers `OWL_DIAG_DISABLE_CLANG`).
+Recommandation : surveiller, effort S (garder `-Weverything`, `-Werror` en CI seulement via une option).
+```
+
+```text
+ID             : G-23 — force, moyenne, confirmé (dépendances)
+Constat        : Conan 2 seul, `conan.lock` à jour (luau, joltphysics, plus de Box2D ni de Lua), dépendances
+                 conditionnées par module (23 paquets au lieu de 47 en `linux-clang-minimal`), paquet testé
+                 (`test/package`). Contrepartie : 16 recettes maison dans `conan/recipes/` à suivre.
+Preuve         : conanfile.py:125-180 ; conan.lock ; conan/recipes/ ; doc/pages/building.md:443 ; test/package.
+Recommandation : garder (surveiller la charge des recettes maison).
+```
+
+```text
+ID             : I-10 — force, moyenne, confirmé (documentation)
+Constat        : documentation abondante pour un projet personnel : 77 pages et 34 pages de conception (~21 400 lignes),
+                 un niveau de lecture par page, mermaid + doxygen-awesome, lisible sur GitHub comme en HTML, embarquée
+                 dans l'aide de l'éditeur (F1 contextuel), référence Lua générée du registre et gardée par un test qui
+                 échoue à la moindre dérive.
+Preuve         : doc/pages ; doc/pages/lua-api.md:7 ; script_tests/LuaBindingRegistry_test.cpp ; cmake/HelpAssets.cmake ;
+                 source/owlnest/sources/EditorLayer.cpp:695.
+Recommandation : garder
 ```
 
 ## Constats — gravité basse
 
 ```text
-ID             : G-09 — faiblesse, basse, confirmé (build)
-Constat        : le configure télécharge des badges d'aide (non bloquant, timeout 15 s par badge) : dépendance au réseau
-                 au premier configure. Le `.env` n'affiche que ses clés, aucune valeur.
-Preuve         : cmake/HelpAssets.cmake:43-46 ; cmake/Environment.cmake:21-22.
-Recommandation : corriger, effort S (versionner les badges).
-```
-
-```text
-ID             : G-15 — faiblesse, basse, confirmé (build)
-Constat        : sous Linux, `CMAKE_EXE_LINKER_FLAGS` écrase toute valeur utilisateur et contient deux fois
-                 `-rpath='$ORIGIN'` : inoffensif aujourd'hui, piège pour un futur drapeau propre aux exécutables.
-Preuve         : cmake/BaseConfig.cmake:186-187.
-Recommandation : corriger, effort S (`BUILD_RPATH` / `INSTALL_RPATH` ou `add_link_options` sur Base).
-```
-
-```text
 ID             : G-16 — étrangeté, basse, plausible (build, Windows non exécuté)
-Constat        : MinGW est construit en CI (force), mais le chemin statique copie des DLL à la main ; le suffixe Debug `d`
-                 d'OpenAL contredit le mappage Debug → Release ; une libpng du toolchain s'ajoute à celle de Conan.
-Preuve         : source/owl/CMakeLists.txt:154-173 ; cmake/BaseConfig.cmake:163, 172-179 ; CMakeLists.txt:37-39.
-Recommandation : surveiller, effort S (`$<TARGET_RUNTIME_DLLS>`, retirer `libpng16-16.dll`).
-```
-
-```text
-ID             : G-17 — risque, basse, plausible (build)
-Constat        : les headers libpng et zlib résolus sont ceux du système de l'image (`/usr/include`, mesuré dans le
-                 CMakeCache) et non ceux du cache de dépendances ; écart de version possible avec la bibliothèque.
-Preuve         : output/build/linux-clang-release/CMakeCache.txt (`PNG_PNG_INCLUDE_DIR`, `ZLIB_INCLUDE_DIR`).
-Recommandation : surveiller, effort S (`CMAKE_FIND_PACKAGE_PREFER_CONFIG` ou vider ces variables).
+Constat        : Windows Clang est construit en CI (force), mais les DLL de Vulkan, Slang et OpenAL sont copiées à la main à
+                 côté de `$<TARGET_RUNTIME_DLLS>` ; le suffixe Debug `d` d'OpenAL contredit le mappage Debug → Release ;
+                 une `libpng16-16.dll` du toolchain s'ajoute à la libpng de Conan.
+Preuve         : source/owl/CMakeLists.txt:196-224 ; cmake/BaseConfig.cmake:185-199 ; CMakeLists.txt:84.
+Recommandation : surveiller, effort S (`$<TARGET_RUNTIME_DLLS>` seul, retirer `libpng16-16.dll`).
 ```
 
 ```text
 ID             : G-18 — étrangeté, basse, confirmé (build)
 Constat        : `GLOB_RECURSE CONFIGURE_DEPENDS` supprime la tenue des listes de fichiers (gain réel en solo) mais re-glob
-                 à chaque build, compile tout `.cpp` déposé sous `source/owl` et va contre la doc CMake (opinion).
-Preuve         : source/owl/CMakeLists.txt:6-8, 31-34 ; test/CMakeLists.txt:2,13 ; .claude/rules/cmake.md.
+                 à chaque build, compile tout `.cpp` déposé sous `source/` et va contre la doc CMake (opinion).
+Preuve         : source/owl/CMakeLists.txt:6-13 ; source/owlnest/CMakeLists.txt:6-81 ; test/unit/CMakeLists.txt:65 ;
+                 .claude/rules/cmake.md.
 Recommandation : garder, à surveiller si des contributeurs arrivent.
 ```
 
 ```text
-ID             : G-19 — étrangeté, basse, confirmé (build)
-Constat        : `Owl.log` est écrit dans le répertoire courant (ignoré par `.gitignore`), sans impact sur le dépôt.
-Preuve         : racine du dépôt.
-Recommandation : surveiller, effort S (écrire le log hors de la racine).
+ID             : G-20 — étrangeté, basse, confirmé (dépendances)
+Constat        : deux bibliothèques YAML : rapidyaml lit scènes, prefabs et snapshots, yaml-cpp fait tout le reste (150
+                 fichiers) ; deux parseurs dont les tolérances peuvent diverger sur un même fichier (plausible).
+Preuve         : conanfile.py:137, 141 ; source/owl/private/core/YamlNode.cpp ; doc/pages/design/dependencies.md:209.
+Recommandation : surveiller, effort M (converger vers une seule, cf. fiche 5).
+```
+
+```text
+ID             : G-21 — étrangeté, basse, confirmé (build, documentation)
+Constat        : l'aide de l'éditeur rend les 76 diagrammes mermaid par un moteur maison de 1 317 lignes lancé au
+                 configure ; un diagramme qu'il ne sait pas dessiner fait échouer le configure.
+Preuve         : cmake/HelpAssets.cmake:131-150 ; tools/doc/mermaid_svg.py.
+Recommandation : surveiller, effort S (dégrader en image d'erreur plutôt qu'en échec, contrôle dans CodeStyle).
 ```
 
 ```text
 ID             : I-01 — faiblesse, basse, plausible (documentation)
-Constat        : des pages peuvent dériver après des refontes (ruban de l'éditeur, triggers, API Lua) malgré la règle de
-                 mise à jour dans la même PR ; exactitude page par page non recomptée, pages récentes (CI, node graph, son,
-                 voxel) fidèles à l'échantillon.
-Preuve         : doc/pages/architecture.md, getting_started.md (menus, ruban non revérifié) ; doc/pages/renderer.md.
-Recommandation : surveiller, effort S (contrôle automatique des identifiants et chemins cités en `code`).
-```
-
-```text
-ID             : I-02 — faiblesse, basse, plausible (documentation)
-Constat        : la référence de l'API Lua omettrait une partie des bindings : 13 tables documentées contre 15
-                 enregistrées, `has_component` 6 noms contre 14 acceptés (comptes non revérifiés).
-Preuve         : doc/pages/scripting.md:49,191-205 ; LuaBindings.cpp:378-404, 987-989.
-Recommandation : corriger, effort S (page) ; M (référence générée depuis `LuaBindings.cpp`).
-```
-
-```text
-ID             : I-03 — faiblesse, basse, confirmé (documentation)
-Constat        : README et `building.md` annoncent les versions testées (GCC 14+, Clang 22+) ; le code impose des minima plus
-                 bas (GCC 13, Clang 18), `building.md` précise que CMake avertit en dessous.
-Preuve         : README.md:94-95 ; building.md:28 ; cmake/BaseConfig.cmake:68-69.
-Recommandation : surveiller, effort S (distinguer « testé » et « minimum » dans le README).
+Constat        : CodeStyle vérifie désormais les identifiants cités en `code` ; restent sans contrôle la prose (menus,
+                 ruban), les pages de conception, le changelog et la roadmap, exclus du contrôle.
+Preuve         : ci/actions/code_style.py:37-38 ; ci/utils/doc_identifiers.py ; doc/pages/getting_started.md.
+Recommandation : surveiller, effort S (captures de l'aide vérifiées, revue des pages au fil des PR).
 ```
 
 ```text
 ID             : I-06 — faiblesse, basse, confirmé (documentation)
-Constat        : l'exigence « tout documenter, erreur au moindre manque » produit des `@brief` de remplissage
-                 (« Default constructor. », plusieurs dizaines) sur les membres spéciaux triviaux : poids de lecture, de
-                 revue et de contexte IA.
-Preuve         : DoxyfileTemplate (`EXTRACT_PRIVATE=NO`, `WARN_NO_PARAMDOC=YES`, `WARN_AS_ERROR=YES`) ; source/owl/public.
-Recommandation : corriger, effort S (exempter constructeurs, destructeurs, `=default` / `=delete`, surcharges déjà
-                 documentées ; garder `WARN_AS_ERROR` ; opinion).
+Constat        : l'exigence « tout documenter, erreur au moindre manque » produit des `@brief` de remplissage (425
+                 « Default constructor. », « Destructor. »… dans `source/owl/public`) : poids de lecture, de revue et de
+                 contexte IA. La règle du dépôt l'exige explicitement.
+Preuve         : DoxyfileTemplate:522, 528, 881, 905 ; source/owl/public ; .claude/rules/ongoing-quality.md.
+Recommandation : corriger, effort S (exempter membres spéciaux `=default` / `=delete` et surcharges documentées ;
+                 garder `WARN_AS_ERROR` ; opinion, décision du mainteneur).
 ```
 
 ```text
 ID             : I-08 — étrangeté, basse, confirmé (documentation)
-Constat        : Keep a Changelog est respecté ; la section 0.1.1 de la page changelog (133 sous-puces) est un rapport de
-                 chantier hors de la règle « une ligne par changement ». Le `CHANGELOG.md` racine tient en une ligne par
-                 release.
-Preuve         : doc/pages/changelog.md ; .claude/rules/documentation.md.
-Recommandation : garder la règle ; 0.1.1 reste tel quel (effort nul).
+Constat        : Keep a Changelog est respecté ; la section 0.1.1 garde 133 sous-puces ; `[Unreleased]` compte déjà 179
+                 entrées neuf jours après la 0.6.0, dont des réglages de jeux d'exemple (« Wolfenstein mini: food heals »)
+                 mêlés aux changements du moteur.
+Preuve         : doc/pages/changelog.md:10-200 ; .claude/rules/documentation.md.
+Recommandation : surveiller, effort S (sous-section « Samples » ou une ligne par jeu ; 0.1.1 tel quel).
 ```
 
 ```text
-ID             : I-10 — force, moyenne, confirmé (documentation)
-Constat        : documentation abondante pour un projet personnel : 16 pages structurées par sous-système, mermaid +
-                 doxygen-awesome, lisible sur GitHub comme en HTML, embarquée dans l'aide de l'éditeur (F1 contextuel). Les
-                 pages écrites avec la fonctionnalité (CI, node graph, voxel) sont précises.
-Preuve         : doc/pages (7 602 lignes avec README, CHANGELOG, CONTRIBUTING, SECURITY) ; doc/fix_md_links.py ;
-                 cmake/HelpAssets.cmake ; EditorLayer.cpp:624.
-Recommandation : garder (protéger par le contrôle de I-01).
+ID             : I-11 — étrangeté, basse, confirmé (documentation)
+Constat        : la référence générée dit qu'une `entity` est « l'UUID entier de l'entité », la page de scripting qu'un
+                 script « ne voit jamais l'UUID, seulement son handle » ; le code pousse bien un handle.
+Preuve         : doc/pages/lua-api.md:9 (généré par script/LuaBindings.cpp:5546) ; doc/pages/scripting.md:200 ;
+                 script/LuaBindings.cpp:1133.
+Recommandation : corriger, effort S (texte du générateur, puis régénérer).
 ```

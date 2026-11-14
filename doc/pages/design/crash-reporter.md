@@ -2,11 +2,11 @@
 
 [TOC]
 
-A crash in Owl Nest or an exported game leaves a report the user can pass on; nothing leaves the machine by itself. Planned for v0.8.0, summarised in the [Roadmap](../roadmap.md).
+A crash in Owl Nest or an exported game leaves a report the user can pass on; nothing leaves the machine by itself. Planned.
 
-## Plan
+## Design
 
-| Item          | Plan                                                                                                       |
+| Item          | What                                                                                                       |
 |---------------|------------------------------------------------------------------------------------------------------------|
 | Report folder | Written locally on a crash: stack trace with symbols when available, the log, config, versions, OS and GPU |
 | Dialog        | Shows where the folder is                                                                                  |

@@ -229,6 +229,8 @@ agents on and off.
 **Content Browser > New Behaviour Tree** creates a `.owlbt` (a Root, a Selector and a Wait); it opens in
 its own tab. The tab is the node graph canvas of the [Node Graph Framework](node_graph.md).
 
+![The tree `cellar_rat.owlbt` of the Engine Demo: the canvas, the Blackboard panel and the Node panel](../images/nest/behaviour_tree.png)
+
 - **Canvas**: the nodes with their icon, title, a one-line summary of their parameters and their note. Drag to move,
   link a node to the pin of a parent. The children of a node run from top to bottom.
 - **Palette**: the node types by kind (composites, decorators, conditions, actions). Right click on the

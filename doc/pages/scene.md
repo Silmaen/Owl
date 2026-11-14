@@ -463,6 +463,11 @@ YAML key: `Environment`. The first visible one of the scene lights the 3D layers
 with the image, diffuse and reflections; without an image the `ambient` colour is a constant sky, and without any `Environment` the layer `Ambient` is. See
 [Renderer > Image-based lighting](renderer.md#renderer-ibl).
 
+The image is prefiltered on a worker. The scenes of a process share it: a scene asking for the image (or procedural sky)
+another one built or is building takes that one, so a level change does not filter the sky again (the file is told
+apart by its time and size, an edit builds it again); a build nobody waits for anymore stops. On the Null backend
+(headless runs, scenario tests) only the source level and the diffuse harmonics are built, a procedural sky at 64 px.
+
 #### ProceduralSky {#proceduralsky-component}
 
 | Field             | Type     | Default              | Description                                                             |
@@ -1474,7 +1479,7 @@ shown again when the play stops.
 #### UiFocus
 
 Optional: a `UiButton` (not disabled) or a `UiSlider` already takes part in the keyboard and gamepad navigation
-([HUD system](design/hud-system.md#focus-navigation-hud5-done)); this component tunes it. A neighbour is the UUID of
+([HUD system](design/hud-system.md#focus-navigation)); this component tunes it. A neighbour is the UUID of
 another widget among the focusable widgets of the scene and its HUD (remapped to the copies when a subtree is duplicated
 or a prefab instantiated).
 
@@ -1496,7 +1501,7 @@ Shows a window of a content larger than the widget: the children are laid out in
 bars), shifted by `scrollOffset` and clipped to it. The content is `contentSize`, or, on an axis at 0, the extent of the
 children a `UiLayout` of the same widget places, else the viewport. The offset is kept inside the content when the HUD
 is laid out. Wheel, bars, `ui_scroll` and the focus scroll it, Lua `ui.scroll_get` / `ui.scroll_set`
-([HUD system](design/hud-system.md#scroll-views-and-virtualised-lists-hud7-done)).
+([HUD system](design/hud-system.md#scroll-views-and-virtualised-lists)).
 
 | Field            | Type    | Description                                                                   |
 |------------------|---------|-------------------------------------------------------------------------------|
@@ -1668,12 +1673,15 @@ from it; the origin itself is saved with the scene. A child keeps its local tran
 
 A shift keeps the running simulation going where it was:
 
-| What                                            | How it follows the shift                                                   |
-|-------------------------------------------------|----------------------------------------------------------------------------|
-| Physics bodies (`PhysicCommand::shiftOrigin`)   | Moved back with their two interpolated poses; velocities and contacts kept |
-| `Oscillator`, `Patrol`, `LightFlicker`, `Drift` | Rest positions and waypoints moved back; a drift keeps its camera parallax |
-| Sound listener and sources                      | Placed each frame from the transforms, after the shift                     |
-| Navigation grids                                | Relative to their tilemap entity                                           |
+| What                                            | How it follows the shift                                                                     |
+|-------------------------------------------------|----------------------------------------------------------------------------------------------|
+| Physics bodies (`PhysicCommand::shiftOrigin`)   | Moved back with their two interpolated poses, in z too in space; velocities, contacts kept   |
+| `Oscillator`, `Patrol`, `LightFlicker`, `Drift` | Rest positions and waypoints moved back; a drift keeps its camera parallax                   |
+| Sound listener and sources                      | Placed each frame from the transforms, after the shift                                       |
+| Navigation grids                                | Relative to their tilemap entity                                                             |
+| `NavMeshVolume`, `NavAgent`, `NavObstacle`      | Baked corners, goal, path and last position moved back (any entity, child or root)           |
+| `WalkAgent`, `SteeringAgent`                    | Path, `targetPoint` and the last target position moved back; the formation slot stays        |
+| Behaviour trees                                 | Walk goals and the vector keys a node reads as a point (distance, move to, steer) moved back |
 
 Scripts read and place an entity in the world in double with `transform.get_world_position` and
 `transform.set_world_position`, and read the origin with `scene.get_world_origin` ([Lua API](lua-api.md)). The

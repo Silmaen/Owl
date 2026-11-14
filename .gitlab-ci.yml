@@ -11,16 +11,23 @@
 #   on that branch, whether it moved or not, publishing nothing unless it is `main`;
 # - anywhere else, every job left out still shows and runs on its ▶, and `nightly-jobs` ▶ opens the nightly jobs
 #   one by one;
-# - a build job of a push pipeline stands on an earlier success on the same tree (`BuildAndTest`, `OWL_CI_REUSE`).
+# - a job of a push or merge request pipeline stands on an earlier success on the same tree (`BuildAndTest` for the
+#   builds, `Reuse` for the others, `OWL_CI_REUSE`): a pipeline started again on the same commit only runs what is new;
+# - the `ready-watch` schedule (`READY_WATCH` = `true`) starts the pipeline of a draft marked ready, which GitLab does
+#   not: the draft pipeline is named `Draft merge request` (`workflow:name`), `ReadyPipelines` looks for those.
 #
-# Marking a draft ready does not start a pipeline: run one from the merge request. The merge waits for the last
-# pipeline (Settings > Merge requests > Pipelines must succeed).
+# The merge waits for the last pipeline (Settings > Merge requests > Pipelines must succeed).
 
 include:
   - local: ci/gitlab/templates.yml
 
 workflow:
+  name: $PIPELINE_NAME
   rules:
+    # Same test as `.ready-merge-request`: the name tells `ReadyPipelines` the jobs of the draft were left out.
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TITLE =~ /^(\[draft\]|\(draft\)|draft:)/i
+      variables:
+        PIPELINE_NAME: Draft merge request
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
     - if: $CI_PIPELINE_SOURCE == "web"
@@ -40,6 +47,10 @@ variables:
   NIGHTLY:
     value: "false"
     description: "true: run the nightly jobs on this branch instead of the usual ones."
+  PIPELINE_NAME: ""
+  READY_WATCH:
+    value: "false"
+    description: "true (the ready-watch schedule): start the pipeline of the drafts marked ready, nothing else."
 
 # --- When a job runs --------------------------------------------------------------------------------------------
 
@@ -65,8 +76,8 @@ variables:
     - !reference [.ready-merge-request, rules]
     - !reference [.by-hand, rules]
 
-# Ready merge requests that change more than the documentation, and pipelines run by hand: the jobs `main` runs
-# at night only.
+# Ready merge requests that change the C++ or what builds it, and pipelines run by hand: the jobs `main` runs at
+# night only. A merge request on the sample games, the Engine Demo or the tools cannot move their verdict.
 .ready-only:
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule" || $NIGHTLY == "true"
@@ -75,11 +86,24 @@ variables:
     - if: $CI_PIPELINE_SOURCE != "merge_request_event"
       when: manual
       allow_failure: true
-    - !reference [.ready-merge-request, rules]
+    - !reference [.draft-or-experiment, rules]
+    - changes:
+        - .gitlab-ci.yml
+        - .clang-tidy
+        - CMakeLists.txt
+        - CMakePresets.json
+        - conan.lock
+        - conanfile.py
+        - ci/**/*
+        - cmake/**/*
+        - conan/**/*
+        - engine_assets/**/*
+        - source/**/*
+        - test/**/*
     - !reference [.by-hand, rules]
 
-# Waiting for their ▶ in drafts and `Experiment/…`; running when anything but the documentation changed.
-.ready-merge-request:
+# Waiting for their ▶ in drafts and `Experiment/…`.
+.draft-or-experiment:
   rules:
     - if: $CI_MERGE_REQUEST_TITLE =~ /^(\[draft\]|\(draft\)|draft:)/i
       when: manual
@@ -88,6 +112,11 @@ variables:
     - if: $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^Experiment\//
       when: manual
       allow_failure: true
+
+# Waiting for their ▶ in drafts and `Experiment/…`; running when anything but the documentation changed.
+.ready-merge-request:
+  rules:
+    - !reference [.draft-or-experiment, rules]
     # Everything but `doc/`, `.claude/`, the root Markdown files and LICENSE.
     - changes:
         - .gitlab-ci.yml
@@ -116,6 +145,13 @@ variables:
         - test/**/*
         - tools/**/*
 
+# Only on their ▶, in every pipeline but the nightly ones: the presets no other job builds.
+.on-demand:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" || $NIGHTLY == "true"
+      when: never
+    - !reference [.by-hand, rules]
+
 # Pushes to `main` and pipelines run by hand; by hand in a merge request.
 .main:
   rules:
@@ -138,6 +174,7 @@ code-style:
   extends: [.linux, .always]
   stage: style
   script:
+    - poetry run python3 ci_action.py Reuse linux-clang-debug && exit 0 || true
     - poetry run python3 ci_action.py CodeStyle linux-clang-debug
   artifacts:
     when: always
@@ -172,6 +209,36 @@ sanitizer-address:
   variables:
     PRESET: linux-sanitizer-address
 
+# On their ▶ only, never blocking: the presets no job builds otherwise. Same steps as the builds above.
+windows-gcc-release:
+  extends: [.build-windows, .on-demand]
+  stage: build
+  needs: []
+  variables:
+    PRESET: windows-gcc-release
+
+windows-gcc-debug:
+  extends: [.build-windows, .on-demand]
+  stage: build
+  needs: []
+  variables:
+    PRESET: windows-gcc-debug
+
+linux-gcc-release:
+  extends: [.build-linux, .on-demand]
+  stage: build
+  needs: []
+  variables:
+    PRESET: linux-gcc-release
+
+# Every optional engine module off (`OWL_MODULE_*`).
+linux-clang-minimal:
+  extends: [.build-linux, .on-demand]
+  stage: build
+  needs: []
+  variables:
+    PRESET: linux-clang-minimal
+
 # --- Analyses ---------------------------------------------------------------------------------------------------
 
 clang-tidy:
@@ -182,12 +249,25 @@ clang-tidy:
 bench:
   extends: [.bench, .after-style, .ready-only]
 
+# --- Drafts marked ready ---------------------------------------------------------------------------------------
+
+# A schedule of its own (Build > Pipeline schedules, `main`, every 10 minutes, `READY_WATCH` = `true`) runs this job
+# alone: it starts the pipeline of each draft marked ready since its draft pipeline (`ReadyPipelines`).
+ready-watch:
+  extends: .linux
+  stage: style
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $READY_WATCH == "true"
+  interruptible: false
+  script:
+    - poetry run python3 ci_action.py ReadyPipelines linux-clang-release
+
 # --- Nightly ----------------------------------------------------------------------------------------------------
 
-# The schedule, and a pipeline run by hand with `NIGHTLY` = `true`.
+# The nightly schedule, and a pipeline run by hand with `NIGHTLY` = `true`.
 .nightly:
   rules:
-    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $READY_WATCH != "true"
     - if: $CI_PIPELINE_SOURCE == "web" && $NIGHTLY == "true"
 
 # The schedule (Build > Pipeline schedules, `main`, 02:00) runs these two only. The gate writes the child pipeline:

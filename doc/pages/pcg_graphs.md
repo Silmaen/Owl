@@ -6,7 +6,7 @@
 
 A **PCG graph** (`.owlpcg`) generates content procedurally: noise, rules and scattered points flow through nodes down to
 outputs that write tiles. The graph is data, edited on the [node canvas](node_graph.md) of Owl Nest; a tilemap runs
-it from a seed, so the same seed always gives the same tiles. Design notes and what is planned:
+it from a seed, so the same seed always gives the same tiles. Design notes:
 [PCG graphs](design/pcg-graphs.md).
 
 ## What a graph is

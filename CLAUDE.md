@@ -9,7 +9,7 @@ Windows x64 (MinGW).
 Detailed, path-scoped rules load automatically from `.claude/rules/` when you touch matching files
 (C++ style, CMake, tests, renderer, Slang, scene, editor, script, task system, dependencies, Python CI,
 docs, module layout). User documentation lives in `doc/pages/*.md` — read the relevant page before
-changing a subsystem. The repository audit of 2026-10-05 is archived in `doc/audit/` (entry point: `AUDIT.md`).
+changing a subsystem. The repository audit (opened 2026-10-05, last reviewed 2026-11-12) lives in `doc/audit/` (entry point: `AUDIT.md`).
 
 ## Build, test, run — Docker only
 
@@ -29,10 +29,11 @@ natively, never install a tool on the host; if a tool is missing from the image,
 ```
 
 - **Clang presets** for dev and tests: `linux-clang-release` (default), `linux-clang-debug`. Coverage is measured
-  with both compilers: `linux-gcc-debug` (the pull-request gate) and `linux-clang-debug` (nightly).
-- Other presets: `linux-clang-tidy`, `linux-sanitizer-{address,thread,undefined-behavior}`,
+  with both compilers: `linux-gcc-debug` (the merge request gate) and `linux-clang-debug` (nightly).
+- Other presets: `linux-gcc-release`, `{linux,windows}-clang-tidy`, `linux-sanitizer-{address,thread,undefined-behavior}`,
   `linux-cross-arm64` (arm64 release, nightly, tests under QEMU, packaged), `linux-clang-minimal` (every optional engine module off,
-  `OWL_MODULE_*`, see `doc/pages/building.md`), `windows-{gcc,clang}-{release,debug}`; `cpack` works in any release tree.
+  `OWL_MODULE_*`, see `doc/pages/building.md`), `linux-bench`, `linux-fuzz`, `linux-include-check` (CI actions below),
+  `windows-{gcc,clang}-{release,debug}`; `cpack` works in any release tree.
 - Dependencies: Conan 2 only (`conanfile.py`, `conan.lock`); in a worktree add `-DOWL_CONAN_HOME=/fhome/.conan2-owl`;
   see `.claude/rules/dependencies.md`.
 - Output: `output/build/<preset>/{bin,lib}`, install in `output/install/<preset>/`.
@@ -56,8 +57,10 @@ natively, never install a tool on the host; if a tool is missing from the image,
 | `Fuzz`                                             | libFuzzer targets for a fixed time each (`linux-fuzz`).                                        |
 | `IncludeCheck`                                     | Every header and source compiled alone on strict libc++, no PCH (`linux-include-check`).       |
 | `DependencyReport`                                 | Informative list of dependencies with a newer version.                                         |
-| `BuildAndTest`                                     | One CI build job: configure, build, test, cover, document and package as the preset says.     |
-| `NightlyGate`                                      | Writes the nightly child pipeline only when `main` moved since the last nightly.              |
+| `BuildAndTest`                                     | One CI build job: configure, build, test, cover, document and package as the preset says.      |
+| `NightlyGate`                                      | Writes the nightly child pipeline only when `main` moved since the last nightly.               |
+| `Reuse`                                            | Exit 0 when the same job already succeeded on the same tree (`--same_commit`: commit).         |
+| `ReadyPipelines`                                   | Starts the full pipeline of merge requests marked ready (`ready-watch` schedule).              |
 | `Package`, `Clean`, `PublishDoc`, `PublishPackage` | As named; also `Help`.                                                                         |
 
 Run `CodeStyle` (and `ClangTidy linux-clang-tidy -- --diff_base=main` after a `linux-clang-tidy` build when C++
@@ -75,11 +78,12 @@ Python, never a bare `conan`. Inside the container the venv lives in `/fhome/.ca
 | `source/owl/public/`      | Public API, one folder per module = one namespace (see `.claude/rules/module-layout.md`). |
 | `source/owl/private/`     | Implementation, mirrors `public/`; third-party header wrappers in `core/external/`.       |
 | `source/owlnest/`         | Editor (`sources/`: panels, documents, undo commands) and runner (`runner/`).             |
-| `test/unit/<cat>_tests/`  | Google Test, 20 categories, helpers and all fixtures in `test/unit/test_helper/`.          |
+| `test/unit/<cat>_tests/`  | Google Test, 20 categories; `.owltest` scenarios in `test/unit/scenarios/`; helpers and fixtures in `test/unit/test_helper/`. |
 | `test/{bench,fuzz,package}/` | `owl_bench` + baseline, libFuzzer targets, Conan package test (`test_package_folder`).  |
 | `engine_assets/`          | What the engine ships: `fonts/`, Slang `shaders/<renderer>/`, `project_templates/`, `logo/`. |
 | `engine_demo/`            | Engine Demo, the all-in-one showcase (not a game): `scenes/ huds/ prefabs/ tilesets/ tilemaps/`, `scripts/` `sounds/` `textures/` by area. |
-| `tools/`                  | Python tools, not installed: `demo/`, `iso_atlas/` (demo assets), `editor/` (icons), `doc/` (Doxygen filter). |
+| `samples/`                | Sample games, one self-contained project per folder, each played by scenarios and exported in tests. |
+| `tools/`                  | Python tools, not installed: `demo/`, `iso_atlas/` (demo assets), `samples/` (sample game generators), `editor/` (icons), `doc/` (Doxygen filter), `tests/` (pytest). |
 | `docker_run.sh`           | Runs any command in the build image (all builds go through it).                           |
 | `ci/`, `ci_action.py`     | Python CI (`ci/actions/*` extend `BaseAction`, auto-discovered).                          |
 | `.gitlab-ci.yml`, `ci/gitlab/` | GitLab CI: merge request and `main` pipeline, shared blocks, nightly child pipeline. |

@@ -2,8 +2,7 @@
 
 [TOC]
 
-Design page for the material graphs of v0.7.0, summarised in the [Roadmap](../roadmap.md). The parameter materials
-they extend are in [3D core](3d-core.md#materials).
+Design of the material graphs. The parameter materials they extend are in [3D core](3d-core.md#materials).
 
 ## Goal
 
@@ -28,7 +27,7 @@ and the shading models stay those of the PBR materials.
 | Parameters     | 8 numbers in `MaterialData.graph`, 6 textures in the map slots; a child overrides them in `graphValues`                                                           |
 | Parameter kind | The pre-coded graph `getParameterMaterialGraph()` (`surface.parameters` into the surface): one shading path                                                       |
 | Preview        | A lit mesh for the whole graph and a thumbnail per node (`MaterialPreviewTarget`, unlit)                                                                          |
-| Renderers      | The mesh renderer (static, skinned, instanced); voxel, planet and particles once they read the same surface                                                       |
+| Renderers      | The mesh renderer (static, skinned, instanced); the voxel, planet and particle layers do not read the graph surface                                               |
 
 ## Limits
 
@@ -36,14 +35,3 @@ and the shading models stay those of the PBR materials.
   position offset; the texture sample reads mip 0 there.
 - Texture parameters take the map slots from the base colour on; the maps of the material keep the slots that follow.
 - The `Time` input wraps every hour.
-
-## Status
-
-| Part                                                 | Status |
-|------------------------------------------------------|--------|
-| `graph` section of `.owlmat`, surface node, compiler | Done   |
-| Small, large and custom Slang nodes                  | Done   |
-| Material functions and parameters                    | Done   |
-| Owl Nest editor and preview                          | Done   |
-| Graph shaders baked by the export                    | Done   |
-| Engine Demo scene                                    | Done   |

@@ -230,8 +230,8 @@ Jolt runs its collision and solver jobs on a Taskflow executor (`SolverTaskPool`
 each multi-threaded world and destroyed with it.
 
 - **Worker count.** `workerCount = 1` keeps the single-threaded path (no task pool). `0` (automatic) uses
-  half the hardware threads, at most 4, but only for worlds of at least 2 000 dynamic bodies counted at `init()`:
-  below that, dispatching the tasks costs more than it saves. `PhysicCommand::getWorkerCount(scene)` reports the
+  half the hardware threads, at most 4, but only for worlds of at least 250 dynamic bodies counted at `init()`:
+  below that, dispatching the tasks costs as much as it saves. `PhysicCommand::getWorkerCount(scene)` reports the
   count in use.
 - **Dedicated executor.** The pool does not share the `core::task::Scheduler` threads: a long Scheduler job holding
   a worker would stall the step. The pose copies to the entities (`parallelFor`) run their last range on the
@@ -244,6 +244,11 @@ each multi-threaded world and destroyed with it.
   them, `PhysicCommand::init` logs a warning (`Physics: Jolt is built with SSE4.2, which this CPU lacks; physics
   disabled.`) and leaves the world uninitialised, so the game runs without physics.
 
+- **Cost.** One step of 1 000 falling 2D boxes costs 1.27 ms on one thread (`owl_bench`, one P-core of an
+  i9-13950HX), 0.61 ms with 4 workers; 5 000 boxes 3.5 ms and 2.1 ms. Jolt itself takes 96 % of it (narrow phase
+  39 %, velocity solver 32 %, position solver 14 %), the copies of the poses 3 %. One collision step
+  (`solverSubSteps: 1`) takes a third off (0.81 ms for 1 000 boxes, 1.31 ms for 5 000 with 4 workers) but changes the
+  simulation: worth it for a dense 2D scene that does not need two contact passes per tick.
 - **Pose copy.** Above 1 024 bodies, a multi-threaded world also spreads the per-frame copy of the poses to the
   entities over the executor; children of a hierarchy are written afterwards, on the calling thread, since they
   read their parent's world transform.

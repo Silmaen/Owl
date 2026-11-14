@@ -31,7 +31,7 @@ Mirrors the *Ongoing across all releases* section of `doc/pages/roadmap.md`; kee
 - Coverage trend must go up over time, never down — measure with
   `./docker_run.sh poetry run python ci_action.py Coverage linux-gcc-debug` (or `linux-clang-debug`); the Linux GCC
   build of a merge request, and the nightly Clang Debug build, fail when the line coverage (engine without backends,
-  `gcovr.cfg`) drops more than one point below their last successful build
+  `gcovr.cfg`) drops more than one point below the last successful job of `main`
 - Unit tests for pure logic; integration tests for anything crossing module boundaries (scene +
   renderer, script + physics, pack + loader, etc.)
 - Opportunistically backfill tests for untested paths when you touch them

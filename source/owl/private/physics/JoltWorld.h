@@ -298,11 +298,11 @@ public:
 
 	/**
 	 * @brief
-	 *  Move a body without waking it nor changing its velocity.
+	 *  Move a body back by a shift without waking it nor changing its velocity.
 	 * @param[in] iBody The body id.
-	 * @param[in] iPosition The new position.
+	 * @param[in] iShift The displacement subtracted from its position.
 	 */
-	void setPositionQuietly(uint32_t iBody, const math::vec2f& iPosition);
+	void shiftQuietly(uint32_t iBody, const math::vec3f& iShift);
 
 	/**
 	 * @brief

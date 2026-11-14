@@ -6,7 +6,7 @@ include(Environment)
 include(CompilerCache)
 # Setup Poetry, and sync python dependencies
 include(Poetry)
-# Third-party dependencies from Conan 2 (conanfile.py, see doc/pages/design/conan-migration.md)
+# Third-party dependencies from Conan 2 (conanfile.py, see doc/pages/design/dependencies.md)
 include(Conan)
 # Load Utility functions
 include(OwlUtils)

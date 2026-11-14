@@ -1081,7 +1081,7 @@ Design and roadmap: [Owl RHI](design/owl-rhi.md).
 | Backend  | API         | Role                                                                  |
 |----------|-------------|-----------------------------------------------------------------------|
 | `Vulkan` | Vulkan 1.3+ | Reference backend: every feature lands here first                     |
-| `OpenGL` | OpenGL 4.5  | Fallback, frozen in features; SPIR-V shaders, GLSL without `gl_spirv` |
+| `OpenGL` | OpenGL 4.5  | Fallback, tested; SPIR-V shaders, GLSL without `gl_spirv`             |
 | `Null`   | None        | Headless tests and benchmarks; records the state of each draw         |
 
 A draw is fully described by two explicit objects, so no draw inherits state from the one before:

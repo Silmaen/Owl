@@ -161,8 +161,8 @@ endif ()
 # script
 if (${PROJECT_PREFIX}_MODULE_SCRIPT)
     owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE Luau CONFIG REQUIRED)
-    if (MINGW AND CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-        # lld finds std::string constructors both in Luau.Analysis and in the libstdc++ import library: same code.
+    if (MINGW)
+        # lld and ld find std::string members both in Luau.Analysis and in the libstdc++ import library: same code.
         target_link_options(${ENGINE_NAME}Private INTERFACE "LINKER:--allow-multiple-definition")
     endif ()
 endif ()

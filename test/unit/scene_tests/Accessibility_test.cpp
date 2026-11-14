@@ -15,6 +15,7 @@
 #include <scene/SettingsManager.h>
 #include <scene/Subtitles.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 
@@ -124,7 +125,7 @@ TEST(Subtitles, aNewLinePushesTheOldestOut) {
 	scene::Subtitles subtitles;
 	for (const auto* text: {"one", "two", "three", "four"}) subtitles.show(text, 5.f);
 	const auto lines = subtitles.getLines();
-	ASSERT_EQ(lines.size(), scene::Subtitles::g_maxLines);
+	ASSERT_EQ(lines.size(), size_t{scene::Subtitles::g_maxLines});
 	EXPECT_EQ(lines.front().text, "two");
 	EXPECT_EQ(lines.back().text, "four");
 	subtitles.clear();

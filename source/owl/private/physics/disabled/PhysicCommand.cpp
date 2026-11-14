@@ -52,7 +52,7 @@ auto PhysicCommand::getInterpolationAlpha([[maybe_unused]] const scene::Scene& i
 
 void PhysicCommand::syncSimulatedTransforms([[maybe_unused]] scene::Scene& ioScene) {}
 
-void PhysicCommand::shiftOrigin([[maybe_unused]] scene::Scene& ioScene, [[maybe_unused]] const math::vec2f& iShift) {}
+void PhysicCommand::shiftOrigin([[maybe_unused]] scene::Scene& ioScene, [[maybe_unused]] const math::vec3f& iShift) {}
 
 auto PhysicCommand::takeCollisionEvents([[maybe_unused]] scene::Scene& ioScene) -> std::vector<CollisionEvent> {
 	return {};

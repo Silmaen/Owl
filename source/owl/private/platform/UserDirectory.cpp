@@ -139,6 +139,12 @@ void setUserDirectory(const std::filesystem::path& iDirectory) {
 		OWL_CORE_WARN("UserDirectory: Cannot create '{}': {}.", state.forced.string(), error.message())
 }
 
+auto getCacheDirectory() -> std::filesystem::path {
+	if (const auto fromEnvironment = core::getEnv("OWL_CACHE_DIR"); !fromEnvironment.empty())
+		return std::filesystem::absolute(fromEnvironment);
+	return getUserDirectory() / "cache";
+}
+
 auto getGameDirectory(const std::string& iGameName) -> std::filesystem::path {
 	return getUserDirectory() / "games" / (iGameName.empty() ? std::string{"OwlGame"} : iGameName);
 }

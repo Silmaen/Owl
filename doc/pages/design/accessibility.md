@@ -2,22 +2,21 @@
 
 [TOC]
 
-Every game made with Owl can be played by more people, with settings the player controls, summarised in the
-[Roadmap](../roadmap.md). They are game settings (`SettingsManager`, `game_settings.yml` defaults, the player's
+Every game made with Owl can be played by more people, with settings the player controls. They are game settings (`SettingsManager`, `game_settings.yml` defaults, the player's
 `settings.yml`), read by the engine every frame through `scene::Accessibility`: a menu changes them with `settings.set`
 and the next frame shows the change.
 
 ## Settings
 
-| Key                    | Type   | Default | Effect                                                                                    |
-|------------------------|--------|---------|-------------------------------------------------------------------------------------------|
-| `ui_scale`             | float  | 1       | Scales the HUD, the HUD markers and the subtitles on top of the canvas scale (0.5 to 3)   |
-| `color_blind_mode`     | string | `none`  | `protanopia`, `deuteranopia` or `tritanopia`: the whole frame is corrected for it         |
-| `color_blind_strength` | float  | 1       | Strength of the correction, 0 to 1                                                        |
-| `reduced_motion`       | bool   | false   | No camera motion blur, a still film grain, wipes drawn as fades; scripts read it too      |
-| `subtitles`            | bool   | true    | Draws the subtitles of the sounds and of `ui.show_subtitle`                               |
-| `subtitle_scale`       | float  | 1       | Size of the subtitles, 0.5 to 3                                                           |
-| `subtitle_background`  | float  | 0.6     | Opacity of the band behind the subtitles, 0 to 1                                          |
+| Key                    | Type   | Default | Effect                                                                                  |
+|------------------------|--------|---------|-----------------------------------------------------------------------------------------|
+| `ui_scale`             | float  | 1       | Scales the HUD, the HUD markers and the subtitles on top of the canvas scale (0.5 to 3) |
+| `color_blind_mode`     | string | `none`  | `protanopia`, `deuteranopia` or `tritanopia`: the whole frame is corrected for it       |
+| `color_blind_strength` | float  | 1       | Strength of the correction, 0 to 1                                                      |
+| `reduced_motion`       | bool   | false   | No camera motion blur, a still film grain, wipes drawn as fades; scripts read it too    |
+| `subtitles`            | bool   | true    | Draws the subtitles of the sounds and of `ui.show_subtitle`                             |
+| `subtitle_scale`       | float  | 1       | Size of the subtitles, 0.5 to 3                                                         |
+| `subtitle_background`  | float  | 0.6     | Opacity of the band behind the subtitles, 0 to 1                                        |
 
 `Accessibility::setDefaults` registers every key (the runner and Owl Nest Play do it), so `settings.get` and
 `settings.reset` know them; `reduced_motion` reaches the screen transitions through `settings.apply`.
@@ -63,13 +62,4 @@ flowchart LR
 - `scene::Subtitles` keeps at most three lines, the same text renewed instead of repeated; `HudPass` draws them in
   Play, centred at the bottom of the screen over every canvas, the newest lowest, wrapped at 80 % of the width.
 
-## Status
-
-| Item               | Status                                                                          |
-|--------------------|---------------------------------------------------------------------------------|
-| UI scale           | Done (`ui_scale`)                                                               |
-| Colour-blind modes | Done: correction for players, simulation preview in Owl Nest                    |
-| Subtitles          | Done: sounds and Lua                                                            |
-| Reduced motion     | Done: motion blur, film grain, wipes, scripts                                   |
-| Input remapping    | Planned in the gamepad improvements ([Windowing and input](windowing-input.md)) |
-| Readable fonts     | Legible fonts and sizes by default ([HUD system](hud-system.md))                |
+Input remapping comes with the gamepad improvements ([Windowing and input](windowing-input.md)).

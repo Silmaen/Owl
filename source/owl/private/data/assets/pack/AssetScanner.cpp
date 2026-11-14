@@ -351,6 +351,8 @@ void followDataTable(const std::string& iName, const std::string& iSource,// NOL
 				followDataTable(asset, source, ioVisitedScenes, ioAssets, ioWarnings);
 			else if (std::filesystem::path(asset).extension() == ".owl")
 				followScene(asset, source, ioVisitedScenes, ioAssets, ioWarnings);
+			else if (std::filesystem::path(asset).extension() == ".owlprefab")
+				followPrefab(asset, source, ioVisitedScenes, ioAssets, ioWarnings);
 			else if (isSoundFile(asset))
 				followSound(asset, source, ioAssets, ioWarnings);
 			else

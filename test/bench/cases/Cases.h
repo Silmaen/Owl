@@ -120,7 +120,13 @@ void runScriptBenches(Runner& ioRunner);
 
 /**
  * @brief
- *  Physics benchmarks (Jolt).
+ *  Physics benchmarks (Jolt): world creation and steps of 2D boxes (one to eight workers, two collision steps, and one
+ *  collision step at 1000 bodies), rollback snapshots, gravity fields and trajectory prediction, time warp, hinged
+ *  chains and compound assemblies. Budgets: 1 ms for the step of 1000 falling 2D boxes on one thread with one collision
+ *  step, 1.5 ms at 5000 with four workers; 500 us for a snapshot or a restore of 1000 bodies; 100 us for the step of
+ *  100 bodies in four fields, 50 us for a prediction of 1000 steps; 1 ms for a frame at x80 or a hand-off of 100
+ *  bodies; 1 ms for the step of 10 chains of 20 hinged links, 250 us for 50 assemblies of 8 parts, 50 us for a part
+ *  detached and attached again.
  * @param[in,out] ioRunner The runner.
  */
 void runPhysicsBenches(Runner& ioRunner);
@@ -195,5 +201,24 @@ void runSplineBenches(Runner& ioRunner);
  * @param[in,out] ioRunner The runner.
  */
 void runNavBenches(Runner& ioRunner);
+
+/**
+ * @brief
+ *  AI: one tick of 1000 behaviour trees (a reactive guard: chase in reach, else wander, wait and count), and 10 runtime
+ *  frames of a 2D flock of 1000 steering agents (separation, alignment, cohesion, wander, avoidance). Budgets: 200 us
+ *  for the 1000 trees, 2 ms per frame for the 1000 agents.
+ * @param[in,out] ioRunner The runner.
+ */
+void runAiBenches(Runner& ioRunner);
+
+/**
+ * @brief
+ *  Replays: 60 runtime frames of 100 falling boxes live, recorded and played back, the rewind of the editor (scene copy,
+ *  start on the timeline, 60 frames simulated again) and the world hash of a checkpoint over 1000 bodies. Budgets: a
+ *  recorded or replayed frame within 10 % of a live one, 50 ms to simulate one second of play again, 5 ms for the hash
+ *  of 1000 bodies.
+ * @param[in,out] ioRunner The runner.
+ */
+void runReplayBenches(Runner& ioRunner);
 
 }// namespace owl::bench

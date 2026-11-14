@@ -40,7 +40,7 @@
       "WebFetch(domain:gcovr.com)",
       "WebFetch(domain:en.cppreference.com)",
       "WebFetch(domain:www.lua.org)",
-      "WebFetch(domain:box2d.org)",
+      "WebFetch(domain:luau.org)",
       "mcp__ide__getDiagnostics"
     ],
     "ask": [

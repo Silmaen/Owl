@@ -241,8 +241,8 @@ script loads in Play; the values and the lists are saved with the scene (`name`,
 A scene can own one script of its own, the **Script** section of Scene Settings in Owl Nest (the `SceneScript:` key of
 the `.owl` file). It has the hooks and the `properties` of an entity script and runs before the entity scripts in the
 same frame, but it belongs to no entity: `entity_id` is `nil`, so it drives the scene through `scene.*`, `ui.*`,
-`gamestate.*` and the other tables, and finds the entities it moves by name or tag. Put there what used to be parked on
-the camera; a script that moves its own entity stays a `LuaScript` of that entity.
+`gamestate.*` and the other tables, and finds the entities it moves by name or tag. Put there what is not bound to one
+entity; a script that moves its own entity stays a `LuaScript` of that entity.
 
 ### HUD script
 
@@ -361,14 +361,14 @@ end
 the HUD, else on the first script of the active scene that defines it.
 
 The keyboard and the gamepad drive a focus over the buttons and sliders (`ui_*` actions, see
-[HUD system](design/hud-system.md#focus-navigation-hud5-done)): `ui.set_focus(id)` gives it to a widget and shows it,
+[HUD system](design/hud-system.md#focus-navigation)): `ui.set_focus(id)` gives it to a widget and shows it,
 `ui.get_focus()` returns the widget holding it (0 when none), and a `UiFocus` with an `onFocusCallback` calls that
 function when its widget takes the focus, with the widget id in `_focused_entity`. A script can also read
 `input.is_action_just_pressed("ui_cancel")` to go back from a menu.
 
 A `UiScrollView` or a `UiList` scrolls with the wheel, its bar and the focus; `ui.scroll_get(id)` and
 `ui.scroll_set(id, x, y)` read and move it (reference pixels, kept inside the content). A list is a model fed by the
-script, which only builds the rows in view ([HUD system](design/hud-system.md#scroll-views-and-virtualised-lists-hud7-done)):
+script, which only builds the rows in view ([HUD system](design/hud-system.md#scroll-views-and-virtualised-lists)):
 
 ```lua
 function on_create()
@@ -742,8 +742,10 @@ process; the scenario and export tests set it from the CMake option of the same 
 ### What is guaranteed, and what is not
 
 - Every call from the engine into Lua is protected: a script error never unwinds through
-  engine code, and a C++ exception never crosses a Lua frame (bindings run behind a
-  trampoline that catches it and raises it as a Lua error once the C++ frames are gone).
+  engine code. Luau raises its errors as C++ exceptions, so an error raised inside an engine
+  binding (a bad argument, `error()` in a function it calls) runs the destructors of the
+  binding's objects on its way to the protected call; a binding's own C++ exception becomes
+  a Lua error (`C++ exception: ...`) at the trampoline every binding runs behind.
 - The engine reads and writes globals with raw accesses, so a metatable the script puts
   on `_G` or on its `properties` table never runs outside a protected call.
 - A script cannot reach the filesystem, the OS, the debug library or other scripts' states.

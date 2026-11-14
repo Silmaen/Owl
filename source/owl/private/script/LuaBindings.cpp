@@ -3508,7 +3508,7 @@ auto luaSteerSetLeader(lua_State* iState) -> int {
 	return 1;
 }
 
-// The value a Lua argument holds for a key of the blackboard, read before anything with a destructor exists.
+// The value a Lua argument holds for a key of the blackboard.
 struct BlackboardArgument {
 	int type = LUA_TNIL;
 	bool flag = false;

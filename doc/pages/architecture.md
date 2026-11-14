@@ -365,7 +365,8 @@ An application writes its settings, saves, logs and caches in one folder, its **
 with it and leaves nothing in the user profile. When that folder cannot be written (an installation in `/usr`, `/opt`
 or `Program Files`), the user profile is used instead: `$XDG_DATA_HOME` or `~/.local/share/<executable>` on Linux,
 `%LOCALAPPDATA%\<executable>` on Windows. The `OWL_USER_DIR` environment variable forces it (the tests point it into
-their temporary folder).
+their temporary folder). What can be generated again goes to `platform::getCacheDirectory()`: `cache/` there, or the
+`OWL_CACHE_DIR` environment variable, which processes keeping their own user directory share (the scenario tests).
 
 ```text
 user/

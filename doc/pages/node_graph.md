@@ -5,8 +5,7 @@
 **Level:** Expert. **Read first:** [Architecture Overview](architecture.md).
 
 This page documents Owl Engine's generic node-graph widget and the editor subsystems built on top of it. The framework is
-designed to be **reusable**: visual scripts and [PCG graphs](pcg_graphs.md) are consumers; future releases reuse the
-same canvas for animation graphs, behaviour trees and dialogue trees.
+designed to be **reusable**: visual scripts, [PCG graphs](pcg_graphs.md) and behaviour trees share the same canvas.
 
 ## Current status
 
@@ -194,13 +193,3 @@ Integration surface:
 | Visual script  | Event graphs compiled to Lua                                    | `.owlvs`  |
 | PCG graph      | Procedural generation of tilemaps ([PCG graphs](pcg_graphs.md)) | `.owlpcg` |
 | Behaviour tree | AI of enemies and creatures ([AI](ai.md))                       | `.owlbt`  |
-
-## Planned consumers
-
-| Document type          | Target type                  | Extension  |
-|------------------------|------------------------------|------------|
-| Animation graph        | Anim state machine           | `.owlanim` |
-| Dialogue tree          | Branching conversations      | `.owldlg`  |
-
-The node canvas is free of domain knowledge so all of these can share a single widget and the single YAML serialization
-format above.

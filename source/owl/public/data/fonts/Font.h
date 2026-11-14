@@ -234,8 +234,7 @@ public:
 
 	/**
 	 * @brief
-	 *  Folder of the cached atlases: `cache/font` in the working directory of the application, or in the temporary
-	 *  directory without an application.
+	 *  Folder of the cached atlases: `font` in the cache directory of the process (`platform::getCacheDirectory()`).
 	 * @return The folder path.
 	 */
 	[[nodiscard]] static auto getAtlasCacheDirectory() -> std::filesystem::path;

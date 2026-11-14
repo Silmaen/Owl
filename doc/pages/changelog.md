@@ -9,8 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-15
+
 ### Added
 
+- Benchmarks and budgets of the 0.7 hot paths in `owl_bench`: behaviour trees, a steering flock, replay record, playback and rewind, rollback snapshots, gravity fields and prediction, time warp, hinged chains and compound bodies.
 - Steering behaviours: the `SteeringAgent` component and the `owl.steering` system (seek, flee, arrive, pursue, evade, wander, flocking, avoidance of agents and `NavObstacle`s, formations) in 2D, on the ground and in open 3D space, Lua `steer.*` ([AI](ai.md#ai-steering)).
 - Behaviour trees: the `.owlbt` asset, the `BehaviourTreeAgent` component and the `owl.behaviour_trees` system with a blackboard, composites, decorators, conditions, actions and Lua leaves, Lua `bt.*` ([AI](ai.md#ai-trees)).
 - Owl Nest edits `.owlbt` trees in a node graph tab (palette, Blackboard and Node panels, `bt.*` commands) with the status of each node and the blackboard live in Play ([AI](ai.md#ai-editor)).
@@ -152,6 +155,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Physics: the automatic solver thread count goes multi-threaded from 250 dynamic bodies instead of 2 000, which halves the step of 500 to 1 000 2D bodies on 4 workers; the 2D step is profiled and its targets revised ([Physics](physics.md#multi-threaded-solver)).
+- CI: the ccache of each runner grows to 20 GiB, so the presets it serves no longer evict each other and rebuild from scratch.
+- CI: on-demand jobs (▶, never blocking) for the presets no job builds: MinGW GCC Release and Debug, `linux-gcc-release`, `linux-clang-minimal`.
+- CI: a draft marked ready gets its full pipeline from the `ready-watch` schedule, every job reuses an earlier success on the same tree, and clang-tidy and the benchmarks skip merge requests that change no C++.
+- Export tests: one CTest entry per shipped project, which CTest balances over its jobs instead of fixed pairs of projects.
+- Caches go to `platform::getCacheDirectory()`, which `OWL_CACHE_DIR` moves out of the user directory; the scenario tests share their font atlases, written atomically.
+- Scenes share their environment: a level change takes the sky another scene built or is building, a build nobody waits for stops, and the Null backend skips the GGX prefiltering (scenario and export tests several times faster).
 - Asteroid Field: the fighter has far less translation inertia (stronger flight assist dampers and thrust), it stops and reaches its top speed in about a second.
 - Fair play: the `Player` impulses run on the fixed tick, and the first person, voxel and ship controllers move by the mean speed of each frame, so jumps and burns no longer depend on the frame rate.
 - The visual script compiler joins the two paths of a branch where they meet, so the Lua of a graph follows the shape of hand-written Lua.
@@ -177,6 +187,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Luau 0.746 replaces Lua 5.5: one VM with an interrupt-based time quota, `lua_breakpoint` breakpoints and the `bit32` and `buffer` libraries.
 - A whole number a script stores in the game state is an integer: Luau numbers are doubles.
 - Sample games: each game's menus have a look of their own: Breakout an arcade cabinet, Sokoban crates and a clipboard, Wolfenstein DOS menus with a skull cursor, Ring Runner cockpit displays, The Moon Lantern a storybook, the tower defence raised planks.
+- The repository audit (`doc/audit/`) and the documentation describe the GitLab CI, Luau and Jolt as they are, without TeamCity leftovers or history wording.
 
 ### Removed
 
@@ -184,6 +195,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The game export packs what the prefabs named in a data table use (the meshes and textures of the Ring Runner enemies), not only the prefab files.
+- A shift of the floating origin moves the 3D physics bodies in z and the points the AI keeps (navigation meshes, agent goals and paths, steering targets, behaviour tree points).
+- Luau raises its errors as C++ exceptions instead of `longjmp`: a Lua error inside an engine binding runs the destructors of its objects.
 - Asteroid Field: the enemies no longer fly into a freighter and shoot it from inside; they break off at close range and their shots must cross the gap.
 - The export packs the prefabs a script spawns (a `.owlprefab` path quoted in a script or a script property) with what their entities use.
 - The visual script compiler hung on a function with two unread results, and could start a statement with a parenthesis Luau read as a call.

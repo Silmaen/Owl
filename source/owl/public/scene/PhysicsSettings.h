@@ -29,8 +29,8 @@ struct OWL_API PhysicsSettings {
 	static constexpr uint32_t maxWorkerCount = 32;
 	/// Upper bound of the automatic solver thread count.
 	static constexpr uint32_t maxAutoWorkerCount = 4;
-	/// Dynamic bodies below which the automatic count stays single-threaded (task dispatch costs more than it saves).
-	static constexpr uint32_t autoThreadingMinBodies = 2000;
+	/// Dynamic bodies below which the automatic count stays single-threaded (task dispatch costs as much as it saves).
+	static constexpr uint32_t autoThreadingMinBodies = 250;
 	/// Default time scale above which the bodies go on rails: the default bound of the ticks of a frame.
 	static constexpr float defaultRailsTimeScale = 8.f;
 	/// Lowest accepted `railsTimeScale`.

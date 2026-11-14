@@ -54,6 +54,16 @@ OWL_API void setUserDirectory(const std::filesystem::path& iDirectory);
 
 /**
  * @brief
+ *  Directory where the running application keeps what it can generate again (font atlases, compiled shaders).
+ *
+ * The `OWL_CACHE_DIR` environment variable when set (processes that keep their own user directory but share the
+ * caches, such as the scenario tests), else `<user directory>/cache`; read at each call.
+ * @return The cache directory of the process, not created.
+ */
+[[nodiscard]] OWL_API auto getCacheDirectory() -> std::filesystem::path;
+
+/**
+ * @brief
  *  Directory of a game's settings and saves, inside the user directory.
  * @param[in] iGameName Name of the game; empty gives `OwlGame`.
  * @return `<user directory>/games/<game name>`, not created.

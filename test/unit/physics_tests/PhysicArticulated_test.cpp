@@ -17,6 +17,7 @@
 
 #include <chrono>
 #include <cmath>
+#include <cstdint>
 #include <filesystem>
 #include <string>
 
@@ -211,12 +212,12 @@ TEST_F(PhysicArticulatedTest, solverIterationsAndBreakThresholdsAreSaved) {
 	ASSERT_TRUE(SceneSerializer(loaded).deserialize(file));
 	std::filesystem::remove(file);
 	EXPECT_EQ(loaded->getPhysicsSettings().velocitySteps, 30u);
-	EXPECT_EQ(loaded->getPhysicsSettings().positionSteps, PhysicsSettings::maxSolverIterations);
+	EXPECT_EQ(loaded->getPhysicsSettings().positionSteps, uint32_t{PhysicsSettings::maxSolverIterations});
 	const auto entity = loaded->findEntityByUUID(weight.getUUID());
 	ASSERT_TRUE(entity);
 	EXPECT_FLOAT_EQ(entity.getComponent<component::PhysicJoint>().joint.breakForce, 12.5f);
 	EXPECT_FLOAT_EQ(entity.getComponent<component::PhysicJoint>().joint.breakTorque, 3.f);
 	EXPECT_TRUE(entity.getComponent<component::PhysicBody>().body.part);
 	PhysicCommand::init(m_scene);
-	EXPECT_EQ(PhysicCommand::getSettings(m_scene).positionSteps, PhysicsSettings::maxSolverIterations);
+	EXPECT_EQ(PhysicCommand::getSettings(m_scene).positionSteps, uint32_t{PhysicsSettings::maxSolverIterations});
 }

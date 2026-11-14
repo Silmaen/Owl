@@ -6,7 +6,7 @@
 
 A **world partition** cuts a scene into cubic cells on world coordinates, each holding a scene of its own. In Play the
 cells near a streaming source are read in the background and merged into the running scene, then removed once the
-source has moved away, without a loading screen. Design notes and what is planned:
+source has moved away, without a loading screen. Design notes:
 [Large worlds](design/large-worlds.md).
 
 ## Settings {#world-partition-settings}

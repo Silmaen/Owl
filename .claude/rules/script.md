@@ -12,8 +12,8 @@ User-facing reference: `doc/pages/scripting.md` (guide), `doc/pages/lua-api.md` 
 
 - Public: `ScriptEngine` (static: quotas, property extraction; no scene, no Lua state), `ScriptInstance` (one isolated `lua_State` per entity),
   `ScriptProperty`. Private: `LuaEngine` (raw `lua_State*` wrapper), `LuaBindings`.
-- Luau 0.746 (local Conan recipe, built with `LUA_USE_LONGJMP`: a Lua error unwinds like in the reference Lua, so the
-  "every `luaL_check*` before an object with a destructor" rule below holds). Headers only through
+- Luau 0.746 (local Conan recipe, without `LUA_USE_LONGJMP`: a Lua error is a C++ exception, internal to Luau, so it
+  runs the destructors of the binding frames it unwinds). Headers only through
   `source/owl/private/core/external/lua.h` (diagnostic suppression, two-argument `lua_pushcfunction` /
   `lua_pushcclosure`, `lua_pushglobaltable`).
 - Numbers are doubles: whole numbers cross through `script/LuaValues.h` (`pushInteger`, `checkInteger`,
@@ -48,9 +48,10 @@ User-facing reference: `doc/pages/scripting.md` (guide), `doc/pages/lua-api.md` 
 - Registry bindings are light C functions `guarded<fn>` (`LuaEngine::callGuarded`, exception trampoline, no closure
   per state) registered by `LuaEngine::registerTable`; any other C function goes through
   `LuaEngine::registerGuardedTable`. The bound scene and the delta time live in the state's `LuaEngine::Quota`
-  (`setHostPointer`, `setDeltaTime`), not in the Lua registry. In a binding,
-  call every `luaL_check*` **before** creating any object with a non-trivial destructor: a Lua error
-  `longjmp`s over the binding's frame. Throw a C++ exception instead when a check comes later.
+  (`setHostPointer`, `setDeltaTime`), not in the Lua registry. A binding may call `luaL_check*` / `luaL_error`
+  anywhere; never catch `std::exception` (nor `...`) around a Lua API call without rethrowing: the Lua error would be
+  swallowed. `callGuarded` lets the Lua error through (its type read once from a probe state) and wraps any other
+  exception as `C++ exception: ...`. A Lua error outside a protected call throws into the host (no panic handler).
 - Lifecycle: `Scene::onStartRuntime()` creates each instance bound to its scene (`ScriptInstance::setScene`,
   read by the bindings through `getBoundScene(L)`, never a global); instances call `on_create` /
   `on_update` / `on_destroy`.

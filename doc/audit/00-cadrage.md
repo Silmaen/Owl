@@ -1,6 +1,6 @@
 # Audit du dépôt Owl — cadrage
 
-> **Statut : cadrage validé le 2026-10-05, revu le 2026-10-20 sur `main` 4e1a6a10.** Décisions complémentaires au §10.
+> **Statut : cadrage validé le 2026-10-05, revu le 2026-11-12 sur `Feature/sample-games-new` b4281d72.** Décisions complémentaires au §10.
 > **Lecteurs visés** : agents IA (Claude Code et sous-agents) qui exécutent l'audit, et le mainteneur.
 > Chaque section est écrite pour être découpée en tâches indépendantes.
 > Environnement et configuration IA : §11 et §12.
@@ -8,7 +8,7 @@
 ## 1. Objectif
 
 Dresser un bilan **honnête et argumenté** du dépôt Owl (moteur de jeu C++23, éditeur Owl Nest, CI
-Python, pipelines TeamCity) : ce qui est solide, ce qui est faible, ce qui est étrange, ce qui mérite
+Python, pipelines GitLab CI) : ce qui est solide, ce qui est faible, ce qui est étrange, ce qui mérite
 d'être conservé. Rien n'est sacré : choix techniques, conventions, outillage, processus, configuration
 IA du dépôt.
 
@@ -24,15 +24,15 @@ Quatre résultats sont attendus :
 
 ## 2. Décisions de cadrage (2026-10-05)
 
-| Sujet       | Décision                                                                            |
-|-------------|-------------------------------------------------------------------------------------|
+| Sujet       | Décision                                                                              |
+|-------------|---------------------------------------------------------------------------------------|
 | Build       | Docker uniquement, via `./docker_run.sh` (miroir de la toolchain CLion *Docker Owl*). |
-| Mesures     | Performance du **moteur** en priorité ; la chaîne de build est secondaire.          |
-| Couverture  | Tous les axes, aussi profond que possible.                                          |
-| Langue      | Français pour les livrables de l'audit.                                             |
-| Emplacement | `doc/audit/`, avec un point d'entrée `AUDIT.md` à la racine.                        |
-| Horizon     | Large : avenir du moteur, y compris ce qui ne peut pas être fait tout de suite.     |
-| Config IA   | Optimisée tout de suite (fait), réévaluée en fin d'audit.                           |
+| Mesures     | Performance du **moteur** en priorité ; la chaîne de build est secondaire.            |
+| Couverture  | Tous les axes, aussi profond que possible.                                            |
+| Langue      | Français pour les livrables de l'audit.                                               |
+| Emplacement | `doc/audit/`, avec un point d'entrée `AUDIT.md` à la racine.                          |
+| Horizon     | Large : avenir du moteur, y compris ce qui ne peut pas être fait tout de suite.       |
+| Config IA   | Optimisée tout de suite (fait), réévaluée en fin d'audit.                             |
 
 ## 3. Ce que ce n'est pas
 
@@ -45,9 +45,9 @@ Quatre résultats sont attendus :
 
 ## 4. Périmètre et axes
 
-Taille : ~217 kLOC C++ (`source/` + `test/`), ~660 fichiers moteur, ~195 fichiers éditeur (dont
-`EditorLayer.cpp` à ~1 300 lignes), 20 catégories de tests, ~40 dépendances Conan, CI Python +
-TeamCity Kotlin, 420 commits. Build complet en Docker : ~60 s sur 32 cœurs (avec ccache chaud).
+Taille (2026-11-12) : ~375 kLOC C++ (`source/` + `test/`), ~970 fichiers moteur, ~270 fichiers éditeur (dont
+`EditorLayer.cpp` à ~1 840 lignes), 20 catégories de tests et des scénarios `.owltest`, 41 dépendances Conan, CI
+Python + GitLab CI, 536 commits. Build complet en Docker : ~60 s sur 32 cœurs (avec ccache chaud).
 
 | Axe | Contenu                                                           | Questions centrales                                                                              |
 |-----|-------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
@@ -57,8 +57,8 @@ TeamCity Kotlin, 420 commits. Build complet en Docker : ~60 s sur 32 cœurs (ave
 | D   | Sous-systèmes : physique, son, script Lua, tâches, voxel, raycast | Choix pertinents ? Intégration propre ou couplage caché ? Coût par frame.                        |
 | E   | Éditeur Owl Nest                                                  | Dette d'`EditorLayer`, undo/redo par snapshot YAML : exactitude et coût.                         |
 | F   | Qualité : tests, couverture, sanitizers, clang-tidy, CodeStyle    | Que testent vraiment les tests ? Trous sur les chemins à risque (GPU, Vulkan, éditeur).          |
-| G   | Build, dépendances, packaging                                     | Conan 2 (`conanfile.py`, `conan.lock`, `conan/recipes/`) : coût, verrouillage, recettes maison.                       |
-| H   | CI (`ci/`, `.teamcity/`)                                          | Robustesse, redondances, signal utile par minute de CI.                                          |
+| G   | Build, dépendances, packaging                                     | Conan 2 (`conanfile.py`, `conan.lock`, `conan/recipes/`) : coût, verrouillage, recettes maison.  |
+| H   | CI (`ci/`, `.gitlab-ci.yml`, `ci/gitlab/`)                        | Robustesse, redondances, signal utile par minute de CI.                                          |
 | I   | Documentation (`doc/pages`, Doxygen, README, CHANGELOG, roadmap)  | À jour par rapport au code ? Exigences Doxygen proportionnées ?                                  |
 | J   | Configuration IA                                                  | Ce que les agents ont réellement utilisé, ce qui manquait, ce qui était faux.                    |
 | K   | Avenir du moteur (§5)                                             | Où va Owl, dans quel ordre, avec quelles briques préalables ?                                    |
@@ -76,7 +76,7 @@ Pistes à instruire au minimum (liste ouverte, chaque agent peut en ajouter) :
 - **Rendu 3D moderne** : static meshes, matériaux PBR, éclairage et ombres, post-process ; render graph ;
   rendu piloté par GPU (indirect draw, culling GPU, bindless) ; abandon ou maintien d'OpenGL.
 - **Animation** : squelettale, blend trees, IK ; animation 2D (sprites, Spine-like).
-- **Physique 3D** (Jolt ou équivalent) à côté de Box2D, et déterminisme.
+- **Physique 2D et 3D** sur Jolt, et déterminisme.
 - **Pipeline d'assets** : import / cook hors-ligne, formats binaires, hot reload, cache dérivé,
   références d'assets par GUID plutôt que par chemin.
 - **Script** : hot reload, débogueur, typage, performance (LuaJIT ? Luau ?), API stable pour les jeux.
@@ -101,12 +101,12 @@ Choix à confronter, au minimum :
 - **ECS** : EnTT face à flecs, à un ECS maison, aux archétypes de Bevy.
 - **Rendu** : double backend GL + Vulkan face à une RHI (bgfx, Diligent, NVRHI, sokol, SDL_GPU, WebGPU / Dawn).
 - **Shaders** : Slang compilé au runtime face à une compilation hors-ligne (glslang, DXC) ; coût du premier lancement.
-- **Script** : Lua 5.5 + bindings manuels face à sol2, LuaJIT, Luau, Wren, AngelScript, C#.
+- **Script** : Luau + bindings manuels face à sol2, Lua 5.5, LuaJIT, Wren, AngelScript, C#.
 - **Sérialisation** : YAML (yaml-cpp) face à JSON, binaire (cereal, flatbuffers) ; impact sur undo, prefab, sauvegarde.
-- **Physique** : Box2D (quelle version ?) face à Box2D v3 et à Jolt pour la 3D.
+- **Physique** : Jolt en 2D et en 3D face à Box2D v3 et Box3D.
 - **Tâches** : Taskflow face à enkiTS, à un job system à fibres.
 - **Dépendances** : Conan 2 face à vcpkg, CPM.cmake.
-- **CI** : TeamCity + wrapper Python + plugin GitHub maison face à GitHub Actions.
+- **CI** : GitLab CI auto-hébergé + wrapper Python face à GitHub Actions.
 - **Moteurs de référence** : Hazel (ADN commun probable), Godot, Bevy, O3DE, Wicked Engine, raylib, Defold.
 
 ### Mesures de performance du moteur (priorité)
@@ -121,7 +121,7 @@ GPU, backend, preset, scène, nombre de répétitions, dispersion.
 - **Scène** : `getWorldTransform` sur hiérarchies profondes et larges, itération des vues EnTT, copie de
   scène (Play), coût d'un snapshot undo et d'une instanciation de prefab selon la taille de la scène.
 - **Script** : coût d'un `on_update` Lua par entité, aller-retour C++ ↔ Lua.
-- **Physique** : pas Box2D selon le nombre de corps, synchronisation avec les transforms.
+- **Physique** : pas Jolt selon le nombre de corps, synchronisation avec les transforms.
 - **Démarrage et chargement** : premier lancement (compilation Slang : ~165 ms à froid en Release, shaders précompilés au build par `OwlShaderBake`), cache SPIR-V, chargement de
   scène, ouverture de `.owlpack`.
 - **Mémoire** : pic et allocations par frame (`TrackerAPI`, heaptrack si ajouté à l'image).
@@ -217,7 +217,7 @@ llvmpipe).
 
 ### 11.2 Outillage présent
 
-Vérifié le 2026-10-20 dans le conteneur.
+Vérifié le 2026-11-12 dans le conteneur.
 
 | Catégorie       | Outils                                                                          |
 |-----------------|---------------------------------------------------------------------------------|
@@ -225,24 +225,23 @@ Vérifié le 2026-10-20 dans le conteneur.
 | Build           | cmake 4.4.4, ninja 1.13                                                         |
 | Python          | Python 3.14.4, Poetry 2.5.1 ; via Poetry : gcovr, codespell                     |
 | Qualité         | clang-tidy et clang-format 22.1.2, cppcheck 2.19, llvm-cov, lcov                |
-| Débogage        | gdb 17.1, lldb 22.1, valgrind 3.26                                              |
+| Débogage        | gdb 17.1, lldb 22.1, valgrind 3.26, perf 7.0                                    |
 | Docs            | doxygen 1.15, graphviz (`dot`)                                                  |
-| GPU / affichage | Mesa 26.0 (lavapipe), `vulkan-tools` et `vulkan-validationlayers` 1.4.341, Xvfb |
+| GPU / affichage | Mesa 26.0.8 (lavapipe), `vulkan-tools`, `vulkan-validationlayers` 1.4.341, Xvfb |
 
 ### 11.3 Ce qui manque à l'image
 
-Absent le 2026-10-20, classé selon la priorité de l'audit (performance du moteur).
+Absent le 2026-11-12, classé selon la priorité de l'audit (performance du moteur).
 
-| Priorité | Ajout                                                            | Pourquoi                                                          |
-|----------|------------------------------------------------------------------|-------------------------------------------------------------------|
-| Haute    | `perf` exécutable                                                | Aucun binaire : profilage CPU impossible malgré `--perf`.         |
-| Haute    | `heaptrack` (+ `heaptrack_print`)                                | Allocations par frame et pics mémoire, plus rapide que massif.   |
-| Haute    | `renderdoccmd` (RenderDoc)                                       | Capture GPU en ligne de commande, OpenGL et Vulkan.               |
-| Moyenne  | `hyperfine`                                                      | Temps de démarrage, de chargement et benchmarks CLI répétés.      |
-| Moyenne  | `hotspot`                                                        | Lecture graphique des enregistrements perf (avec `--gui`).        |
-| Moyenne  | `spirv-tools` (`spirv-val`, `spirv-dis`, `spirv-opt`), `glslang` | Inspecter et valider le SPIR-V produit par Slang.                 |
-| Basse    | `include-what-you-use`, ClangBuildAnalyzer                       | Coût des headers et temps de build.                               |
-| Basse    | `bloaty`                                                         | Taille des binaires et sections, par symbole.                     |
+| Priorité | Ajout                                                            | Pourquoi                                                       |
+|----------|------------------------------------------------------------------|----------------------------------------------------------------|
+| Haute    | `heaptrack` (+ `heaptrack_print`)                                | Allocations par frame et pics mémoire, plus rapide que massif. |
+| Haute    | `renderdoccmd` (RenderDoc)                                       | Capture GPU en ligne de commande, OpenGL et Vulkan.            |
+| Moyenne  | `hyperfine`                                                      | Temps de démarrage, de chargement et benchmarks CLI répétés.   |
+| Moyenne  | `hotspot`                                                        | Lecture graphique des enregistrements perf (avec `--gui`).     |
+| Moyenne  | `spirv-tools` (`spirv-val`, `spirv-dis`, `spirv-opt`), `glslang` | Inspecter et valider le SPIR-V produit par Slang.              |
+| Basse    | `include-what-you-use`, ClangBuildAnalyzer                       | Coût des headers et temps de build.                            |
+| Basse    | `bloaty`                                                         | Taille des binaires et sections, par symbole.                  |
 
 Tracy n'est pas un outil de l'image : c'est un backend du profileur du moteur (`OWL_PROFILER=none|tracy|chrome`),
 fourni par Conan.
@@ -261,13 +260,13 @@ Première passe appliquée le 2026-10-05 ; réévaluation prévue en fin d'audit
 
 ### 12.1 Problèmes relevés
 
-| Source                        | Problèmes                                                                                                                                                   |
-|-------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `CLAUDE.md` racine            | 466 lignes (~33 Ko) : commandes `cmake` nues (absent du PATH hôte), version périmée, sous-systèmes chargés même pour une tâche CI ou doc.                   |
-| `.claude/rules/`              | 3 règles sans `paths:` chargées toujours ; liste de catégories de tests fausse ; changelog « sous-listes autorisées » contraire à la règle globale.         |
-| `.claude/skills/`             | Natives et sur `linux-gcc-*`, contre la préférence Clang et la règle Docker.                                                                                |
-| Mémoire auto                  | 39 fichiers, index de 117 lignes contenant du contenu ; doublons du dépôt, notes contradictoires, faits périmés.                                            |
-| `.claude/settings.local.json` | 144 autorisations ponctuelles, chemins inexistants, worktrees supprimés ; `Bash(git:*)` autorisait `git push`.                                              |
+| Source                        | Problèmes                                                                                                                                           |
+|-------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| `CLAUDE.md` racine            | 466 lignes (~33 Ko) : commandes `cmake` nues (absent du PATH hôte), version périmée, sous-systèmes chargés même pour une tâche CI ou doc.           |
+| `.claude/rules/`              | 3 règles sans `paths:` chargées toujours ; liste de catégories de tests fausse ; changelog « sous-listes autorisées » contraire à la règle globale. |
+| `.claude/skills/`             | Natives et sur `linux-gcc-*`, contre la préférence Clang et la règle Docker.                                                                        |
+| Mémoire auto                  | 39 fichiers, index de 117 lignes contenant du contenu ; doublons du dépôt, notes contradictoires, faits périmés.                                    |
+| `.claude/settings.local.json` | 144 autorisations ponctuelles, chemins inexistants, worktrees supprimés ; `Bash(git:*)` autorisait `git push`.                                      |
 
 Contradictions bloquantes : build (global « Docker uniquement » contre mémoire « natif »), commits (global « commit
 local » contre mémoire « jamais de commit »), changelog (global « une ligne » contre `documentation.md` « sous-items »).
@@ -275,16 +274,16 @@ Contexte chargé à chaque session : ~55 Ko.
 
 ### 12.2 Configuration en place
 
-| Élément                           | Contenu                                                                                                                                                                 |
-|-----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `docker_run.sh`                   | Lanceur unique, options `--gui` et `--perf`.                                                                                                                            |
-| `CLAUDE.md`                       | 121 lignes : build Docker, presets Clang, actions CI, carte du dépôt, workflow, pièges.                                                                                 |
-| Règles ciblées par `paths:`       | `renderer`, `scene`, `editor`, `script`, `core-task`, `data-pack`, `dependencies`, `slang-shaders`, `python-ci`, `ongoing-quality`, `documentation`, `module-layout`, `cmake`, `cpp-style` : chargées quand on touche aux fichiers concernés. |
-| Skills                            | `build`, `test`, `coverage`, `add-test`, `add-dependency` en Docker et Clang ; `check` (gate avant de rendre la main).                                                  |
-| `.claude/settings.json` (versionné) | Autorisations partagées (`docker_run.sh`, git en lecture, commit local) ; `ask` sur `git push`, `gh pr create`, `git reset --hard`, `git clean` ; `deny` sur `pip install`, `sudo apt`. |
-| `.claude/settings.local.json`     | Courte liste générique (lecture, domaines web, MCP).                                                                                                                    |
-| Mémoire                           | 22 fichiers, index de 25 lignes ; les leçons techniques vivent dans les règles du dépôt, la mémoire ne garde que profil, retours de méthode, décisions de fond, références externes. |
-| CI                                | `doc/audit/` exclu de codespell et de Doxygen (§11.4).                                                                                                                  |
+| Élément                             | Contenu                                                                                                                                                                                                                                                  |
+|-------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `docker_run.sh`                     | Lanceur unique, options `--gui` et `--perf`.                                                                                                                                                                                                             |
+| `CLAUDE.md`                         | 127 lignes : build Docker, presets Clang, actions CI, carte du dépôt, workflow, pièges.                                                                                                                                                                  |
+| Règles ciblées par `paths:`         | `renderer`, `scene`, `editor`, `script`, `core-task`, `data-pack`, `dependencies`, `slang-shaders`, `python-ci`, `ongoing-quality`, `documentation`, `module-layout`, `cmake`, `cpp-style`, `testing` : chargées quand on touche aux fichiers concernés. |
+| Skills                              | `build`, `test`, `coverage`, `add-test`, `add-dependency` en Docker et Clang ; `check` (gate avant de rendre la main).                                                                                                                                   |
+| `.claude/settings.json` (versionné) | Autorisations partagées (`docker_run.sh`, git en lecture, commit local) ; `ask` sur `git push`, `gh pr create`, `git reset --hard`, `git clean` ; `deny` sur `pip install`, `sudo apt`.                                                                  |
+| `.claude/settings.local.json`       | Courte liste générique (lecture, domaines web, MCP).                                                                                                                                                                                                     |
+| Mémoire                             | 37 fichiers, index de 40 lignes ; les leçons techniques vivent dans les règles du dépôt, la mémoire ne garde que profil, retours de méthode, décisions de fond, références externes.                                                                     |
+| CI                                  | `doc/audit/` exclu de codespell et de Doxygen (§11.4).                                                                                                                                                                                                   |
 
 Sauvegarde de l'ancienne mémoire et de l'ancien `settings.local.json` :
 `~/.claude/projects/-data-sources-personnel-stack-owl-Owl/memory-backup-2026-10-05/`.
@@ -310,14 +309,14 @@ Décisions prises au nom du mainteneur (à valider) :
 
 Huit sous-agents ont instruit les axes A à I, chacun en contexte neuf, avec une consigne autonome renvoyant au cadrage.
 
-| Retour                                                                              | Suite donnée                                                          |
-|-------------------------------------------------------------------------------------|-----------------------------------------------------------------------|
-| `docker_run.sh` ne transmettait pas stdin hors terminal ni ne montait le scratchpad | `-i` si stdin est un pipe, variable `OWL_DOCKER_MOUNTS`.              |
-| « Compilation Slang ~50 s » faux en Release                                         | `CLAUDE.md` donne ~165 ms à froid et 21 à 35 ms par shader.           |
-| `CodeStyle` ne scannait pas le harnais de bench                                     | `test/bench` fait partie des racines scannées.                        |
+| Retour                                                                              | Suite donnée                                                                    |
+|-------------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
+| `docker_run.sh` ne transmettait pas stdin hors terminal ni ne montait le scratchpad | `-i` si stdin est un pipe, variable `OWL_DOCKER_MOUNTS`.                        |
+| « Compilation Slang ~50 s » faux en Release                                         | `CLAUDE.md` donne ~165 ms à froid et 21 à 35 ms par shader.                     |
+| `CodeStyle` ne scannait pas le harnais de bench                                     | `test/bench` fait partie des racines scannées.                                  |
 | Un agent a lu l'ancien index mémoire (liens cassés)                                 | Les liens de l'index résolvent ; l'index est un instantané de début de session. |
-| Comparaisons à Hazel / Godot / Bevy tirées de la mémoire des modèles                | Sourcées par `30-etat-de-l-art.md` ; les agents marquent « non revérifié ». |
-| Un script de texte lancé une fois en natif                                          | Sans conséquence ; règle Docker rappelée dans chaque consigne.        |
+| Comparaisons à Hazel / Godot / Bevy tirées de la mémoire des modèles                | Sourcées par `30-etat-de-l-art.md` ; les agents marquent « non revérifié ».     |
+| Un script de texte lancé une fois en natif                                          | Sans conséquence ; règle Docker rappelée dans chaque consigne.                  |
 
 Coût observé : 130 k à 360 k tokens et 7 à 60 min par agent d'axe ; l'orchestrateur ne reçoit qu'un résumé de
 20 lignes par agent, les fichiers de constats faisant foi.

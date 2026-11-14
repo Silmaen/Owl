@@ -39,16 +39,22 @@ auto makeFrame() -> core::Timestep {
 	return ts;
 }
 
-auto makeScene(Scene& ioScene) -> std::vector<Entity> {
+auto makeScene(Scene& ioScene, const SceneBody::Dimension iDimension) -> std::vector<Entity> {
+	const bool space = iDimension == SceneBody::Dimension::Space;
 	auto ground = ioScene.createEntity("ground");
-	ground.getComponent<component::Transform>().transform.scale() = {40.f, 1.f, 1.f};
-	ground.addComponent<component::PhysicBody>().body.type = SceneBody::BodyType::Static;
+	ground.getComponent<component::Transform>().transform.scale() = {40.f, 1.f, space ? 40.f : 1.f};
+	auto& groundBody = ground.addComponent<component::PhysicBody>().body;
+	groundBody.type = SceneBody::BodyType::Static;
+	groundBody.dimension = iDimension;
 	std::vector<Entity> boxes;
 	for (int i = 0; i < 4; ++i) {
 		auto box = ioScene.createEntity("box");
 		box.getComponent<component::Transform>().transform.translation() = {static_cast<float>(i) * 1.5f - 2.f,
-																			2.f + static_cast<float>(i), 0.f};
-		box.addComponent<component::PhysicBody>().body.type = SceneBody::BodyType::Dynamic;
+																			2.f + static_cast<float>(i),
+																			space ? static_cast<float>(i) - 1.f : 0.f};
+		auto& body = box.addComponent<component::PhysicBody>().body;
+		body.type = SceneBody::BodyType::Dynamic;
+		body.dimension = iDimension;
 		boxes.push_back(box);
 	}
 	return boxes;
@@ -67,9 +73,10 @@ struct Run {
 };
 
 // Falls the boxes for a while, optionally moves the world origin in the middle of a frame interval, and falls on.
-auto simulate(const std::optional<math::vec3d>& iShift) -> Run {
+auto simulate(const std::optional<math::vec3d>& iShift,
+			  const SceneBody::Dimension iDimension = SceneBody::Dimension::Plane) -> Run {
 	Scene scene;
-	const auto boxes = makeScene(scene);
+	const auto boxes = makeScene(scene, iDimension);
 	PhysicCommand::init(scene);
 	for (int frame = 0; frame < 40; ++frame) PhysicCommand::frame(scene, makeFrame());
 	Run run;
@@ -99,10 +106,24 @@ TEST_F(PhysicOriginShiftTest, TheBodiesCarryOnFromWhereTheShiftLeftThem) {
 	}
 }
 
+TEST_F(PhysicOriginShiftTest, BodiesInSpaceFollowTheShiftInDepth) {
+	constexpr math::vec3d spaceShift{30.0, -12.0, 45.0};
+	const auto reference = simulate(std::nullopt, SceneBody::Dimension::Space);
+	const auto shifted = simulate(spaceShift, SceneBody::Dimension::Space);
+	const math::vec3 shift{static_cast<float>(spaceShift.x()), static_cast<float>(spaceShift.y()),
+						   static_cast<float>(spaceShift.z())};
+	ASSERT_EQ(reference.end.size(), shifted.end.size());
+	for (std::size_t i = 0; i < reference.end.size(); ++i) {
+		EXPECT_NEAR(shifted.afterShift[i].z(), shifted.beforeShift[i].z() - shift.z(), 1e-4f) << i;
+		for (std::size_t axis = 0; axis < 3; ++axis)
+			EXPECT_NEAR(shifted.end[i][axis] + shift[axis], reference.end[i][axis], 1e-3f) << i << " axis " << axis;
+	}
+}
+
 TEST_F(PhysicOriginShiftTest, AWorldlessSceneShiftsWithoutPhysics) {
 	Scene scene;
 	auto box = scene.createEntity("box");
 	box.addComponent<component::PhysicBody>().body.type = SceneBody::BodyType::Dynamic;
-	EXPECT_NO_THROW(PhysicCommand::shiftOrigin(scene, {5.f, 5.f}));
+	EXPECT_NO_THROW(PhysicCommand::shiftOrigin(scene, {5.f, 5.f, 5.f}));
 	EXPECT_FALSE(PhysicCommand::isInitialized(scene));
 }

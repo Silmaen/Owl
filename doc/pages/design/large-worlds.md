@@ -2,17 +2,10 @@
 
 [TOC]
 
-Design page for the capabilities that let a game span any scale and any time span, from a room to a star system,
-summarised in the [Roadmap](../roadmap.md). Each brick also serves smaller games: splines carry isometric roads, data
-tables carry management games, the floating origin carries open worlds.
-
-## Goal
-
-- Positions precise to the millimetre anywhere in a world of several astronomical units
-- Vehicles assembled from parts at runtime, simulated as articulated bodies that can break apart
-- Bodies under gravity fields, their trajectories predicted, time sped up without losing them
-- Thousands of entities alive off screen on a coarse model, back to full simulation when the player comes near
-- Planets rendered from orbit to the ground in one continuous view, mixed with the other renderer-stack layers
+Design of the capabilities that let a game span any scale and any time span, from a room to a star system. Each brick
+also serves smaller games: splines carry isometric roads, data tables carry management games, the floating origin
+carries open worlds. The articulated bodies are in [Physics API](physics-api.md), the sockets in
+[Skeletal animation](skeletal-animation.md).
 
 ## Precision
 
@@ -33,51 +26,23 @@ flowchart LR
 |-------------------|--------------------------------------------------------------------------------------------------------|
 | Rendering         | Model matrices built relative to the camera on the CPU, in double, then cast to float                  |
 | Depth             | Reversed-Z with a floating-point depth buffer and an infinite far plane, on Vulkan and OpenGL          |
-| World coordinates | `WorldPosition` in double beside the float `Transform`; scenes without it keep today's behaviour       |
-| Floating origin   | Shifted when the focus leaves a radius; transforms, physics bodies, audio sources and particles follow |
+| World coordinates | `WorldPosition` in double beside the float `Transform`; scenes without it use the float positions only |
+| Floating origin   | Shifted when the focus leaves a radius; transforms, bodies, audio, particles and the AI points follow  |
 | Owl Nest          | Gizmos, picking, snapping and the camera work in world coordinates; the inspector shows doubles        |
 | Serialisation     | Scenes and saves store world positions in double                                                       |
-
-### Lights at astronomical scale {#lights-at-astronomical-scale}
-
-| Decision      | Choice                                                                                                    |
-|---------------|-----------------------------------------------------------------------------------------------------------|
-| Near a planet | The star is a directional light (angular radius from its size and distance), shadows from cascades        |
-| In space      | The star is an emissive body carrying a point light without falloff, placed camera-relative like any body |
-| Switching     | The same entity: its light is directional below a distance from the planet, a point light above it        |
-| Depth         | Reversed-Z and the infinite far plane keep the star and the planet in one depth buffer                    |
-| Shadows       | Planet-scale shadows (eclipses) are analytic (sphere against ray), not shadow maps                        |
-
-## Assembly and articulated bodies
-
-The sockets are detailed in [Skeletal animation](skeletal-animation.md); the physics items are v0.7.0.
-
-- Mesh sockets: named attachment points on a mesh or a prefab, picked and moved in Owl Nest
-- Entities snapped together at runtime on their sockets, the hierarchy rebuilt without reloading the scene
-- Compound rigid bodies rebuilt when parts join or leave; mass, centre of mass and inertia recomputed
-- Breakable joints with a force and a torque threshold, an event when they break
-- Physics sub-stepping per scene, for long chains of joints
-- Forces and torques applied at a point, from Lua and from systems (thrust, drag, lift computed by the game)
 
 ## Gravity and time {#large-worlds-gravity}
 
 User reference: [Gravity](../physics.md#gravity), [Time Warp](../physics.md#time-warp),
 [Simulation Level of Detail](../physics.md#simulation-lod).
 
-- Gravity fields: uniform, point and spherical sources, several summed, per-body opt-out, on the 2D and the 3D physics
-- Trajectory prediction: the future path of a body under the fields, drawn in the viewport and readable from Lua
-- Time warp: the scene clock scaled; above `railsTimeScale`, bodies leave the solver for analytic propagation
-  (conic arcs around the dominant source) and come back when the warp drops
-- Simulation level of detail: entities far from the focus follow a coarse model supplied by the game, on a slower
-  tick; promotion and demotion are events, deterministic on the v0.7.0 simulation
-
-| Item                                                                                                             | Status |
-|------------------------------------------------------------------------------------------------------------------|--------|
-| `GravitySource` component (uniform, point, spherical), summed with the world gravity, per-body scale and opt-out | Done   |
-| Trajectory prediction: `PhysicCommand::predictTrajectory`, Lua `physics.predict_trajectory`, Owl Nest overlay    | Done   |
-| Time warp: clock up to 100000, bodies on rails above `railsTimeScale`, `math::propagateKepler`                   | Done   |
-| `SimulationLod` component: demotion, promotion, coarse tick, Lua hooks, Owl Nest overlay                         | Done   |
-| 2D and 3D bodies in the same fields                                                                              | Done   |
+- Gravity fields: `GravitySource` (uniform, point and spherical), several summed with the world gravity, per-body scale
+  and opt-out, on the 2D and the 3D physics
+- Trajectory prediction: `PhysicCommand::predictTrajectory`, Lua `physics.predict_trajectory`, drawn in the viewport
+- Time warp: the scene clock scaled up to 100000; above `railsTimeScale`, bodies leave the solver for analytic
+  propagation (`math::propagateKepler`, conic arcs around the dominant source) and come back when the warp drops
+- Simulation level of detail: `SimulationLod`, entities far from the focus follow a coarse model supplied by the game,
+  on a slower tick; promotion and demotion are events, deterministic on the simulation
 
 | Decision                                                                                                                                  | Why                                                                                         |
 |-------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
@@ -94,35 +59,18 @@ User reference: [Gravity](../physics.md#gravity), [Time Warp](../physics.md#time
 | `owl.simulation_lod` runs on the tick in the `Scripts` phase before `owl.scripts`, in a fixed entity order                                | Promotions and demotions fall on the same ticks in a replay                                 |
 | A demoted script gets `on_coarse_tick(dt)` instead of `on_update` and `on_tick`; the `Rails` model follows the arc, `Hold` stays          | The game supplies the coarse model; the engine only decides when it runs                    |
 
-## Planetary terrain
+## Planetary terrain {#planetary-terrain}
 
 A renderer-stack layer, like the voxel and isometric ones, composing with the 3D layer and the HUD. User guide:
 [Planets](../planets.md).
 
-| Item                                                                                                    | Status  |
-|---------------------------------------------------------------------------------------------------------|---------|
-| `RendererPlanet` layer and `Planet` component: cube-sphere quadtree LOD, chunks built in the background | Done    |
-| Horizon culling, skirts, ancestor chunks standing in while a chunk builds                               | Done    |
-| Heights from a PCG graph (`output.height`) and a triplanar detail noise                                 | Done    |
-| Atmospheric scattering (single scattering, Rayleigh and Mie), seen from the ground and from orbit       | Done    |
-| Scaled space: far planets drawn shrunk toward the camera, level-0 chunks only                           | Done    |
-| Owl Nest: inspector, creation, picking; Lua `scene.get_planet_altitude`                                 | Done    |
-| Heights read from height map image files                                                                | Planned |
-| Starfield and sky behind the planet                                                                     | Planned |
-| Physics collision on the chunks near bodies only                                                        | v0.7.0  |
-
-## Content and simulation at scale
-
-- Spline component with its editor: control points, tangents, sampling by distance, paths, lanes and rails
-  ([below](#large-worlds-splines))
-- Data tables: typed records (columns, references between tables) edited in a grid in Owl Nest, read from Lua
-  ([below](#large-worlds-data-tables))
-- Emissive materials, lens flares and particle trails on the v0.6.0 effects ([Effects](gpu-effects.md))
-- HUD markers anchored to world entities, with off-screen indicators ([HUD system](hud-system.md))
-- 3D steering in open space: obstacle avoidance between moving volumes, formations
-- Doppler effect and adaptive music driven by game states
-- Interest management for replication: relevance areas and priorities, so a client receives only what is near it
-- Camera tracks in the sequencer, for cutscenes ([below](#large-worlds-sequences))
+- `RendererPlanet` layer and `Planet` component: cube-sphere quadtree LOD, chunks built in the background
+- Horizon culling, skirts, ancestor chunks standing in while a chunk builds
+- Heights from a PCG graph (`output.height`) and a triplanar detail noise
+- Atmospheric scattering (single scattering, Rayleigh and Mie), seen from the ground and from orbit
+- Scaled space: far planets drawn shrunk toward the camera, level-0 chunks only
+- Owl Nest: inspector, creation, picking; Lua `scene.get_planet_altitude`
+- No physics collision on the chunks, no height map read from an image file, no starfield behind the planet
 
 ## World partition {#world-partition}
 
@@ -130,15 +78,13 @@ Streaming cells on world coordinates (double), additive scenes merged into the r
 the focus in the background through the task system, without a loading screen. User guide:
 [World partition](../world_partition.md).
 
-| Item                                                                                                 | Status  |
-|------------------------------------------------------------------------------------------------------|---------|
-| `WorldPartition:` scene settings: cubic cells, load and unload radii, one scene per cell             | Done    |
-| `owl.world_streaming`: cells read and parsed on the task scheduler, merged two per frame             | Done    |
-| `StreamingSource` component, the primary camera when a scene has none                                | Done    |
-| Pack export follows the cell scenes and the planet graphs                                            | Done    |
-| Owl Nest: cell table, drop to add, multi-select, move, viewport outlines; `scene.*_world_*` commands | Done    |
-| Lua `scene.is_world_cell_loaded`, `get_loaded_world_cells`, `set_world_streaming`                    | Done    |
-| Streaming in the editor viewport                                                                     | Planned |
+- `WorldPartition:` scene settings: cubic cells, load and unload radii, one scene per cell
+- `owl.world_streaming`: cells read and parsed on the task scheduler, merged two per frame
+- `StreamingSource` component, the primary camera when a scene has none
+- The pack export follows the cell scenes and the planet graphs
+- Owl Nest: cell table, drop to add, multi-select, move, viewport outlines; `scene.*_world_*` commands; no streaming in
+  the editor viewport
+- Lua `scene.is_world_cell_loaded`, `get_loaded_world_cells`, `set_world_streaming`
 
 ## Splines {#large-worlds-splines}
 
@@ -194,31 +140,7 @@ User reference: [Cutscene sequences](../sequences.md), [SequencePlayer](../scene
 | The Sequencer runs `sequence.*` commands on its own undo history; **Key from view** is a `sequence.set_key` or `add_key`      | Every edit is undoable and reachable from the console, macros and MCP |
 | The Sequencer docks under the scene and previews on one of its `SequencePlayer`s; the scene keeps the viewport and Hierarchy  | Keys are placed in 3D, in the space they play in                      |
 
-## Delivery {#large-worlds-delivery}
+## Interest management
 
-| Release | Items                                                                                                 |
-|---------|-------------------------------------------------------------------------------------------------------|
-| v0.5.0  | Camera-relative rendering, reversed-Z depth                                                           |
-| v0.6.0  | Double positions, splines, data tables, sockets, world partition, planets, camera tracks, HUD markers |
-| v0.7.0  | Articulated bodies, gravity fields, time warp, simulation LOD, planetary terrain collision            |
-| v0.8.0  | Joysticks and throttles with many axes                                                                |
-| v0.9.0  | Interest management                                                                                   |
-
-World positions in double ship in three steps:
-
-| Step                                                                                  | Status |
-|---------------------------------------------------------------------------------------|--------|
-| `WorldPosition`, world origin and its shift, `FloatingOrigin:` scene settings, editor | Done   |
-| Physics bodies, behaviours and sound follow a shift of the origin                     | Done   |
-| Owl Nest gizmos, picking, snapping and camera in world coordinates                    | Done   |
-
-World partition and planets ship in the same release:
-
-| Step                                                                  | Status |
-|-----------------------------------------------------------------------|--------|
-| World partition, streaming sources, Owl Nest cell editing, Lua        | Done   |
-| Planetary terrain layer, atmosphere, scaled space, Owl Nest, Lua      | Done   |
-| `planet/*` and `world_streaming/*` benchmarks, `planet_*` image tests | Done   |
-| Engine Demo far orbit: planet Cinder and streamed debris cells        | Done   |
-
-Sample games that exercise these bricks are listed in [Sample games](sample-games.md).
+Planned: relevance areas and priorities for replication, so a client receives only what is near it
+([Networking](simulation-networking.md)).

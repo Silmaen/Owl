@@ -22,6 +22,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <fstream>
+#include <functional>
 #include <iterator>
 #include <memory>
 #include <numbers>
@@ -138,7 +139,7 @@ auto makeFilterSamples(const float iAlpha, const uint32_t iSampleCount, const fl
 }
 
 auto filterLevel(const std::vector<FloatImage>& iMips, const math::vec2ui& iSize, const float iRoughness,
-				 const uint32_t iSampleCount) -> FloatImage {
+				 const uint32_t iSampleCount, const std::function<bool()>& iCancelled) -> FloatImage {
 	FloatImage out;
 	out.size = iSize;
 	out.pixels.resize(static_cast<size_t>(iSize.x()) * iSize.y());
@@ -149,6 +150,8 @@ auto filterLevel(const std::vector<FloatImage>& iMips, const math::vec2ui& iSize
 	const uint32_t w = iSize.x();
 	const uint32_t h = iSize.y();
 	utils::parallelRows(h, [&](const uint32_t iRow) -> void {
+		if (iCancelled && iCancelled())
+			return;
 		for (uint32_t x = 0; x < w; ++x) {
 			const auto n = Equirectangular::toDirection({(static_cast<float>(x) + 0.5f) / static_cast<float>(w),
 														 (static_cast<float>(iRow) + 0.5f) / static_cast<float>(h)});
@@ -344,8 +347,8 @@ auto SphericalHarmonics::constant(const math::vec3& iRadiance) -> SphericalHarmo
 	return out;
 }
 
-auto EnvironmentMap::build(const FloatImage& iImage, const uint32_t iLevelCount, const uint32_t iSampleCount)
-		-> EnvironmentMap {
+auto EnvironmentMap::build(const FloatImage& iImage, const uint32_t iLevelCount, const uint32_t iSampleCount,
+						   const std::function<bool()>& iCancelled) -> EnvironmentMap {
 	OWL_PROFILE_FUNCTION()
 
 	EnvironmentMap out;
@@ -364,12 +367,15 @@ auto EnvironmentMap::build(const FloatImage& iImage, const uint32_t iLevelCount,
 	}
 	const auto levelCount = static_cast<uint32_t>(sizes.size());
 
-	const auto mips = buildSourceMips(base);
+	// The source mips only feed the filtered levels.
+	const auto mips = levelCount > 1 ? buildSourceMips(base) : std::vector<FloatImage>{};
 	out.levels.reserve(levelCount);
 	out.levels.push_back(std::move(base));
 	for (uint32_t i = 1; i < levelCount; ++i) {
 		const float roughness = static_cast<float>(i) / static_cast<float>(levelCount - 1);
-		out.levels.push_back(filterLevel(mips, sizes[i], roughness, iSampleCount));
+		out.levels.push_back(filterLevel(mips, sizes[i], roughness, iSampleCount, iCancelled));
+		if (iCancelled && iCancelled())
+			return {};
 	}
 	return out;
 }

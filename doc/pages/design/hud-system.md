@@ -2,24 +2,11 @@
 
 [TOC]
 
-Design page for the v0.4.0 HUD overhaul and the text work it relies on, summarised in the [Roadmap](../roadmap.md).
-The pull requests and their order are in [Isometric worlds](isometric-worlds.md) (TX1, TX2, HUD1 to HUD7).
-
-## Goal
-
 A HUD authored once and drawn on top of any rendering style (2D, raycast, voxel, isometric), in pixels, at any
 resolution, edited in its own document in Owl Nest — and rich enough for a management game: several windows, toolbars,
 tooltips and construction tools at once, as in Transport Tycoon.
 
-## Before v0.4.0
-
-- The HUD is a second `Renderer2D` layer named `ui`, in world space, and every UI entity carries `RendererTag: ui` by
-  hand; in the editor it floats at world coordinates over the level.
-- Only direct children of a `Canvas` draw and react to the mouse; the parent size is always the viewport, without
-  resolution scaling; there is no keyboard or gamepad focus.
-- HUD drawing and hit-testing live in `Scene.cpp` (C-14).
-
-## Text (TX1, TX2)
+## Text
 
 - UTF-8 decoded to code points, `Font` API on `char32_t`, default charset Latin only (Latin-1 + Latin Extended-A +
   punctuation + €), extra ranges per font, atlas cached on disk.
@@ -32,7 +19,7 @@ tooltips and construction tools at once, as in Transport Tycoon.
   `backgroundPadding` a box behind the measured text block. They keep white text readable on a light map. `Text` has the
   same four fields, in text heights. Edited in the inspector, undoable like any component edit.
 
-## HUD layer (HUD1, done)
+## HUD layer
 
 ```mermaid
 flowchart LR
@@ -47,15 +34,13 @@ flowchart LR
   the screen transition (`HudPass`); it cannot be misordered, whatever the layers underneath draw, in Play
   as in the editor viewport (where a click on a widget selects it). The voxel highlight and crosshair are
   `Scene::renderOverlays`; `RendererTag` does not route a canvas, so the `ui` layer of the templates stays empty.
-- The code left `Scene.cpp`: `HudLayout` lays the canvases out once per frame (in ascending `sortOrder`,
+- `HudLayout` lays the canvases out once per frame (in ascending `sortOrder`,
   depth first, a parent before its children) and `UiInputSystem` hit-tests that same layout, so a click lands on the
   rectangle that was drawn; the topmost button or slider under the mouse takes it, labels and panels over it do not.
 - Nested `UiRect`: the nearest ancestor carrying a `UiRect` is the parent rectangle, an entity without one passes
   its parent on, a hidden entity hides its subtree.
-- Y-down pixels with the origin at the top left; scene and prefab format 4 converts every `UiRect` written before
-  (preset point to both anchors, `pivot.y = 1 - pivotY`, `offset.y = -offsetY`) and gives the legacy canvases
-  `ConstantPixels`, so no widget moves; the Engine Demo and the templates were rewritten and use
-  `ScaleWithHeight`.
+- Y-down pixels with the origin at the top left; scene and prefab format 4 converts older files without moving a
+  widget.
 - Anchors: `anchorMin` / `anchorMax` (normalised, a distinct pair stretches the widget, `size` is then added to the
   span) besides the 9 presets (`UiRect::setAnchor`, `getAnchor`), which stay as shortcuts in the inspector.
 - Relative units: each of `size.x`, `size.y`, `offset.x` and `offset.y` has a `UiRect::Unit`, `Pixels` (default,
@@ -64,7 +49,7 @@ flowchart LR
   reference pixels at layout time against the parent and the canvas (the scale is uniform, so this is the ratio of the
   screen pixels too, in every scale mode); a square widget uses `ParentHeight` for both sizes, a child of a `UiLayout`
   is measured the same way. Files write `sizeUnit: [X, Y]` / `offsetUnit: [X, Y]` only when a number leaves the pixels,
-  so older files and pixel widgets are unchanged (no format bump: absent means `Pixels`, an unknown name too).
+  (absent means `Pixels`, an unknown name too).
   `UiRect::convertSizeUnit` / `convertOffsetUnit` change a unit keeping the screen rectangle, `moveBy` moves in
   reference pixels whatever the units (window drag, `hud.move`).
 - `Canvas::referenceResolution` (1280×720 by default) with `Canvas::scaleMode`: `ConstantPixels`, `ScaleWithHeight`
@@ -75,11 +60,10 @@ flowchart LR
   (a 16 px font at 640×360 draws at 12 px, not 8); the scale of that text is raised, never past 1, and its layout runs at
   that scale, so a box too small for it wraps or clips the text as for any other size. Authored sizes at scale 1 or
   more, and boxes, are untouched.
-- Every new field is edited in the inspector, undoable through `component.set`; bench `hud/{layout,frame}/500_widgets`
-  (budget in [Isometric worlds](isometric-worlds.md)); image tests `hud_raycast` and `hud_voxel` at 320×180, 480×270
-  and 240×240.
+- Every field is edited in the inspector, undoable through `component.set`; bench `hud/{layout,frame}/500_widgets`;
+  image tests `hud_raycast` and `hud_voxel` at 320×180, 480×270 and 240×240.
 
-## `.owlhud` asset (HUD2, done)
+## `.owlhud` asset
 
 - A HUD is an `.owlhud` file (scene entity format, own `DocumentFormat`) loaded into its own scene by a `HudLibrary`
   cached per path in `EngineContext`: shared by several scenes, kept across scene transitions.
@@ -92,7 +76,7 @@ flowchart LR
 Implementation notes:
 
 - `SceneSerializer(scene, DocumentKind::Hud)` reads and writes the file: root key `Hud`, `FormatVersion` of its own
-  `DocumentFormat` (`SceneSerializer::format(DocumentKind::Hud)`, version 1, no migration yet), the entities only. A
+  `DocumentFormat` (`SceneSerializer::format(DocumentKind::Hud)`), the entities only. A
   scene remembers the document it was loaded from (`Scene::getDocumentKind`), so every save goes back to the right one.
 - `HudLibrary::get(path)` reads the open pack, then the asset folders, then the plain path; a failure is logged once and
   cached. A scene loaded from an `.owlhud` has an explicit empty `Hud:`: a HUD never draws another one.
@@ -106,7 +90,7 @@ Implementation notes:
 - The exporter follows `Hud:` keys and `DefaultHud` (`runner.yml` carries it) and packs the HUD with its textures and
   fonts. The editor reads the HUD files again after a save and when Play starts or stops.
 
-## Management-game widgets (HUD3, done)
+## Management-game widgets
 
 - `UiWindow`: a title bar over the body; the title bar drags the window (kept inside the screen), a click raises it
   (it becomes the last child of its parent, hence drawn last), the close button hides it (`Visibility`, Lua
@@ -128,7 +112,7 @@ Implementation notes:
 
 Implementation notes:
 
-- `HudLayout` is still computed once per frame. A node gains `content` (the area its children live in), `clip` /
+- `HudLayout` is computed once per frame. A node has `content` (the area its children live in), `clip` /
   `clipped`, `clipsChildren` and `window` (index of the nearest window above it, itself included, which the pass uses to
   break batches). A window is clamped to the screen in the layout, and the drag clamps the stored offset too, so the
   window follows the mouse again as soon as it comes back.
@@ -141,14 +125,13 @@ Implementation notes:
   walks the entity storage backwards): the last window listed in a file is the first child, hence the one drawn
   under the others.
 
-## HUD editor (HUD4, done)
+## HUD editor
 
 - `HudDocument` (`document/HudDocument.h`) holds the state of the editor of a scene's canvases: preview resolution
   (presets 640 x 360, 1280 x 720, 1920 x 1080, 2560 x 1440, 1024 x 768, 720 x 1280, or a custom size), backdrop (a
   colour or an image), snapping, selection and the gizmo gestures. It owns no scene and no undo history: it edits the
   scene of a `SceneDocument`, an `.owlhud` or the canvases embedded in a scene, so the hierarchy, the inspector, the
-  autosave, the hot reload and Save work as they do for a scene. A live scene backdrop comes with "look through scene
-  camera" (v0.5.0).
+  autosave, the hot reload and Save work as they do for a scene.
 - `panel::HudEditor` draws it in the tab of the document in place of the 3D viewport: an `.owlhud` always opens in it,
   a scene switches with **HUD Editor** of the Scene ribbon tab (Play brings the viewport back). The preview is the
   HUD drawn into its own framebuffer at the chosen resolution (`Scene::renderHud`), zoomed to fit or 1:1, panned with
@@ -169,7 +152,7 @@ Implementation notes:
   the scene is put back and one command runs with the final values (a drag is one undo step, a nudge merges into the
   previous one within a second).
 - The project `DefaultHud` stays a field of Project Settings, applied with the dialog: it is a project setting, not a
-  scene edit, so it has no undo entry and no command yet (the dialog applies and saves the whole project at once).
+  scene edit, so it has no undo entry and no command (the dialog applies and saves the whole project at once).
 
 Implementation notes:
 
@@ -185,7 +168,7 @@ Implementation notes:
 - Tests: `HudDocument_test.cpp` (resolution, selection, hit-testing, gestures, snapping, creation by drop) and the
   `HudCommandsTest` cases of `CommandRegistry_test.cpp`.
 
-## Focus navigation (HUD5, done)
+## Focus navigation {#focus-navigation}
 
 Keyboard and gamepad focus on buttons and sliders, driven by the built-in `ui_up` / `ui_down` / `ui_left` /
 `ui_right` / `ui_accept` / `ui_cancel` actions of the scene's action map (`UiInputSystem::navigate`, called by
@@ -221,22 +204,18 @@ Keyboard and gamepad focus on buttons and sliders, driven by the built-in `ui_up
   widget takes the focus.
 - The state (`focus`, `focusInHud`, `focusVisible`, repeat) lives in `Scene::UiInputState`, like the hover state.
 
-## Migration (HUD6, done)
+## Extracting a canvas
 
 - `hud.extract_canvas` (Scene Hierarchy context menu, [Editor](../editor_console.md#commands)) writes a root canvas and
   its widgets to an `.owlhud`, removes them from the scene and sets the scene's `Hud:` key, as one undo step (a
   `DeleteSubtreeCommand` and a `SetSceneHudCommand` in a group). The file is written when the command is prepared and
   stays after an undo.
-- Scene and prefab format 5 (`dropUiRendererTag`) removes `RendererTag: ui` from every entity carrying a `Canvas` or a
-  `Ui*` component; a world entity tagged `ui` keeps its tag. Legacy fixture: `UiRendererTagMigration_test.cpp`.
-- The project templates (`empty_2d`, `mixed`, `raycast`) each ship a `huds/gameplay.owlhud`; in `engine_demo/` the
-  platformer keeps `huds/gameplay.owlhud` and the world map, the raycast demo and the isometric test have their own HUD
-  (`world_map`, `raycast`, `voxel`) because their hints and widgets differ; the menus keep their embedded canvas.
-  No shipped `.owl` or `.owlhud` names the `ui` layer (`EngineSceneTemplates.NoShippedWidgetNamesTheUiLayer`).
-- The dead `UiPanel::layout`, `spacing` and `padding` are gone; old files keep loading (unknown keys are ignored).
-- The empty raycast hint of `raycast_demo.owl` is fixed: its HUD now carries the walk, turn and interact keys.
+- Scene and prefab format 5 drops `RendererTag: ui` from every entity carrying a `Canvas` or a `Ui*` component; no
+  shipped `.owl` or `.owlhud` names the `ui` layer (`EngineSceneTemplates.NoShippedWidgetNamesTheUiLayer`).
+- The project templates (`empty_2d`, `mixed`, `raycast`) each ship a `huds/gameplay.owlhud`; the menus keep their
+  embedded canvas.
 
-## Scroll views and virtualised lists (HUD7, done)
+## Scroll views and virtualised lists {#scroll-views-and-virtualised-lists}
 
 - **`UiScrollView`.** The children are laid out in the viewport (the rectangle minus the bars the overflow needs),
   shifted by `scrollOffset`, and clipped to it by the same scissor as a window: a click, a hover or the focus reaches
@@ -258,7 +237,7 @@ Keyboard and gamepad focus on buttons and sliders, driven by the built-in `ui_up
 - **Focus.** A list takes the focus like a button: `ui_up` / `ui_down` step the selection (and scroll it into view),
   and past the first or last row the focus moves on to the next widget. A widget scrolled out of a `UiScrollView` stays
   reachable (it is not cut away by a clipping panel): moving the focus to it scrolls the view just enough to show it,
-  once per focus change and only while the focus is shown, so the mouse never scrolls by hovering. The new built-in
+  once per focus change and only while the focus is shown, so the mouse never scrolls by hovering. The built-in
   `ui_scroll` action (right stick, Page Up / Page Down) scrolls the view or list holding the focus.
 - **Look.** The bar track and thumb are drawn after the content of the view, over it, with the clip of the view.
 - **Saves.** `scrollOffset`, `selectedIndex` and `itemCount` are component fields of the HUD entity, hence saved with
@@ -267,7 +246,6 @@ Keyboard and gamepad focus on buttons and sliders, driven by the built-in `ui_up
   `hud.add_widget` (`scroll_view`, `list`); every field is in the inspector, undoable through `component.set`, and a
   widget dropped into a scroll view lands in its scrolled content. The gizmo and `keep_bounds` read the parent rectangle
   shifted by the scroll (`HudNode::childArea`). The preview shows `Item N` rows from `itemCount`.
-- **Format.** New components only: scene and `.owlhud` files need no migration step.
 
 Implementation notes:
 
@@ -281,10 +259,10 @@ Implementation notes:
   focus, virtualisation counted in quads), `LuaScrollList_test.cpp`, the `hud.add_widget` and `component.set` cases of
   `CommandRegistry_test.cpp`, bench `hud/frame/1000_row_list`.
 
-## Inventory demo (DEMO1)
+## Inventory demo
 
-Done. Collectible objects and an inventory window with slots in `engine_demo/`, in Lua only,
-navigable with the gamepad (now in the raycast level, `scenes/raycast_demo.owl`).
+Collectible objects and an inventory window with slots in the raycast level of `engine_demo/`
+(`scenes/raycast_demo.owl`), navigable with the gamepad.
 
 - **Window.** `huds/raycast.owlhud` is the scene's `Hud:` (one HUD per scene): a closable `UiWindow` holding a grid of
   nine `UiButton` slots (a `UiImage` icon and a `UiText` count each, a `UiTooltip` with the item name) and an info
@@ -334,7 +312,7 @@ A minimap is a second camera drawn off-screen and shown by a `UiImage`; nothing 
 - The voxel level (`scenes/voxel_terrain.owl`) holds the entity `MinimapCamera` and shows its image in
   `huds/voxel.owlhud`. See [Scene > RenderTarget](../scene.md#rendertarget).
 
-## World markers (HUD8, done) {#world-markers}
+## World markers {#world-markers}
 
 A marker is an icon and a label drawn in pixels over a world entity, with an arrow on the screen edge when the entity
 is out of view; it needs no canvas.
@@ -359,7 +337,7 @@ is out of view; it needs no canvas.
   (`scripts/raycast/raycast_level.lua`); scenario `test/unit/scenarios/raycast_exit_marker.owltest`.
   See [Scene > HudMarker](../scene.md#hudmarker).
 
-## Themes and widget looks (HUD9, done) {#hud-themes}
+## Themes and widget looks {#hud-themes}
 
 A theme gives every HUD and menu of a project one skin, authored in one file.
 
@@ -426,14 +404,6 @@ text styles `title`, `heading`, `label`, `text`, `hint`. The textures are drawn 
 Every menu (`main_menu`, `settings_menu`, `game_over`, `victory`) and every HUD but `far_orbit.owlhud` follow it; the
 sample games name no style: their widgets keep their own look.
 
-### Measures
-
-Release, i9-13950HX, one pinned core, same build options, against the base branch: `hud/frame/500_widgets` (plain
-boxes, the quad path) 78.4 to 80.0 µs before, 83.0 to 85.3 µs after (+6 %, within the 15 % gate: the per-shape depth
-of `ShapeOrder` and the box test); `hud/frame/500_styled_widgets` (every panel, button and bar rounded, bordered,
-shadowed) 86 to 89 µs, **2 draw calls** like the plain HUD (a canvas holding a rounded box draws its flat shapes as
-boxes too, one batch); `hud/frame/1000_row_list` 5.0 µs before, 5.3 to 5.9 µs after.
-
 ## Tests
 
 Layout maths (anchors, pivot, nesting, scale modes), hit-testing and focus order, text layout (pen advance, wrap,
@@ -444,9 +414,3 @@ Themes (`HudTheme_test`): file round-trip, unversioned and newer formats, style 
 widget kind, the theme of a scene and its library, the `HudTheme:` key, the box data (scaled lengths, flipped shadow,
 inner fill); `theme.*` and `scene.set_hud_theme` commands, `ui.set_style`, the bench at 500 styled widgets, and the
 image tests of the iso town HUD (Vulkan, OpenGL).
-
-## Later
-
-- v0.5.0: a live scene backdrop in the HUD editor.
-- v0.6.0: docking and saved window layouts for in-game windows.
-- v0.8.0: controller remapping UI on the HUD widgets.

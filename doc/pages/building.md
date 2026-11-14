@@ -90,7 +90,7 @@ target_link_libraries(my_tools PRIVATE Owl::Gui)
 poetry run conan create . --profile:all conan/profiles/linux-clang --lockfile conan.lock --lockfile-partial --build=missing
 ```
 
-Preset status, lockfile update command and the local recipes: [Conan migration](design/conan-migration.md).
+Preset status, lockfile update command and the local recipes: [Dependencies](design/dependencies.md).
 
 ### Troubleshooting a fresh checkout
 
@@ -266,8 +266,11 @@ Each of the 20 folders of `test/unit/` (`<category>_tests`: core, debug, event, 
 math, mesh, owlnest, physics, render, renderer, runner, scene, script, sound, voxel) builds one executable
 `owl_<category>_tests_unit_test`; each `test/unit/scenarios/*.owltest` is one more CTest (label `scenario`) played by
 `OwlRunner --scenario`; a scenario whose first line is `# slow` is labelled `slow` too (`ctest -LE slow` leaves those
-out). The image tests are split into `OWL_RENDER_TEST_SHARDS` CTest entries (gtest shards, one X server each) that run
-in parallel. `owlnest_tests` links the editor sources through the `OwlNestCore` static library and is skipped when
+out); each scenario has a user directory of its own but they share one cache directory (`OWL_CACHE_DIR`), so a font
+atlas is generated once per run. The image tests are split into `OWL_RENDER_TEST_SHARDS` CTest entries (gtest shards,
+one X server each) that run in parallel; `export_tests` has one CTest entry per shipped project
+(`owl_export_tests_<project>`, the templates as `template_<name>`) and `owl_export_tests_UTests` for its other cases,
+so CTest balances them over its jobs. `owlnest_tests` links the editor sources through the `OwlNestCore` static library and is skipped when
 `OWL_BUILD_NEST` is off.
 
 ## Measuring frames on the GPU

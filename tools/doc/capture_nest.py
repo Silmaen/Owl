@@ -152,6 +152,7 @@ SHOTS: list[Shot] = [
     Shot("visual_script", documents=["scripts/tavern/cellar_ladder.owlvs"], settle=15.0),
     Shot("dialogue_editor", documents=["dialogues/barkeeper.owldlg"], settle=15.0),
     Shot("material_editor", documents=["materials/old_brass.owlmat"], settle=20.0),
+    Shot("behaviour_tree", documents=["scripts/tavern/cellar_rat.owlbt"], settle=15.0),
     Shot("sequence_editor", documents=["sequences/tavern_intro.owlseq"], settle=15.0),
     Shot("data_table", documents=["tables/dishes.owltable"]),
     Shot("sound_editor", documents=["sounds/hub/steps.owlsound"]),
@@ -244,6 +245,7 @@ SHOTS: list[Shot] = [
         proof=True,
     ),
     Shot("help_roadmap", documents=["scenes/iso_town.owl"], steps=help_page("Roadmap"), crop=HELP_CROP, proof=True),
+    Shot("help_ai", documents=["scenes/iso_town.owl"], steps=help_page("AI: steering"), crop=HELP_CROP, proof=True),
     Shot(
         "help_lua_api",
         documents=["scenes/iso_town.owl"],

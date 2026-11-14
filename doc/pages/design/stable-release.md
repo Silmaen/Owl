@@ -2,8 +2,8 @@
 
 [TOC]
 
-Design page for v1.0.0, summarised in the [Roadmap](../roadmap.md). No new feature: the release only closes these
-criteria, each verified by CI or by a shipped artefact.
+Criteria of the 1.0.0 release. No new feature: the release only closes these criteria, each verified by CI or by a
+shipped artefact.
 
 ## Criteria
 
@@ -16,8 +16,7 @@ criteria, each verified by CI or by a shipped artefact.
       load through tested migration steps
 - Consumable SDK
     - `find_package(OwlEngine)` pulls one or two public dependencies (EnTT, and imgui only through `Owl::Gui`)
-    - OwlEngine published as a Conan package (`conan create`, `test/package/`, started in v0.3.0): it replaces the
-      packaged archive consumers use since DepManager left in v0.3.0
+    - OwlEngine published as a Conan package (`conan create`, `test/package/`)
     - A consumer test project builds and runs against the installed Conan package in CI
 - Two showcase games authored only in the editor
     - One 2D game and one 3D game, built in Owl Nest without engine-side C++ (Lua and visual scripting only), each
@@ -39,10 +38,9 @@ criteria, each verified by CI or by a shipped artefact.
 
 ## Hardening phase (0.9.x) {#stable-release-hardening}
 
-- The maintainer tests alone.
+- Test protocols and release checklists: export per target, editor tour, sample games, upgrade from a previous
+  version, documentation; the maintainer runs them.
 - Exit to 1.0: CI green everywhere (every configuration, every target smoke test) and the test protocols pass.
-- v0.9.0 writes the test protocols and release checklists: export per target, editor tour, sample games, upgrade
-  from a previous version, documentation.
 
 ## Project upgrade assistant {#stable-release-upgrade}
 

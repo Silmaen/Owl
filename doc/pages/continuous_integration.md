@@ -14,12 +14,12 @@ Owl Engine is built and tested by **GitLab CI** on [gitlab.argawaen.net](https:/
 argawaen/Owl). Every job is one `ci_action.py` call (`ci/actions/`); the YAML only says which preset runs where and
 when:
 
-| File                      | Content                                                                       |
-|---------------------------|-------------------------------------------------------------------------------|
-| `.gitlab-ci.yml`          | Merge request and `main` pipeline: rules, stages, the jobs.                   |
-| `ci/gitlab/templates.yml` | Shared blocks (runners, artifacts, analysis, bench) and the secrets they use. |
-| `ci/gitlab/nightly.yml`   | The nightly child pipeline.                                                   |
-| `ci/gitlab/nightly-unchanged.yml` | The child pipeline written when `main` did not move.                  |
+| File                              | Content                                                                       |
+|-----------------------------------|-------------------------------------------------------------------------------|
+| `.gitlab-ci.yml`                  | Merge request and `main` pipeline: rules, stages, the jobs.                   |
+| `ci/gitlab/templates.yml`         | Shared blocks (runners, artifacts, analysis, bench) and the secrets they use. |
+| `ci/gitlab/nightly.yml`           | The nightly child pipeline.                                                   |
+| `ci/gitlab/nightly-unchanged.yml` | The child pipeline written when `main` did not move.                          |
 
 | Area         | Coverage                                                                                                          |
 |--------------|-------------------------------------------------------------------------------------------------------------------|
@@ -40,6 +40,9 @@ flowchart TD
         CS --> BENCH["bench"]
         CS --> ASAN["sanitizer-address (main only)"]
     end
+    subgraph WATCH["Schedule every 10 min on main, READY_WATCH"]
+        RW["ready-watch"] -->|"draft marked ready"| MRP["merge request pipeline"]
+    end
     subgraph NIGHT["Schedule 02:00 on main"]
         GATE["nightly-gate"] -->|"main moved"| CHILD["nightly child pipeline"]
         GATE -->|"unchanged"| SKIP["single job, nothing built"]
@@ -58,9 +61,10 @@ flowchart TD
 | `linux-clang-release` (Doxygen)                     | ✅                         | ✅        | ✅                 | ✅           | —       |
 | `linux-gcc-debug` (coverage gate)                   | ▶                         | ✅        | ▶                 | ✅           | —       |
 | `windows-clang-release`                             | ▶                         | ✅        | ▶                 | ✅           | —       |
-| `clang-tidy` (diff scope)                           | ▶                         | ✅        | ▶                 | ▶           | full    |
-| `bench` (runner tag `bench`)                        | ▶                         | ✅        | ▶                 | ▶           | ✅       |
+| `clang-tidy` (diff scope)                           | ▶                         | ✅ (C++)  | ▶                 | ▶           | full    |
+| `bench` (runner tag `bench`)                        | ▶                         | ✅ (C++)  | ▶                 | ▶           | ✅       |
 | `sanitizer-address`                                 | ▶                         | ▶        | ▶                 | ✅           | —       |
+| `windows-gcc-{release,debug}`, `linux-gcc-release`, `linux-clang-minimal` | ▶   | ▶        | ▶                 | ▶           | —       |
 | `nightly-jobs` (every nightly job, one ▶ each)      | ▶                         | ▶        | ▶                 | ▶           | —       |
 | `linux-clang-debug` (Clang coverage)                | —                         | —        | —                 | —           | ✅       |
 | `slow-suite` (Release, every test)                  | —                         | —        | —                 | —           | ✅       |
@@ -76,9 +80,18 @@ flowchart TD
   the full one.
 - **Ready merge requests** add the GCC Debug build (coverage gate), Windows Clang Release, clang-tidy and the
   benchmarks. Every job but Code Style and Linux Clang Release waits for its ▶ when only documentation moved (`rules:
-  changes`: everything outside `doc/`, `.claude/`, the root Markdown files and `LICENSE`).
-- Marking a draft ready **does not start a pipeline**: run one by hand from the merge request (*Run pipeline*). A
-  pipeline run by hand always runs the ready set.
+  changes`: everything outside `doc/`, `.claude/`, the root Markdown files and `LICENSE`). clang-tidy and the
+  benchmarks (C++) also wait for it when nothing but the sample games, the Engine Demo or `tools/` moved: neither
+  reads them.
+- **Presets no job builds** (MinGW GCC, `linux-gcc-release`, `linux-clang-minimal`) have a job of their own in every
+  pipeline but the nightly ones, waiting for its ▶ and never blocking (`.on-demand`).
+- **A draft marked ready**: GitLab starts no pipeline when the draft status changes. The pipeline of a draft is named
+  `Draft merge request` (`workflow:name`); the `ready-watch` job of a schedule of its own (*Build > Pipeline
+  schedules*, `main`, every 10 minutes, variable `READY_WATCH` = `true`) runs `ReadyPipelines`, which starts a
+  pipeline on every open merge request marked ready whose last pipeline is the draft one of the same commit, as the
+  *Run pipeline* button does. That pipeline reuses what the draft already passed (see **Reuse**): only the jobs the
+  draft left to their ▶ build. It needs `OWL_GITLAB_PIPELINE_TOKEN`; without it the merge request still waits for
+  *Run pipeline*. A pipeline run by hand always runs the ready set.
 - **Merging** needs the last pipeline to succeed (*Settings > Merge requests > Pipelines must succeed*); this
   replaces any composite check.
 - **`main` push**: Code Style, the three builds and the address sanitizer, on the merged result.
@@ -90,10 +103,13 @@ flowchart TD
   waiting for its own ▶ (`NIGHTLY_PICK`): ▶ the one to check. The merge request does not wait for it.
 - **Nightly by hand**: *Build > Pipelines > Run pipeline* on any branch with `NIGHTLY` = `true` runs the gate and the
   whole child pipeline on that branch, whether it moved or not, and none of the usual jobs; only `main` publishes.
-- **Reuse**: in a pipeline a push started, a `BuildAndTest` job that a successful job of the same name already ran
-  on a commit with exactly the same tree (GitLab's `compare`, no diff) builds nothing and keeps that verdict, and
-  its coverage figure: the `main` pipeline of an up-to-date merge request, a push of the same content. Never a job
-  that packages, one started by ▶, a nightly one, nor with `OWL_CI_REUSE=false`; no artifact is kept for it.
+- **Reuse**: in a pipeline a push or a merge request started, a job that a successful job of the same name already
+  ran on a commit with exactly the same tree (GitLab's `compare`, no diff) builds nothing and keeps that verdict: the
+  pipeline of a draft marked ready, the `main` pipeline of an up-to-date merge request, a push of the same content.
+  The builds check it in `BuildAndTest` (which also keeps the coverage figure), Code Style, clang-tidy and the
+  benchmarks call `Reuse` first (`ci_action.py Reuse <preset> && exit 0`); clang-tidy only on the very same commit,
+  its scope being the diff from the merge base. Never a job that packages, one started by ▶, a pipeline run by hand,
+  a nightly one, nor with `OWL_CI_REUSE=false`; no artifact is kept for it.
 
 Code Style and Linux Clang Release run on documentation-only merge requests because those paths are their input:
 
@@ -122,7 +138,7 @@ Code Style and Linux Clang Release run on documentation-only merge requests beca
 
 Jobs take tagged runners: `linux` + `docker` + `amd64` (an arm64 runner never takes an x64 image), `windows`, and
 `bench` (one machine, so timings stay comparable). The runner configuration provides `CONAN_HOME` and `CCACHE_DIR` on persistent volumes, `SYS_PTRACE` and
-`seccomp=unconfined` for the sanitizers, and qemu-user (`binfmt_misc`) for the arm64 tests; the YAML sets none of them.
+`seccomp=unconfined` for the sanitizers, and qemu-user (`binfmt_misc`) for the arm64 tests; the YAML sets none of them. The YAML sets `CCACHE_MAXSIZE` to 20 GiB, since every preset of a runner shares the one cache.
 Conan's cache takes one writer at a time, so each concurrent slot of a runner uses its own `$CONAN_HOME/slot-<n>`.
 
 The secrets are masked project CI/CD variables, never in the repository:
@@ -132,6 +148,7 @@ The secrets are masked project CI/CD variables, never in the repository:
 | `OWL_DEPLOY_URL`, `OWL_DEPLOY_LOGIN`, `OWL_DEPLOY_PASSWORD`   | Publishing packages and documentation        |
 | `OWL_CONAN_CACHE_URL`, `CONAN_LOGIN_USERNAME_OWL_CACHE`, `CONAN_PASSWORD_OWL_CACHE` | The Conan binary cache |
 | `OWL_GITLAB_API_TOKEN`                                        | Coverage reference and nightly gate (`read_api`) |
+| `OWL_GITLAB_PIPELINE_TOKEN`                                   | `ready-watch`: starting merge request pipelines (`api`, Developer) |
 
 ## Fuzzing
 

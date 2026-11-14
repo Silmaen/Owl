@@ -1076,6 +1076,42 @@ TEST_F(AssetScannerTest, ScanSceneFollowsTheTreeOfABehaviourTreeAgent) {
 			  1);
 }
 
+TEST_F(AssetScannerTest, ScanDataTableFollowsThePrefabsOfItsAssetCells) {
+	// A prefab named in a table cell goes in the pack with what its entities use, as a spawned prefab does.
+	const auto partScript = m_tempDir / "scripts" / "fighter.lua";
+	writeFile(partScript, "function on_create() end\n");
+	const auto prefabPath = m_tempDir / "prefabs" / "fighter.owlprefab";
+	writeFile(prefabPath, "Prefab: Fighter\nVersion: 1\nEntities:\n"
+						  "  - Entity: 7\n"
+						  "    LuaScript:\n"
+						  "      scriptPath: " +
+								  partScript.generic_string() + "\n");
+	const auto tablePath = m_tempDir / "tables" / "enemies.owltable";
+	writeFile(tablePath, "DataTable: ''\nFormatVersion: 1\ncolumns:\n"
+						 "  - {name: prefab, type: Asset}\n"
+						 "rows:\n"
+						 "  - key: fighter\n"
+						 "    prefab: " +
+								 prefabPath.generic_string() + "\n");
+	const auto scenePath = m_tempDir / "scenes" / "level.owl";
+	writeFile(scenePath, "Scene: level\nEntities:\n"
+						 "  - Entity: 1\n"
+						 "    LuaScript:\n"
+						 "      scriptPath: \"\"\n"
+						 "      properties:\n"
+						 "        - {name: enemies, type: string, value: " +
+								 tablePath.generic_string() + "}\n");
+	std::vector<std::string> warnings;
+	const auto assets = AssetScanner::scanScene(scenePath, &warnings);
+	const auto has = [&assets](const std::filesystem::path& iPath) -> bool {
+		return std::ranges::any_of(assets, [&](const AssetReference& iRef) -> bool { return iRef.diskPath == iPath; });
+	};
+	EXPECT_TRUE(has(tablePath));
+	EXPECT_TRUE(has(prefabPath));
+	EXPECT_TRUE(has(partScript));
+	EXPECT_TRUE(warnings.empty());
+}
+
 TEST_F(AssetScannerTest, ScanLuaScriptFollowsTheSpawnedPrefabs) {
 	// A prefab quoted in a script goes in the pack with the script of its entity; a prefab named in a script property
 	// too, and a missing one is reported.

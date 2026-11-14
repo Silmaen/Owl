@@ -19,7 +19,7 @@ external sources into the repo. Check ConanCenter and `conan/recipes/` before as
 - Conan comes from Poetry (dev group): `./docker_run.sh poetry run conan …`, never a host install.
 - ConanCenter first. A recipe missing there goes in `conan/recipes/<name>/` (CCI layout: `config.yml` +
   `all/conanfile.py` + `all/conandata.yml`), served as the `owl-local` local-recipes-index remote. Keep it
-  minimal and list it in `doc/pages/design/conan-migration.md`.
+  minimal and list it in `doc/pages/design/dependencies.md`.
 - Pin exact versions in `conanfile.py`. Profiles are versioned in `conan/profiles/` (`<os>-<compiler>`, picked from
   the compiler). No profile per build type or sanitizer: third parties are Release and never instrumented.
 - `conan.lock` pins every recipe revision and is always used. After touching `conanfile.py` or a local recipe,

@@ -12,6 +12,7 @@ This page is the contributor guide: setup, conventions and the checks a change m
 Owl Engine is developed by one maintainer with Claude Code as a development tool, used under supervision: every
 change is reviewed and owned by the maintainer, and goes through the same strict CI as any contribution (unit and
 scenario tests on Linux x64/arm64 and Windows, sanitizers, clang-tidy, include checks and performance budgets).
+The CI runs on the maintainer's GitLab instance (see [Continuous Integration](continuous_integration.md)).
 
 ## Getting started
 
@@ -178,7 +179,7 @@ The changelog, the roadmap and the design pages are history: a release dates the
 
 The CI then runs clang-tidy, the sanitizers and the full test suite — see
 [Continuous Integration](continuous_integration.md) for the build matrix and which configurations run on draft
-vs. ready PRs vs. `main` only.
+vs. ready merge requests vs. `main` only.
 
 ## Reporting Issues
 

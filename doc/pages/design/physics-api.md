@@ -2,8 +2,7 @@
 
 [TOC]
 
-Design page for the physics work, summarised in the [Roadmap](../roadmap.md). Current behaviour is documented in
-[Physics](../physics.md).
+Design of the physics. Current behaviour is documented in [Physics](../physics.md).
 
 ## Principle: one engine, one API, determinism first
 
@@ -22,8 +21,7 @@ a simulation result.
 | Topic               | Decision                                                                                                                       |
 |---------------------|--------------------------------------------------------------------------------------------------------------------------------|
 | Engine              | Jolt (MIT): cross-platform determinism, MinGW, Android and WASM, mutable compounds, constraints, state save                    |
-| Rejected            | PhysX (determinism on one machine only, no MinGW nor Web), Bullet (maintenance mode), Rapier (Rust toolchain)                  |
-| 2D                  | Jolt bodies locked to the XY plane; Box2D removed                                                                              |
+| 2D                  | Jolt bodies locked to the XY plane                                                                                             |
 | Lua API             | One `physics` table for 2D and 3D: the dimension follows the vector type (`vec2` or `vec3`)                                    |
 | Precision           | Single precision; large worlds go through the floating origin ([Large worlds](large-worlds.md)), no `JPH_DOUBLE_PRECISION`     |
 | Determinism         | `JPH_CROSS_PLATFORM_DETERMINISTIC`, no FMA, `-ffp-contract=off`                                                                |
@@ -35,45 +33,27 @@ a simulation result.
 | Rewind and network  | Jolt `SaveState` / `RestoreState` for the snapshots of rewind and rollback                                                     |
 | Check               | Frozen world hash of a Jolt scene, the same value on x86_64 and arm64, with 1 and several workers                              |
 
-## v0.3.0 — correctness
+## Features
 
 - Fixed-step simulation: accumulator, bounded steps per frame, interpolated transforms, per-scene settings
-  (PR-22: D-05) — done
-- Multi-threaded Box2D solver on a dedicated Taskflow executor, automatic above 2 000 dynamic bodies
-  (PR-22: P-12, D-14) — done; Box2D built with AVX2 on x86_64 (`OWL_PHYSICS_AVX2`) — done
-- Bodies destroyed with their entity, no ghost collider (PR-13: C-08, D-04)
-- `on_collision` implemented from Box2D contact events, with the other entity (D-07, I-02) — done
+- Bodies destroyed with their entity, no ghost collider
+- Collision callbacks with the other entity: `on_collision`, `on_collision_exit`, `on_trigger_enter`,
+  `on_trigger_exit`; collision layers and masks, sensors
+- Queries: raycast, circle, box and sphere casts with a layer mask, overlaps; Lua `physics.raycast`; line-of-sight and
+  ground detection for gameplay
+- 3D shapes: box, sphere, capsule, cylinder, convex hull, mesh
+- Joints: fixed, distance, hinge, slider, limits, motors; a visual joint editor in Owl Nest (viewport overlay and
+  inspector)
+- Gravity fields, trajectory prediction, time warp on rails ([Large worlds](large-worlds.md#large-worlds-gravity))
 
-## v0.7.0 — Jolt and the physics interface
+## Articulated bodies {#physics-api-articulated-bodies}
 
-| Step                                                                                       | Status      |
-|--------------------------------------------------------------------------------------------|-------------|
-| Local Jolt recipe (deterministic, SSE4.2, no consumer flags), world-hash golden on Jolt    | Done        |
-| Backend-independent physics world interface, Jolt behind it                                | Done        |
-| 3D rigid body component and shapes, editor support                                         | Done        |
-| 2D bodies on Jolt (plane-locked), the 2D scenes and the world-hash golden moved, Box2D out | Done        |
-| Rewind snapshots through `SaveState` / `RestoreState`                                      | Done        |
-
-## v0.7.0 — 2D and 3D physics
-
-| Part   | Step                                                                                              | Status  |
-|--------|---------------------------------------------------------------------------------------------------|---------|
-| 2D, 3D | Collision callbacks: `on_collision`, `on_collision_exit`, `on_trigger_enter`, `on_trigger_exit`   | Done    |
-| 2D, 3D | Collision layers and masks, sensors                                                               | Done    |
-| 2D, 3D | Queries: raycast, circle, box and sphere casts with a layer mask, overlaps; Lua `physics.raycast` | Done    |
-| 2D, 3D | Joints: fixed, distance, hinge, slider, limits, motors                                            | Done    |
-| 2D, 3D | Visual joint editor in Owl Nest (viewport overlay and inspector)                                  | Done    |
-| 3D     | 3D rigid body component on the same interface                                                     | Done    |
-| 3D     | Collision shapes: box, sphere, capsule, cylinder, convex hull, mesh                               | Done    |
-| 3D     | Raycasting for gameplay (line-of-sight, ground detection), sphere casts                           | Done    |
-| 2D, 3D | Gravity fields, trajectory prediction, time warp on rails ([Large worlds](large-worlds.md))       | Done    |
-| 2D, 3D | Articulated bodies: assemblies of parts, breakable joints, solver iterations, forces at a point   | Done    |
-
-Articulated bodies ([Large worlds](large-worlds.md), user reference [Assemblies](../physics.md#assemblies)):
+User reference: [Assemblies](../physics.md#assemblies).
 
 - Compound bodies rebuilt when parts join or leave (`SceneBody::part`, `attach`, `detach`): one Jolt
   `StaticCompoundShape` replaced through `SetShape`, mass, centre of mass and inertia recomputed
 - Breakable joints with force and torque thresholds, from the solver's impulses of the last collision step, checked in
   joint order (deterministic), an `on_joint_break` event
 - Solver iterations per scene (`velocitySteps`, `positionSteps`) next to the collision steps, for long chains of joints
-- Forces and torques applied at a point, from Lua and from systems
+- Forces and torques applied at a point (`PhysicCommand::addForceAtPoint`), from Lua and from systems (thrust, drag,
+  lift computed by the game)

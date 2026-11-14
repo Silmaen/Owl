@@ -23,6 +23,12 @@ from ci.utils.secrets import get_secret
 TOKEN_VARIABLE = "OWL_GITLAB_API_TOKEN"
 """CI/CD variable holding a project access token with `read_api`: `CI_JOB_TOKEN` cannot list the project's jobs."""
 
+PIPELINE_TOKEN_VARIABLE = "OWL_GITLAB_PIPELINE_TOKEN"
+"""CI/CD variable holding a project access token with `api` (Developer): the only one allowed to start a pipeline."""
+
+DRAFT_PIPELINE_NAME = "Draft merge request"
+"""Name `.gitlab-ci.yml` gives the pipeline of a draft merge request, which leaves most of the jobs to their ▶."""
+
 _PAGES = 5
 """Pages of 100 successful jobs searched for a reference: older than that, the reference is stale anyway."""
 
@@ -68,6 +74,31 @@ def section(name: str, header: str, collapsed: bool = False) -> Iterator[None]:
         sys.stderr.flush()
 
 
+def _api_call(path: str, method: str = "GET", token_variable: str = TOKEN_VARIABLE) -> object | None:
+    """
+    Call one GitLab API endpoint of this project.
+
+    :param path: The path after `/projects/:id/`, query string included.
+    :param method: `GET` to read, `POST` to create.
+    :param token_variable: The CI/CD variable holding the token to authenticate with.
+    :return: The decoded JSON, or None when the context, the token or the server is missing.
+    """
+    api = os.environ.get("CI_API_V4_URL", "")
+    project = os.environ.get("CI_PROJECT_ID", "")
+    token = get_secret(token_variable)
+    if not api or not project or not token:
+        return None
+    request = Request(
+        f"{api}/projects/{quote(project, safe='')}/{path}", headers={"PRIVATE-TOKEN": token}, method=method
+    )
+    try:
+        with urlopen(request, timeout=30) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except (URLError, TimeoutError, ValueError) as error:
+        log.warning(f"GitLab API: {method} {path.split('?')[0]} failed ({error}).")
+        return None
+
+
 def _api_get(path: str) -> object | None:
     """
     Read one GitLab API endpoint of this project.
@@ -75,18 +106,17 @@ def _api_get(path: str) -> object | None:
     :param path: The path after `/projects/:id/`, query string included.
     :return: The decoded JSON, or None when the context, the token or the server is missing.
     """
-    api = os.environ.get("CI_API_V4_URL", "")
-    project = os.environ.get("CI_PROJECT_ID", "")
-    token = get_secret(TOKEN_VARIABLE)
-    if not api or not project or not token:
-        return None
-    request = Request(f"{api}/projects/{quote(project, safe='')}/{path}", headers={"PRIVATE-TOKEN": token})
-    try:
-        with urlopen(request, timeout=30) as response:
-            return json.loads(response.read().decode("utf-8"))
-    except (URLError, TimeoutError, ValueError) as error:
-        log.warning(f"GitLab API: {path.split('?')[0]} unreadable ({error}).")
-        return None
+    return _api_call(path)
+
+
+def _api_post(path: str) -> object | None:
+    """
+    Create through one GitLab API endpoint of this project, with the token allowed to start pipelines.
+
+    :param path: The path after `/projects/:id/`, query string included.
+    :return: The decoded JSON, or None when the context, the token or the server is missing.
+    """
+    return _api_call(path, "POST", PIPELINE_TOKEN_VARIABLE)
 
 
 def reference_coverage(job_name: str | None = None) -> float | None:
@@ -148,12 +178,14 @@ def reuse_allowed() -> bool:
     )
 
 
-def same_tree_success(job_name: str | None = None) -> dict | None:
+def same_tree_success(job_name: str | None = None, same_commit: bool = False) -> dict | None:
     """
     An earlier successful job of the same name whose commit has exactly the tree of this one: its verdict is this
     job's verdict.
 
     :param job_name: The job to look for; default the running job (`CI_JOB_NAME`).
+    :param same_commit: Only the very commit of this job, for a verdict that also depends on the history (the
+        clang-tidy of a merge request reads the diff from its merge base).
     :return: The job (`id`, `coverage`, `commit.id`), or None when there is none or the API cannot be read.
     """
     name = job_name or os.environ.get("CI_JOB_NAME", "")
@@ -171,9 +203,60 @@ def same_tree_success(job_name: str | None = None) -> dict | None:
                 candidates[commit] = job
         if len(candidates) >= _REUSE_CANDIDATES or len(jobs) < 100:
             break
+    if same_commit:
+        return candidates.get(sha)
     for commit, job in list(candidates.items())[:_REUSE_CANDIDATES]:
         # Straight: the two trees against each other, whatever their history. No diff, same tree.
         compare = _api_get(f"repository/compare?from={commit}&to={sha}&straight=true")
         if isinstance(compare, dict) and compare.get("diffs") == []:
             return job
     return None
+
+
+def merge_requests_to_rerun() -> list[int]:
+    """
+    The open merge requests marked ready whose last pipeline is still the one of their draft: GitLab starts no
+    pipeline when a draft is marked ready, so the jobs a draft left to their ▶ never ran on them.
+
+    :return: Their internal ids (`iid`); empty when the API cannot be read.
+    """
+    merge_requests = _api_get("merge_requests?state=opened&per_page=100")
+    if not isinstance(merge_requests, list):
+        return []
+    rerun: list[int] = []
+    for merge_request in merge_requests:
+        if merge_request.get("draft") or merge_request.get("work_in_progress"):
+            continue
+        iid = merge_request.get("iid")
+        pipelines = _api_get(f"merge_requests/{iid}/pipelines?per_page=1")
+        if not isinstance(pipelines, list) or not pipelines:
+            continue
+        last = pipelines[0]
+        # A pipeline still running ends as a draft one: its successor is started by the next watch.
+        if (
+            last.get("sha") == merge_request.get("sha")
+            and last.get("status") not in {"created", "pending", "running"}
+            and _pipeline_name(last.get("id")) == DRAFT_PIPELINE_NAME
+        ):
+            rerun.append(int(iid))
+    return rerun
+
+
+def _pipeline_name(pipeline_id: object) -> str:
+    """
+    :param pipeline_id: A pipeline of the project.
+    :return: Its name (`workflow:name`), empty when it has none or the API cannot be read.
+    """
+    pipeline = _api_get(f"pipelines/{pipeline_id}")
+    return str(pipeline.get("name") or "") if isinstance(pipeline, dict) else ""
+
+
+def start_merge_request_pipeline(iid: int) -> int | None:
+    """
+    Start a pipeline of a merge request, as its Run pipeline button does.
+
+    :param iid: The internal id of the merge request.
+    :return: The id of the new pipeline, None when it could not be started.
+    """
+    pipeline = _api_post(f"merge_requests/{iid}/pipelines")
+    return int(pipeline["id"]) if isinstance(pipeline, dict) and "id" in pipeline else None
