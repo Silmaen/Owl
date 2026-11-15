@@ -45,6 +45,7 @@ class OwlEngineConan(ConanFile):
         "render": [True, False],
         "physics": [True, False],
         "audio": [True, False],
+        "network": [True, False],
         "script": [True, False],
         "gui": [True, False],
     }
@@ -56,6 +57,7 @@ class OwlEngineConan(ConanFile):
         "render": True,
         "physics": True,
         "audio": True,
+        "network": True,
         "script": True,
         "gui": True,
         # Tracy client: zones cost a flag test until a profiler connects, nothing is buffered before.
@@ -155,6 +157,8 @@ class OwlEngineConan(ConanFile):
         if self.options.audio:
             self.requires("openal-soft/1.25.2")
             self.requires("libsndfile/1.2.2")
+        if self.options.network:
+            self.requires("enet/1.3.18")
         if self.options.script:
             self.requires("luau/0.746")
         if self.options.gui:
@@ -191,7 +195,7 @@ class OwlEngineConan(ConanFile):
         tc.cache_variables["OWL_TESTING"] = False
         tc.cache_variables["OWL_PROFILER"] = "tracy" if self.options.tracy else "none"
         tc.cache_variables["OWL_USE_CCACHE"] = False
-        for module in ("render", "physics", "audio", "script", "gui"):
+        for module in ("render", "physics", "audio", "network", "script", "gui"):
             tc.cache_variables[f"OWL_MODULE_{module.upper()}"] = bool(self.options.get_safe(module))
         tc.generate()
 
@@ -212,5 +216,5 @@ class OwlEngineConan(ConanFile):
         self.cpp_info.resdirs = ["assets"]
         self.cpp_info.defines = ["OWL_BUILD_SHARED", f"OWL_PLATFORM_{str(self.settings.os).upper()}"] + [
             f"OWL_WITH_{module.upper()}={int(bool(self.options.get_safe(module)))}"
-            for module in ("render", "physics", "audio", "script", "gui")
+            for module in ("render", "physics", "audio", "network", "script", "gui")
         ]

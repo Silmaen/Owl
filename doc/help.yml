@@ -38,6 +38,7 @@ Groups:
       - doc/pages/planets.md
       - doc/pages/world_partition.md
       - doc/pages/sound.md
+      - doc/pages/networking.md
       - doc/pages/languages.md
       - doc/pages/data_tables.md
       - doc/pages/dialogues.md

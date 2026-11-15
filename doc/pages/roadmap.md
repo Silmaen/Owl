@@ -111,7 +111,7 @@ per target, Android and the Web.
   ([Input](design/windowing-input.md))
 - ![Planned][planned] Crash reporter: a local report to attach to a GitHub issue, nothing sent
   ([Crash reporter](design/crash-reporter.md))
-- ![Planned][planned] Network transport layer (reliable UDP, authoritative server, connection management), on desktop
+- ![In Progress][progress] Network transport layer (reliable UDP, authoritative server, connection management), on desktop
   and Android ([Networking](design/simulation-networking.md#networking-multiplayer))
 - ![Planned][planned] Network transport in the browser: WebSocket to a native server, a Web client in every networked
   game ([Networking](design/simulation-networking.md#networking-multiplayer))
@@ -122,7 +122,8 @@ per target, Android and the Web.
   ([Fair play](design/simulation-networking.md#networking-fairness))
 - ![Planned][planned] RPC system (Lua `rpc_server` / `rpc_client` / `rpc_all`, reliable and unreliable)
 - ![Planned][planned] Lobby and session management
-- ![Planned][planned] Network debugging tools (latency / loss simulation, stats overlay)
+- ![In Progress][progress] Network debugging tools (latency / loss simulation, stats overlay)
+  ([Networking](networking.md#networking-conditions))
 - ![Planned][planned] Interest management: relevance areas and priorities, a client receives only what is near it
   ([Large worlds](design/large-worlds.md))
 - ![Planned][planned] Extension packs: one format and one loader for game mods and for data and script plugins

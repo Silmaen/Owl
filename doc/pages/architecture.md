@@ -35,6 +35,7 @@ The engine library (`source/owl/`) is organized into the following modules:
 | `script`   | Luau embedded scripting (sandboxed `LuaEngine` per entity)                        |
 | `physics`  | 2D physics (Jolt integration)                                                     |
 | `sound`    | Audio playback and device management                                              |
+| `network`  | Transports (ENet UDP, loopback), server and client sessions, byte streams         |
 | `input`    | Keyboard, mouse, and gamepad input abstraction                                    |
 | `window`   | Window creation and management                                                    |
 | `gui`      | ImGui/ImGuizmo integration for editor UI                                          |
@@ -58,7 +59,7 @@ imgui under `gui/` (CodeStyle `public-deps`): the other dependencies stay privat
 |-------|---------------------------------------|
 | 11    | `gui`                                 |
 | 10    | `app`                                 |
-| 9     | `physics`                             |
+| 9     | `physics`, `network`                  |
 | 8     | `scene`                               |
 | 7     | `sound`                               |
 | 6     | `io`, `window`                        |
@@ -71,7 +72,7 @@ imgui under `gui/` (CodeStyle `public-deps`): the other dependencies stay privat
 
 ### Optional modules
 
-A game specialises the engine at build time with five CMake options (`OWL_MODULE_*`, see
+A game specialises the engine at build time with six CMake options (`OWL_MODULE_*`, see
 [Building](building.md#engine-modules)). They follow the layers above: an optional module only swaps the
 implementation behind a public API of its layer, never removes a type a lower layer names, so no public header of the
 core depends on whether it is built.
@@ -82,6 +83,7 @@ core depends on whether it is built.
 | render       | `renderer`, `window`, `input`     | `gpu/opengl`, `gpu/vulkan`, `window/glfw`, `input/glfw`     | Null backends: headless             |
 | physics      | `physics`                         | `physics/PhysicCommand.cpp` (Jolt)                          | `physics/disabled/`: no-op          |
 | audio        | `sound`                           | `sound/openal`                                              | Null sound backend                  |
+| network      | `network`                         | `network/enet`                                              | Loopback transport only             |
 | script       | `script`                          | `script/` (Lua)                                             | `script/disabled/`: scripts skipped |
 | Gui          | `gui`, the ImGui overlay of `app` | `gui/`, `Owl::Gui`                                          | no `gui/` headers, no overlay       |
 

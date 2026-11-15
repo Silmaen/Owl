@@ -94,12 +94,14 @@ Planned with the networking:
 
 ## Networking and multiplayer {#networking-multiplayer}
 
-Planned. Two network models: an authoritative server with client prediction (action games), and lockstep on the
+Two network models: an authoritative server with client prediction (action games), and lockstep on the
 cross-platform deterministic simulation (management games, strategy), with desync detection by world hash. UDP on
 desktop and Android; in the browser, which opens no UDP socket, a WebSocket transport joins a native server.
 
-- Transport: UDP-based reliable messaging, client-server with an authoritative server; connect, disconnect,
-  reconnect, timeout
+The transport and the sessions exist ([Networking](../networking.md)): `Transport` (ENet reliable UDP, in-process
+loopback), `NetServer` and `NetClient` with handshake, timeouts and reconnection. To do:
+
+- Android: the ENet backend built and run on the device
 - Web transport: the same messages over a WebSocket, a server on desktop accepting UDP and WebSocket clients in one
   session; the Web client never hosts
 - Replication: components marked as replicated, interpolation and prediction, server-owned and client-owned entities;

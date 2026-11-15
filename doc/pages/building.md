@@ -422,6 +422,7 @@ it nothing.
 | `OWL_MODULE_RENDER`                        | ON      | OpenGL / Vulkan backends, GLFW, Slang ([Engine modules](#engine-modules))                           |
 | `OWL_MODULE_PHYSICS`                       | ON      | Jolt physics ([Engine modules](#engine-modules))                                                    |
 | `OWL_MODULE_AUDIO`                         | ON      | OpenAL backend, libsndfile ([Engine modules](#engine-modules))                                      |
+| `OWL_MODULE_NETWORK`                       | ON      | ENet UDP transport ([Engine modules](#engine-modules))                                              |
 | `OWL_MODULE_SCRIPT`                        | ON      | Lua scripting ([Engine modules](#engine-modules))                                                   |
 | `OWL_MODULE_GUI`                           | ON      | ImGui layer, widgets, `Owl::Gui` ([Engine modules](#engine-modules))                                |
 
@@ -436,11 +437,12 @@ its public API stays, backed by the Null backend or a no-op, so a game compiles 
 | `OWL_MODULE_RENDER`  | `render`     | glad, GLFW, lunasvg, Vulkan, SPIRV-Cross, Slang | Null window, input and graphics: the engine runs headless |
 | `OWL_MODULE_PHYSICS` | `physics`    | Jolt                                            | `PhysicCommand` does nothing, bodies stay where they are  |
 | `OWL_MODULE_AUDIO`   | `audio`      | OpenAL Soft, libsndfile                         | Null sound backend                                        |
+| `OWL_MODULE_NETWORK` | `network`    | ENet                                            | Loopback transport only: no socket, in-process sessions   |
 | `OWL_MODULE_SCRIPT`  | `script`     | Lua                                             | `ScriptInstance` never loads, scripts are skipped         |
 | `OWL_MODULE_GUI`     | `gui`        | imgui, ImGuizmo                                 | No `UiLayer`, no `gui/` headers, no `Owl::Gui` target     |
 
 - The code sees `OWL_WITH_<MODULE>` (`0` or `1`), a public definition of `Owl::OwlEngine`; a consumer checks a module
-  with `find_package(OwlEngine COMPONENTS Physics)` (components `Render`, `Physics`, `Audio`, `Script`, `Gui`).
+  with `find_package(OwlEngine COMPONENTS Physics)` (components `Render`, `Physics`, `Audio`, `Network`, `Script`, `Gui`).
 - `OWL_MODULE_GUI` needs `OWL_MODULE_RENDER` (turned off otherwise). Owl Nest, OwlRunner, the benchmarks and the
   fuzzers need every module: `OWL_BUILD_NEST`, `OWL_BENCHMARK` and `OWL_FUZZING` are turned off when one is missing.
 - Tests: `physics_tests`, `script_tests` and `gui_tests` go with their module; a test elsewhere that needs a module

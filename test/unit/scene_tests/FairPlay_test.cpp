@@ -141,6 +141,8 @@ TEST_F(FairPlayTest, gameplayLightsBeyondTheCommonSlotsCompeteAsTheOthers) {
 }
 
 TEST_F(FairPlayTest, thePlayerIsPushedPerTickWhateverTheFrameRate) {
+	if constexpr (OWL_WITH_PHYSICS == 0)
+		GTEST_SKIP() << "The push moves a physics body: needs OWL_MODULE_PHYSICS";
 	const auto slow = playerVelocity(25, 40);
 	const auto fast = playerVelocity(250, 4);
 	EXPECT_GT(slow.x(), 0.f);

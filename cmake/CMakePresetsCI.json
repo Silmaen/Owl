@@ -132,6 +132,7 @@
         "OWL_MODULE_RENDER": "OFF",
         "OWL_MODULE_PHYSICS": "OFF",
         "OWL_MODULE_AUDIO": "OFF",
+        "OWL_MODULE_NETWORK": "OFF",
         "OWL_MODULE_SCRIPT": "OFF",
         "OWL_MODULE_GUI": "OFF",
         "OWL_BUILD_NEST": "OFF",

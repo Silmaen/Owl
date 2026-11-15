@@ -20,7 +20,7 @@ if (${PROJECT_PREFIX}_MODULE_GUI)
 endif ()
 # The engine modules built in, as find_package(OwlEngine COMPONENTS ...) names them.
 set(${PROJECT_PREFIX}_PACKAGE_MODULES "")
-foreach (_owl_module Render Physics Audio Script Gui)
+foreach (_owl_module Render Physics Audio Network Script Gui)
     string(TOUPPER "${_owl_module}" _owl_module_upper)
     if (${PROJECT_PREFIX}_MODULE_${_owl_module_upper})
         list(APPEND ${PROJECT_PREFIX}_PACKAGE_MODULES ${_owl_module})

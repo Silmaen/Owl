@@ -9,9 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Network transport: `network::Transport` with an ENet reliable UDP backend and an in-process `LoopbackTransport`, four ordered channels, reliable and unreliable messages, link statistics ([Networking](networking.md)).
+- Network sessions: `NetServer` and `NetClient` with a game and version handshake, an authoritative server, kick, timeouts and reconnection within a grace time keeping the `ClientId` ([Networking](networking.md#networking-sessions)).
+- `ConditionedTransport` wraps any transport to simulate latency, jitter, loss and duplication from a seed ([Networking](networking.md#networking-conditions)).
+- `net_session` fuzz target: arbitrary messages sent to a `NetServer` and a `NetClient`, with a seed corpus.
+- `OWL_MODULE_NETWORK` (Conan option `network`) builds the ENet backend; without it only the loopback transport remains.
+
 ### Changed
 
 - CI: `ready-watch` runs untagged on any runner, Windows and arm64 included, so its schedule no longer piles up pending pipelines behind the builds.
+
+### Fixed
+
+- `linux-clang-minimal` links again: the no-physics `PhysicCommand` has the 3D angular velocity and joint load stubs, and the one physics-only scene test is skipped there.
 
 ## [0.7.0] - 2026-11-15
 

@@ -22,12 +22,13 @@ module.
 | `scene`                                                                   | ECS world, **all** ECS components (`scene::component`), tilemap, prefab, save / settings.                                                                                                                                                                         |
 | `renderer`                                                                | Draw path + `gpu/` backends + camera types and camera controllers.                                                                                                                                                                                                |
 | `gui`                                                                     | ImGui widgets (`widgets`) and per-component render helpers (`component`).                                                                                                                                                                                         |
+| `network`                                                                 | Transports (`Transport`, `LoopbackTransport`, `ConditionedTransport`, the ENet backend in `private/network/enet/`), sessions (`NetServer`, `NetClient`), `ByteWriter` / `ByteReader`. |
 | `event`, `input`, `window`, `sound`, `script`, `debug`, `physics`, `math` | Their namesake domain.                                                                                                                                                                                                                                            |
 
 ## Optional modules (`OWL_MODULE_*`)
 
-render (`renderer/gpu/{opengl,vulkan}`, `window/glfw`, `input/glfw`), physics, audio (`sound/openal`), script and
-gui can be left out of the build. The public API of physics and script stays: their no-op implementation lives in
+render (`renderer/gpu/{opengl,vulkan}`, `window/glfw`, `input/glfw`), physics, audio (`sound/openal`), network
+(`network/enet`), script and gui can be left out of the build. The public API of physics and script stays: their no-op implementation lives in
 `private/<module>/disabled/`, compiled instead of the real one. Code outside a backend that names it goes under
 `#if OWL_WITH_<MODULE>`; a new backend file of an optional module needs no CMake edit if it sits in those folders.
 
@@ -42,7 +43,7 @@ A public header includes no third-party header but EnTT (imgui in `gui/`): `publ
 |-------|---------------------------------------|
 | 11    | `gui`                                 |
 | 10    | `app`                                 |
-| 9     | `physics`                             |
+| 9     | `physics`, `network`                  |
 | 8     | `scene`                               |
 | 7     | `sound`                               |
 | 6     | `io`, `window`                        |

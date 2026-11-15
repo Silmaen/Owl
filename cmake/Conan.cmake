@@ -75,7 +75,7 @@ if (${PROJECT_PREFIX}_CONAN_INSTALL)
     endif ()
     # One recipe option per engine module (lower-case name), so a module turned OFF drops its packages.
     set(_owl_conan_modules "")
-    foreach (_owl_module RENDER PHYSICS AUDIO SCRIPT GUI)
+    foreach (_owl_module RENDER PHYSICS AUDIO NETWORK SCRIPT GUI)
         string(TOLOWER "${_owl_module}" _owl_module_lower)
         if (${PROJECT_PREFIX}_MODULE_${_owl_module})
             string(APPEND _owl_conan_modules "&:${_owl_module_lower}=True\n")

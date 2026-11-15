@@ -11,7 +11,7 @@ endif ()
 # Engine modules built into this package (OWL_MODULE_*): find_package(OwlEngine COMPONENTS Physics) fails when the
 # package was built without it. The OWL_WITH_<MODULE> definitions of Owl::OwlEngine say the same to the code.
 set(OwlEngine_MODULES "@OWL_PACKAGE_MODULES@")
-foreach (_owl_module Render Physics Audio Script)
+foreach (_owl_module Render Physics Audio Network Script)
     if (_owl_module IN_LIST OwlEngine_MODULES)
         set(OwlEngine_${_owl_module}_FOUND TRUE)
     else ()

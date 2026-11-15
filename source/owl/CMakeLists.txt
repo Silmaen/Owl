@@ -31,6 +31,9 @@ endif ()
 if (NOT ${PROJECT_PREFIX}_MODULE_AUDIO)
     list(APPEND _owl_excluded "/private/sound/openal/" "/private/core/external/openal\\.h$")
 endif ()
+if (NOT ${PROJECT_PREFIX}_MODULE_NETWORK)
+    list(APPEND _owl_excluded "/private/network/enet/" "/private/core/external/enet\\.h$")
+endif ()
 if (${PROJECT_PREFIX}_MODULE_SCRIPT)
     list(APPEND _owl_excluded "/private/script/disabled/")
 else ()
@@ -88,7 +91,7 @@ target_include_directories(${ENGINE_NAME} PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/ge
 # (editor, tests) inherit them, the installed package does not. It only exports what the public headers need.
 target_link_libraries(${ENGINE_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_PROJECT_NAME}_Base>)
 target_compile_features(${ENGINE_NAME} PUBLIC cxx_std_23)
-foreach (_owl_module RENDER PHYSICS AUDIO SCRIPT GUI)
+foreach (_owl_module RENDER PHYSICS AUDIO NETWORK SCRIPT GUI)
     if (${PROJECT_PREFIX}_MODULE_${_owl_module})
         target_compile_definitions(${ENGINE_NAME} PUBLIC ${PROJECT_PREFIX}_WITH_${_owl_module}=1)
     else ()
@@ -156,6 +159,11 @@ endif ()
 if (${PROJECT_PREFIX}_MODULE_AUDIO)
     owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE OpenAL CONFIG REQUIRED)
     owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE SndFile REQUIRED MODULE_TARGET "SndFile::sndfile")
+endif ()
+
+# network
+if (${PROJECT_PREFIX}_MODULE_NETWORK)
+    owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE enet REQUIRED MODULE_TARGET "enet::enet")
 endif ()
 
 # script

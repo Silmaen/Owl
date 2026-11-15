@@ -151,6 +151,7 @@ The `DependencyReport` CI action lists what lags behind ConanCenter or upstream.
 |-----------------------|-----------------|-----------------------|---------|--------------------------------------------------------------------------------|
 | cpp-httplib           | 0.59.0          | ConanCenter           | header  | Owl Nest (`nest`): HTTP transport of the MCP server, no TLS                    |
 | cpptrace              | 1.0.4           | ConanCenter           | static  | Pulls libdwarf 2.1.0                                                           |
+| enet                  | 1.3.18          | ConanCenter           | static  | `network` module: reliable UDP of `network::Transport`, behind its interface   |
 | entt                  | 4.0.0           | local recipe          | header  | ConanCenter stops at 3.16.0; its recipe, C++20 for 4.x                         |
 | fast_float            | 8.2.10          | ConanCenter           | header  | Pulled by rapidyaml, pinned directly                                           |
 | freetype              | 2.14.3          | ConanCenter           | static  | Transitive, pinned by the msdfgen recipe; pulls brotli 1.2.0 (override)        |

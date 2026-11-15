@@ -23,7 +23,7 @@ LAYERS: tuple[tuple[str, ...], ...] = (
     ("io", "window"),
     ("sound",),
     ("scene",),
-    ("physics",),
+    ("physics", "network"),
     ("app",),
     ("gui",),
 )
