@@ -274,6 +274,12 @@ struct CommandContext {
 	const CommandRegistry* registry{nullptr};
 	/// The asset documents of the editor, edited by the `sound.*` and `locale.*` commands (non-owning, null without).
 	DocumentHost* documents{nullptr};
+	/// Folder of the open project, where `extension.*` commands find its extension packs (empty without a project).
+	std::filesystem::path projectDirectory{};
+	/// Ids of the extension packs disabled in the project, edited by `extension.enable` (non-owning, null without).
+	std::vector<std::string>* disabledExtensions{nullptr};
+	/// Called after the extension packs of the project changed (the editor saves the project and mounts them again).
+	std::function<void()> onExtensionsChanged{};// NOLINT(readability-redundant-member-init) callers may omit it
 };
 
 /**

@@ -1014,6 +1014,7 @@ void EditorLayer::openProject(const std::filesystem::path& iDir) {
 	}
 	app::Application::get().addAssetDirectory({std::format("Project: {}", m_project.name), m_project.projectDirectory},
 											  true);
+	mountProjectExtensions();
 	app::Application::get().getEngineContext().setSimulationSettings(m_project.simulation);
 	std::ignore = app::Application::get().getEngineContext().loadActionMap(m_project.projectDirectory);
 	std::ignore = app::Application::get().getEngineContext().loadLocalisation(m_project.projectDirectory);
@@ -1076,6 +1077,11 @@ void EditorLayer::saveProjectAs() {
 	requestProjectSwitch(dest);
 }
 
+void EditorLayer::mountProjectExtensions() {
+	const auto sources = m_project.isLoaded() ? m_project.getEnabledExtensions() : std::vector<std::filesystem::path>{};
+	std::ignore = app::Application::get().setExtensionSources(sources);
+}
+
 void EditorLayer::closeProject() {
 	if (!m_project.isLoaded())
 		return;
@@ -1096,6 +1102,7 @@ void EditorLayer::closeProject() {
 	gui::FontPreviewCache::get().clear();
 	auto& app = app::Application::get();
 	app.getEngineContext().getScreenTransition().reset();
+	std::ignore = app.setExtensionSources({});
 	app.removeAssetDirectory(m_project.projectDirectory);
 	// These libraries key their assets by project-relative path: two projects both have a `tables/waves.owltable`.
 	auto& context = app.getEngineContext();

@@ -54,7 +54,7 @@ auto LevelTransition::readLevel(const std::string& iLevelName, const std::vector
 		-> std::optional<LevelSource> {
 	const auto fileName = resolveLevelName(iLevelName);
 	const std::array<std::string, 2> names{fileName, "scenes/" + fileName};
-	if (app::Application::instanced() && app::Application::get().hasOpenPack()) {
+	if (app::Application::instanced() && app::Application::get().hasPackedAssets()) {
 		for (const auto& name: names) {
 			if (auto data = app::Application::get().loadFromPack(name); data)
 				return LevelSource{.bytes = std::move(*data), .sourceName = name};

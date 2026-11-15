@@ -123,7 +123,7 @@ void drawStep(const RenderGraph::PassContext& iContext, const BloomStep& iStep) 
 auto readLut(const std::filesystem::path& iAssetPath) -> std::optional<ColorLut> {
 	if (app::Application::instanced()) {
 		const auto& app = app::Application::get();
-		if (const std::string rel = iAssetPath.generic_string(); app.hasOpenPack() && app.packContains(rel)) {
+		if (const std::string rel = iAssetPath.generic_string(); app.hasPackedAssets() && app.packContains(rel)) {
 			if (const auto bytes = app.loadFromPack(rel); bytes)
 				return ColorLut::parse(std::string_view{reinterpret_cast<const char*>(bytes->data()), bytes->size()});
 		}

@@ -12,7 +12,9 @@
 #include "session/HeadlessSession.h"
 #include "session/HeldInput.h"
 
+#include <app/Application.h>
 #include <app/EngineContext.h>
+#include <data/assets/pack/ExtensionRegistry.h>
 #include <input/ActionMap.h>
 #include <input/Gamepad.h>
 #include <input/Input.h>
@@ -242,6 +244,11 @@ auto parseStep(const YAML::Node& iNode, ScenarioStep& oStep) -> std::string {
 		oStep.replay = replay.as<std::string>();
 		return oStep.replay == "synced" || oStep.replay == "finished" ? "" : "`replay` is `synced` or `finished`";
 	}
+	if (const auto asset = expect["asset"]; asset) {
+		oStep.asset = asset.as<std::string>();
+		oStep.provider = expect["provider"] ? expect["provider"].as<std::string>() : std::string{};
+		return oStep.provider.empty() ? "an `asset` expectation needs a `provider` (an extension id or `game`)" : "";
+	}
 	if (const auto hash = expect["world_hash"]; hash) {
 		oStep.worldHash = std::stoull(hash.as<std::string>(), nullptr, 0);
 		return "";
@@ -267,7 +274,7 @@ auto parseStep(const YAML::Node& iNode, ScenarioStep& oStep) -> std::string {
 	else if (const auto player = expect["player"]; player && player.as<bool>())
 		oStep.player = true;
 	else
-		return "an expectation names an `entity`, the `player`, a `gamestate` key or a `setting`";
+		return "an expectation names an `entity`, the `player`, a `gamestate` key, a `setting` or an `asset`";
 	for (const auto& item: expect) {
 		const auto field = item.first.as<std::string>();
 		if (field == "entity" || field == "player")
@@ -410,6 +417,18 @@ auto ScenarioTest::load(const std::filesystem::path& iFile) -> expected<Scenario
 				return unexpected<std::string>{
 						std::format("assets folder {} not found", scenario.m_assets.back().string())};
 		}
+		if (const auto modsNode = root["mods"]; modsNode) {
+			std::vector<std::string> mods;
+			if (modsNode.IsSequence())
+				for (const auto& item: modsNode) mods.push_back(item.as<std::string>());
+			else
+				mods.push_back(modsNode.as<std::string>());
+			for (const auto& mod: mods) {
+				scenario.m_mods.push_back(weakly_canonical(folder / mod));
+				if (!exists(scenario.m_mods.back()))
+					return unexpected<std::string>{std::format("mod {} not found", scenario.m_mods.back().string())};
+			}
+		}
 		if (const auto replayNode = root["replay"]; replayNode) {
 			auto replay = scene::Replay::loadFile(weakly_canonical(folder / replayNode.as<std::string>()));
 			if (!replay)
@@ -497,6 +516,15 @@ auto ScenarioTest::check(const ScenarioStep& iStep, const scene::Scene& iScene) 
 			return std::format("line {}: the replay is at frame {} of {}", iStep.line, progress.frame,
 							   progress.frameCount);
 		return "";
+	}
+	if (!iStep.asset.empty()) {
+		const auto* pack = app::Application::instanced()
+								   ? app::Application::get().getExtensions().findProvider(iStep.asset)
+								   : nullptr;
+		const std::string provider = pack != nullptr ? pack->getManifest().id : std::string{"game"};
+		return provider == iStep.provider ? ""
+										  : std::format("line {}: asset `{}` comes from `{}`, expected `{}`",
+														iStep.line, iStep.asset, provider, iStep.provider);
 	}
 	if (iStep.worldHash.has_value()) {
 		if (const uint64_t hash = scene::computeWorldHash(iScene); hash != *iStep.worldHash)

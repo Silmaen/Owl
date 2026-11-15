@@ -67,6 +67,9 @@ struct OWL_API ExportSettings {
 	PackFlags packFlags{PackFlags::Default};
 	/// Cook cache directory; empty for `<projectDirectory>/.owl/cache/cooked`.
 	std::filesystem::path cookCacheDirectory;
+	/// Extension packs embedded as mods: each folder (or `.owlmod`) written to `mods/<id>.owlmod` of the game.
+	std::vector<std::filesystem::path>
+			extensionSources{};// NOLINT(readability-redundant-member-init) callers may omit it
 };
 
 /**
@@ -88,6 +91,8 @@ enum struct ExportError : uint8_t {
 	Cancelled,
 	/// An asset could not be cooked (a corrupt image, a compression failure).
 	CookFailed,
+	/// An extension pack could not be written as a mod of the game.
+	ExtensionWrite,
 };
 
 /**
@@ -115,6 +120,8 @@ struct OWL_API ExportReport {
 	size_t engineFilesSkipped{0};
 	/// Shaders compiled by the export because the pack held no up-to-date SPIR-V for them (project shaders).
 	size_t shadersBaked{0};
+	/// The `.owlmod` files written in the `mods` folder of the game, one per extension pack embedded.
+	std::vector<std::filesystem::path> mods;
 };
 
 /**

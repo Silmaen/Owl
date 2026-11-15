@@ -159,7 +159,8 @@ auto HeadlessSession::makeCommandContext() -> commands::CommandContext {
 			.scenePath = m_scenePath,
 			.onSaved = [this](const std::filesystem::path& iPath) -> void { m_scenePath = iPath; },
 			.projectStack = m_project.empty() ? nullptr : &m_rendererStack,
-			.onProjectStackChanged = [this]() -> void { installRenderStack(); }};
+			.onProjectStackChanged = [this]() -> void { installRenderStack(); },
+			.projectDirectory = m_project};
 }
 
 void HeadlessSession::ensureTarget() {

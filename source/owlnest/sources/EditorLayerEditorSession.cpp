@@ -98,7 +98,14 @@ auto EditorLayer::makeCommandContext() -> commands::CommandContext {
 					OWL_ERROR("Render stack: Cannot write the project file.")
 				syncActiveDocumentPanels();
 			},
-			.documents = this};
+			.documents = this,
+			.projectDirectory = m_project.isLoaded() ? m_project.projectDirectory : std::filesystem::path{},
+			.disabledExtensions = m_project.isLoaded() ? &m_project.disabledExtensions : nullptr,
+			.onExtensionsChanged = [this]() -> void {
+				if (!m_project.saveToFile(m_project.projectDirectory / "owl_project.yml"))
+					OWL_ERROR("Extensions: Cannot write the project file.")
+				mountProjectExtensions();
+			}};
 }
 
 auto EditorLayer::startPlay(const session::PlayRequest& iRequest) -> expected<void, session::SessionFailure> {

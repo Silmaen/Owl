@@ -435,6 +435,11 @@ and `AssetLibrary::find` resolves a name to a pack entry before a file. Nothing 
 game: the export bakes the font atlases, the project shaders and the shader variants of the material graphs into the pack. `PackReader::readEntry` is thread-safe,
 so asynchronous loads decompress their entries in parallel.
 
+Extension packs (`.owlmod`, the same format with an `extension.yml` manifest, or their source folder) are mounted over
+the assets by `Application::getExtensions()` (`data::assets::pack::ExtensionRegistry`): `loadFromPack` and
+`packContains` ask the mounted packs first, the last one loaded first, so a mod overrides the pack and the asset
+folders by holding an entry at the same path ([Mods and extension packs](mods.md)).
+
 A pack is treated as untrusted input: `PackReader::tryOpen` bounds every offset and size by the real file size and
 by `g_maxTocSize` / `g_maxEntrySize` before allocating, rejects absolute or `..` entry paths, and returns a typed
 `PackOpenError` instead of throwing. `extractPack`, for the tools, confines every entry to the destination directory

@@ -17,6 +17,7 @@
 #include "core/task/Scheduler.h"
 #include "core/task/Task.h"
 #include "data/assets/AssetRegistry.h"
+#include "data/assets/pack/ExtensionRegistry.h"
 #include "data/assets/pack/PackReader.h"
 #include "data/fonts/FontLibrary.h"
 #include "event/AppEvent.h"
@@ -543,7 +544,14 @@ public:
 
 	/**
 	 * @brief
-	 *  Read an asset from the open pack.
+	 *  Check whether assets are read from packs: an asset pack is open or extension packs are mounted.
+	 * @return True when `loadFromPack` may find an asset.
+	 */
+	[[nodiscard]] auto hasPackedAssets() const -> bool { return hasOpenPack() || !m_extensions.isEmpty(); }
+
+	/**
+	 * @brief
+	 *  Read an asset from the mounted extension packs (the last mounted first), else from the open pack.
 	 * @param[in] iPath The asset path inside the pack.
 	 * @return The raw asset data, or nullopt if not found.
 	 */
@@ -551,11 +559,34 @@ public:
 
 	/**
 	 * @brief
-	 *  Check if the open pack contains an asset.
+	 *  Check if a mounted extension pack or the open pack contains an asset.
 	 * @param[in] iPath The asset path inside the pack.
-	 * @return True if the asset exists in the pack.
+	 * @return True if the asset exists in a pack.
 	 */
 	[[nodiscard]] auto packContains(const std::string& iPath) const -> bool;
+
+	/**
+	 * @brief
+	 *  Access the extension packs mounted over the assets (mods of a game, plugins of a project).
+	 * @return The extension registry.
+	 */
+	[[nodiscard]] auto getExtensions() -> data::assets::pack::ExtensionRegistry& { return m_extensions; }
+
+	/**
+	 * @brief
+	 *  Access the extension packs mounted over the assets (mods of a game, plugins of a project).
+	 * @return The extension registry.
+	 */
+	[[nodiscard]] auto getExtensions() const -> const data::assets::pack::ExtensionRegistry& { return m_extensions; }
+
+	/**
+	 * @brief
+	 *  Replace the mounted extension packs by these ones, then reload the loaded assets that a pack overrides or no
+	 *  longer overrides (`HotReload::reloadAssets`).
+	 * @param[in] iSources `.owlmod` files or pack folders; empty unmounts every pack.
+	 * @return The number of packs mounted.
+	 */
+	auto setExtensionSources(const std::vector<std::filesystem::path>& iSources) -> size_t;
 
 	/**
 	 * @brief
@@ -668,6 +699,8 @@ private:
 	uniq<EngineContext> mp_engineContext = mkUniq<EngineContext>();
 	/// The asset pack reader.
 	data::assets::pack::PackReader m_packReader;
+	/// Extension packs mounted over the assets, asked before the pack.
+	data::assets::pack::ExtensionRegistry m_extensions;
 	/// Mark the main entrypoint function as friend.
 	friend auto ::main(int iArgc, char** iArgv) -> int;
 };

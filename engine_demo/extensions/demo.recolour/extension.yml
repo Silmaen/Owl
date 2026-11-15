@@ -1,0 +1,9 @@
+FormatVersion: 1
+OwlExtension:
+  id: demo.recolour
+  name: Recoloured first-aid kit
+  version: 1.0.0
+  kind: Data
+  loadOrder: 0
+  author: Silmaen
+  description: Overrides the first-aid kit of the raycast level with a blue one.

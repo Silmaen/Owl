@@ -183,6 +183,11 @@ A refused command changes nothing and logs why (a bad argument, an edit during P
 | `asset.cook`                      | `path` (file or folder), cooked into the project cache                                                  |
 | `asset.clear_cache`               | none                                                                                                    |
 | `asset.upgrade_references`        | none; rewrites the references of every project document by GUID                                         |
+| `extension.list`                  | none; the packs of `<project>/extensions` (`count`, `ids`)                                              |
+| `extension.create`                | `id`, and the fields of `extension.set`; a folder and its `extension.yml`                               |
+| `extension.set`                   | `path`, `name`, `version`, `kind`, `load_order`, `author`, `description`, `dependencies`; undoable      |
+| `extension.enable`                | `path`, `enabled`; saved in the project, the packs mounted again (not an undo step)                     |
+| `extension.export`                | `path`, `output` (`exports/<id>.owlmod` when absent)                                                    |
 | `edit.undo`, `edit.redo`          | none                                                                                                    |
 | `macro.run`                       | `path` (`.owlmacro`)                                                                                    |
 | `hud.add_widget`                  | `kind` (`panel`, `label`...), `name`, `parent`, `size`, `anchor`, `offset`, `size_unit`, `offset_unit`  |

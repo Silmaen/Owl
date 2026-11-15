@@ -589,7 +589,7 @@ auto loadHdrAsset(const std::filesystem::path& iAssetPath) -> std::optional<Floa
 		return std::nullopt;
 	if (app::Application::instanced()) {
 		const auto& app = app::Application::get();
-		if (const std::string rel = iAssetPath.generic_string(); app.hasOpenPack() && app.packContains(rel)) {
+		if (const std::string rel = iAssetPath.generic_string(); app.hasPackedAssets() && app.packContains(rel)) {
 			if (const auto bytes = app.loadFromPack(rel); bytes)
 				return decodeHdrImage(*bytes);
 		}

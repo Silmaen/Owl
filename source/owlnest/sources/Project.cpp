@@ -9,6 +9,8 @@
 #include "Project.h"
 
 #include <core/Core.h>
+#include <data/assets/pack/ExtensionManifest.h>
+#include <data/assets/pack/ExtensionRegistry.h>
 #include <input/Input.h>
 #include <platform/AtomicFile.h>
 
@@ -23,6 +25,7 @@ OWL_DIAG_POP
 #include <fstream>
 #include <sstream>
 #include <utility>
+#include <vector>
 
 namespace owl::nest {
 
@@ -77,6 +80,8 @@ void readProjectConfig(const YAML::Node& iConfig, Project& oProject) {
 		readSimulationSettings(simulation, oProject.simulation);
 	if (const auto stack = iConfig["RendererStack"]; stack)
 		oProject.rendererStack = renderer::RendererStackConfig::fromYaml(YAML::Dump(stack));
+	if (const auto disabled = iConfig["disabledExtensions"]; disabled && disabled.IsSequence())
+		for (const auto& id: disabled) oProject.disabledExtensions.push_back(id.as<std::string>());
 }
 
 }// namespace
@@ -139,7 +144,15 @@ auto Project::makeExportSettings(const std::filesystem::path& iOutputDir, const 
 			.rendererStackYaml = rendererStack.isEmpty() ? std::string{} : rendererStack.toYaml(),
 			.imGui = imGui,
 			.packFlags = data::assets::pack::PackFlags::Default,
-			.cookCacheDirectory = {}};
+			.cookCacheDirectory = {},
+			.extensionSources = getEnabledExtensions()};
+}
+
+auto Project::getEnabledExtensions() const -> std::vector<std::filesystem::path> {
+	if (projectDirectory.empty())
+		return {};
+	return data::assets::pack::ExtensionRegistry::listSources(
+			projectDirectory / data::assets::pack::g_projectExtensionsFolder, disabledExtensions);
 }
 
 auto Project::saveToFile(const std::filesystem::path& iFile) const -> bool {
@@ -179,6 +192,8 @@ auto Project::saveToFile(const std::filesystem::path& iFile) const -> bool {
 	}
 	if (!rendererStack.isEmpty())
 		out << YAML::Key << "RendererStack" << YAML::Value << YAML::Load(rendererStack.toYaml());
+	if (!disabledExtensions.empty())
+		out << YAML::Key << "disabledExtensions" << YAML::Value << YAML::Flow << disabledExtensions;
 	out << YAML::EndMap;// OwlProject
 	out << YAML::EndMap;
 

@@ -18,6 +18,7 @@
 #include "DialogueCommands.h"
 #include "DocumentCommands.h"
 #include "EntityCommands.h"
+#include "ExtensionCommands.h"
 #include "HierarchyCommands.h"
 #include "HudCommands.h"
 #include "HudThemeCommands.h"
@@ -1929,6 +1930,7 @@ CommandRegistry::CommandRegistry() {
 	addSequenceCommands(*this);
 	addBehaviourTreeCommands(*this);
 	addAssetCommands(*this);
+	addExtensionCommands(*this);
 	addDocumentCommands(*this);
 	add(getMacroRunSpec());
 }

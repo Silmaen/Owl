@@ -111,7 +111,7 @@ auto loadAsset(const std::filesystem::path& iAssetPath) -> std::optional<std::pa
 	};
 	if (app::Application::instanced()) {
 		const auto& app = app::Application::get();
-		if (const std::string rel = iAssetPath.generic_string(); app.hasOpenPack() && app.packContains(rel)) {
+		if (const std::string rel = iAssetPath.generic_string(); app.hasPackedAssets() && app.packContains(rel)) {
 			if (const auto bytes = app.loadFromPack(rel); bytes) {
 				const auto readFromPack = [&app](const std::string& iPath) -> std::optional<std::vector<uint8_t>> {
 					return app.loadFromPack(std::filesystem::path{iPath}.lexically_normal().generic_string());

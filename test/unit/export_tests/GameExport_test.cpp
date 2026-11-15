@@ -13,6 +13,7 @@
 #include <data/assets/AssetMeta.h>
 #include <data/assets/AssetRegistry.h>
 #include <data/assets/AssetSearchPaths.h>
+#include <data/assets/pack/ExtensionPack.h>
 #include <data/assets/pack/GameExporter.h>
 #include <data/assets/pack/PackReader.h>
 #include <renderer/Material.h>
@@ -219,8 +220,9 @@ TEST(GameExporter, SanitizeFilename) {
 }
 
 TEST(GameExporter, ErrorMessages) {
-	for (const auto error: {ExportError::NoAssets, ExportError::OutputDirectory, ExportError::PackWrite,
-							ExportError::RunnerNotFound, ExportError::RunnerCopy, ExportError::Cancelled})
+	for (const auto error:
+		 {ExportError::NoAssets, ExportError::OutputDirectory, ExportError::PackWrite, ExportError::RunnerNotFound,
+		  ExportError::RunnerCopy, ExportError::Cancelled, ExportError::CookFailed, ExportError::ExtensionWrite})
 		EXPECT_FALSE(GameExporter::getErrorMessage(error).empty());
 }
 
@@ -337,6 +339,37 @@ TEST_F(GameExporterFixture, ExportWritesAPlayableFolder) {
 	const auto scene = readPackEntry(result->packFile, "scenes/level.owl");
 	EXPECT_NE(scene.find("nam:textures/a.png"), std::string::npos);
 	EXPECT_EQ(scene.find("pat:"), std::string::npos);
+}
+
+TEST_F(GameExporterFixture, ExportEmbedsTheExtensionPacksAsMods) {
+	auto settings = makeSettings();
+	const auto gameDir = settings.outputDirectory / "My_Game__Deluxe";
+	writeFile(m_project / "extensions" / "recolour" / "extension.yml", "OwlExtension:\n  id: recolour\n");
+	writeFile(m_project / "extensions" / "recolour" / "textures" / "a.png", "PNG-MOD");
+	writeFile(m_root / "extra" / "extension.yml", "OwlExtension:\n  id: extra\n");
+	ASSERT_TRUE(writeExtensionPack(m_root / "extra", m_root / "extra.owlmod").has_value());
+	writeFile(gameDir / "mods" / "stale.owlmod", "STALE");
+	settings.extensionSources = {m_project / "extensions" / "recolour", m_root / "extra.owlmod"};
+	const auto result = GameExporter::exportGame(settings, {});
+	ASSERT_TRUE(result.has_value());
+	EXPECT_EQ(result->mods, (std::vector{gameDir / "mods" / "recolour.owlmod", gameDir / "mods" / "extra.owlmod"}));
+	EXPECT_FALSE(exists(gameDir / "mods" / "stale.owlmod"));
+	{
+		// Closed before the next export: Windows cannot remove an open file.
+		const auto mod = ExtensionPack::open(gameDir / "mods" / "recolour.owlmod");
+		ASSERT_TRUE(mod.has_value());
+		EXPECT_EQ(mod->getManifest().id, "recolour");
+		EXPECT_TRUE(mod->contains("textures/a.png"));
+		EXPECT_TRUE(ExtensionPack::open(gameDir / "mods" / "extra.owlmod").has_value());
+	}
+
+	settings.extensionSources = {m_root / "missing"};
+	EXPECT_EQ(GameExporter::exportGame(settings, {}).error(), ExportError::ExtensionWrite);
+	settings.extensionSources = {};
+	const auto plain = GameExporter::exportGame(settings, {});
+	ASSERT_TRUE(plain.has_value());
+	EXPECT_TRUE(plain->mods.empty());
+	EXPECT_FALSE(exists(gameDir / "mods" / "recolour.owlmod"));
 }
 
 TEST_F(GameExporterFixture, ExportPacksOnlyTheEngineFilesOfTheGame) {
@@ -603,6 +636,8 @@ void checkProjectPlaysFromItsExportFolder(const std::filesystem::path& iBinDir, 
 			  "sounds/hub/wind_3.wav", "sounds/hub/steps.owlsound", "sounds/hub/step_2.wav", "sounds/hub/wade_4.wav",
 			  "tables/walkers.owltable", "tables/dishes.owltable"})
 			EXPECT_TRUE(reader.contains(entry)) << entry;
+		// Its extension pack is embedded as a mod, which the smoke test below mounts.
+		EXPECT_TRUE(ExtensionPack::open(exported / "mods" / "demo.recolour.owlmod").has_value());
 	}
 	reader.close();
 

@@ -8,8 +8,10 @@
 
 #include "EditorLayer.h"
 
+#include "commands/ExtensionCommands.h"
 #include "document/SceneDocument.h"
 
+#include <data/assets/AssetSearchPaths.h>
 #include <platform/FileWatcher.h>
 #include <scene/Tileset.h>
 
@@ -22,6 +24,9 @@ void EditorLayer::onAssetFileChanged(const std::filesystem::path& iFile) {
 	OWL_PROFILE_FUNCTION()
 
 	const auto extension = iFile.extension().string();
+	if (m_project.isLoaded() &&
+		data::assets::isInDirectory(iFile, commands::getExtensionsFolder(m_project.projectDirectory)))
+		mountProjectExtensions();
 	if (extension == scene::Tileset::fileExtension())
 		onTilesetSaved(iFile);
 	for (const auto& docPtr: m_documents.list()) {

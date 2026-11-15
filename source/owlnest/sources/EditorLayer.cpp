@@ -175,6 +175,8 @@ void EditorLayer::syncActiveDocumentPanels() {
 		m_sceneSettings.setUndoManager(nullptr);
 		m_mixerPanel.setScene(s_empty);
 		m_mixerPanel.setUndoManager(nullptr);
+		m_extensionPanel.setScene(s_empty);
+		m_extensionPanel.setUndoManager(nullptr);
 		m_assetImport.setScene(s_empty);
 		m_assetImport.setUndoManager(nullptr);
 		m_voxelPalette.setScene(s_empty);
@@ -185,6 +187,8 @@ void EditorLayer::syncActiveDocumentPanels() {
 		m_sceneSettings.setUndoManager(&doc->undoManager());
 		m_mixerPanel.setScene(doc->getActiveScene());
 		m_mixerPanel.setUndoManager(&doc->undoManager());
+		m_extensionPanel.setScene(doc->getActiveScene());
+		m_extensionPanel.setUndoManager(&doc->undoManager());
 		m_assetImport.setScene(doc->getActiveScene());
 		m_assetImport.setUndoManager(&doc->undoManager());
 		m_voxelPalette.setScene(doc->getActiveScene());
@@ -193,6 +197,10 @@ void EditorLayer::syncActiveDocumentPanels() {
 	m_sceneSettings.setProject(m_project);
 	m_sceneSettings.setCommandRegistry(&m_commands);
 	m_mixerPanel.setCommandRegistry(&m_commands);
+	m_extensionPanel.setCommandRegistry(&m_commands);
+	m_extensionPanel.setContextProvider([this]() -> commands::CommandContext { return makeCommandContext(); });
+	m_extensionPanel.setDisabledExtensions(m_project.isLoaded() ? &m_project.disabledExtensions : nullptr);
+	m_extensionPanel.setProjectDirectory(m_project.isLoaded() ? m_project.projectDirectory : std::filesystem::path{});
 	m_assetImport.setCommandRegistry(&m_commands);
 	m_voxelPalette.setProjectDirectory(m_project.projectDirectory);
 	m_sceneHierarchy.setActiveDocument(m_documents.getActive());
@@ -1106,6 +1114,7 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	m_assetImport.onImGuiRender();
 	m_sceneSettings.onImGuiRender();
 	m_mixerPanel.onImGuiRender();
+	m_extensionPanel.onImGuiRender();
 	if (m_sceneSettings.consumeDirtyFlag()) {
 		syncActiveDocumentPanels();
 	}

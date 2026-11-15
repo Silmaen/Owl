@@ -17,6 +17,7 @@
 #include <cstdint>
 #include <filesystem>
 #include <string>
+#include <vector>
 
 namespace owl::nest {
 /**
@@ -66,6 +67,16 @@ struct Project {
 
 	/// Project-level renderer stack definition. Empty → engine falls back to a single Renderer2D.
 	renderer::RendererStackConfig rendererStack;
+
+	/// Ids of the extension packs of `extensions/` left out (`disabledExtensions:`); every other pack is enabled.
+	std::vector<std::string> disabledExtensions;
+
+	/**
+	 * @brief
+	 *  Enabled extension packs of the project: mounted as plugins by Owl Nest, embedded as mods by Pack Game.
+	 * @return The pack folders, sorted.
+	 */
+	[[nodiscard]] auto getEnabledExtensions() const -> std::vector<std::filesystem::path>;
 
 	/**
 	 * @brief

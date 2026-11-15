@@ -92,6 +92,14 @@ flowchart LR
 **HUDs and menus.** Every HUD (`huds/*.owlhud`) and menu canvas is authored at a comfortable size for `ui_scale` 1 (the default; the Interface Size slider goes from 75 to 200 %): body text 24 to 30 reference pixels, titles 64 to 72. The widgets of a corner live in a `UiLayout` column or row anchored to that corner, sized by ratios of the screen or of their parent, with `Shrink` text, so nothing overlaps at any interface size or aspect ratio (`DemoHudLayout_test.cpp` checks every HUD and menu from 640×360 to 3440×1440, 4:3 to 21:9, 75 to 200 %). Controls never stay on screen in game: the main menu lists them, and each level shows its own in a
 hint that `controls_hint.owlvs` hides after a few seconds.
 
+## Mods
+
+`extensions/demo.recolour` is an extension pack ([Mods and extension packs](../doc/pages/mods.md)): its
+`textures/items/health.png` (written by `tools/demo/generate_demo_mod.py`) replaces the first-aid kit of the raycast
+level. The pack is enabled: Owl Nest mounts it as a plugin (the blue kit shows in the editor and in Play) and Pack Game
+embeds it as `mods/demo.recolour.owlmod` of the exported demo; untick it in the *Extensions* panel to play the original
+kit. `test/unit/scenarios/mod_recolour.owltest` mounts it as a mod.
+
 ## Layout
 
 ```

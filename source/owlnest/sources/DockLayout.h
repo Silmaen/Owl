@@ -53,6 +53,8 @@ constexpr auto sceneSettings = "###SceneSettings";
 constexpr auto assetImport = "###AssetImport";
 /// Buses of the mixer.
 constexpr auto mixer = "###Mixer";
+/// Extension packs of the project.
+constexpr auto extensions = "###Extensions";
 /// Bundled documentation.
 constexpr auto help = "###Help";
 

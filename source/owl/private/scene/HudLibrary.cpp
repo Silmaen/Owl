@@ -46,7 +46,7 @@ auto readBytes(const std::filesystem::path& iPath) -> std::optional<std::vector<
 auto findSource(const std::string& iPath) -> std::optional<HudSource> {
 	if (app::Application::instanced()) {
 		const auto& app = app::Application::get();
-		if (app.hasOpenPack() && app.packContains(iPath)) {
+		if (app.hasPackedAssets() && app.packContains(iPath)) {
 			if (auto data = app.loadFromPack(iPath))
 				return HudSource{.bytes = std::move(*data), .name = iPath};
 		}

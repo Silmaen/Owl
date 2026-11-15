@@ -46,6 +46,7 @@ Groups:
       - doc/pages/pathfinding.md
       - doc/pages/ai.md
       - doc/pages/pcg_graphs.md
+      - doc/pages/mods.md
   - title: Sample games
     pages:
       - doc/pages/samples.md

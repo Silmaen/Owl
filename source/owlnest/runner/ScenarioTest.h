@@ -89,6 +89,10 @@ struct ScenarioStep {
 	std::string replay;
 	/// World hash expected (`world_hash:`).
 	std::optional<uint64_t> worldHash;
+	/// Asset whose source is checked (`asset:`, a path relative to the asset root), empty otherwise.
+	std::string asset;
+	/// Expected source of `asset` (`provider:`): the id of the extension pack serving it, or `game`.
+	std::string provider;
 	/// Comparisons of an expectation.
 	std::vector<ScenarioCheck> checks;
 	/// Editor command run by the step (`command:`), empty otherwise.
@@ -150,6 +154,13 @@ public:
 	 * @return The folders (absolute).
 	 */
 	[[nodiscard]] auto getAssets() const -> const std::vector<std::filesystem::path>& { return m_assets; }
+
+	/**
+	 * @brief
+	 *  Get the extension packs mounted as mods (`mods` key): `.owlmod` files, pack folders or folders of packs.
+	 * @return The paths (absolute).
+	 */
+	[[nodiscard]] auto getMods() const -> const std::vector<std::filesystem::path>& { return m_mods; }
 
 	/**
 	 * @brief
@@ -229,6 +240,8 @@ private:
 	std::filesystem::path m_project;
 	/// Extra asset folders.
 	std::vector<std::filesystem::path> m_assets;
+	/// Extension packs mounted as mods.
+	std::vector<std::filesystem::path> m_mods;
 	/// Fixed time step.
 	core::Timestep m_step;
 	/// Session the scene replays, null for none.

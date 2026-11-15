@@ -23,6 +23,9 @@ User-facing reference: `doc/pages/architecture.md`, `doc/pages/voxel.md`.
   (open pack first, then the asset directories) and never extract nor write a file: a game writes nothing beside
   itself. `PackReader::readEntry` is thread-safe.
 - The runner opens the pack named by `PackFile` in `runner.yml`; Owl Nest *Project → Pack Game* writes one.
+- Extension packs (`ExtensionManifest`, `ExtensionPack`, `ExtensionRegistry`; `.owlmod` or a folder with
+  `extension.yml`) are mounted by `Application::getExtensions()`: `loadFromPack` / `packContains` ask them before the
+  pack, so a loader gates on `hasPackedAssets()`, never on `hasOpenPack()` alone (`doc/pages/mods.md`).
 - `GameExporter` is the only export path (*Pack Game*, `OwlNest --export`, `export_tests`). Any asset reference a
   component adds must be followed by `AssetScanner`, or the end-to-end export test fails.
 - A loader that produces an engine data type lives next to that type (`MeshLoader` in `data/geometry`).

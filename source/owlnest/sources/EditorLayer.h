@@ -31,6 +31,7 @@
 #include "panel/CommandPalette.h"
 #include "panel/ConsolePanel.h"
 #include "panel/ContentBrowser.h"
+#include "panel/ExtensionPanel.h"
 #include "panel/FrameMeter.h"
 #include "panel/FullLoadProbe.h"
 #include "panel/GpuCounterMonitor.h"
@@ -546,6 +547,13 @@ public:
 	 *  search paths and everything loaded from it is unloaded (textures, sounds, fonts, HUDs, previews).
 	 */
 	void closeProject();
+
+	/**
+	 * @brief
+	 *  Mount the enabled extension packs of the project as plugins (none without a project), so their overrides
+	 *  show while editing and in Play; the loaded assets they change are reloaded.
+	 */
+	void mountProjectExtensions();
 
 	/**
 	 * @brief
@@ -1381,6 +1389,8 @@ private:
 	panel::SceneSettings m_sceneSettings;
 	/// Mixer panel: the buses of the scene mix.
 	panel::MixerPanel m_mixerPanel;
+	/// Extensions panel: the extension packs of the project and their manifests.
+	panel::ExtensionPanel m_extensionPanel;
 	/// Import settings of the asset selected in the content browser.
 	panel::AssetImport m_assetImport;
 	/// Log output panel (filterable).

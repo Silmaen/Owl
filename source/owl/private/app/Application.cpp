@@ -752,15 +752,32 @@ void Application::closePack() {
 auto Application::hasOpenPack() const -> bool { return m_packReader.isOpen(); }
 
 auto Application::loadFromPack(const std::string& iPath) const -> std::optional<std::vector<uint8_t>> {
+	if (auto data = m_extensions.readEntry(iPath); data)
+		return data;
 	if (!m_packReader.isOpen())
 		return std::nullopt;
 	return m_packReader.readEntry(iPath);
 }
 
 auto Application::packContains(const std::string& iPath) const -> bool {
+	if (m_extensions.contains(iPath))
+		return true;
 	if (!m_packReader.isOpen())
 		return false;
 	return m_packReader.contains(iPath);
+}
+
+auto Application::setExtensionSources(const std::vector<std::filesystem::path>& iSources) -> size_t {
+	auto changed = m_extensions.listEntries();
+	m_extensions.clear();
+	const size_t mounted = iSources.empty() ? 0 : m_extensions.mount(iSources);
+	const auto entries = m_extensions.listEntries();
+	changed.insert(changed.end(), entries.begin(), entries.end());
+	std::ranges::sort(changed);
+	const auto [first, last] = std::ranges::unique(changed);
+	changed.erase(first, last);
+	std::ignore = m_hotReload.reloadAssets(changed);
+	return mounted;
 }
 
 }// namespace owl::app

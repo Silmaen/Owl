@@ -126,6 +126,7 @@ timestep_ms: 16.667                                       # optional
 # project: ../../engine_demo                              # optional: the project, when the scene is a test fixture
 # assets: assets                                          # optional: extra asset folder(s) of the fixture
 # replay: ../../engine_demo/replays/tour.owlreplay        # optional: a recording played in place of the devices
+# mods: ../../engine_demo/extensions                      # optional: extension packs mounted as mods (see mods.md)
 steps:
   - frames: 30                                            # play 30 frames, no input
   - input: {key: Right, frames: 20}                       # hold keys (or `keys: [...]`, `mouse: Left`,
@@ -151,7 +152,8 @@ steps:
 | `expect`  | `entity: <tag>` or `player: true` with fields `translation.*`, `rotation.z`, `scale.*`,       |
 |           | `exists`; or `gamestate: <key>`, or `setting: <key>` (a game setting). Each check is a value  |
 |           | or `equals` / `greater` / `less`, `tolerance` for a numeric `equals`; or `replay: synced` /   |
-|           | `finished` (no divergence so far / every recorded frame played), or `world_hash: 0x...`       |
+|           | `finished` (no divergence so far / every recorded frame played), or `world_hash: 0x...`, or   |
+|           | `asset: <path>` with `provider: <extension id>` or `game` (the pack the asset is read from)   |
 | `command` | An editor command by name, its arguments under `args`:                                        |
 |           | `{command: entity.delete, args: {entity: Crate}}`; a vector or a colour is a list of numbers, |
 |           | a text argument may be a map (`component.set` values)                                         |

@@ -33,6 +33,8 @@ struct RunnerConfig {
 	std::string firstScene;
 	/// Optional path to an asset pack file.
 	std::string packFile;
+	/// Folder of the mods (`ModsDirectory`, relative to the game folder): `.owlmod` files and pack folders.
+	std::string modsDirectory{"mods"};
 	/// Game display name (for window title and save directory).
 	std::string gameName;
 	/// Game version string.
@@ -303,6 +305,13 @@ private:
 	 *  Frame bench start-up: project assets and renderer stack, scene, null input, timings.
 	 */
 	void attachFrameBench();
+
+	/**
+	 * @brief
+	 *  Mount extension packs as mods, before the first scene loads.
+	 * @param[in] iPaths `.owlmod` files, pack folders (holding `extension.yml`) or folders of packs.
+	 */
+	static void mountMods(const std::vector<std::filesystem::path>& iPaths);
 
 	/**
 	 * @brief

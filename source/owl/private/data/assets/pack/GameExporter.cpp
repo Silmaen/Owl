@@ -14,6 +14,9 @@
 #include "core/external/yaml.h"
 #include "data/assets/AssetRegistry.h"
 #include "data/assets/cook/CookCache.h"
+#include "data/assets/pack/ExtensionManifest.h"
+#include "data/assets/pack/ExtensionPack.h"
+#include "data/assets/pack/ExtensionRegistry.h"
 #include "data/assets/pack/PackWriter.h"
 #include "data/fonts/Font.h"
 #include "data/fonts/FontLibrary.h"
@@ -33,11 +36,14 @@
 #include <array>
 #include <chrono>
 #include <cstdint>
+#include <filesystem>
 #include <fstream>
 #include <iterator>
 #include <set>
 #include <sstream>
 #include <string>
+#include <system_error>
+#include <utility>
 #include <vector>
 
 namespace owl::data::assets::pack {
@@ -472,6 +478,44 @@ void report(const GameExporter::ProgressCallback& iProgress, const float iFracti
 
 auto isCancelled(const GameExporter::CancelCheck& iCancel) -> bool { return iCancel && iCancel(); }
 
+// The extension packs as `mods/<id>.owlmod`; the `.owlmod` files of an earlier export are replaced.
+auto writeMods(const ExportSettings& iSettings, const std::filesystem::path& iGameDir)
+		-> expected<std::vector<std::filesystem::path>, ExportError> {
+	std::vector<std::filesystem::path> mods;
+	const auto folder = iGameDir / "mods";
+	std::error_code error;
+	for (const auto& old: ExtensionRegistry::listSources(folder)) {
+		if (old.extension() != g_extensionPackExtension)
+			continue;
+		if (std::filesystem::remove(old, error); error) {
+			OWL_CORE_ERROR("GameExporter: Earlier extension pack '{}' not removed: {}.", old.string(), error.message())
+			return unexpected{ExportError::ExtensionWrite};
+		}
+	}
+	for (const auto& source: iSettings.extensionSources) {
+		const auto manifest = ExtensionPack::readManifest(source);
+		if (!manifest) {
+			OWL_CORE_ERROR("GameExporter: Extension pack '{}' cannot be read: {}.", source.string(),
+						   describe(manifest.error()))
+			return unexpected{ExportError::ExtensionWrite};
+		}
+		const auto file = folder / (manifest->id + std::string{g_extensionPackExtension});
+		if (std::filesystem::is_directory(source, error)) {
+			if (const auto written = writeExtensionPack(source, file, iSettings.packFlags); !written) {
+				OWL_CORE_ERROR("GameExporter: Extension pack '{}' not written: {}.", manifest->id,
+							   describe(written.error()))
+				return unexpected{ExportError::ExtensionWrite};
+			}
+		} else if (std::filesystem::create_directories(folder, error); !std::filesystem::copy_file(
+						   source, file, std::filesystem::copy_options::overwrite_existing, error)) {
+			OWL_CORE_ERROR("GameExporter: Extension pack '{}' not copied: {}.", manifest->id, error.message())
+			return unexpected{ExportError::ExtensionWrite};
+		}
+		mods.push_back(file);
+	}
+	return mods;
+}
+
 }// namespace
 
 auto GameExporter::getErrorMessage(const ExportError iError) -> std::string_view {
@@ -490,6 +534,8 @@ auto GameExporter::getErrorMessage(const ExportError iError) -> std::string_view
 			return "cancelled";
 		case ExportError::CookFailed:
 			return "an asset could not be cooked, see the log";
+		case ExportError::ExtensionWrite:
+			return "an extension pack could not be written as a mod, see the log";
 	}
 	return "unknown error";
 }
@@ -692,6 +738,11 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 		OWL_CORE_ERROR("GameExporter: Cannot write pack '{}'.", result.packFile.string())
 		return unexpected{ExportError::PackWrite};
 	}
+
+	auto mods = writeMods(iSettings, result.gameDirectory);
+	if (!mods)
+		return unexpected{mods.error()};
+	result.mods = std::move(*mods);
 
 	report(iProgress, 0.82f, "Writing configuration...");
 	std::string iconEntry;

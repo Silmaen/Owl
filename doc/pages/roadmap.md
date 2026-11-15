@@ -126,12 +126,13 @@ per target, Android and the Web.
   ([Networking](networking.md#networking-conditions))
 - ![Planned][planned] Interest management: relevance areas and priorities, a client receives only what is near it
   ([Large worlds](design/large-worlds.md))
-- ![Planned][planned] Extension packs: one format and one loader for game mods and for data and script plugins
-  ([Modding and platforms](design/modding-platforms.md#modding-plugins))
-- ![Planned][planned] Mod loading system (`.owlmod` packs, manifest, load order, asset overrides)
+- ![Done][done] Extension packs: one format and one loader for game mods and for data and script plugins
+  ([Mods and extension packs](mods.md))
+- ![Done][done] Mod loading system (`.owlmod` packs, manifest, load order, asset overrides)
+  ([Mods and extension packs](mods.md))
 - ![Planned][planned] Lua mod API (custom components, game event hooks, sandboxed)
 - ![Planned][planned] In-game mod manager (enable / disable / reorder, conflict detection)
-- ![Planned][planned] Data and script plugins: material and script nodes, templates, game rules, shared by a project
+- ![In Progress][progress] Data and script plugins: material and script nodes, templates, game rules, shared by a project
   on every target ([Plugins](design/modding-platforms.md#modding-plugins))
 - ![Planned][planned] Owl Nest plugins: panels, commands, inspector drawers, document types, importers
   ([Plugins](design/modding-platforms.md#modding-plugins))

@@ -68,7 +68,7 @@ auto readAssetBytes(const std::filesystem::path& iReference) -> std::optional<st
 	if (app::Application::instanced()) {
 		const auto& app = app::Application::get();
 		if (const std::string rel = relative.lexically_normal().generic_string();
-			app.hasOpenPack() && app.packContains(rel)) {
+			app.hasPackedAssets() && app.packContains(rel)) {
 			if (auto data = app.loadFromPack(rel); data)
 				return data;
 		}
@@ -84,12 +84,12 @@ auto isPackedAsset(const std::filesystem::path& iPath) -> bool {
 	if (iPath.empty() || iPath.is_absolute() || !app::Application::instanced())
 		return false;
 	const auto& app = app::Application::get();
-	return app.hasOpenPack() && app.packContains(iPath.lexically_normal().generic_string());
+	return app.hasPackedAssets() && app.packContains(iPath.lexically_normal().generic_string());
 }
 
 auto findPackedAsset(const std::string& iName, const std::vector<std::string>& iExtensions)
 		-> std::optional<std::filesystem::path> {
-	if (iName.empty() || !app::Application::instanced() || !app::Application::get().hasOpenPack())
+	if (iName.empty() || !app::Application::instanced() || !app::Application::get().hasPackedAssets())
 		return std::nullopt;
 	const auto& app = app::Application::get();
 	const std::filesystem::path name{std::filesystem::path{iName}.lexically_normal()};
@@ -102,10 +102,12 @@ auto findPackedAsset(const std::string& iName, const std::vector<std::string>& i
 		if (app.packContains(candidate))
 			return candidate;
 	}
-	for (const auto& entry: app.getPackReader().listEntries()) {
-		for (const auto& candidate: candidates) {
-			if (endsWithEntry(entry, candidate))
-				return entry;
+	for (const auto& entries: {app.getExtensions().listEntries(), app.getPackReader().listEntries()}) {
+		for (const auto& entry: entries) {
+			for (const auto& candidate: candidates) {
+				if (endsWithEntry(entry, candidate))
+					return entry;
+			}
 		}
 	}
 	return std::nullopt;

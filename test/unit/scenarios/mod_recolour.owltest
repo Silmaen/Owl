@@ -1,0 +1,12 @@
+# The demo mod: the raycast level played with the extension packs of the Engine Demo mounted as mods. The first-aid
+# kit of the HUD comes from `demo.recolour`, which holds a texture at its path; the other items stay the game's.
+scene: ../../../engine_demo/scenes/raycast_demo.owl
+mods: ../../../engine_demo/extensions
+steps:
+  - frames: 20
+  - expect: {asset: textures/items/health.png, provider: demo.recolour}
+  - expect: {asset: textures/items/ammo.png, provider: game}
+  - expect: {entity: PickupAmmo1, exists: true}
+  - actions: {walk: 1, frames: 60}
+  - frames: 3
+  - expect: {gamestate: inv_ammo, equals: 1}

@@ -10,6 +10,8 @@
 #include "ScenarioWatchdog.h"
 
 #include <app/EngineContext.h>
+#include <data/assets/pack/ExtensionManifest.h>
+#include <data/assets/pack/ExtensionRegistry.h>
 #include <data/localisation/Localisation.h>
 #include <debug/LogSink.h>
 #include <input/ActionMap.h>
@@ -34,11 +36,13 @@
 #include <chrono>
 #include <cstddef>
 #include <exception>
+#include <filesystem>
 #include <format>
 #include <fstream>
 #include <optional>
 #include <string>
 #include <string_view>
+#include <system_error>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -111,6 +115,7 @@ void RunnerConfig::loadYaml(const std::filesystem::path& iPath) {
 	rendererStack = renderer::RendererStackConfig{};
 	if (const auto appConfig = data["RunnerConfig"]; appConfig) {
 		get(appConfig, "PackFile", packFile);
+		get(appConfig, "ModsDirectory", modsDirectory);
 		get(appConfig, "GameName", gameName);
 		get(appConfig, "Version", version);
 		get(appConfig, "Author", author);
@@ -158,6 +163,8 @@ void RunnerConfig::saveYaml(const std::filesystem::path& iPath) const {
 	}
 	if (!packFile.empty())
 		out << YAML::Key << "PackFile" << YAML::Value << packFile;
+	if (!modsDirectory.empty())
+		out << YAML::Key << "ModsDirectory" << YAML::Value << modsDirectory;
 	if (!gameName.empty())
 		out << YAML::Key << "GameName" << YAML::Value << gameName;
 	if (!version.empty())
@@ -187,6 +194,18 @@ void RunnerConfig::saveYaml(const std::filesystem::path& iPath) const {
 	fileOut.close();
 }
 
+void RunnerLayer::mountMods(const std::vector<std::filesystem::path>& iPaths) {
+	auto& extensions = app::Application::get().getExtensions();
+	for (const auto& path: iPaths) {
+		std::error_code error;
+		if (path.extension() == data::assets::pack::g_extensionPackExtension ||
+			std::filesystem::is_regular_file(path / data::assets::pack::g_extensionManifestEntry, error))
+			std::ignore = extensions.mount({path});
+		else
+			std::ignore = extensions.mountFolder(path);
+	}
+}
+
 RunnerLayer::RunnerLayer(const SmokeTest& iSmokeTest) : Layer("RunnerLayer"), m_smokeTest{iSmokeTest} {}
 
 RunnerLayer::RunnerLayer(const FrameBenchOptions& iBench)
@@ -209,6 +228,7 @@ void RunnerLayer::onAttach() {
 		ScenarioWatchdog::start(m_scenario->getSteps().size());
 		for (const auto& assets: m_scenario->getAssets())
 			app::Application::get().addAssetDirectory({"Scenario assets", assets});
+		mountMods(m_scenario->getMods());
 		if (attachSourceScene(m_scenario->getProject(), m_scenario->getScene(), "Scenario"))
 			OWL_INFO("Scenario: {} step(s) on '{}'.", m_scenario->getSteps().size(),
 					 m_scenario->getScene().filename().string())
@@ -225,6 +245,12 @@ void RunnerLayer::onAttach() {
 			return;
 		}
 		m_config.loadYaml(config);
+	}
+	if (!m_config.modsDirectory.empty()) {
+		auto modsFolder = std::filesystem::path{m_config.modsDirectory};
+		if (modsFolder.is_relative())
+			modsFolder = app.getWorkingDirectory() / modsFolder;
+		mountMods({modsFolder});
 	}
 	app::Application::get().getEngineContext().setSimulationSettings(m_config.simulation);
 	app::Application::get().getEngineContext().setDefaultHud(m_config.defaultHud);

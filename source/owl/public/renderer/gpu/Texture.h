@@ -23,6 +23,11 @@ namespace owl::core::task {
 class Scheduler;
 }// namespace owl::core::task
 
+namespace owl::renderer {
+
+struct DecodedImage;
+}// namespace owl::renderer
+
 namespace owl::renderer::gpu {
 /**
  * @brief
@@ -414,6 +419,15 @@ public:
 
 	/**
 	 * @brief
+	 *  Read the texture's asset again by its name (`data::assets::readAssetBytes`: the mounted extension packs, the
+	 *  pack, then the asset folders) and swap its pixels as `reloadFromFile` does, so mounting or unmounting an
+	 *  extension pack shows on the textures already loaded.
+	 * @return True when the new pixels are in use.
+	 */
+	auto reloadFromAssets() -> bool;
+
+	/**
+	 * @brief
 	 *  Turn the texture into a pixel-art atlas: `FilterMode::PixelArt` and mipmaps built cell by cell
 	 *  (`buildCellMips`), so no level mixes two tiles. A texture still loading gets them when its pixels arrive; a
 	 *  compressed texture keeps the levels of its cook that hold whole cells.
@@ -440,6 +454,14 @@ private:
 	 * @return True when the pixels are in use.
 	 */
 	auto uploadPixels(std::span<const uint8_t> iPixels, const math::vec2ui& iSize) -> bool;
+
+	/**
+	 * @brief
+	 *  Swap the pixels for decoded ones (hot reload): fresh GPU storage, the pixel format and the filter mode kept.
+	 * @param[in] iDecoded The decoded image (valid).
+	 * @return True when the new pixels are in use.
+	 */
+	auto applyDecoded(const DecodedImage& iDecoded) -> bool;
 
 	/**
 	 * @brief

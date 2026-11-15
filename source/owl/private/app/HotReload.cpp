@@ -11,6 +11,7 @@
 
 #include "app/Application.h"
 #include "app/EngineContext.h"
+#include "data/assets/AssetSearchPaths.h"
 #include "data/geometry/MeshLoader.h"
 #include "debug/Profiler.h"
 #include "renderer/MaterialLibrary.h"
@@ -23,6 +24,8 @@
 #include <string>
 #include <system_error>
 #include <tuple>
+#include <unordered_set>
+#include <vector>
 
 namespace owl::app {
 
@@ -123,6 +126,43 @@ auto HotReload::reloadFile(const std::filesystem::path& iFile) -> Report {
 	// Copy: a listener may remove itself (a layer detached by a scene change).
 	const auto listeners = m_listeners;
 	for (const auto& [id, listener]: listeners) listener(iFile);
+	m_lastReport = report;
+	return report;
+}
+
+auto HotReload::reloadAssets(const std::vector<std::string>& iAssetPaths) -> Report {
+	OWL_PROFILE_FUNCTION()
+
+	Report report;
+	if (iAssetPaths.empty())
+		return report;
+	const std::unordered_set<std::string> paths{iAssetPaths.begin(), iAssetPaths.end()};
+	renderer::Renderer::getTextureLibrary().forEach(
+			[&paths, &report](const std::string&, const shared<renderer::gpu::Texture2D>& iTexture) -> void {
+				if (!iTexture || !paths.contains(iTexture->getName()))
+					return;
+				if (iTexture->reloadFromAssets())
+					++report.reloaded;
+				else
+					++report.failed;
+			});
+	if (Application::instanced()) {
+		auto& context = Application::get().getEngineContext();
+		auto roots = data::assets::getAssetSearchPaths();
+		roots.emplace_back();
+		for (const auto& path: iAssetPaths) {
+			const bool mesh = data::geometry::MeshLoader::isMeshAsset(path);
+			const bool material = lowerExtension(path) == ".owlmat";
+			if (!mesh && !material)
+				continue;
+			for (const auto& root: roots)
+				report.reloaded += mesh ? context.getMeshCache().invalidate(root / path)
+										: context.getMaterialLibrary().invalidate(root / path);
+		}
+	}
+	if (report.reloaded + report.failed > 0)
+		OWL_CORE_INFO("HotReload: Asset sources changed, {} asset(s) reloaded, {} kept the previous version.",
+					  report.reloaded, report.failed)
 	m_lastReport = report;
 	return report;
 }

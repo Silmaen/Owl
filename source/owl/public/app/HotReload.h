@@ -140,6 +140,16 @@ public:
 
 	/**
 	 * @brief
+	 *  Reload what was made from assets whose source changed without their file changing (an extension pack mounted
+	 *  or unmounted): the textures named by these paths read again through the asset lookup, the meshes and
+	 *  materials of these paths dropped from their caches.
+	 * @param[in] iAssetPaths Asset paths, relative to the asset root.
+	 * @return The report of the reloads (its `file` is empty).
+	 */
+	auto reloadAssets(const std::vector<std::string>& iAssetPaths) -> Report;
+
+	/**
+	 * @brief
 	 *  Get the report of the last dispatched file.
 	 * @return The report.
 	 */

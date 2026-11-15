@@ -200,7 +200,7 @@ auto environmentKey(const std::filesystem::path& iHdri, const bool iProcedural, 
 		return key;
 	}
 	const auto& app = app::Application::get();
-	if (const std::string packed = iHdri.generic_string(); app.hasOpenPack() && app.packContains(packed))
+	if (const std::string packed = iHdri.generic_string(); app.hasPackedAssets() && app.packContains(packed))
 		return key + "pack:" + packed;
 	std::vector<std::filesystem::path> candidates;
 	if (iHdri.is_relative()) {
@@ -3491,7 +3491,7 @@ void Scene::resolveAllTilemapAssets() {
 	// Try the open pack first (packaged games have no loose files on disk), then the asset directories.
 	const auto loadAsset = [&](const std::filesystem::path& iRelative, const auto& iFromBytes,
 							   const auto& iFromFile) -> bool {
-		if (const std::string rel = iRelative.generic_string(); app.hasOpenPack() && app.packContains(rel)) {
+		if (const std::string rel = iRelative.generic_string(); app.hasPackedAssets() && app.packContains(rel)) {
 			if (const auto data = app.loadFromPack(rel)) {
 				if (const std::string text(data->begin(), data->end()); iFromBytes(text))
 					return true;

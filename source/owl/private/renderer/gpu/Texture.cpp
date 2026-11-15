@@ -250,7 +250,7 @@ auto resolveTextureSource(std::string_view iKey, const std::string& iValue) -> R
 	ResolvedSource out;
 	if (iKey == "nam:") {
 		out.name = iValue;
-		if (app::Application::instanced() && app::Application::get().hasOpenPack()) {
+		if (app::Application::instanced() && app::Application::get().hasPackedAssets()) {
 			if (auto data = app::Application::get().loadFromPack(iValue); data) {
 				out.bytes = std::move(*data);
 				return out;
@@ -288,7 +288,7 @@ auto Texture2D::createFromSerialized(const std::string& iTextureSerializedName) 
 		return create(Specification{.size = {0, 0}, .format = ImageFormat::Rgb8});
 	if (key == "nam:") {
 		// Check pack first.
-		if (app::Application::instanced() && app::Application::get().hasOpenPack()) {
+		if (app::Application::instanced() && app::Application::get().hasPackedAssets()) {
 			if (auto data = app::Application::get().loadFromPack(val); data) {
 				if (isKtx2(*data)) {
 					auto texture = createFromKtx2(*data, val);
@@ -449,19 +449,54 @@ auto Texture2D::reloadFromFile() -> bool {
 					   m_path.string())
 		return false;
 	}
-	if (m_specification.atlasCell.surface() > 0 && decoded.format == ImageFormat::Rgba8) {
-		if (!uploadPixels(decoded.pixels, decoded.size))
+	if (!applyDecoded(decoded))
+		return false;
+	OWL_CORE_DEBUG("Texture: '{}' reloaded ({}x{}).", m_path.string(), m_specification.size.x(),
+				   m_specification.size.y())
+	return true;
+}
+
+auto Texture2D::reloadFromAssets() -> bool {
+	OWL_PROFILE_FUNCTION()
+
+	if (m_name.empty()) {
+		OWL_CORE_WARN("Texture: Cannot reload a texture without a name from the assets.")
+		return false;
+	}
+	if (m_loadState == LoadState::Pending) {
+		OWL_CORE_WARN("Texture: Reload of '{}' skipped, the first load is still running.", m_name)
+		return false;
+	}
+	const auto bytes = data::assets::readAssetBytes(m_name);
+	if (!bytes) {
+		OWL_CORE_WARN("Texture: Cannot reload '{}', no asset source holds it.", m_name)
+		return false;
+	}
+	const int channels = m_specification.format == ImageFormat::Rgb8 ? 3 : 4;
+	const auto decoded = decodeImageBytes(*bytes, channels);
+	if (!decoded.valid) {
+		OWL_CORE_ERROR("Texture: Reload of '{}' failed (unreadable image), the previous pixels stay in use.", m_name)
+		return false;
+	}
+	if (!applyDecoded(decoded))
+		return false;
+	OWL_CORE_DEBUG("Texture: '{}' reloaded from the assets ({}x{}).", m_name, m_specification.size.x(),
+				   m_specification.size.y())
+	return true;
+}
+
+auto Texture2D::applyDecoded(const DecodedImage& iDecoded) -> bool {
+	if (m_specification.atlasCell.surface() > 0 && iDecoded.format == ImageFormat::Rgba8) {
+		if (!uploadPixels(iDecoded.pixels, iDecoded.size))
 			return false;
 	} else {
 		auto specs = m_specification;
-		specs.size = decoded.size;
-		specs.format = decoded.format;
+		specs.size = iDecoded.size;
+		specs.format = iDecoded.format;
 		reallocate(specs);
-		setData(const_cast<uint8_t*>(decoded.pixels.data()), static_cast<uint32_t>(decoded.pixels.size()));
+		setData(const_cast<uint8_t*>(iDecoded.pixels.data()), static_cast<uint32_t>(iDecoded.pixels.size()));
 	}
 	m_loadState = LoadState::Ready;
-	OWL_CORE_DEBUG("Texture: '{}' reloaded ({}x{}).", m_path.string(), m_specification.size.x(),
-				   m_specification.size.y())
 	return true;
 }
 

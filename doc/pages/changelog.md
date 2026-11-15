@@ -16,6 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ConditionedTransport` wraps any transport to simulate latency, jitter, loss and duplication from a seed ([Networking](networking.md#networking-conditions)).
 - `net_session` fuzz target: arbitrary messages sent to a `NetServer` and a `NetClient`, with a seed corpus.
 - `OWL_MODULE_NETWORK` (Conan option `network`) builds the ENet backend; without it only the loopback transport remains.
+- Extension packs: one `extension.yml` manifest (id, name, version, kind, load order, dependencies) and one loader, `ExtensionPack` and `ExtensionRegistry`, for game mods and project plugins, packed as `.owlmod` or read from their folder ([Mods and extension packs](mods.md)).
+- Mod loading: the runner mounts the packs of `ModsDirectory` (`mods` beside the game) in dependency and load order, and every asset lookup reads a pack entry over the game pack and the asset folders, so a mod overrides or adds textures, scripts and scenes.
+- Owl Nest *Extensions* panel and `extension.list` / `create` / `set` / `export` commands: list the packs of a project, edit their manifest with undo and export them as `.owlmod`.
+- Scenarios: the `mods:` key mounts extension packs and `expect: {asset: ..., provider: ...}` checks which pack serves an asset.
+- Pack Game embeds the enabled extension packs of the project as `mods/<id>.owlmod` of the exported game (`ExportSettings::extensionSources`); `extension.enable` and the panel check box keep `disabledExtensions` in `owl_project.yml`.
+- Owl Nest mounts the enabled extension packs of the project as plugins while editing and in Play, and mounts them again when they change, reloading the textures already loaded (`Application::setExtensionSources`, `Texture2D::reloadFromAssets`).
+- Engine Demo: the `demo.recolour` mod recolours the first-aid kit of the raycast level, played by `mod_recolour.owltest`.
 
 ### Changed
 

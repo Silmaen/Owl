@@ -151,6 +151,14 @@ void RibbonBuilder::build() {
 							  .isEnabled = projectLoaded,
 							  .onClick = [this]() -> void { mp_editor->openLocalisationEditor(); }});
 	m_ribbon.addButton(home, gProject,
+					   Button{.iconName = gui::icon::puzzle,
+							  .label = "Extensions",
+							  .tooltip = "Show or hide the extension packs of the project: mods and plugins, their "
+										 "manifest and their export as .owlmod.",
+							  .isEnabled = projectLoaded,
+							  .isChecked = [this]() -> bool { return mp_editor->m_extensionPanel.isVisible(); },
+							  .onClick = [this]() -> void { mp_editor->m_extensionPanel.toggle(); }});
+	m_ribbon.addButton(home, gProject,
 					   Button{.iconName = "ribbon_pack",
 							  .label = "Pack Game",
 							  .tooltip = "Package the project as a standalone game.",
