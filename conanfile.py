@@ -78,6 +78,11 @@ class OwlEngineConan(ConanFile):
         "glad/*:gl_profile": "compatibility",
         "glad/*:gl_version": "4.6",
         "spdlog/*:use_std_fmt": True,
+        # The fonts are TrueType / OpenType: no WOFF2 (brotli) nor compressed PCF (bzip2) to read.
+        "freetype/*:with_brotli": False,
+        "freetype/*:with_bzip2": False,
+        # glTF files are read, never written.
+        "tinygltf/*:stb_image_write": False,
         # glibc's getaddrinfo_a helper threads escape ThreadSanitizer (crash); the MCP server only binds 127.0.0.1.
         "cpp-httplib/*:use_non_blocking_getaddrinfo": False,
         "spirv-cross/*:build_executable": False,
@@ -131,10 +136,10 @@ class OwlEngineConan(ConanFile):
         self.requires("msdf-atlas-gen/1.4")
         self.requires("nativefiledialog-extended/1.4.1")
         self.requires("spdlog/1.17.0")
-        self.requires("stb/cci.20240531")
+        # Newer than the one tinygltf pins.
+        self.requires("stb/cci.20261021", force=True)
         self.requires("taskflow/4.1.0")
         self.requires("tinygltf/2.9.7")
-        self.requires("tinyobjloader/2.0.0-rc13")
         self.requires("ufbx/0.23.1")
         self.requires("rapidyaml/0.15.2")
         # c4core (rapidyaml) includes fast_float in its headers; linked directly so every target finds them (arm64).
@@ -146,38 +151,36 @@ class OwlEngineConan(ConanFile):
             self.requires("glad/2.0.8")
             self.requires("glfw/3.5.1")
             self.requires("lunasvg/3.5.0")
-            self.requires("slang/2026.19")
+            self.requires("slang/2026.22")
             self.requires("spirv-cross/1.4.357.0")
             self.requires("vulkan-headers/1.4.357.0")
             self.requires("vulkan-loader/1.4.357.0")
             self.requires("vulkan-memory-allocator/3.3.0")
             self.requires("vulkan-utility-libraries/1.4.357.0")
         if self.options.physics:
-            self.requires("joltphysics/5.6.0")
+            self.requires("joltphysics/5.7.0")
         if self.options.audio:
             self.requires("openal-soft/1.25.2")
             self.requires("libsndfile/1.2.2")
         if self.options.network:
             self.requires("enet/1.3.18")
         if self.options.script:
-            self.requires("luau/0.746")
+            self.requires("luau/0.747")
         if self.options.gui:
             self.requires("imgui/1.92.9b-docking", transitive_headers=True, force=True)
             self.requires("imguizmo/1.10")
         if self.options.tracy:
-            self.requires("tracy/0.13.1")
+            self.requires("tracy/0.14.1")
         # Owl Nest only.
         if self.options.nest:
-            self.requires("imgui-color-text-edit/1.92.9")
-            self.requires("md4c/0.5.2")
+            self.requires("imgui-color-text-edit/1.93.0")
+            self.requires("md4c/0.6.0")
             # MCP dispatcher (JSON-RPC); tinygltf pulls the same version.
             self.requires("nlohmann_json/3.12.0")
             # MCP HTTP transport on loopback, header-only, built without TLS (the recipe defaults).
-            self.requires("cpp-httplib/0.59.0")
+            self.requires("cpp-httplib/0.65.0")
         # Transitive versions newer than the ones their ConanCenter recipes pin.
-        self.requires("brotli/1.2.0", override=True)
         self.requires("flac/1.5.0", override=True)
-        self.requires("plutovg/1.3.3", override=True)
 
     def build_requirements(self):
         if self.options.testing:

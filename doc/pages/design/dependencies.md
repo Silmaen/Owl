@@ -149,46 +149,45 @@ The `DependencyReport` CI action lists what lags behind ConanCenter or upstream.
 
 | Dependency            | Owl             | Source                | Linkage | Note                                                                           |
 |-----------------------|-----------------|-----------------------|---------|--------------------------------------------------------------------------------|
-| cpp-httplib           | 0.59.0          | ConanCenter           | header  | Owl Nest (`nest`): HTTP transport of the MCP server, no TLS                    |
+| cpp-httplib           | 0.65.0          | ConanCenter           | header  | Owl Nest (`nest`): HTTP transport of the MCP server, no TLS                    |
 | cpptrace              | 1.0.4           | ConanCenter           | static  | Pulls libdwarf 2.1.0                                                           |
 | enet                  | 1.3.18          | ConanCenter           | static  | `network` module: reliable UDP of `network::Transport`, behind its interface   |
-| entt                  | 4.0.0           | local recipe          | header  | ConanCenter stops at 3.16.0; its recipe, C++20 for 4.x                         |
+| entt                  | 4.0.0           | ConanCenter           | header  | Header-only, public (the only one)                                             |
 | fast_float            | 8.2.10          | ConanCenter           | header  | Pulled by rapidyaml, pinned directly                                           |
-| freetype              | 2.14.3          | ConanCenter           | static  | Transitive, pinned by the msdfgen recipe; pulls brotli 1.2.0 (override)        |
+| freetype              | 2.15.0          | ConanCenter           | static  | Transitive, pinned by the msdfgen recipe; no brotli, no bzip2                  |
 | glad                  | 2.0.8           | ConanCenter           | static  | Generated at build time: GL 4.6 compatibility                                  |
 | glfw                  | 3.5.1           | local recipe          | shared  | ConanCenter: X11 only, or its own libwayland; both backends, system Wayland    |
 | googletest            | 1.18.0          | ConanCenter (`gtest`) | static  |                                                                                |
 | imgui                 | 1.92.9b-docking | ConanCenter           | shared  | Backends compiled by Owl (see above)                                           |
-| imgui_color_text_edit | 1.92.9          | local recipe          | static  | Absent; upstream tag, `DocPos` cursor API                                      |
+| imgui_color_text_edit | 1.93.0          | local recipe          | static  | Absent; upstream tag, `DocPos` cursor API                                      |
 | imguizmo              | 1.10            | local recipe          | static  | ConanCenter's cci.20231114 does not build with imgui 1.92                      |
-| joltphysics           | 5.6.0           | local recipe          | static  | Latest upstream; cross-platform deterministic, SSE4.2 on x86_64, no FMA        |
+| joltphysics           | 5.7.0           | local recipe          | static  | Latest upstream; cross-platform deterministic, SSE4.2 on x86_64, no FMA        |
 | ktx                   | 4.4.2           | local recipe          | static  | KTX2 of the cook: Basis Universal, BC7 / ASTC transcode; tools off             |
-| libpng                | 1.6.58          | ConanCenter           | static  | Transitive (msdf-atlas-gen)                                                    |
+| libpng                | 1.6.59          | ConanCenter           | static  | Transitive (msdf-atlas-gen)                                                    |
 | libsndfile            | 1.2.2           | ConanCenter           | shared  | LGPL: kept shared; flac 1.5.0 and libalsa 1.2.16.1 forced (override)           |
-| luau                  | 0.746           | local recipe          | static  | ConanCenter stops at 0.700; Lua errors as C++ exceptions                       |
-| lunasvg               | 3.5.0           | ConanCenter           | static  | Pulls plutovg, forced to 1.3.3 (override)                                      |
+| luau                  | 0.747           | local recipe          | static  | ConanCenter stops at 0.700; Lua errors as C++ exceptions                       |
+| lunasvg               | 3.5.0           | ConanCenter           | static  | Pulls plutovg 1.3.3                                                            |
 | magic_enum            | 0.9.8           | ConanCenter           | header  |                                                                                |
-| md4c                  | 0.5.2           | ConanCenter           | static  |                                                                                |
+| md4c                  | 0.6.0           | ConanCenter           | static  |                                                                                |
 | msdf-atlas-gen        | 1.4             | local recipe          | static  | ConanCenter packages the tool only; this one builds the library                |
-| msdfgen               | 1.13            | local recipe          | static  | ConanCenter stops at 1.12: its recipe, unchanged                               |
+| msdfgen               | 1.13.1          | local recipe          | static  | ConanCenter stops at 1.12: its recipe, unchanged                               |
 | nfd (extended)        | 1.4.1           | local recipe          | static  | Absent from ConanCenter; `portal` on Linux: D-Bus + wayland-client (system)    |
 | nlohmann_json         | 3.12.0          | ConanCenter           | header  | Owl Nest (`nest`): MCP dispatcher; tinygltf pulls the same version             |
 | openal                | 1.25.2          | local recipe          | shared  | `openal-soft`, ConanCenter stops at 1.24.3; LGPL: shared                       |
 | rapidyaml             | 0.15.2          | ConanCenter           | static  | Read side of scenes, prefabs and snapshots; pulls c4core and fast_float        |
-| slang                 | 2026.19         | local recipe          | shared  | Upstream release binaries                                                      |
+| slang                 | 2026.22         | local recipe          | shared  | Upstream release binaries                                                      |
 | spdlog                | 1.17.0          | ConanCenter           | static  | `use_std_fmt`: no fmt dependency                                               |
 | spirv-cross           | 1.4.357.0       | ConanCenter           | static  | Only the core/glsl/cpp/reflect components                                      |
-| stb_image             | cci.20240531    | ConanCenter (`stb`)   | header  |                                                                                |
+| stb_image             | cci.20261021    | ConanCenter (`stb`)   | header  | Newer than the one tinygltf pins (force)                                       |
 | taskflow              | 4.1.0           | local recipe          | header  | ConanCenter stops at 4.0.0; its recipe, unchanged                              |
-| tinygltf              | 2.9.7           | ConanCenter           | header  | Pulls nlohmann_json                                                            |
-| tinyobjloader         | 2.0.0-rc13      | local recipe          | static  | ConanCenter stops at rc10: its recipe, without the rc10 patch (upstream since) |
-| tracy                 | 0.13.1          | ConanCenter           | static  | Optional (`tracy` option), `on_demand`; 0.14.1 upstream                        |
-| ufbx                  | 0.23.1          | local recipe          | static  | Absent from ConanCenter (single source file)                                   |
+| tinygltf              | 2.9.7           | ConanCenter           | header  | Pulls nlohmann_json; read only, no stb_image_write                             |
+| tracy                 | 0.14.1          | ConanCenter           | static  | Optional (`tracy` option), `on_demand`                                         |
+| ufbx                  | 0.23.1          | local recipe          | static  | Absent from ConanCenter (single source file); FBX and OBJ                      |
 | vulkan                | 1.4.357.0       | ConanCenter           | shared  | vulkan-headers, vulkan-loader, vulkan-utility-libraries                        |
 | vulkan-memory-alloc.  | 3.3.0           | ConanCenter           | header  | VMA: every Vulkan buffer and image is a sub-allocation                         |
 | xxhash                | 0.8.4           | ConanCenter           | static  | XXH3-128 keys of the asset cook cache                                          |
 | yaml-cpp              | 0.9.0           | ConanCenter           | static  |                                                                                |
-| zlib                  | 1.3.2           | ConanCenter           | static  | Transitive                                                                     |
+| zlib                  | 1.4             | ConanCenter           | static  | Transitive                                                                     |
 | zstd                  | 1.5.7           | ConanCenter           | static  |                                                                                |
 
 ## Local recipes (`conan/recipes/`)
@@ -201,20 +200,18 @@ ConanCenter as is.
 
 | Recipe                            | Why it is local                                                                                                                                                                                                                                         |
 |-----------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `slang` 2026.19                   | Absent; building it pulls LLVM-sized dependencies, so the recipe repackages the upstream release binaries                                                                                                                                               |
+| `slang` 2026.22                   | Absent; building it pulls LLVM-sized dependencies, so the recipe repackages the upstream release binaries                                                                                                                                               |
 | `ufbx` 0.23.1                     | Absent; one `.c` file, upstream ships no build system                                                                                                                                                                                                   |
-| `imgui-color-text-edit` 1.92.9    | Absent (goossens fork); the upstream release tag                                                                                                                                                                                                        |
+| `imgui-color-text-edit` 1.93.0    | Absent (goossens fork); the upstream release tag                                                                                                                                                                                                        |
 | `imguizmo` 1.10                   | ConanCenter's only recent version (cci.20231114) calls `BeginChildFrame`, removed in imgui 1.92; the recipe also puts the thickness before the flags in the AddRect / AddPolyline calls of ImCurveEdit, GraphEditor and ImGradient (imgui 1.92.8 order) |
 | `nativefiledialog-extended` 1.4.1 | Absent; the GitHub archive lacks the `wayland-protocols` submodule, fetched as a second source                                                                                                                                                          |
 | `msdf-atlas-gen` 1.4              | ConanCenter's recipe packages the command-line tool only; this one builds the library on ConanCenter's msdfgen                                                                                                                                          |
 | `libmp3lame` 3.100                | ConanCenter's recipe, except MinGW Clang builds with autotools: upstream takes every Windows Clang for clang-cl                                                                                                                                         |
-| `entt` 4.0.0                      | ConanCenter stops at 3.16.0: its recipe, requiring C++20 from 4.x                                                                                                                                                                                       |
 | `taskflow` 4.1.0                  | ConanCenter stops at 4.0.0: its recipe, unchanged                                                                                                                                                                                                       |
-| `luau` 0.746                      | ConanCenter stops at 0.700: a build of the upstream CMake, Lua errors raised as C++ exceptions (no `LUA_USE_LONGJMP`): an error unwinding a binding runs its destructors                                                                                |
+| `luau` 0.747                      | ConanCenter stops at 0.700: a build of the upstream CMake, Lua errors raised as C++ exceptions (no `LUA_USE_LONGJMP`): an error unwinding a binding runs its destructors                                                                                |
 | `openal-soft` 1.25.2              | ConanCenter stops at 1.24.3: its recipe on libalsa 1.2.16.1, `-Werror=function-effects` off (libstdc++)                                                                                                                                                 |
-| `msdfgen` 1.13                    | ConanCenter stops at 1.12 (needed by msdf-atlas-gen 1.4): its recipe, on freetype 2.14.3 and tinyxml2 11.0.0                                                                                                                                            |
-| `tinyobjloader` 2.0.0-rc13        | ConanCenter stops at rc10: its recipe, unchanged                                                                                                                                                                                                        |
-| `joltphysics` 5.6.0               | ConanCenter's recipe turns cross-platform determinism off and pushes `-mavx2 -mfma` to its consumers: deterministic, SSE4.2 on x86_64, no FMA, RTTI on, no consumer flag                                                                                |
+| `msdfgen` 1.13.1                  | ConanCenter stops at 1.12 (needed by msdf-atlas-gen 1.4): its recipe, on freetype 2.15.0 and tinyxml2 11.0.0                                                                                                                                            |
+| `joltphysics` 5.7.0               | ConanCenter's recipe turns cross-platform determinism off and pushes `-mavx2 -mfma` to its consumers: deterministic, SSE4.2 on x86_64, no FMA, RTTI on, no consumer flag                                                                                |
 | `glfw` 3.5.1                      | ConanCenter stops at 3.4 and builds Wayland on its own libwayland: both backends, system libraries dlopened                                                                                                                                             |
 | `ktx` 4.4.2                       | ConanCenter's recipe plus a patch: the ETC1S encoder allocates the BasisLZ global data with `new[]` that `ktxTexture2_Destroy` frees with `free` (ASan)                                                                                                 |
 

@@ -75,6 +75,7 @@ class _Version:
     key: tuple
     flavour: str
     prerelease: bool
+    dotted: bool
 
 
 def _version(ref: str) -> str:
@@ -100,7 +101,9 @@ def _semantic(version: str) -> _Version | None:
     prerelease = match.group("pre") is not None
     pre_number = int(match.group("pre_number") or 0)
     key = (tuple(release), match.group("letter") or "", 0 if prerelease else 1, pre_number)
-    return _Version(key=key, flavour=match.group("flavour") or "", prerelease=prerelease)
+    return _Version(
+        key=key, flavour=match.group("flavour") or "", prerelease=prerelease, dotted="." in match.group("release")
+    )
 
 
 def is_update(current: str, candidate: str, name: str = "") -> bool:
@@ -110,7 +113,8 @@ def is_update(current: str, candidate: str, name: str = "") -> bool:
     :param current: The version in use.
     :param candidate: A version available on the remote or upstream.
     :param name: The package name, to apply `KNOWN_FALSE_POSITIVES`.
-    :return: True for a newer version of the same scheme and flavour, a pre-release only after a pre-release.
+    :return: True for a newer version of the same scheme and flavour, a pre-release only after a pre-release; a bare
+        number (`696`) and a dotted version (`0.746`) are two schemes.
     """
     if candidate in KNOWN_FALSE_POSITIVES.get(name, set()):
         return False
@@ -120,7 +124,7 @@ def is_update(current: str, candidate: str, name: str = "") -> bool:
     current_version, candidate_version = _semantic(current), _semantic(candidate)
     if current_version is None or candidate_version is None:
         return False
-    if candidate_version.flavour != current_version.flavour:
+    if candidate_version.flavour != current_version.flavour or candidate_version.dotted != current_version.dotted:
         return False
     if candidate_version.prerelease and not current_version.prerelease:
         return False

@@ -98,4 +98,4 @@ TEST_F(WorldHashGoldenTest, SameRunGivesTheSameHash) { EXPECT_EQ(run(), run()); 
 
 // The value is the same on every target: a change of it on one target only is a determinism bug; a change everywhere
 // follows a change of the simulation or of the scene format, and the value is updated with it.
-TEST_F(WorldHashGoldenTest, MatchesTheReferenceOnEveryTarget) { EXPECT_EQ(run(), 0x938c64a5d59d0d4eull); }
+TEST_F(WorldHashGoldenTest, MatchesTheReferenceOnEveryTarget) { EXPECT_EQ(run(), 0x4611301b1ee636bcull); }

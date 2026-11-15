@@ -18,12 +18,9 @@
 
 // TinyGLTF + implementation
 #define TINYGLTF_IMPLEMENTATION
-#define STB_IMAGE_WRITE_IMPLEMENTATION
 #include <tiny_gltf.h>
-#undef STB_IMAGE_WRITE_IMPLEMENTATION
 #undef TINYGLTF_IMPLEMENTATION
 
-#include <tiny_obj_loader.h>
 #include <ufbx.h>
 
 #include <algorithm>
@@ -36,10 +33,8 @@
 #include <format>
 #include <fstream>
 #include <iterator>
-#include <map>
 #include <optional>
 #include <span>
-#include <sstream>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -133,142 +128,185 @@ auto readSiblingFile(const std::filesystem::path& iBaseDirectory, const MeshFile
 	return std::vector<uint8_t>{std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>()};
 }
 
-// Reads the `.mtl` files of an OBJ next to it, from the disk or through a mesh file reader.
-class ObjMaterialReader final : public tinyobj::MaterialReader {
-public:
-	ObjMaterialReader(std::filesystem::path iBaseDirectory, MeshFileReader iReadFile)
-		: m_baseDirectory{std::move(iBaseDirectory)}, m_readFile{std::move(iReadFile)} {}
-
-	auto operator()(const std::string& iMaterialFile, std::vector<tinyobj::material_t>* oMaterials,
-					std::map<std::string, int>* oMaterialMap, std::string* oWarning, std::string* oError)
-			-> bool override {
-		const auto bytes = readSiblingFile(m_baseDirectory, m_readFile, iMaterialFile);
-		if (!bytes) {
-			OWL_CORE_WARN("MeshLoader: OBJ material file '{}' not found.", iMaterialFile)
-			return false;
-		}
-		std::istringstream stream{std::string{reinterpret_cast<const char*>(bytes->data()), bytes->size()}};
-		tinyobj::LoadMtl(oMaterialMap, oMaterials, &stream, oWarning, oError);
-		return true;
-	}
-
-private:
-	// Folder the material files are looked up in.
-	std::filesystem::path m_baseDirectory;
-	// Reader of the material files, empty to read the disk.
-	MeshFileReader m_readFile;
+// Files next to an OBJ (its `.mtl`), read from the disk or through a mesh file reader.
+struct ObjSiblings {
+	// Folder the files are looked up in.
+	std::filesystem::path baseDirectory;
+	// Reader of the files, empty to read the disk.
+	MeshFileReader readFile;
+	// Whether a material file was opened.
+	bool hasMaterialFile = false;
 };
 
-auto convertObjMaterial(const tinyobj::material_t& iSource, const std::filesystem::path& iBaseDirectory,
+auto openObjSibling(void* iUser, ufbx_stream* oStream, const char* iPath, const size_t iPathLength,
+					[[maybe_unused]] const ufbx_open_file_info* iInfo) -> bool {
+	auto& siblings = *static_cast<ObjSiblings*>(iUser);
+	const std::string relative{iPath, iPathLength};
+	const auto bytes = readSiblingFile(siblings.baseDirectory, siblings.readFile, relative);
+	if (!bytes) {
+		OWL_CORE_WARN("MeshLoader: OBJ material file '{}' not found.", relative)
+		return false;
+	}
+	ufbx_error error;
+	if (!ufbx_open_memory(oStream, bytes->data(), bytes->size(), nullptr, &error)) {
+		OWL_CORE_WARN("MeshLoader: Cannot read the OBJ material file '{}': {}.", relative, error.description.data)
+		return false;
+	}
+	siblings.hasMaterialFile = true;
+	return true;
+}
+
+auto findVec3(const ufbx_props& iProps, const char* iName, const ufbx_real iDefault) -> vec3 {
+	const auto value = ufbx_find_vec3(&iProps, iName, ufbx_vec3{.x = iDefault, .y = iDefault, .z = iDefault});
+	return vec3{static_cast<float>(value.x), static_cast<float>(value.y), static_cast<float>(value.z)};
+}
+
+// A `.mtl` key left out reads as a diffuse of 0.6, a dissolve of 1 and a shininess of 1.
+auto convertObjMaterial(const ufbx_material& iSource, const std::filesystem::path& iBaseDirectory,
 						const MeshFileReader& iReadFile) -> MeshMaterial {
 	MeshMaterial material;
-	material.name = iSource.name;
-	material.baseColorFactor = vec4{iSource.diffuse[0], iSource.diffuse[1], iSource.diffuse[2], iSource.dissolve};
-	if (iSource.dissolve < 1.f)
+	material.name = iSource.name.data;
+	const vec3 diffuse = findVec3(iSource.props, "Kd", 0.6);
+	const auto dissolve = static_cast<float>(ufbx_find_real(&iSource.props, "d", 1.0));
+	material.baseColorFactor = vec4{diffuse.x(), diffuse.y(), diffuse.z(), dissolve};
+	if (dissolve < 1.f)
 		material.alphaMode = MeshMaterial::AlphaMode::Blend;
 	material.metallicFactor = 0.f;
-	// tinyobj reports a shininess of 1 for a material that gives none.
-	material.roughnessFactor = iSource.shininess > 1.f ? std::sqrt(2.f / (iSource.shininess + 2.f)) : 0.5f;
-	material.emissiveFactor = vec3{iSource.emission[0], iSource.emission[1], iSource.emission[2]};
-	if (!iSource.diffuse_texname.empty()) {
-		if (const auto bytes = readSiblingFile(iBaseDirectory, iReadFile, iSource.diffuse_texname)) {
-			if (auto image = decodeImageBytes(*bytes, iSource.diffuse_texname))
+	const auto shininess = static_cast<float>(ufbx_find_real(&iSource.props, "Ns", 1.0));
+	material.roughnessFactor = shininess > 1.f ? std::sqrt(2.f / (shininess + 2.f)) : 0.5f;
+	material.emissiveFactor = findVec3(iSource.props, "Ke", 0.0);
+	if (const ufbx_texture* texture = iSource.fbx.diffuse_color.texture; texture != nullptr) {
+		const std::string textureName = texture->relative_filename.data;
+		if (const auto bytes = readSiblingFile(iBaseDirectory, iReadFile, textureName)) {
+			if (auto image = decodeImageBytes(*bytes, textureName))
 				material.baseColor = std::move(*image);
 		} else {
-			OWL_CORE_WARN("MeshLoader: Texture '{}' of material '{}' not found.", iSource.diffuse_texname, iSource.name)
+			OWL_CORE_WARN("MeshLoader: Texture '{}' of material '{}' not found.", textureName, material.name)
 		}
 	}
 	return material;
 }
 
-// A triangle of an OBJ shape and the material slot it uses.
+// A triangle of an OBJ mesh and the material slot it uses.
 struct ObjFace {
-	// Index of the shape.
-	size_t shape = 0;
-	// Position of the first corner in the index list of the shape.
-	size_t offset = 0;
+	// The engine vertex index of each corner.
+	std::array<uint32_t, 3> vertices{};
+	// UV of each corner.
+	std::array<vec2, 3> uvs{};
+	// Normal of each corner.
+	std::array<vec3, 3> normals{};
 	// Position of the material in the converted list.
 	uint32_t slot = 0;
 };
 
-auto buildObj(const tinyobj::attrib_t& iAttrib, const std::vector<tinyobj::shape_t>& iShapes,
-			  const std::vector<tinyobj::material_t>& iMaterials, const std::string& iName,
+// The triangles of one OBJ mesh, its positions appended to the engine mesh.
+void collectObjFaces(const ufbx_mesh& iMesh, const bool iHasMaterials, const uint32_t iDefaultSlot, StaticMesh& ioMesh,
+					 std::vector<ObjFace>& oFaces, bool& ioUsesDefault) {
+	const auto vertexOffset = static_cast<uint32_t>(ioMesh.getVertexCount());
+	for (size_t i = 0; i < iMesh.vertex_position.values.count; ++i) {
+		const ufbx_vec3& pos = iMesh.vertex_position.values.data[i];
+		ioMesh.addVertex(vec3{static_cast<float>(pos.x), static_cast<float>(pos.y), static_cast<float>(pos.z)});
+	}
+	const bool hasUv = iMesh.vertex_uv.exists;
+	const bool hasNormals = iMesh.vertex_normal.exists && !iMesh.generated_normals;
+	std::vector<uint32_t> corners(iMesh.max_face_triangles * 3);
+	for (size_t faceIndex = 0; faceIndex < iMesh.faces.count; ++faceIndex) {
+		uint32_t slot = iDefaultSlot;
+		if (iHasMaterials && faceIndex < iMesh.face_material.count) {
+			const uint32_t local = iMesh.face_material.data[faceIndex];
+			if (local < iMesh.materials.count)
+				slot = iMesh.materials.data[local]->typed_id;
+		}
+		ioUsesDefault = ioUsesDefault || slot == iDefaultSlot;
+		const uint32_t triangles =
+				ufbx_triangulate_face(corners.data(), corners.size(), &iMesh, iMesh.faces.data[faceIndex]);
+		for (size_t t = 0; t < triangles; ++t) {
+			ObjFace face{.slot = slot};
+			for (size_t c = 0; c < 3; ++c) {
+				const uint32_t corner = corners[t * 3 + c];
+				face.vertices[c] = vertexOffset + iMesh.vertex_position.indices.data[corner];
+				if (hasUv) {
+					const ufbx_vec2& uv = iMesh.vertex_uv.values.data[iMesh.vertex_uv.indices.data[corner]];
+					face.uvs[c] = vec2{static_cast<float>(uv.x), static_cast<float>(uv.y)};
+				}
+				if (hasNormals) {
+					const ufbx_vec3& normal = iMesh.vertex_normal.values.data[iMesh.vertex_normal.indices.data[corner]];
+					face.normals[c] = vec3{static_cast<float>(normal.x), static_cast<float>(normal.y),
+										   static_cast<float>(normal.z)};
+				}
+			}
+			oFaces.push_back(face);
+		}
+	}
+}
+
+auto buildObj(const ufbx_scene& iScene, const bool iHasMaterials, const std::string& iName,
 			  const std::filesystem::path& iBaseDirectory, const MeshFileReader& iReadFile) -> LoadedMesh {
 	LoadedMesh loaded;
 	loaded.mesh = mkShared<StaticMesh>();
 	auto& mesh = *loaded.mesh;
-	mesh.reserveVertices(iAttrib.vertices.size() / 3);
-	for (size_t i = 0; i + 2 < iAttrib.vertices.size(); i += 3)
-		mesh.addVertex(vec3{iAttrib.vertices[i], iAttrib.vertices[i + 1], iAttrib.vertices[i + 2]});
-	const bool hasUv = !iAttrib.texcoords.empty();
-	const bool hasNormals = !iAttrib.normals.empty();
-	// Faces are grouped by material so that every submesh covers a contiguous run of indices.
-	const auto defaultSlot = static_cast<uint32_t>(iMaterials.size());
-	bool usesDefault = iMaterials.empty();
+	bool hasUv = false;
+	bool hasNormals = false;
+	const auto defaultSlot = iHasMaterials ? static_cast<uint32_t>(iScene.materials.count) : 0u;
+	bool usesDefault = !iHasMaterials || iScene.materials.count == 0;
 	std::vector<ObjFace> faces;
-	for (size_t shapeIndex = 0; shapeIndex < iShapes.size(); ++shapeIndex) {
-		const auto& shape = iShapes[shapeIndex];
-		size_t indexOffset = 0;
-		for (size_t faceIndex = 0; faceIndex < shape.mesh.num_face_vertices.size(); ++faceIndex) {
-			const size_t fv = shape.mesh.num_face_vertices[faceIndex];
-			if (fv != 3) {
-				OWL_CORE_WARN_ONCE(
-						"MeshLoader: OBJ face with {} vertices found, only triangles are supported, face skipped.", fv)
-				indexOffset += fv;
-				continue;
-			}
-			const int materialId = faceIndex < shape.mesh.material_ids.size() ? shape.mesh.material_ids[faceIndex] : -1;
-			const bool known = materialId >= 0 && static_cast<size_t>(materialId) < iMaterials.size();
-			usesDefault = usesDefault || !known;
-			faces.push_back({.shape = shapeIndex,
-							 .offset = indexOffset,
-							 .slot = known ? static_cast<uint32_t>(materialId) : defaultSlot});
-			indexOffset += fv;
-		}
+	for (size_t meshIndex = 0; meshIndex < iScene.meshes.count; ++meshIndex) {
+		const ufbx_mesh& source = *iScene.meshes.data[meshIndex];
+		hasUv = hasUv || source.vertex_uv.exists;
+		hasNormals = hasNormals || (source.vertex_normal.exists && !source.generated_normals);
+		collectObjFaces(source, iHasMaterials, defaultSlot, mesh, faces, usesDefault);
 	}
-	std::ranges::stable_sort(
-			faces, [](const ObjFace& iLeft, const ObjFace& iRight) -> bool { return iLeft.slot < iRight.slot; });
+	// Faces are grouped by material so that every submesh covers a contiguous run of indices.
+	std::ranges::stable_sort(faces, {}, &ObjFace::slot);
 	mesh.reserveTriangles(faces.size());
 	CornerUvs uvCoords;
 	CornerNormals normals;
 	uvCoords.reserve(hasUv ? faces.size() : 0);
 	normals.reserve(hasNormals ? faces.size() : 0);
-	for (const auto& [shapeIndex, offset, slot]: faces) {
-		const auto& shape = iShapes[shapeIndex];
-		std::array<uint32_t, 3> vertexIndices{};
-		std::array<vec2, 3> faceUv{};
-		std::array<vec3, 3> faceNormals{};
-		for (size_t v = 0; v < 3; v++) {
-			const tinyobj::index_t idx = shape.mesh.indices[offset + v];
-			vertexIndices[v] = static_cast<uint32_t>(idx.vertex_index);
-			if (idx.texcoord_index >= 0) {
-				const auto uvIndex = 2u * static_cast<size_t>(idx.texcoord_index);
-				faceUv[v] = vec2{iAttrib.texcoords[uvIndex], iAttrib.texcoords[uvIndex + 1]};
-			}
-			if (idx.normal_index >= 0) {
-				const auto normalIndex = 3u * static_cast<size_t>(idx.normal_index);
-				faceNormals[v] = vec3{iAttrib.normals[normalIndex], iAttrib.normals[normalIndex + 1],
-									  iAttrib.normals[normalIndex + 2]};
-			}
-		}
+	for (const auto& face: faces) {
 		if (hasUv)
-			uvCoords.push_back(faceUv);
+			uvCoords.push_back(face.uvs);
 		if (hasNormals)
-			normals.push_back(faceNormals);
-		if (loaded.submeshes.empty() || loaded.submeshes.back().materialIndex != slot)
+			normals.push_back(face.normals);
+		if (loaded.submeshes.empty() || loaded.submeshes.back().materialIndex != face.slot)
 			loaded.submeshes.push_back({.firstIndex = static_cast<uint32_t>(mesh.getTriangleCount() * 3),
 										.indexCount = 0,
-										.materialIndex = slot});
+										.materialIndex = face.slot});
 		loaded.submeshes.back().indexCount += 3;
-		mesh.addTriangle(vertexIndices);
+		mesh.addTriangle(face.vertices);
 	}
 	attachCornerData(mesh, uvCoords, normals);
 	logCompleteness("OBJ", iName, mesh, hasUv, hasNormals);
 	loaded.materials.clear();
-	for (const auto& source: iMaterials)
-		loaded.materials.push_back(convertObjMaterial(source, iBaseDirectory, iReadFile));
+	if (iHasMaterials) {
+		for (size_t i = 0; i < iScene.materials.count; ++i)
+			loaded.materials.push_back(convertObjMaterial(*iScene.materials.data[i], iBaseDirectory, iReadFile));
+	}
 	if (usesDefault)
 		loaded.materials.emplace_back();
+	return loaded;
+}
+
+// An OBJ read from its bytes, its `.mtl` and textures looked up next to it.
+auto parseObj(const std::span<const uint8_t> iData, const std::string& iName,
+			  const std::filesystem::path& iBaseDirectory, const MeshFileReader& iReadFile) -> LoadedMesh {
+	ObjSiblings siblings{.baseDirectory = iBaseDirectory, .readFile = iReadFile, .hasMaterialFile = false};
+	ufbx_load_opts opts{};
+	opts.file_format = UFBX_FILE_FORMAT_OBJ;
+	opts.load_external_files = true;
+	opts.ignore_missing_external_files = true;
+	opts.obj_merge_objects = true;
+	opts.obj_merge_groups = true;
+	opts.open_file_cb.fn = &openObjSibling;
+	opts.open_file_cb.user = &siblings;
+	ufbx_error error;
+	ufbx_scene* scene = ufbx_load_memory(iData.data(), iData.size(), &opts, &error);
+	if (scene == nullptr) {
+		OWL_CORE_ERROR("MeshLoader: Failed to load OBJ '{}': {}.", iName, error.description.data)
+		return {};
+	}
+	auto loaded = buildObj(*scene, siblings.hasMaterialFile, iName, iBaseDirectory, iReadFile);
+	ufbx_free_scene(scene);
 	return loaded;
 }
 
@@ -844,22 +882,8 @@ auto loadSourceMesh(const std::span<const uint8_t> iData, const std::string& iEx
 			return {};
 		return buildGltf(*model, iName);
 	}
-	if (iExtension == ".obj") {
-		tinyobj::attrib_t attrib;
-		std::vector<tinyobj::shape_t> shapes;
-		std::vector<tinyobj::material_t> materials;
-		std::string warn;
-		std::string err;
-		std::istringstream stream{std::string{reinterpret_cast<const char*>(iData.data()), iData.size()}};
-		ObjMaterialReader materialReader{iBaseDirectory, iReadFile};
-		if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, &stream, &materialReader)) {
-			OWL_CORE_ERROR("MeshLoader: Failed to load OBJ '{}': {}.", iName, err)
-			return {};
-		}
-		if (!warn.empty())
-			OWL_CORE_WARN("MeshLoader: The OBJ loader warns: {}.", warn)
-		return buildObj(attrib, shapes, materials, iName, iBaseDirectory, iReadFile);
-	}
+	if (iExtension == ".obj")
+		return parseObj(iData, iName, iBaseDirectory, iReadFile);
 	OWL_CORE_ERROR("MeshLoader: Unsupported mesh format '{}' for '{}'.", iExtension, iName)
 	return {};
 }
@@ -940,18 +964,13 @@ auto MeshLoader::getExternalFiles(const std::filesystem::path& iFilePath) -> std
 }
 
 auto MeshLoader::loadObj(const std::filesystem::path& iFilePath) -> shared<StaticMesh> {
-	tinyobj::attrib_t attrib;
-	std::vector<tinyobj::shape_t> shapes;
-	std::vector<tinyobj::material_t> materials;
-	std::string warn;
-	std::string err;
-	if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, iFilePath.string().c_str())) {
-		OWL_CORE_ERROR("MeshLoader: Failed to load OBJ '{}': {}.", iFilePath.string(), err)
+	const auto bytes = readFileBytes(iFilePath);
+	if (!bytes) {
+		OWL_CORE_ERROR("MeshLoader: Failed to load OBJ '{}': cannot read the file.", iFilePath.string())
 		return mkShared<StaticMesh>();
 	}
-	if (!warn.empty())
-		OWL_CORE_WARN("MeshLoader: The OBJ loader warns: {}.", warn)
-	return buildObj(attrib, shapes, materials, iFilePath.string(), iFilePath.parent_path(), {}).mesh;
+	auto loaded = parseObj(*bytes, iFilePath.string(), iFilePath.parent_path(), {});
+	return loaded.mesh ? loaded.mesh : mkShared<StaticMesh>();
 }
 
 auto MeshLoader::loadFbx([[maybe_unused]] const std::filesystem::path& iFilePath) -> shared<StaticMesh> {

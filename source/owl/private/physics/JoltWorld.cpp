@@ -188,6 +188,11 @@ public:
 		return handle;
 	}
 
+	void CreateJobs(const char* iName, const JPH::ColorArg iColor, const JobFunction& iFunction, JobHandle* oJobs,
+					const JPH::uint32 iCount, const JPH::uint32 iDependencies) override {
+		for (JPH::uint32 i = 0; i < iCount; ++i) oJobs[i] = CreateJob(iName, iColor, iFunction, iDependencies);
+	}
+
 protected:
 	void QueueJob(Job* iJob) override {
 		iJob->AddRef();

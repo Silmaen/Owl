@@ -1,13 +1,13 @@
 sources:
-  "2026.19":
+  "2026.22":
     Linux:
       x86_64:
-        url: "https://github.com/shader-slang/slang/releases/download/v2026.19/slang-2026.19-linux-x86_64-glibc-2.28.tar.gz"
-        sha256: "bd7afcb0956dee9304f44ed115e9aaa7140704271b5c3294bcb237e3ae67adc7"
+        url: "https://github.com/shader-slang/slang/releases/download/v2026.22/slang-2026.22-linux-x86_64-glibc-2.28.tar.gz"
+        sha256: "35c765d20b69f6217b02848cdb82a5216bf03990044a8991ceb0b89a198a80fb"
       armv8:
-        url: "https://github.com/shader-slang/slang/releases/download/v2026.19/slang-2026.19-linux-aarch64-glibc-2.28.tar.gz"
-        sha256: "f49229eb9606b47b122e1d8789be46a7bcd6bb2ffa94b06fae6d544a4e6df637"
+        url: "https://github.com/shader-slang/slang/releases/download/v2026.22/slang-2026.22-linux-aarch64-glibc-2.28.tar.gz"
+        sha256: "08a9690c41a7624cf9f091ab1e5d5f02fa8a6891c57a635b5698386581e8e826"
     Windows:
       x86_64:
-        url: "https://github.com/shader-slang/slang/releases/download/v2026.19/slang-2026.19-windows-x86_64.zip"
-        sha256: "fc922f214b5d115f663932e59e80e0f6b6cc6fae140979cf307da6459b6f8f33"
+        url: "https://github.com/shader-slang/slang/releases/download/v2026.22/slang-2026.22-windows-x86_64.zip"
+        sha256: "dd0c4a86bd44cdb7e9cf712af0c8ebf2fff1bba19fa5e3c128ff87384e8ff17b"

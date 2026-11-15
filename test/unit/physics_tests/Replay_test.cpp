@@ -271,3 +271,34 @@ TEST_F(ReplayTest, ATakenOverReplayRecordsTheSessionFromThere) {
 	EXPECT_EQ(replay(*branched, progress), liveHash);
 	EXPECT_FALSE(progress.divergedFrame.has_value());
 }
+
+// A replay recorded again while it plays keeps its frames and takes the world hashes of this build, as after a change of
+// the simulation.
+TEST_F(ReplayTest, AReplayRecordedAgainTakesTheHashesOfThisBuild) {
+	Replay recorded;
+	std::ignore = record(recorded);
+	Replay stale = recorded;
+	for (auto& checkpoint: stale.checkpoints) checkpoint.worldHash ^= 1u;
+	Scene scene;
+	build(scene);
+	ASSERT_TRUE(scene.setPlaybackReplay(mkShared<const Replay>(stale)));
+	ASSERT_TRUE(scene.setRecordingReplay(true));
+	scene.onStartRuntime();
+	core::Timestep step;
+	step.forceUpdate(std::chrono::milliseconds{1});
+	for (std::size_t frame = 0; frame < stale.frames.size(); ++frame) {
+		UiInputSystem::update(&scene, {10, 10}, {99.f, 99.f}, true, 1.f);
+		scene.onUpdateRuntime(step, false);
+	}
+	EXPECT_TRUE(scene.getReplayProgress().divergedFrame.has_value());
+	const auto again = scene.takeRecordedReplay();
+	scene.onEndRuntime();
+	ASSERT_TRUE(again.has_value());
+	EXPECT_EQ(again->frames.size(), recorded.frames.size());
+	EXPECT_EQ(again->seed, recorded.seed);
+	EXPECT_EQ(again->startHash, recorded.startHash);
+	EXPECT_EQ(again->checkpoints, recorded.checkpoints);
+	ReplayProgress progress;
+	std::ignore = replay(*again, progress);
+	EXPECT_FALSE(progress.divergedFrame.has_value());
+}

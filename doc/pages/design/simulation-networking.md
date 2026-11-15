@@ -51,6 +51,8 @@ platformer house, checked by `replay_platformer_house.owltest`.
 - Lua raw input (`input.is_key_pressed`, mouse, gamepad) and the mouse-look of the first-person, ship and voxel
   controllers read the input frame of the scene, so they replay too
 - A divergence is reported at the first checkpoint whose world hash differs (frame 0: the start state differs)
+- A replay played while recording is recorded again: the same frames with the world hashes of the current build,
+  so `OwlRunner --replay <old> --record <new>` refreshes a replay after a change of the simulation
 - A replay needs the same project: its action map, settings and texts are not stored
 - Only the first scene of a session is recorded: a level transition ends the recording
 - The systems that run per frame replay the recorded frame sequence, not a different frame rate

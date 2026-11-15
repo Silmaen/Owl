@@ -18,6 +18,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
+#include <optional>
 #include <utility>
 
 namespace owl::scene {
@@ -111,29 +112,38 @@ auto Scene::startReplay() -> input::InputState {
 		m_simulationClock.setSettings({.tickRate = replay.tickRate, .maxTicksPerFrame = replay.maxTicksPerFrame});
 		m_simulationClock.reset();
 		m_cursorCaptured = false;
+		if (m_recordArmed)
+			armRecording(replay.start);
 		return replay.start;
 	}
 	m_cursorCaptured = readCursorCaptured();
 	const auto held = input::Input::readState();
-	if (m_recordArmed) {
-		const auto& settings = m_simulationClock.getSettings();
-		m_recording.emplace();
-		m_recording->seed = m_randomSeed;
-		m_recording->tickRate = settings.tickRate;
-		m_recording->maxTicksPerFrame = settings.maxTicksPerFrame;
-		m_recording->start = held;
-		m_recording->start.wheel = {0.f, 0.f};
-		m_nextCheckpointTick = Replay::checkpointTicks;
-	}
+	if (m_recordArmed)
+		armRecording(held);
 	return held;
 }
 
+void Scene::armRecording(const input::InputState& iStart) {
+	const auto& settings = m_simulationClock.getSettings();
+	m_recording.emplace();
+	m_recording->seed = m_randomSeed;
+	m_recording->tickRate = settings.tickRate;
+	m_recording->maxTicksPerFrame = settings.maxTicksPerFrame;
+	m_recording->start = iStart;
+	m_recording->start.wheel = {0.f, 0.f};
+	m_nextCheckpointTick = Replay::checkpointTicks;
+}
+
 void Scene::checkReplayStart() {
+	if (!m_recording.has_value() && mp_playback == nullptr)
+		return;
+	// A replay recorded again while it plays shares the hash of the start.
+	const uint64_t hash = computeWorldHash(*this);
 	if (m_recording.has_value())
-		m_recording->startHash = computeWorldHash(*this);
+		m_recording->startHash = hash;
 	if (mp_playback == nullptr)
 		return;
-	if (const uint64_t hash = computeWorldHash(*this); hash != mp_playback->startHash) {
+	if (hash != mp_playback->startHash) {
 		OWL_CORE_WARN(
 				"Scene: Replay start state differs from the recorded one (world hash {:#018x}, recorded {:#018x}).",
 				hash, mp_playback->startHash)
@@ -149,6 +159,8 @@ auto Scene::beginReplayFrame(const core::Timestep& iTimeStep, input::InputState&
 		m_replayTimeStep.forceUpdate(frame.duration);
 		oInput = frame.input;
 		m_cursorCaptured = frame.cursorCaptured;
+		if (m_recording.has_value())
+			m_recording->frames.push_back(frame);
 		return true;
 	}
 	oInput = input::Input::readState();
@@ -163,12 +175,16 @@ auto Scene::beginReplayFrame(const core::Timestep& iTimeStep, input::InputState&
 
 void Scene::endReplayFrame() {
 	const uint64_t ticks = m_simulationClock.getTotalTickCount();
-	if (m_recording.has_value()) {
-		if (ticks < m_nextCheckpointTick)
-			return;
-		m_recording->checkpoints.push_back({.frame = m_recording->frames.size(), .worldHash = computeWorldHash(*this)});
+	// A replay recorded again while it plays checks and records the same frames: one hash serves both.
+	std::optional<uint64_t> frameHash;
+	const auto hashOfFrame = [this, &frameHash]() -> uint64_t {
+		if (!frameHash.has_value())
+			frameHash = computeWorldHash(*this);
+		return *frameHash;
+	};
+	if (m_recording.has_value() && ticks >= m_nextCheckpointTick) {
+		m_recording->checkpoints.push_back({.frame = m_recording->frames.size(), .worldHash = hashOfFrame()});
 		while (m_nextCheckpointTick <= ticks) m_nextCheckpointTick += Replay::checkpointTicks;
-		return;
 	}
 	if (!isPlayingReplay())
 		return;
@@ -180,8 +196,7 @@ void Scene::endReplayFrame() {
 	if (m_nextCheckpoint < checkpoints.size() && checkpoints[m_nextCheckpoint].frame == progress.frame) {
 		const auto& checkpoint = checkpoints[m_nextCheckpoint++];
 		++progress.checkedCount;
-		if (const uint64_t hash = computeWorldHash(*this);
-			hash != checkpoint.worldHash && !progress.divergedFrame.has_value()) {
+		if (const uint64_t hash = hashOfFrame(); hash != checkpoint.worldHash && !progress.divergedFrame.has_value()) {
 			OWL_CORE_WARN("Scene: Replay diverges at frame {} (world hash {:#018x}, recorded {:#018x}).",
 						  progress.frame, hash, checkpoint.worldHash)
 			progress.divergedFrame = progress.frame;

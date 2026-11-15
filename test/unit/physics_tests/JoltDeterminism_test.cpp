@@ -21,7 +21,7 @@ using namespace owl;
 namespace {
 
 // Final state of the reference scene, the same value on every target, instruction set and worker count.
-constexpr uint64_t g_GoldenHash = 0x9a3bc1dd30ffe4deull;
+constexpr uint64_t g_GoldenHash = 0x02a3d5df9016b3adull;
 
 constexpr JPH::ObjectLayer g_StaticLayer = 0;
 constexpr JPH::ObjectLayer g_MovingLayer = 1;

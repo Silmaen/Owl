@@ -23,13 +23,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Pack Game embeds the enabled extension packs of the project as `mods/<id>.owlmod` of the exported game (`ExportSettings::extensionSources`); `extension.enable` and the panel check box keep `disabledExtensions` in `owl_project.yml`.
 - Owl Nest mounts the enabled extension packs of the project as plugins while editing and in Play, and mounts them again when they change, reloading the textures already loaded (`Application::setExtensionSources`, `Texture2D::reloadFromAssets`).
 - Engine Demo: the `demo.recolour` mod recolours the first-aid kit of the raycast level, played by `mod_recolour.owltest`.
+- A replay played while recording is recorded again with the world hashes of the current build, to refresh a replay after a simulation change ([Simulation](design/simulation-networking.md#simulation-replay)).
 
 ### Changed
 
+- Dependencies: Slang 2026.22, Jolt 5.7.0, Luau 0.747, Tracy 0.14.1, freetype 2.15.0, msdfgen 1.13.1, md4c 0.6.0, cpp-httplib 0.65.0, imgui-color-text-edit 1.93.0, stb cci.20261021, zlib 1.4, libpng 1.6.59, wayland-protocols 1.50; EnTT from ConanCenter.
+- freetype is built without brotli and bzip2, and tinygltf without `stb_image_write`: two packages and an override less.
+- OBJ meshes are read by ufbx, which already reads FBX: polygons are triangulated, `.mtl` files and textures are found as before.
+- Jolt 5.7.0 changes the simulation: the frozen world hashes, the Engine Demo tour replay and the dice scenario are recorded again.
 - CI: `ready-watch` runs untagged on any runner, Windows and arm64 included, so its schedule no longer piles up pending pipelines behind the builds.
+
+### Removed
+
+- tinyobjloader and its local recipe.
 
 ### Fixed
 
+- `DependencyReport` no longer takes a bare-number tag (Luau's `696`) for a newer version than a dotted one.
 - `linux-clang-minimal` links again: the no-physics `PhysicCommand` has the 3D angular velocity and joint load stubs, and the one physics-only scene test is skipped there.
 
 ## [0.7.0] - 2026-11-15

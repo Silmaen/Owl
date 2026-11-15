@@ -1375,7 +1375,8 @@ public:
 	 *  Record the next Play session of the scene into a `Replay`.
 	 *
 	 * A replay starts with the runtime: asked while the scene is edited, the recording starts with the next
-	 * `onStartRuntime()`; asked while it plays, it is refused. False drops the recording.
+	 * `onStartRuntime()`; asked while it plays, it is refused. False drops the recording. A replay played meanwhile is
+	 * recorded again: same frames, world hashes of this build.
 	 * @param[in] iRecord Whether to record.
 	 * @return True if the request is taken.
 	 */
@@ -2459,6 +2460,13 @@ private:
 	 * @return The input held at the start.
 	 */
 	[[nodiscard]] auto startReplay() -> input::InputState;
+
+	/**
+	 * @brief
+	 *  Start recording with the current seed and clock settings.
+	 * @param[in] iStart The input held at the start.
+	 */
+	void armRecording(const input::InputState& iStart);
 
 	/**
 	 * @brief

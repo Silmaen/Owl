@@ -46,6 +46,13 @@ def test_versions_compare_by_number_not_by_text() -> None:
     assert is_update("1.92.9", "1.92.9b")
 
 
+def test_bare_numbers_are_their_own_scheme() -> None:
+    # luau carries a stray tag 696 next to its 0.7xx releases.
+    assert not is_update("0.746", "696")
+    assert is_update("0.746", "0.747")
+    assert is_update("20", "21")
+
+
 def test_flavours_and_pre_releases() -> None:
     assert not is_update("1.92.9b-docking", "1.92.10")
     assert is_update("1.92.9b-docking", "1.92.10-docking")
