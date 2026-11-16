@@ -13,8 +13,6 @@
 #   one by one;
 # - a job of a push or merge request pipeline stands on an earlier success on the same tree (`BuildAndTest` for the
 #   builds, `Reuse` for the others, `OWL_CI_REUSE`): a pipeline started again on the same commit only runs what is new;
-# - the `ready-watch` schedule (`READY_WATCH` = `true`) starts the pipeline of a draft marked ready, which GitLab does
-#   not: the draft pipeline is named `Draft merge request` (`workflow:name`), `ReadyPipelines` looks for those.
 #
 # The merge waits for the last pipeline (Settings > Merge requests > Pipelines must succeed).
 
@@ -22,12 +20,7 @@ include:
   - local: ci/gitlab/templates.yml
 
 workflow:
-  name: $PIPELINE_NAME
   rules:
-    # Same test as `.ready-merge-request`: the name tells `ReadyPipelines` the jobs of the draft were left out.
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TITLE =~ /^(\[draft\]|\(draft\)|draft:)/i
-      variables:
-        PIPELINE_NAME: Draft merge request
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
     - if: $CI_PIPELINE_SOURCE == "web"
@@ -47,10 +40,6 @@ variables:
   NIGHTLY:
     value: "false"
     description: "true: run the nightly jobs on this branch instead of the usual ones."
-  PIPELINE_NAME: ""
-  READY_WATCH:
-    value: "false"
-    description: "true (the ready-watch schedule): start the pipeline of the drafts marked ready, nothing else."
 
 # --- When a job runs --------------------------------------------------------------------------------------------
 
@@ -249,30 +238,12 @@ clang-tidy:
 bench:
   extends: [.bench, .after-style, .ready-only]
 
-# --- Drafts marked ready ---------------------------------------------------------------------------------------
-
-# A schedule of its own (Build > Pipeline schedules, `main`, every 10 minutes, `READY_WATCH` = `true`) runs this job
-# alone: it starts the pipeline of each draft marked ready since its draft pipeline (`ReadyPipelines`). No tag: every
-# runner with "Run untagged jobs" takes it, the Docker ones in the build image, a shell one (Windows) directly; the
-# script reads the same in bash and PowerShell.
-ready-watch:
-  image: $LINUX_IMAGE
-  stage: style
-  variables:
-    # As in `.windows`: MSYS2's Python makes a venv Poetry cannot use.
-    POETRY_VIRTUALENVS_USE_POETRY_PYTHON: "true"
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "schedule" && $READY_WATCH == "true"
-  interruptible: false
-  script:
-    - poetry run python ci_action.py ReadyPipelines linux-clang-release
-
 # --- Nightly ----------------------------------------------------------------------------------------------------
 
 # The nightly schedule, and a pipeline run by hand with `NIGHTLY` = `true`.
 .nightly:
   rules:
-    - if: $CI_PIPELINE_SOURCE == "schedule" && $READY_WATCH != "true"
+    - if: $CI_PIPELINE_SOURCE == "schedule"
     - if: $CI_PIPELINE_SOURCE == "web" && $NIGHTLY == "true"
 
 # The schedule (Build > Pipeline schedules, `main`, 02:00) runs these two only. The gate writes the child pipeline:

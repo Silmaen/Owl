@@ -44,11 +44,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - OBJ meshes are read by ufbx, which already reads FBX: polygons are triangulated, `.mtl` files and textures are found as before.
 - Jolt 5.7.0 changes the simulation: the frozen world hashes, the Engine Demo tour replay and the dice scenario are recorded again.
 - Bench: the Linux baseline takes the empty physics frame at 174 µs (60 Hz) and 116 µs (144 Hz) measured with Jolt 5.7.0.
-- CI: `ready-watch` runs untagged on any runner, Windows and arm64 included, so its schedule no longer piles up pending pipelines behind the builds.
 
 ### Removed
 
 - tinyobjloader and its local recipe.
+- CI: the `ready-watch` schedule and its `ReadyPipelines` action: its pipelines on `main` hid the status of the real ones; a draft marked ready is started with *Run pipeline*.
 
 ### Fixed
 

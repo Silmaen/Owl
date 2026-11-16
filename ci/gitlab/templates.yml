@@ -8,8 +8,7 @@
 # Linux ones `SYS_PTRACE` + `seccomp=unconfined` for the sanitizers and qemu-user (binfmt_misc) for the arm64 tests,
 # so these files never set them. Secrets are project CI/CD variables, masked: OWL_DEPLOY_URL, OWL_DEPLOY_LOGIN,
 # OWL_DEPLOY_PASSWORD, OWL_CONAN_CACHE_URL, CONAN_LOGIN_USERNAME_OWL_CACHE, CONAN_PASSWORD_OWL_CACHE,
-# OWL_GITLAB_API_TOKEN (a project access token with `read_api`, for the coverage reference and the nightly gate) and
-# OWL_GITLAB_PIPELINE_TOKEN (`api`, Developer, protected: `ready-watch` starts merge request pipelines with it).
+# OWL_GITLAB_API_TOKEN (a project access token with `read_api`, for the coverage reference and the nightly gate).
 
 variables:
   # In the project directory so that GitLab's cache carries the virtual environment.

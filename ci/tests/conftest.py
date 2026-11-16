@@ -19,7 +19,7 @@ FAKE_PASSWORD = "fake-Pa55word-for-tests"
 CI_VARIABLE_PREFIXES = ("CI_", "GITLAB_")
 """Variables a GitLab job sets: a test run inside a job would read the real pipeline context."""
 
-CI_VARIABLES = ("OWL_CI_REUSE", "OWL_GITLAB_API_TOKEN", "OWL_GITLAB_PIPELINE_TOKEN", "NIGHTLY", "READY_WATCH")
+CI_VARIABLES = ("OWL_CI_REUSE", "OWL_GITLAB_API_TOKEN", "NIGHTLY")
 """The project's own CI/CD variables the actions read."""
 
 
