@@ -74,7 +74,10 @@ auto functionType(const LuaBinding& iBinding) -> std::string {
 	for (const auto& param: iBinding.params) {
 		if (!params.empty())
 			params += ", ";
-		params += std::format("{}: {}{}", param.name, typeName(param.type), param.optional ? "?" : "");
+		if (param.name == "...")
+			params += "...any";
+		else
+			params += std::format("{}: {}{}", param.name, typeName(param.type), param.optional ? "?" : "");
 	}
 	std::string returns;
 	for (const auto& value: iBinding.returns) {

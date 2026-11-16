@@ -113,6 +113,7 @@ void RunnerConfig::loadYaml(const std::filesystem::path& iPath) {
 	firstScene.clear();
 	packFile.clear();
 	rendererStack = renderer::RendererStackConfig{};
+	network = {};
 	if (const auto appConfig = data["RunnerConfig"]; appConfig) {
 		get(appConfig, "PackFile", packFile);
 		get(appConfig, "ModsDirectory", modsDirectory);
@@ -146,6 +147,8 @@ void RunnerConfig::loadYaml(const std::filesystem::path& iPath) {
 			firstScene = sceneName;
 		if (const auto stack = appConfig["RendererStack"]; stack)
 			rendererStack = renderer::RendererStackConfig::fromYaml(YAML::Dump(stack));
+		if (const auto rules = appConfig["Network"]; rules)
+			network = network::MatchRules::fromYaml(YAML::Dump(rules));
 	}
 }
 
@@ -187,6 +190,8 @@ void RunnerConfig::saveYaml(const std::filesystem::path& iPath) const {
 	out << YAML::Key << "MaxTicksPerFrame" << YAML::Value << simulation.maxTicksPerFrame;
 	if (!rendererStack.isEmpty())
 		out << YAML::Key << "RendererStack" << YAML::Value << YAML::Load(rendererStack.toYaml());
+	if (network != network::MatchRules{})
+		out << YAML::Key << "Network" << YAML::Value << YAML::Load(network.toYaml());
 	out << YAML::EndMap;
 	out << YAML::EndMap;
 	std::ofstream fileOut(iPath);
@@ -253,6 +258,9 @@ void RunnerLayer::onAttach() {
 		mountMods({modsFolder});
 	}
 	app::Application::get().getEngineContext().setSimulationSettings(m_config.simulation);
+	app::Application::get().getEngineContext().setNetworkRules(m_config.network);
+	app::Application::get().getEngineContext().setNetworkGame(m_config.gameName,
+															  network::getVersionNumber(m_config.version));
 	app::Application::get().getEngineContext().setDefaultHud(m_config.defaultHud);
 	app::Application::get().getEngineContext().setDefaultHudTheme(m_config.defaultHudTheme);
 
@@ -493,6 +501,9 @@ auto RunnerLayer::attachSourceScene(const std::filesystem::path& iProject, const
 				get(project, "name", m_config.gameName);
 				if (const auto stack = project["RendererStack"]; stack)
 					m_config.rendererStack = renderer::RendererStackConfig::fromYaml(YAML::Dump(stack));
+				if (const auto rules = project["network"]; rules)
+					m_config.network = network::MatchRules::fromYaml(YAML::Dump(rules));
+				get(project, "version", m_config.version);
 				if (const auto simulation = project["simulation"]; simulation) {
 					get(simulation, "tickRate", m_config.simulation.tickRate);
 					get(simulation, "maxTicksPerFrame", m_config.simulation.maxTicksPerFrame);
@@ -514,6 +525,9 @@ auto RunnerLayer::attachSourceScene(const std::filesystem::path& iProject, const
 	}
 	app::Application::get().getEngineContext().getSettings().setGameName(m_config.gameName);
 	app::Application::get().getEngineContext().setSimulationSettings(m_config.simulation);
+	app::Application::get().getEngineContext().setNetworkRules(m_config.network);
+	app::Application::get().getEngineContext().setNetworkGame(m_config.gameName,
+															  network::getVersionNumber(m_config.version));
 	app::Application::get().getEngineContext().setDefaultHud(m_config.defaultHud);
 	app::Application::get().getEngineContext().setDefaultHudTheme(m_config.defaultHudTheme);
 	m_viewportSize = app.getWindow().getSize();

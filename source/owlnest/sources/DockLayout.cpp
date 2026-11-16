@@ -47,7 +47,7 @@ constexpr std::array g_panels{panelWindow::hierarchy,    panelWindow::properties
 							  panelWindow::log,          panelWindow::console,     panelWindow::stats,
 							  panelWindow::voxelPalette, panelWindow::tilePalette, panelWindow::sceneSettings,
 							  panelWindow::assetImport,  panelWindow::help,        panelWindow::scriptDebug,
-							  panelWindow::mixer,        panelWindow::extensions};
+							  panelWindow::mixer,        panelWindow::extensions,  panelWindow::network};
 
 auto isPanelWindow(const ImGuiID iWindowId) -> bool {
 	return std::ranges::any_of(g_panels,
@@ -112,7 +112,7 @@ void DockLayout::build(const uint32_t iDockSpaceId, const LayoutPreset iPreset,
 	ImGui::DockBuilderDockWindow(panelWindow::hierarchy, hierarchy);
 	for (const auto* name:
 		 {panelWindow::properties, panelWindow::tilePalette, panelWindow::voxelPalette, panelWindow::sceneSettings,
-		  panelWindow::assetImport, panelWindow::mixer, panelWindow::extensions})
+		  panelWindow::assetImport, panelWindow::mixer, panelWindow::extensions, panelWindow::network})
 		ImGui::DockBuilderDockWindow(name, properties);
 	// The help pages need width: they open among the documents.
 	ImGui::DockBuilderDockWindow(panelWindow::help, center);

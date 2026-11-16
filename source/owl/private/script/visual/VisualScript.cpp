@@ -114,6 +114,20 @@ void addEvents(std::vector<NodeType>& ioTypes) {
 	ioTypes.push_back(event("on_triggered", "On Triggered", "Runs when the trigger fires.", {other}));
 	ioTypes.push_back(event("on_interact", "On Interact", "Runs when the player interacts with the trigger."));
 	ioTypes.push_back(event("on_timer", "On Timer", "Runs when the timer of the trigger elapses."));
+	const PinSpec player = pin("player", PinType::Integer);
+	ioTypes.push_back(
+			event("on_player_join", "On Player Join", "Runs when a player joins the network session.", {player}));
+	ioTypes.push_back(
+			event("on_player_leave", "On Player Leave", "Runs when a player leaves the network session.", {player}));
+	ioTypes.push_back(event("on_lobby_changed", "On Lobby Changed",
+							"Runs when the lobby changes: a player joined, left, was renamed or became ready."));
+	ioTypes.push_back(event("on_match_start", "On Match Start", "Runs when the networked match starts in the scene."));
+	ioTypes.push_back(event("on_desync", "On Desync",
+							"Runs when the world hashes of a lockstep match differ, with the tick.",
+							{pin("tick", PinType::Integer)}));
+	ioTypes.push_back(event("on_disconnected", "On Disconnected",
+							"Runs when this machine leaves the session it joined, with the reason.",
+							{pin("reason", PinType::String)}));
 	ioTypes.push_back({.id = "event.custom",
 					   .title = "Custom Event",
 					   .category = "Events",

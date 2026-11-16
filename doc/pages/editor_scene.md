@@ -130,6 +130,16 @@ raycast layer) and its field of view. The layers themselves are described in
 step per bus, however long its fader moves, saved as `Mixer:` with the scene, heard at once in the previews); while the scene plays it runs
 `sound.set_live_bus`, which changes the live mixer only and ends with Play.
 
+## Network
+
+**Scene > Show > Network** shows or hides the Network panel: **Session** (host or join a lobby by hand, leave it, with
+the role, state, local player and port of an open session), **Simulated Link** (latency, jitter, loss and duplication
+applied to what this machine sends, in every session of the editor), **Figures** (round trip, loss, bytes per second,
+replicated entities, tick, stalled frames, first desync, remote calls) and **Players** (name, ready flag, input type,
+machine, marked when below the minimum profile). Scripts normally open the session with `net.host` and `net.join` while
+the scene plays; **Stop** closes it. The rules of the matches are in Project Settings
+([Networking](networking.md#networking-debugging)).
+
 A **Reverb Zone** draws its volume in the viewport, brighter when selected with the edge of its fade; move, turn and
 resize it with the gizmo. Its inspector picks the shape, the preset (or **Custom** parameters) and the zone filter; a
 **Sound Source** picks its bus, its filter (low-pass, high-pass, band-pass) and, spatial, its Doppler; an **Adaptive

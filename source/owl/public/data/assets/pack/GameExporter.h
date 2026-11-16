@@ -61,6 +61,8 @@ struct OWL_API ExportSettings {
 	uint32_t maxTicksPerFrame{8};
 	/// Project renderer stack as YAML (`RendererStackConfig::toYaml`), forwarded to `runner.yml`; empty for none.
 	std::string rendererStackYaml;
+	/// Network match rules as YAML (`network::MatchRules::toYaml`), forwarded to `runner.yml`; empty for the defaults.
+	std::string networkRulesYaml;
 	/// Whether the game draws an ImGui overlay: the runner creates its ImGui layer and the pack holds its fonts.
 	bool imGui{false};
 	/// Pack flags (compression, obfuscation).

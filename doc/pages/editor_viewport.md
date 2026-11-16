@@ -14,7 +14,7 @@ few translucent overlays. Scenes can sit side by side: drag a scene tab out of t
 | Top left     | Gizmo mode (Select, Move, Rotate, Scale), Local / World, **Snap** and its step (a click: presets)                                                                                 |
 | Top centre   | Play (Resume), Pause, Step, Stop; while playing a chevron (`F10`) folds them into a corner handle                                                                                 |
 | Top right    | The view (**2D**, **3D**, or **Iso**), the navigation modes and the fly speed, **Show**, the isometric **Navigation tool**, **Frame selection**, the **Camera** menu, frame stats |
-| Bottom left  | CPU and GPU time of a frame, the waits for the display excluded: a click opens Stats                                                                                              |
+| Bottom left  | CPU and GPU time of a frame, the waits for the display excluded: a click opens Stats; in a networked Play, the network chip                                                       |
 | Bottom right | The view-cube; above it the preview of the selected camera                                                                                                                        |
 
 **Show** toggles the grid, the camera, light and reflection probe markers (a probe: its capture point and its
@@ -23,6 +23,10 @@ Play always draws it) and, in the isometric mode, the navigation graph (Shift-cl
 the lit 3D surfaces in Edit only, never in Play. **Colour vision preview** shows the whole frame, HUD included, as a
 player with protanopia, deuteranopia or tritanopia sees it, in Edit and in Play, for this session
 ([Accessibility](design/accessibility.md#accessibility-colour-vision)).
+
+During a networked Play a **network chip** sits at the bottom left: role, players, round trip, bytes per second,
+replicated entities and, in red, the tick of a lockstep desync. **Show > Network stats** turns it on or off
+([Networking](networking.md#networking-debugging)).
 
 A viewport hidden behind another tab or collapsed does not draw its scene (a running one still steps), unless the MCP
 server is on: its captures read the viewport back.

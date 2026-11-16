@@ -14,6 +14,7 @@
 #include "data/sequence/SequenceLibrary.h"
 #include "data/table/DataTableLibrary.h"
 #include "input/ActionMap.h"
+#include "network/Match.h"
 #include "scene/SimulationClock.h"
 #include "scene/ai/BehaviourTreeLibrary.h"
 
@@ -23,6 +24,10 @@
 #include <string_view>
 #include <unordered_map>
 
+namespace owl::network {
+class GameSession;
+}// namespace owl::network
+
 namespace owl::renderer {
 class MaterialLibrary;
 class MeshCache;
@@ -30,6 +35,7 @@ class VoxelMeshCache;
 }// namespace owl::renderer
 
 namespace owl::scene {
+class NetworkHook;
 class HudLibrary;
 class HudThemeLibrary;
 class ScreenTransition;
@@ -281,6 +287,63 @@ public:
 	 */
 	[[nodiscard]] auto getLocalisationGeneration() const -> uint64_t { return m_localisationGeneration; }
 
+	/**
+	 * @brief
+	 *  The network session of the game, created on first use with the game's name and rules; it goes on across the
+	 *  levels.
+	 * @return The session.
+	 */
+	[[nodiscard]] auto getNetworkSession() -> network::GameSession&;
+
+	/**
+	 * @brief
+	 *  Whether the game has a network session.
+	 * @return True once `getNetworkSession()` created one, until `resetNetworkSession()`.
+	 */
+	[[nodiscard]] auto hasNetworkSession() const -> bool { return mp_networkSession != nullptr; }
+
+	/**
+	 * @brief
+	 *  The network session as the scenes see it (`Scene::onStartRuntime`).
+	 * @return The session, nullptr when the game has none.
+	 */
+	[[nodiscard]] auto getNetworkHook() const -> shared<scene::NetworkHook>;
+
+	/**
+	 * @brief
+	 *  Leave the network session and forget it (the editor's Play stops, the runner quits).
+	 */
+	void resetNetworkSession();
+
+	/**
+	 * @brief
+	 *  Rules of the game's matches, from the project; the next session takes them.
+	 * @param[in] iRules The rules.
+	 */
+	void setNetworkRules(const network::MatchRules& iRules) { m_networkRules = iRules.clamped(); }
+
+	/**
+	 * @brief
+	 *  Rules of the game's matches.
+	 * @return The rules.
+	 */
+	[[nodiscard]] auto getNetworkRules() const -> const network::MatchRules& { return m_networkRules; }
+
+	/**
+	 * @brief
+	 *  Name and version a network session presents: a server refuses the clients of another game or version.
+	 * @param[in] iGameId Name of the game (the project name).
+	 * @param[in] iVersion Version of the game's messages.
+	 */
+	void setNetworkGame(const std::string& iGameId, uint32_t iVersion);
+
+	/**
+	 * @brief
+	 *  Name a network session presents.
+	 * @return The game name.
+	 */
+	[[nodiscard]] auto getNetworkGameId() const -> const std::string& { return m_networkGameId; }
+
 private:
 	/// Screen transition state.
 	uniq<scene::ScreenTransition> mp_screenTransition;
@@ -322,6 +385,14 @@ private:
 	scene::ai::BehaviourTreeLibrary m_behaviourTrees;
 	/// Loaded HUD scenes (declared last: they hold GPU resources and are destroyed first).
 	uniq<scene::HudLibrary> mp_hudLibrary;
+	/// Network session of the game, none until a script or the editor needs one.
+	shared<network::GameSession> mp_networkSession;
+	/// Rules of the game's matches.
+	network::MatchRules m_networkRules;
+	/// Name of the game for the network sessions.
+	std::string m_networkGameId{"owl.game"};
+	/// Version of the game's network messages.
+	uint32_t m_networkGameVersion{1};
 };
 
 }// namespace owl::app

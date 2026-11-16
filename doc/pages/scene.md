@@ -225,6 +225,7 @@ flowchart LR
     E --> B["Behaviour<br/>Oscillator, Patrol, Drift,<br/>FollowTarget, LightFlicker"]
     E --> A["Audio<br/>SoundSource, SoundListener,<br/>ReverbZone, AdaptiveMusic"]
     E --> S["Scripting<br/>LuaScript"]
+    E --> N["Network<br/>Replicated"]
     E --> U["UI<br/>Canvas, UiRect, UiText,<br/>UiButton, ..."]
     E --> P["Prefab<br/>PrefabLink"]
 ```
@@ -1234,6 +1235,24 @@ See [Scripting](scripting.md) for the full Lua API reference.
 | `properties` | `vector<ScriptProperty>` | —           | Typed property list declared in the Lua script |
 
 One isolated `lua_State` per instance; callbacks, properties and lifecycle are in [Lua Scripting](scripting.md).
+
+### Network Components
+
+See [Networking](networking.md#networking-replication). Ignored outside a networked match.
+
+#### Replicated
+
+| Field         | Type             | YAML Key     | Description                                                                       |
+|---------------|------------------|--------------|-----------------------------------------------------------------------------------|
+| `authority`   | `Authority`      | `Replicated` | `Server` (the host decides) or `Owner` (its owner decides, the host passes it on) |
+| `owner`       | `uint32`         | —            | Player owning the entity, 0 for the host                                          |
+| `transform`   | `bool`           | —            | Whether the transform is sent                                                     |
+| `components`  | `vector<string>` | —            | Keys of the other components sent when they change                                |
+| `interpolate` | `bool`           | —            | Clients show the received transforms interpolated                                 |
+| `predict`     | `bool`           | —            | The owner simulates the entity and is corrected above `correctionThreshold`       |
+| `relevance`   | `float`          | —            | Distance within which a client receives the entity, 0 for everywhere              |
+| `priority`    | `float`          | —            | Share of the snapshot budget                                                      |
+| `hitRadius`   | `float`          | —            | Radius of the hit sphere the host rewinds for the lag compensation, 0 for none    |
 
 ### UI Components
 

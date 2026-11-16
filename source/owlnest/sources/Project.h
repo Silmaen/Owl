@@ -10,6 +10,7 @@
 
 #include <core/FormatVersion.h>
 #include <data/assets/pack/GameExporter.h>
+#include <network/Match.h>
 #include <owlgui.h>
 #include <renderer/RenderStack.h>
 #include <scene/SimulationClock.h>
@@ -64,6 +65,8 @@ struct Project {
 
 	/// Fixed simulation tick of the game (`simulation:`): rate of `on_tick` and of the physics steps.
 	scene::SimulationSettings simulation;
+	/// Rules of the game's network matches (`network:`): model, players, crossplay, minimum machine, replication.
+	owl::network::MatchRules network;
 
 	/// Project-level renderer stack definition. Empty → engine falls back to a single Renderer2D.
 	renderer::RendererStackConfig rendererStack;

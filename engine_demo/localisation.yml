@@ -167,3 +167,27 @@ strings:
   - key: dialogue.server.busy
     table: dialogue
     values: {en: 'Busy night! Ask the barkeeper for a drink.', fr: 'Quelle soirée ! Demande donc un verre au tavernier.'}
+  - key: loft.player
+    table: hub
+    values: {en: 'Pigeon keeper', fr: 'Colombophile'}
+  - key: loft.hosting
+    table: hub
+    values: {en: 'The loft opens on port %d: start the demo again on this machine and press E here to join.', fr: 'Le pigeonnier ouvre sur le port %d : relance la démo sur cette machine et appuie sur E ici pour le rejoindre.'}
+  - key: loft.joining
+    table: hub
+    values: {en: 'Flying to the loft of %s...', fr: 'Envol vers le pigeonnier de %s...'}
+  - key: loft.offline
+    table: hub
+    values: {en: 'No network here: the pigeon stays home.', fr: 'Pas de réseau ici : le pigeon reste au nid.'}
+  - key: loft.flap
+    table: hub
+    values: {en: 'Player %d flaps its wings (%d at the loft, %d ms).', fr: 'Le joueur %d fait battre ses ailes (%d au pigeonnier, %d ms).'}
+  - key: loft.joined
+    table: hub
+    values: {en: 'Player %d reaches the loft.', fr: 'Le joueur %d rejoint le pigeonnier.'}
+  - key: loft.left
+    table: hub
+    values: {en: 'Player %d leaves the loft.', fr: 'Le joueur %d quitte le pigeonnier.'}
+  - key: loft.disconnected
+    table: hub
+    values: {en: 'The loft closes (%s).', fr: 'Le pigeonnier ferme (%s).'}

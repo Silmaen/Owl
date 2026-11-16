@@ -101,6 +101,8 @@ struct EditorSettings {
 	bool showCameraPreview = true;
 	/// Whether the frame-time chip (fps, ms, draw calls) is drawn at the bottom-left of the viewports.
 	bool showFrameChip = true;
+	/// Whether a networked Play draws the network chip (ping, bandwidth, entities) above the frame-time chip.
+	bool showNetworkChip = true;
 	/// Whether the viewport draws a grid of the snap step in Edit mode.
 	bool showGrid = true;
 	/// Whether the viewport draws the scene HUD in Edit mode (Play always draws it).

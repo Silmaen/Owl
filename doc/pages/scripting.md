@@ -70,7 +70,8 @@ flowchart LR
    are kept
 5. Edit property values in the inspector — they are saved with the scene
 6. The **Hooks** list shows each function the engine calls (`on_create`, `on_update`, `on_tick`, `on_destroy`,
-   `on_collision`, `on_trigger_enter`, `on_trigger_exit`, `on_triggered`, `on_interact`, `on_timer`): a defined hook
+   `on_collision`, `on_trigger_enter`, `on_trigger_exit`, `on_triggered`, `on_interact`, `on_timer`, and the network hooks `on_player_join`, `on_player_leave`, `on_lobby_changed`,
+   `on_match_start`, `on_desync`, `on_disconnected`): a defined hook
    gives its line and an **Open** button that reveals it in the code editor, an undefined one is dimmed
 7. A HUD widget (button, slider, list, window, focus), a timer, an interaction or a Lua-callback trigger that names a
    function shows the script of the scene that defines it, with the same **Open** button, or a warning when none
@@ -141,6 +142,12 @@ end
 | `on_demoted()`                | The entity's `SimulationLod` demotes it                                          | None                          |
 | `on_promoted()`               | The entity's `SimulationLod` promotes it                                         | None                          |
 | `on_coarse_tick(dt)`          | Every `coarseInterval` ticks while demoted, instead of `on_update` and `on_tick` | `dt`: seconds covered         |
+| `on_player_join(player)`      | A player joins the lobby of the network session                                  | `player`: player number       |
+| `on_player_leave(player)`     | A player leaves the session                                                      | `player`: player number       |
+| `on_lobby_changed()`          | The lobby changes (players, ready flags, input types)                            | None                          |
+| `on_match_start()`            | The match of the network session starts                                          | None                          |
+| `on_desync(tick)`             | A lockstep match diverged                                                        | `tick`: first diverging tick  |
+| `on_disconnected(reason)`     | The network session ended or was refused                                         | `reason`: text                |
 
 All callbacks are optional — missing callbacks are silently skipped.
 

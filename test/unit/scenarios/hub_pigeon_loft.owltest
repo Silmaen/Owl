@@ -1,0 +1,18 @@
+# The hub's pigeon loft: E next to it opens a network session (the runner hosts, ENet on its port), E again flaps its wings
+# through a remote call to every machine of the session, this one included.
+scene: ../../../engine_demo/scenes/world_map.owl
+steps:
+  - frames: 30
+  - expect: {gamestate: net_online, equals: 0}
+  - expect: {entity: LoftPigeon, exists: true}
+  # The loft stands four cells east of the start.
+  - input: {key: D, frames: 40}
+  - input: {key: E, frames: 3}
+  - frames: 5
+  - expect: {gamestate: net_online, equals: 1}
+  - expect: {gamestate: net_players, equals: 1}
+  - expect: {gamestate: pigeon_flaps, equals: 0}
+  - frames: 20
+  - input: {key: E, frames: 3}
+  - frames: 5
+  - expect: {gamestate: pigeon_flaps, equals: 1}

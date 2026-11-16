@@ -10,6 +10,8 @@
 #include "script/ScriptInstance.h"
 
 #include <cstdint>
+#include <span>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -85,6 +87,11 @@ auto ScriptInstance::callFunction([[maybe_unused]] const std::string& iName) con
 
 auto ScriptInstance::callFunction([[maybe_unused]] const std::string& iName,
 								  [[maybe_unused]] const uint64_t iEntityId) const -> bool {
+	return false;
+}
+
+auto ScriptInstance::callFunction([[maybe_unused]] const std::string& iName,
+								  [[maybe_unused]] const std::span<const CallValue> iArgs) const -> bool {
 	return false;
 }
 

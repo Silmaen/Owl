@@ -58,7 +58,7 @@ tileset and map of the templates.
 
 ## Project Settings
 
-**Home > Project > Settings** edits the project in five tabs, the dialog fitting the screen; **OK** writes `owl_project.yml`, **Cancel** drops
+**Home > Project > Settings** edits the project in six tabs, the dialog fitting the screen; **OK** writes `owl_project.yml`, **Cancel** drops
 the changes (they are not undo steps).
 
 | Section        | Fields                                                                                             |
@@ -68,7 +68,9 @@ the changes (they are not undo steps).
 | Input          | Gamepad mappings file (SDL_GameControllerDB format), **Edit Input Actions**                        |
 | Simulation     | Tick rate (1 to 1000 per second, 60 by default), max ticks per frame (1 to 64, 8 by default)       |
 | Renderer Stack | The layers that draw every scene, in order, with their configuration                               |
+| Network        | The rules of the matches: model, players, crossplay, minimum machine, lockstep and snapshot rates  |
 
+The **Network** tab writes the `network:` block ([match rules](networking.md#networking-rules)).
 An empty version follows the engine version and an empty icon gives the Owl logo. **ImGui overlay** (off by default)
 makes the exported game create an ImGui layer and pack its fonts, for a game whose C++ code draws with ImGui; a game
 drawing its interface with HUDs leaves it off. The tick rate applies from the next Play

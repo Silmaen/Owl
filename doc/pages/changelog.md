@@ -16,6 +16,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `ConditionedTransport` wraps any transport to simulate latency, jitter, loss and duplication from a seed ([Networking](networking.md#networking-conditions)).
 - `net_session` fuzz target: arbitrary messages sent to a `NetServer` and a `NetClient`, with a seed corpus.
 - `OWL_MODULE_NETWORK` (Conan option `network`) builds the ENet backend; without it only the loopback transport remains.
+- Game session: `network::GameSession`, one per game in `app::EngineContext::getNetworkSession()` and kept across levels, with a lobby (host, join, names, ready flag, input type, hardware profile) and `startMatch` loading the scene on every machine ([Networking](networking.md#networking-game-session)).
+- Remote calls: Lua `net.rpc_server`, `rpc_client` and `rpc_all` with `_unreliable` variants, `net.get_sender()`, offline calls run locally ([Networking](networking.md#networking-rpc)).
+- Lockstep model: action map inputs sampled per tick and played `inputDelay` ticks later, the clock held until every input is known, world hash compared every `hashInterval` ticks, `net.is_held` / `is_pressed` / `get_value` / `get_vector` ([Networking](networking.md#networking-lockstep)).
+- Authoritative model: the `Replicated` component (authority, owner, transform, components, interpolation, prediction with correction, relevance, priority, hit radius), snapshots at `snapshotRate` shown `interpolationDelay` in the past, run-time spawns and despawns replicated ([Networking](networking.md#networking-replication)).
+- Interest management: relevance radius around the viewpoints (owned entities, `net.set_viewpoint`) and priorities within `snapshotBudget` ([Networking](networking.md#networking-interest)).
+- Lag compensation: `net.rewind_raycast` rewinds the hit spheres by the shooter's latency within `lagCompensationWindow` ([Networking](networking.md#networking-fair-play)).
+- Fair play checks: input type and crossplay refused by the host, a minimum hardware profile checked at match start, full and started matches refuse joiners.
+- `net` Lua table and the hooks `on_player_join`, `on_player_leave`, `on_lobby_changed`, `on_match_start`, `on_desync` and `on_disconnected` ([Lua API: Multiplayer](lua-api-network.md)).
+- `SimulationClock::setTickLimit` holds the ticks at a total count, and `scene::NetworkHook` is how a scene reports to the network session.
+- Match rules: the `network:` block of `owl_project.yml` and `Network:` of `runner.yml`, edited in the Project Settings *Network* tab ([Networking](networking.md#networking-rules)).
+- Owl Nest *Network* panel (host, join, simulated latency, jitter, loss and duplication, figures, players) and a viewport network chip during a networked Play; Stop closes the session ([Networking](networking.md#networking-debugging)).
+- Engine Demo: a pigeon loft in the hub opens a network session and flaps on every machine, a replicated pigeon flying over it, played by `hub_pigeon_loft.owltest`.
 - Extension packs: one `extension.yml` manifest (id, name, version, kind, load order, dependencies) and one loader, `ExtensionPack` and `ExtensionRegistry`, for game mods and project plugins, packed as `.owlmod` or read from their folder ([Mods and extension packs](mods.md)).
 - Mod loading: the runner mounts the packs of `ModsDirectory` (`mods` beside the game) in dependency and load order, and every asset lookup reads a pack entry over the game pack and the asset folders, so a mod overrides or adds textures, scripts and scenes.
 - Owl Nest *Extensions* panel and `extension.list` / `create` / `set` / `export` commands: list the packs of a project, edit their manifest with undo and export them as `.owlmod`.
@@ -31,6 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - freetype is built without brotli and bzip2, and tinygltf without `stb_image_write`: two packages and an override less.
 - OBJ meshes are read by ufbx, which already reads FBX: polygons are triangulated, `.mtl` files and textures are found as before.
 - Jolt 5.7.0 changes the simulation: the frozen world hashes, the Engine Demo tour replay and the dice scenario are recorded again.
+- Bench: the Linux baseline takes the empty physics frame at 174 µs (60 Hz) and 116 µs (144 Hz) measured with Jolt 5.7.0.
 - CI: `ready-watch` runs untagged on any runner, Windows and arm64 included, so its schedule no longer piles up pending pipelines behind the builds.
 
 ### Removed

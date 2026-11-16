@@ -11,6 +11,7 @@
 #include "LuaBindings.h"
 
 #include "EntityHandle.h"
+#include "LuaNetBindings.h"
 
 #include "app/EngineContext.h"
 #include "core/Core.h"
@@ -4180,7 +4181,7 @@ OWL_DIAG_DISABLE_GCC("-Wmissing-field-initializers")
 auto declareBindings() -> std::vector<LuaBinding> {
 	const LuaValue entityId{.name = "entity_id", .type = Entity};
 	// clang-format off
-	return {
+	std::vector<LuaBinding> bindings{
 		{.table = "transform", .name = "get_position", .function = guarded<luaTransformGetPosition>,
 		 .description = "Local position of the entity (zeros when it has no transform).",
 		 .params = {entityId}, .returns = {{"x", Number}, {"y", Number}, {"z", Number}}},
@@ -5371,6 +5372,8 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .params = {entityId, {"speed", Number}}, .returns = {{"done", Boolean}}},
 	};
 	// clang-format on
+	appendNetworkBindings(bindings);
+	return bindings;
 }
 OWL_DIAG_POP
 
@@ -5399,6 +5402,10 @@ auto describeSignature(const LuaBinding& iBinding) -> std::string {
 	for (const auto& param: iBinding.params) {
 		if (!params.empty())
 			params += ", ";
+		if (param.name == "...") {
+			params += "...";
+			continue;
+		}
 		const auto text = std::format("{}: {}", param.name, typeName(param.type));
 		params += param.optional ? std::format("[{}]", text) : text;
 	}
@@ -5492,6 +5499,9 @@ auto getLuaTables() -> const std::vector<LuaTable>& {
 			{.name = "steer",
 			 .description = "Steering behaviours of the `SteeringAgent`s: targets, weights, formations, on the 2D "
 							"plane, the ground or in space."},
+			{.name = "net",
+			 .description = "Multiplayer: the session and its lobby, the remote calls, the replicated entities, the "
+							"lockstep inputs and the lag compensation."},
 	};
 	return s_tables;
 }
@@ -5521,6 +5531,7 @@ auto getLuaReferencePages() -> const std::vector<LuaReferencePage>& {
 			{.file = "lua-api-data.md", .title = "Splines and data tables", .tables = {"spline", "datatable"}},
 			{.file = "lua-api-dialogue.md", .title = "Dialogues", .tables = {"dialogue"}},
 			{.file = "lua-api-sequence.md", .title = "Cutscene sequences", .tables = {"sequence"}},
+			{.file = "lua-api-network.md", .title = "Multiplayer", .tables = {"net"}},
 	};
 	return s_pages;
 }

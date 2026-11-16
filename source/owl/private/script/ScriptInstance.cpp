@@ -227,6 +227,14 @@ auto ScriptInstance::callFunction(const std::string& iName, const uint64_t iEnti
 	return mp_impl->engine.callFunction(iName, mp_impl->handleOf(iEntityId));
 }
 
+auto ScriptInstance::callFunction(const std::string& iName, const std::span<const CallValue> iArgs) const -> bool {
+	if (!isValid() || mp_impl->disabled)
+		return false;
+	const bool called = mp_impl->engine.callFunction(iName, iArgs);
+	mp_impl->checkQuota(iName, called);
+	return called;
+}
+
 auto ScriptInstance::callFunctionForValue(const std::string& iName, const uint64_t iEntityId,
 										  const float iSeconds) const -> std::optional<std::string> {
 	if (!isValid() || mp_impl->disabled)

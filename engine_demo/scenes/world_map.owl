@@ -749,6 +749,42 @@ Entities:
   Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_board_interact}
   LuaScript: {scriptPath: scripts/hub/info_board.owlvs}
   Visibility: {gameVisible: true}
+- Entity: 2000000000000000900
+  Tag: {tag: PigeonLoft}
+  Transform:
+    translation: [36.5, -36.5, 0.6]
+    rotation: [0, 0, 0]
+    scale: [1.2, 1.2, 1]
+  AnimatedSpriteRenderer:
+    color: [0.85, 0.92, 1, 1]
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
+    columns: 12
+    rows: 38
+    firstFrame: 83
+    lastFrame: 83
+    frameDuration: 0.1
+    loop: false
+  Trigger: {Type: Interaction, InteractionRange: 1.5, CallbackName: on_loft_interact}
+  LuaScript: {scriptPath: scripts/hub/pigeon_loft.lua}
+  Visibility: {gameVisible: true}
+- Entity: 2000000000000000901
+  Tag: {tag: LoftPigeon}
+  Transform:
+    translation: [35.5, -35.2, 0.85]
+    rotation: [0, 0, 0]
+    scale: [1.0, 1.0, 1.0]
+  Visibility: {gameVisible: true}
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    columns: 12
+    rows: 38
+    firstFrame: 214
+    lastFrame: 215
+    frameDuration: 0.09
+    loop: true
+    texture: gid:0a809e82310f61c8:textures/atlases/town_atlas.png
+  Oscillator: {enabled: true, offset: [2, 0.4, 0], period: 3, phase: 0, easing: Smooth}
+  Replicated: {authority: Server, owner: 0, transform: true, interpolate: true, predict: false, relevance: 0, priority: 1, hitRadius: 0}
 - Entity: 2000000000000000120
   Tag: {tag: Lever}
   Transform:

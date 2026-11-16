@@ -31,6 +31,7 @@
 #include "renderer/ShadowCascades.h"
 #include "scene/Accessibility.h"
 #include "scene/FloatingOriginSettings.h"
+#include "scene/NetworkHook.h"
 #include "scene/PhysicsSettings.h"
 #include "scene/Replay.h"
 #include "scene/SimulationClock.h"
@@ -147,6 +148,7 @@ struct DayNightCycle;
 struct ReflectionProbe;
 struct FirstPersonController;
 struct ShipController;
+struct Replicated;
 struct Environment;
 struct NativeScript;
 struct PhysicBody;
@@ -1479,6 +1481,21 @@ public:
 
 	/**
 	 * @brief
+	 *  Network session the runtime reports to: the one of the engine context when it has one, taken by
+	 *  `onStartRuntime()`, else the one given here.
+	 * @param[in] iHook The hook, nullptr for none.
+	 */
+	void setNetworkHook(const shared<NetworkHook>& iHook) { m_networkHook = iHook; }
+
+	/**
+	 * @brief
+	 *  Network session the runtime reports to.
+	 * @return The hook, nullptr when the scene plays alone.
+	 */
+	[[nodiscard]] auto getNetworkHook() const -> NetworkHook* { return m_networkHook.get(); }
+
+	/**
+	 * @brief
 	 *  Task scheduler the scene prepares its renders on: the application's one by default.
 	 * @return The scheduler, or nullptr when the scene was created without application and none was given.
 	 */
@@ -1861,6 +1878,8 @@ private:
 	SystemSchedule m_systems;
 	/// Engine state used by the scene (not owned).
 	app::EngineContext* mp_engineContext = nullptr;
+	/// Network session of the runtime, none when the scene plays alone.
+	shared<NetworkHook> m_networkHook;
 	/// Scheduler the render preparation runs on (not owned).
 	core::task::Scheduler* mp_taskScheduler = nullptr;
 	/// Entity count from which the render preparation runs on the scheduler.
@@ -3130,6 +3149,9 @@ OWL_API void Scene::onComponentAdded<component::VoxelPlayer>(const Entity& iEnti
 template<>
 OWL_API void Scene::onComponentAdded<component::ShipController>(const Entity& iEntity,
 																component::ShipController& ioComponent);
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Replicated>(const Entity& iEntity, component::Replicated& ioComponent);
 /// @endcond
 
 }// namespace owl::scene

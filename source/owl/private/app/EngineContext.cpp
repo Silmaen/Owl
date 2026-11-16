@@ -11,6 +11,7 @@
 #include "app/EngineContext.h"
 
 #include "data/assets/AssetSearchPaths.h"
+#include "network/GameSession.h"
 
 #include "renderer/MaterialLibrary.h"
 #include "renderer/MeshCache.h"
@@ -20,6 +21,7 @@
 #include "scene/ScreenTransition.h"
 #include "scene/SettingsManager.h"
 
+#include <cstdint>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -34,6 +36,21 @@ EngineContext::EngineContext()
 	  mp_hudLibrary{mkUniq<scene::HudLibrary>(this)} {}
 
 EngineContext::~EngineContext() = default;
+
+auto EngineContext::getNetworkSession() -> network::GameSession& {
+	if (mp_networkSession == nullptr)
+		mp_networkSession = mkShared<network::GameSession>(m_networkGameId, m_networkGameVersion, m_networkRules);
+	return *mp_networkSession;
+}
+
+auto EngineContext::getNetworkHook() const -> shared<scene::NetworkHook> { return mp_networkSession; }
+
+void EngineContext::resetNetworkSession() { mp_networkSession.reset(); }
+
+void EngineContext::setNetworkGame(const std::string& iGameId, const uint32_t iVersion) {
+	m_networkGameId = iGameId;
+	m_networkGameVersion = iVersion;
+}
 
 auto EngineContext::loadActionMap(const std::filesystem::path& iProjectDirectory) -> bool {
 	setActionMap({});

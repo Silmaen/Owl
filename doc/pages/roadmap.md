@@ -111,21 +111,23 @@ per target, Android and the Web.
   ([Input](design/windowing-input.md))
 - ![Planned][planned] Crash reporter: a local report to attach to a GitHub issue, nothing sent
   ([Crash reporter](design/crash-reporter.md))
-- ![In Progress][progress] Network transport layer (reliable UDP, authoritative server, connection management), on desktop
-  and Android ([Networking](design/simulation-networking.md#networking-multiplayer))
+- ![In Progress][progress] Network transport layer (reliable UDP, authoritative server, connection management): done on
+  desktop, Android left ([Networking](networking.md))
 - ![Planned][planned] Network transport in the browser: WebSocket to a native server, a Web client in every networked
   game ([Networking](design/simulation-networking.md#networking-multiplayer))
-- ![Planned][planned] Entity replication (replicated components, interpolation, prediction, authority)
-- ![Planned][planned] Lockstep network model on the bit-exact simulation, desync detection by world hash
-  ([Networking](design/simulation-networking.md#networking-multiplayer))
-- ![Planned][planned] Fair matches: input type in the lobby, server-side lag compensation, minimum hardware profile
-  ([Fair play](design/simulation-networking.md#networking-fairness))
-- ![Planned][planned] RPC system (Lua `rpc_server` / `rpc_client` / `rpc_all`, reliable and unreliable)
-- ![Planned][planned] Lobby and session management
-- ![In Progress][progress] Network debugging tools (latency / loss simulation, stats overlay)
-  ([Networking](networking.md#networking-conditions))
-- ![Planned][planned] Interest management: relevance areas and priorities, a client receives only what is near it
-  ([Large worlds](design/large-worlds.md))
+- ![Done][done] Entity replication (replicated components, interpolation, prediction, authority)
+  ([Replication](networking.md#networking-replication))
+- ![Done][done] Lockstep network model on the bit-exact simulation, desync detection by world hash
+  ([Lockstep](networking.md#networking-lockstep))
+- ![Done][done] Fair matches: input type in the lobby, server-side lag compensation, minimum hardware profile
+  ([Fair play](networking.md#networking-fair-play))
+- ![Done][done] RPC system (Lua `rpc_server` / `rpc_client` / `rpc_all`, reliable and unreliable)
+  ([Remote calls](networking.md#networking-rpc))
+- ![Done][done] Lobby and session management ([Game session](networking.md#networking-game-session))
+- ![Done][done] Network debugging tools (latency / loss simulation, stats overlay)
+  ([Debugging](networking.md#networking-debugging))
+- ![Done][done] Interest management: relevance areas and priorities, a client receives only what is near it
+  ([Interest management](networking.md#networking-interest))
 - ![Done][done] Extension packs: one format and one loader for game mods and for data and script plugins
   ([Mods and extension packs](mods.md))
 - ![Done][done] Mod loading system (`.owlmod` packs, manifest, load order, asset overrides)

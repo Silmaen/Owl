@@ -38,6 +38,7 @@
 #include "panel/HelpPanel.h"
 #include "panel/LogPanel.h"
 #include "panel/MixerPanel.h"
+#include "panel/NetworkPanel.h"
 #include "panel/NewProjectDialog.h"
 #include "panel/Parameters.h"
 #include "panel/ProjectSettings.h"
@@ -1389,6 +1390,8 @@ private:
 	panel::SceneSettings m_sceneSettings;
 	/// Mixer panel: the buses of the scene mix.
 	panel::MixerPanel m_mixerPanel;
+	/// Network session of the Play: host, join, simulated link, figures, players.
+	panel::NetworkPanel m_networkPanel;
 	/// Extensions panel: the extension packs of the project and their manifests.
 	panel::ExtensionPanel m_extensionPanel;
 	/// Import settings of the asset selected in the content browser.

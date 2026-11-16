@@ -417,6 +417,8 @@ void writeRunnerConfig(const ExportSettings& iSettings, const std::filesystem::p
 	out << YAML::Key << "MaxTicksPerFrame" << YAML::Value << iSettings.maxTicksPerFrame;
 	if (!iSettings.rendererStackYaml.empty())
 		out << YAML::Key << "RendererStack" << YAML::Value << YAML::Load(iSettings.rendererStackYaml);
+	if (!iSettings.networkRulesYaml.empty())
+		out << YAML::Key << "Network" << YAML::Value << YAML::Load(iSettings.networkRulesYaml);
 	out << YAML::Key << "Renderers" << YAML::Value << YAML::Flow << iRenderers;
 	out << YAML::Key << "ImGui" << YAML::Value << iSettings.imGui;
 	out << YAML::EndMap;

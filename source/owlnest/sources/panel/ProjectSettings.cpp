@@ -17,6 +17,8 @@
 #include <gui/widgets/IconButton.h>
 #include <gui/widgets/PropertyGrid.h>
 #include <imgui_stdlib.h>
+#include <magic_enum/magic_enum.hpp>
+#include <network/Match.h>
 #include <renderer/RenderLayerFactory.h>
 
 #include <algorithm>
@@ -113,6 +115,61 @@ void drawSimulationSettings(scene::SimulationSettings& ioSimulation) {
 								  "of stalling."))
 		ioSimulation.maxTicksPerFrame = static_cast<uint32_t>(maxTicks);
 	ioSimulation = ioSimulation.clamped();
+}
+
+// An unsigned rule row with its reset, within a range.
+void drawRuleCount(const char* iLabel, uint32_t& ioValue, const uint32_t iDefault, const int iMin, const int iMax,
+				   const char* iTooltip) {
+	auto value = static_cast<int>(ioValue);
+	if (gui::widgets::propertyInt(iLabel, value, static_cast<int>(iDefault), iMin, iMax, "%d", iTooltip))
+		ioValue = static_cast<uint32_t>(value);
+}
+
+void drawNetworkRules(network::MatchRules& ioRules) {
+	const network::MatchRules defaults;
+	gui::widgets::propertyLabel("Model", "Authoritative: the host simulates and sends snapshots (action games). "
+										 "Lockstep: every machine simulates every tick from the inputs of all the "
+										 "players (strategy, management).");
+	if (gui::widgets::beginCombo("##netModel", std::string{magic_enum::enum_name(ioRules.model)}.c_str())) {
+		for (const auto model: magic_enum::enum_values<network::NetModel>()) {
+			if (ImGui::Selectable(std::string{magic_enum::enum_name(model)}.c_str(), ioRules.model == model))
+				ioRules.model = model;
+		}
+		ImGui::EndCombo();
+	}
+	drawRuleCount("Max Players", ioRules.maxPlayers, defaults.maxPlayers, 1, 64,
+				  "Most players of a match, the host included.");
+	std::ignore = gui::widgets::propertyBool("Crossplay", ioRules.crossplay, defaults.crossplay,
+											 "Off: the host refuses the players who do not play like it (keyboard and "
+											 "mouse, gamepad, touch).");
+	drawRuleCount("Minimum Threads", ioRules.minimum.cpuThreads, defaults.minimum.cpuThreads, 0, 256,
+				  "Hardware threads a player's machine needs to start a match; 0 for none.");
+	std::ignore = gui::widgets::propertyFloat("Slowest Frame", ioRules.minimum.frameMs, defaults.minimum.frameMs, 0.1f,
+											  "%.1f ms",
+											  "Mean frame duration a player's machine must stay under to start a "
+											  "match; 0 for none.");
+	drawRuleCount("Input Delay", ioRules.inputDelay, defaults.inputDelay, 1, 30,
+				  "Lockstep: ticks between an input and the tick it plays in, which hides the latency.");
+	drawRuleCount("Hash Interval", ioRules.hashInterval, defaults.hashInterval, 1, 3600,
+				  "Lockstep: ticks between two world hash comparisons (desync detection).");
+	std::ignore = gui::widgets::propertyFloat("Snapshot Rate", ioRules.snapshotRate, defaults.snapshotRate, 0.5f,
+											  "%.0f /s", "Authoritative: snapshots sent to each client per second.");
+	std::ignore = gui::widgets::propertyFloat("Interpolation Delay", ioRules.interpolationDelay,
+											  defaults.interpolationDelay, 0.005f, "%.3f s",
+											  "Authoritative: how far in the past a client shows the received "
+											  "entities, so that it always has two snapshots to blend.");
+	drawRuleCount("Snapshot Budget", ioRules.snapshotBudget, defaults.snapshotBudget, 1, 1024,
+				  "Authoritative: most entities of a snapshot; the interest management keeps the nearest and most "
+				  "overdue.");
+	std::ignore = gui::widgets::propertyFloat("Lag Compensation", ioRules.lagCompensationWindow,
+											  defaults.lagCompensationWindow, 0.01f, "%.2f s",
+											  "Authoritative: seconds of hit sphere history the host rewinds a shot "
+											  "into.");
+	std::ignore = gui::widgets::propertyFloat("Correction Threshold", ioRules.correctionThreshold,
+											  defaults.correctionThreshold, 0.01f, "%.2f",
+											  "Authoritative: distance between a predicted entity and the host's "
+											  "one above which the client corrects it.");
+	ioRules = ioRules.clamped();
 }
 
 // A row choosing a project-wide asset (default HUD, default HUD theme) among the files of the project.
@@ -273,6 +330,13 @@ void ProjectSettings::onImGuiRender() {
 			if (ImGui::BeginTabItem(std::format("{}  Simulation###simulation", gui::icon::timer).c_str())) {
 				if (gui::widgets::beginProperties("##simulation")) {
 					drawSimulationSettings(m_localProject.simulation);
+					gui::widgets::endProperties();
+				}
+				ImGui::EndTabItem();
+			}
+			if (ImGui::BeginTabItem(std::format("{}  Network###network", gui::icon::globe).c_str())) {
+				if (gui::widgets::beginProperties("##network")) {
+					drawNetworkRules(m_localProject.network);
 					gui::widgets::endProperties();
 				}
 				ImGui::EndTabItem();

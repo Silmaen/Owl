@@ -139,6 +139,7 @@ void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 		readKey(config, "graphSnap", graphSnap);
 		readKey(config, "showCameraPreview", showCameraPreview);
 		readKey(config, "showFrameChip", showFrameChip);
+		readKey(config, "showNetworkChip", showNetworkChip);
 		readKey(config, "showGrid", showGrid);
 		readKey(config, "showHud", showHud);
 		if (config["editorAmbient"])
@@ -212,6 +213,7 @@ void EditorSettings::saveToFile(const std::filesystem::path& iFile) const {
 	out << YAML::Key << "graphSnap" << YAML::Value << graphSnap;
 	out << YAML::Key << "showCameraPreview" << YAML::Value << showCameraPreview;
 	out << YAML::Key << "showFrameChip" << YAML::Value << showFrameChip;
+	out << YAML::Key << "showNetworkChip" << YAML::Value << showNetworkChip;
 	out << YAML::Key << "showGrid" << YAML::Value << showGrid;
 	out << YAML::Key << "showHud" << YAML::Value << showHud;
 	out << YAML::Key << "editorAmbient" << YAML::Value << editorAmbient;

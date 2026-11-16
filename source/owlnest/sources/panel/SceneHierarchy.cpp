@@ -387,6 +387,7 @@ auto componentIconName(const char* iCompName) -> const char* {
 			{"Voxel Player", "comp_player"},
 			{"Mesh Renderer", "gltf_icon"},
 			{"Ship Controller", "comp_fly_camera"},
+			{"Replicated", "comp_link"},
 	};
 	if (const auto it = map.find(iCompName); it != map.end())
 		return it->second;

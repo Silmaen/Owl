@@ -78,6 +78,8 @@ void readProjectConfig(const YAML::Node& iConfig, Project& oProject) {
 		oProject.imGui = iConfig["imGui"].as<bool>();
 	if (const auto simulation = iConfig["simulation"]; simulation)
 		readSimulationSettings(simulation, oProject.simulation);
+	if (const auto rules = iConfig["network"]; rules)
+		oProject.network = owl::network::MatchRules::fromYaml(YAML::Dump(rules));
 	if (const auto stack = iConfig["RendererStack"]; stack)
 		oProject.rendererStack = renderer::RendererStackConfig::fromYaml(YAML::Dump(stack));
 	if (const auto disabled = iConfig["disabledExtensions"]; disabled && disabled.IsSequence())
@@ -142,6 +144,7 @@ auto Project::makeExportSettings(const std::filesystem::path& iOutputDir, const 
 			.tickRate = simulation.tickRate,
 			.maxTicksPerFrame = simulation.maxTicksPerFrame,
 			.rendererStackYaml = rendererStack.isEmpty() ? std::string{} : rendererStack.toYaml(),
+			.networkRulesYaml = network == owl::network::MatchRules{} ? std::string{} : network.toYaml(),
 			.imGui = imGui,
 			.packFlags = data::assets::pack::PackFlags::Default,
 			.cookCacheDirectory = {},
@@ -190,6 +193,8 @@ auto Project::saveToFile(const std::filesystem::path& iFile) const -> bool {
 		out << YAML::Key << "maxTicksPerFrame" << YAML::Value << simulation.maxTicksPerFrame;
 		out << YAML::EndMap;// simulation
 	}
+	if (network != owl::network::MatchRules{})
+		out << YAML::Key << "network" << YAML::Value << YAML::Load(network.toYaml());
 	if (!rendererStack.isEmpty())
 		out << YAML::Key << "RendererStack" << YAML::Value << YAML::Load(rendererStack.toYaml());
 	if (!disabledExtensions.empty())

@@ -439,6 +439,14 @@ void RibbonBuilder::buildSceneTab() {
 							  .isChecked = [this]() -> bool { return mp_editor->m_mixerPanel.isVisible(); },
 							  .onClick = [this]() -> void { mp_editor->m_mixerPanel.toggle(); },
 							  .size = Size::Small});
+	m_ribbon.addButton(sceneTab, gShow,
+					   Button{.iconName = "comp_link",
+							  .label = "Network",
+							  .tooltip = "Show or hide the network session of the Play: host, join, simulated latency "
+										 "and loss, figures, players",
+							  .isChecked = [this]() -> bool { return mp_editor->m_networkPanel.isVisible(); },
+							  .onClick = [this]() -> void { mp_editor->m_networkPanel.toggle(); },
+							  .size = Size::Small});
 
 	m_ribbon.addButton(sceneTab, gShow,
 					   Button{.iconName = "ribbon_pack",

@@ -12,6 +12,7 @@
 #include "ScenarioTest.h"
 
 #include <data/assets/pack/PackReader.h>
+#include <network/Match.h>
 #include <owl.h>
 #include <scene/Replay.h>
 #include <scene/SceneSerializer.h>
@@ -59,6 +60,8 @@ struct RunnerConfig {
 	bool resizable{true};
 	/// Fixed simulation tick of the game (`TickRate`, `MaxTicksPerFrame`).
 	scene::SimulationSettings simulation;
+	/// Rules of the game's network matches (`Network`).
+	network::MatchRules network;
 	/**
 	 * @brief
 	 *  Renderer-stack definition forwarded from the project's `RendererStack:` block.

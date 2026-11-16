@@ -84,8 +84,10 @@ auto getBindingNodeTypes() -> std::vector<NodeType> {
 			type.inputs.push_back(pin("Exec", PinType::Exec));
 			type.outputs.push_back(pin("Then", PinType::Exec));
 		}
+		// A variadic tail is one optional argument pin: a graph passes one value.
 		for (const auto& param: binding.params)
-			type.inputs.push_back(pin(std::string{param.name}, toPinType(param.type), {}, param.optional));
+			type.inputs.push_back(pin(param.name == "..." ? std::string{"Argument"} : std::string{param.name},
+									  toPinType(param.type), {}, param.optional));
 		for (const auto& ret: binding.returns)
 			type.outputs.push_back(pin(std::string{ret.name}, toPinType(ret.type), {}, ret.optional));
 		types.push_back(std::move(type));

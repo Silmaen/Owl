@@ -1016,6 +1016,9 @@ void EditorLayer::openProject(const std::filesystem::path& iDir) {
 											  true);
 	mountProjectExtensions();
 	app::Application::get().getEngineContext().setSimulationSettings(m_project.simulation);
+	app::Application::get().getEngineContext().setNetworkRules(m_project.network);
+	app::Application::get().getEngineContext().setNetworkGame(m_project.name,
+															  network::getVersionNumber(m_project.version));
 	std::ignore = app::Application::get().getEngineContext().loadActionMap(m_project.projectDirectory);
 	std::ignore = app::Application::get().getEngineContext().loadLocalisation(m_project.projectDirectory);
 	app::Application::get().getEngineContext().setDefaultHud(m_project.defaultHud);
@@ -1114,6 +1117,8 @@ void EditorLayer::closeProject() {
 	context.getHudThemeLibrary().clear();
 	m_project = {};
 	app.getEngineContext().setSimulationSettings(m_project.simulation);
+	app.getEngineContext().setNetworkRules(m_project.network);
+	app.getEngineContext().setNetworkGame(m_project.name, network::getVersionNumber(m_project.version));
 	std::ignore = app.getEngineContext().loadActionMap({});
 	app.getEngineContext().setLocalisation({});
 	app.getEngineContext().setDefaultHud(m_project.defaultHud);

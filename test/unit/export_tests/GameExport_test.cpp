@@ -198,6 +198,7 @@ protected:
 				.fullscreen = false,
 				.resizable = true,
 				.rendererStackYaml = {},
+				.networkRulesYaml = {},
 				.imGui = false,
 				.packFlags = PackFlags::Default,
 				.cookCacheDirectory = {}};

@@ -11,6 +11,7 @@
 #include <app/Application.h>
 #include <app/EngineContext.h>
 #include <imgui.h>
+#include <network/GameSession.h>
 #include <physics/PhysicCommand.h>
 #include <scene/HudLibrary.h>
 #include <scene/LevelTransition.h>
@@ -228,6 +229,7 @@ void SceneDocument::resetHudValues() {
 	if (app::Application::instanced()) {
 		app::Application::get().getEngineContext().getHudLibrary().clear();
 		app::Application::get().getEngineContext().getDialogues().clear();
+		app::Application::get().getEngineContext().resetNetworkSession();
 	}
 }
 
@@ -280,6 +282,11 @@ auto SceneDocument::getTimelineSeconds(const uint64_t iFrames) const -> double {
 }
 
 auto SceneDocument::seek(const uint64_t iFrame) -> bool {
+	if (app::Application::instanced() && app::Application::get().getEngineContext().hasNetworkSession() &&
+		app::Application::get().getEngineContext().getNetworkSession().getRole() != network::NetRole::Offline) {
+		OWL_WARN("Rewind: A networked Play cannot be sought, the other machines would not follow.")
+		return false;
+	}
 	const uint64_t count = getTimelineFrameCount();
 	if (count == 0) {
 		OWL_WARN("Rewind: Nothing to seek in this Play session.")

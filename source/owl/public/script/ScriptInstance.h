@@ -8,11 +8,13 @@
 
 #pragma once
 
+#include "CallValue.h"
 #include "ScriptDebugger.h"
 #include "ScriptEngine.h"
 
 #include <cstdint>
 #include <optional>
+#include <span>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -211,6 +213,15 @@ public:
 	 * @return True if the function existed and was called successfully.
 	 */
 	[[nodiscard]] auto callFunction(const std::string& iName, uint64_t iEntityId) const -> bool;
+
+	/**
+	 * @brief
+	 *  Call an arbitrary named function in the script with plain values (a network call, a player number).
+	 * @param[in] iName The function name.
+	 * @param[in] iArgs The arguments, in order.
+	 * @return True if the function existed and was called successfully.
+	 */
+	[[nodiscard]] auto callFunction(const std::string& iName, std::span<const CallValue> iArgs) const -> bool;
 
 	/**
 	 * @brief

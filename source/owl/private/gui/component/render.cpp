@@ -31,6 +31,7 @@
 #include "renderer/MeshCache.h"
 #include "renderer/Renderer.h"
 #include "renderer/RendererParticles.h"
+#include "scene/ComponentRegistry.h"
 #include "scene/HudTheme.h"
 #include "scene/TilemapAsset.h"
 #include "scene/Tileset.h"
@@ -3538,6 +3539,42 @@ void renderProps(Oscillator& ioComponent) {
 	enumCombo("Easing", ioComponent.easing);
 	fieldTooltip("Linear: constant speed. Smooth: slowing down towards each end.");
 	ImGui::TextDisabled("A body moves through the physics step: a kinematic body carries what stands on it.");
+}
+
+void renderProps(Replicated& ioComponent) {
+	enumCombo("Authority", ioComponent.authority);
+	fieldTooltip("Server: the server simulates the entity and sends it. Owner: its owner simulates it and the server "
+				 "passes it on.");
+	std::ignore = resetUint("Owner", ioComponent.owner, 0, 0.1f, 0, 255);
+	fieldTooltip("Player owning the entity when the match starts, 0 for the host; scripts change it with "
+				 "net.set_owner.");
+	prop::Checkbox("Transform", &ioComponent.transform);
+	fieldTooltip("Send the position, rotation and scale.");
+	prop::Checkbox("Interpolate", &ioComponent.interpolate);
+	fieldTooltip("Show the received transforms smoothly, a little in the past; off shows them as they arrive.");
+	prop::Checkbox("Predict", &ioComponent.predict);
+	fieldTooltip("Its owner simulates it at once and only corrects it when the server disagrees.");
+	prop::DragFloat("Relevance", &ioComponent.relevance, 0.1f, 0.f, 100000.f, "%.1f");
+	fieldTooltip("Distance within which a client receives the entity, from the entities it owns; 0 for everywhere.");
+	prop::DragFloat("Priority", &ioComponent.priority, 0.01f, 0.f, 100.f, "%.2f");
+	fieldTooltip("Share of the snapshot budget: twice the priority, sent twice as often when the budget is short.");
+	prop::DragFloat("Hit Radius", &ioComponent.hitRadius, 0.01f, 0.f, 1000.f, "%.2f");
+	fieldTooltip("Radius of the hit sphere rewound to what a shooting player saw (lag compensation); 0 for none.");
+	if (!ImGui::TreeNodeEx("Components", ImGuiTreeNodeFlags_SpanAvailWidth))
+		return;
+	for (const auto& descriptor: scene::ComponentRegistry::getAll()) {
+		if (!descriptor.optional || descriptor.key == Replicated::key())
+			continue;
+		const auto found = std::ranges::find(ioComponent.components, descriptor.key);
+		bool sent = found != ioComponent.components.end();
+		if (!ImGui::Checkbox(descriptor.name.c_str(), &sent))
+			continue;
+		if (sent)
+			ioComponent.components.push_back(descriptor.key);
+		else
+			ioComponent.components.erase(found);
+	}
+	ImGui::TreePop();
 }
 
 void renderProps(Patrol& ioComponent) {

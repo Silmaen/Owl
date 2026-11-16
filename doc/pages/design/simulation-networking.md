@@ -2,7 +2,7 @@
 
 [TOC]
 
-Design of the deterministic simulation, its replay and rewind, and of the planned networking, which rests on them.
+Design of the deterministic simulation, its replay and rewind, and of the networking, which rests on them.
 
 ## Deterministic simulation {#simulation-deterministic}
 
@@ -87,11 +87,12 @@ A game both multiplayer and multi-platform keeps its players equal; a platform m
 - **Field of view:** the game bounds the gameplay field of view, whatever the aspect ratio of the screen
   (`SceneCamera::setMaxAspectRatio`, [Renderer](../renderer.md)).
 
-Planned with the networking:
+The networking enforces the rest ([Fair play](../networking.md#networking-fair-play)):
 
 - **Outcome:** the authoritative server decides; a platform difference only costs a prediction correction
-- **Input device:** the input type of each player is known to the lobby: matchmaking filter, optional crossplay
-- **Latency:** server-side lag compensation (hitboxes rewound to the time of the shot)
+- **Input device:** the input type of each player is known to the lobby; without crossplay the host refuses players of
+  another input type
+- **Latency:** server-side lag compensation rewinds the hit spheres to the time of the shot (`net.rewind_raycast`)
 - **Performance floor:** a minimum hardware profile, checked when a multiplayer match starts
 
 ## Networking and multiplayer {#networking-multiplayer}
@@ -100,14 +101,15 @@ Two network models: an authoritative server with client prediction (action games
 cross-platform deterministic simulation (management games, strategy), with desync detection by world hash. UDP on
 desktop and Android; in the browser, which opens no UDP socket, a WebSocket transport joins a native server.
 
-The transport and the sessions exist ([Networking](../networking.md)): `Transport` (ENet reliable UDP, in-process
-loopback), `NetServer` and `NetClient` with handshake, timeouts and reconnection. To do:
+The transport, the sessions, the lobby, the remote calls, both models, replication, interest management, the fair
+play checks and the debugging tools exist ([Networking](../networking.md)): the lobby and match start
+([game session](../networking.md#networking-game-session)), Lua `rpc_server`, `rpc_client` and `rpc_all`
+([remote calls](../networking.md#networking-rpc)), lockstep with desync detection
+([lockstep](../networking.md#networking-lockstep)), the `Replicated` component with interpolation and prediction
+([replication](../networking.md#networking-replication)), relevance and priorities
+([interest management](../networking.md#networking-interest)) and the Network panel
+([debugging](../networking.md#networking-debugging)). To do:
 
 - Android: the ENet backend built and run on the device
 - Web transport: the same messages over a WebSocket, a server on desktop accepting UDP and WebSocket clients in one
   session; the Web client never hosts
-- Replication: components marked as replicated, interpolation and prediction, server-owned and client-owned entities;
-  interest management (relevance areas and priorities, a client receives only the entities near it)
-- RPC: Lua `rpc_server(func, args)`, `rpc_client(func, args)`, `rpc_all(func, args)`; reliable and unreliable channels
-- Lobby: host / join, player list, ready state; Lua `on_player_join`, `on_player_leave`
-- Debugging: latency and packet-loss simulation in the editor, a network stats overlay (ping, bandwidth, entity count)

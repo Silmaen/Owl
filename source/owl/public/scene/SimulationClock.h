@@ -12,6 +12,7 @@
 #include "core/Timestep.h"
 
 #include <cstdint>
+#include <optional>
 
 namespace owl::scene {
 
@@ -137,6 +138,21 @@ public:
 
 	/**
 	 * @brief
+	 *  Hold the ticks at a total count: `advance()` runs none past it and keeps the time it could not use, a frame's
+	 *  worth of ticks at most (the lockstep network waits for the inputs of every player).
+	 * @param[in] iLimit The highest total tick count, none to run freely.
+	 */
+	void setTickLimit(std::optional<uint64_t> iLimit) { m_tickLimit = iLimit; }
+
+	/**
+	 * @brief
+	 *  The total tick count the clock is held at.
+	 * @return The limit, none when the clock runs freely.
+	 */
+	[[nodiscard]] auto getTickLimit() const -> std::optional<uint64_t> { return m_tickLimit; }
+
+	/**
+	 * @brief
 	 *  Number of ticks computed by the last `advance()`.
 	 * @return The tick count.
 	 */
@@ -181,6 +197,8 @@ private:
 	double m_accumulator = 0.0;
 	/// Ticks of the last `advance()`.
 	uint32_t m_frameTicks = 0;
+	/// Highest total tick count `advance()` may reach, none when free.
+	std::optional<uint64_t> m_tickLimit;
 	/// Ticks since the last `reset()`.
 	uint64_t m_totalTicks = 0;
 	/// Leftover time over the tick duration after the last `advance()`.

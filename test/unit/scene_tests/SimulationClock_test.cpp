@@ -16,6 +16,7 @@
 #include <chrono>
 #include <cstdint>
 #include <limits>
+#include <optional>
 #include <tuple>
 
 using namespace owl;
@@ -122,4 +123,17 @@ TEST(SimulationClock, SceneTakesTheTickRateOfItsEngineContext) {
 	source->getSimulationClock().setSettings({.tickRate = 45.f});
 	EXPECT_FLOAT_EQ(Scene::copy(source)->getSimulationClock().getSettings().tickRate, 45.f);
 	core::Log::invalidate();
+}
+
+TEST(SimulationClock, ATickLimitHoldsTheTicksAndKeepsTheTime) {
+	SimulationClock clock;
+	clock.setTickLimit(2);
+	EXPECT_EQ(clock.advance(makeFrame(50'000)), 2U);
+	EXPECT_EQ(clock.getTotalTickCount(), 2U);
+	EXPECT_EQ(clock.advance(makeFrame(16'667)), 0U);
+	clock.setTickLimit(10);
+	EXPECT_GE(clock.advance(makeFrame(0)), 1U);
+	EXPECT_EQ(clock.getTickLimit(), std::optional<uint64_t>{10});
+	clock.reset();
+	EXPECT_FALSE(clock.getTickLimit().has_value());
 }

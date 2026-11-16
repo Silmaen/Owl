@@ -861,6 +861,13 @@ private:
 
 	/**
 	 * @brief
+	 *  Draw the figures of the network session of a networked Play, bottom-left.
+	 * @param[in] iAbove Height kept free under the chip (the frame-time chip).
+	 */
+	void renderNetworkChip(float iAbove);
+
+	/**
+	 * @brief
 	 *  Remember the screen rectangle of an overlay control, so the game does not see the clicks it takes.
 	 * @param[in] iRect Rectangle of the overlay window.
 	 */

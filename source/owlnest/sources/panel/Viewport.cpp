@@ -22,6 +22,7 @@
 #include "../commands/VoxelCommands.h"
 
 #include <app/Application.h>
+#include <app/EngineContext.h>
 #include <data/voxel/VoxelRaycast.h>
 #include <scene/component/Animator.h>
 #include <scene/component/Light.h>
@@ -43,6 +44,7 @@
 #include <gui/widgets/Tooltip.h>
 #include <math/linAlgebra.h>
 #include <math/matrixCreation.h>
+#include <network/GameSession.h>
 #include <owlgui.h>
 #include <renderer/ClipSpace.h>
 #include <renderer/MeshCache.h>
@@ -1412,6 +1414,8 @@ void Viewport::renderOverlayToolbar() {
 	}
 	if (frameChip)
 		endOverlay();
+	if (!editing && settings.showNetworkChip)
+		renderNetworkChip(frameChip ? ImGui::GetFrameHeight() + 6.f : 0.f);
 
 	// While the scene runs, the navigation overlay (graph and routes of the vehicles) is one toggle, bottom-right.
 	if (!editing && m_isometric) {
@@ -1582,6 +1586,36 @@ void Viewport::renderReplayStatus() const {
 	ImGui::SameLine();
 	ImGui::AlignTextToFramePadding();
 	ImGui::TextColored(gui::vec(colour), " %s", label.c_str());
+}
+
+void Viewport::renderNetworkChip(const float iAbove) {
+	if (!app::Application::instanced() || !app::Application::get().getEngineContext().hasNetworkSession())
+		return;
+	const auto& stats = app::Application::get().getEngineContext().getNetworkSession().getStats();
+	if (stats.role == network::NetRole::Offline)
+		return;
+	const auto& theme = gui::UiLayer::getTheme();
+	const float margin = 8.f;
+	const auto id = static_cast<uint64_t>(mp_document->id());
+	if (beginOverlay(std::format("##vpNet{:x}", id), {m_lower.x() + margin, m_upper.y() - margin - iAbove},
+					 {0.f, 1.f})) {
+		gui::UiLayer::pushTextStyle(gui::TextStyle::Value);
+		const auto text = std::format(
+				"{} {}  {} players  {} ms  {:.1f} / {:.1f} kB/s  {} entities{}", gui::icon::globe,
+				stats.role == network::NetRole::Host ? "Host" : "Client", stats.players, stats.roundTripMs,
+				stats.sentPerSecond / 1000.f, stats.receivedPerSecond / 1000.f, stats.replicatedEntities,
+				stats.desyncTick.has_value() ? std::format("  desync at {}", *stats.desyncTick) : std::string{});
+		ImGui::AlignTextToFramePadding();
+		ImGui::TextColored(gui::vec(stats.desyncTick.has_value() ? theme.error : theme.textMuted), " %s ",
+						   text.c_str());
+		gui::UiLayer::popTextStyle();
+		gui::widgets::itemTooltip(
+				"Network stats", nullptr,
+				"The session of this Play: round trip, bytes sent and received per second, replicated "
+				"entities. Scene > Show > Network for the players and the simulated link.");
+		addOverlayRect(currentOverlayRect());
+	}
+	endOverlay();
 }
 
 void Viewport::renderPlayBanner(const bool iCollapsed) {
@@ -1893,6 +1927,7 @@ void Viewport::renderViewOverlay() {
 			option("Trigger icons", settings.showTriggerIcons);
 			option("HUD", settings.showHud);
 			option("Frame stats", settings.showFrameChip);
+			option("Network stats (networked Play)", settings.showNetworkChip);
 			if (m_isometric)
 				option("Navigation graph and routes", settings.showNavGraph);
 			ImGui::Separator();

@@ -31,6 +31,7 @@
 #include <map>
 #include <mutex>
 #include <optional>
+#include <span>
 #include <stdexcept>
 #include <stop_token>
 #include <string>
@@ -38,8 +39,10 @@
 #include <system_error>
 #include <thread>
 #include <tuple>
+#include <type_traits>
 #include <typeinfo>
 #include <utility>
+#include <variant>
 #include <vector>
 
 
@@ -1005,6 +1008,34 @@ auto LuaEngine::callFunction(const std::string_view iName, const uint64_t iArg) 
 		return false;
 	pushInteger(mp_state, static_cast<int64_t>(iArg));
 	return protectedCall(handler, 1, iName);
+}
+
+auto LuaEngine::callFunction(const std::string_view iName, const std::span<const CallValue> iArgs) const -> bool {
+	OWL_PROFILE_FUNCTION()
+
+	if (mp_state == nullptr)
+		return false;
+	const int handler = pushGlobalFunction(iName);
+	if (handler == 0)
+		return false;
+	lua_checkstack(mp_state, static_cast<int>(iArgs.size()));
+	for (const auto& arg: iArgs) {
+		std::visit(
+				[this]<typename T>(const T& iValue) -> void {
+					if constexpr (std::is_same_v<T, std::monostate>)
+						lua_pushnil(mp_state);
+					else if constexpr (std::is_same_v<T, bool>)
+						lua_pushboolean(mp_state, iValue ? 1 : 0);
+					else if constexpr (std::is_same_v<T, int64_t>)
+						pushInteger(mp_state, iValue);
+					else if constexpr (std::is_same_v<T, double>)
+						lua_pushnumber(mp_state, iValue);
+					else
+						lua_pushlstring(mp_state, iValue.data(), iValue.size());
+				},
+				arg);
+	}
+	return protectedCall(handler, static_cast<int>(iArgs.size()), iName);
 }
 
 auto LuaEngine::callFunctionForValue(const std::string_view iName, const uint64_t iEntity, const float iSeconds) const

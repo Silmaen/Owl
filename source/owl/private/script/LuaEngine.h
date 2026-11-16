@@ -9,6 +9,7 @@
 #pragma once
 
 #include "core/Core.h"
+#include "script/CallValue.h"
 #include "script/ScriptDebugger.h"
 #include "script/ScriptEngine.h"
 
@@ -272,6 +273,15 @@ public:
 	 * @return True on success.
 	 */
 	[[nodiscard]] auto callFunction(std::string_view iName, uint64_t iArg) const -> bool;
+
+	/**
+	 * @brief
+	 *  Call a global Lua function with plain values.
+	 * @param[in] iName Function name.
+	 * @param[in] iArgs Arguments, in order.
+	 * @return True on success.
+	 */
+	[[nodiscard]] auto callFunction(std::string_view iName, std::span<const CallValue> iArgs) const -> bool;
 
 	/**
 	 * @brief

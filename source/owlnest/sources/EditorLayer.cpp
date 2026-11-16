@@ -1101,6 +1101,9 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 		const auto previousMappings = m_project.gamepadMappings;
 		m_project = m_projectSettings.consumeResult();
 		app::Application::get().getEngineContext().setSimulationSettings(m_project.simulation);
+		app::Application::get().getEngineContext().setNetworkRules(m_project.network);
+		app::Application::get().getEngineContext().setNetworkGame(m_project.name,
+																  network::getVersionNumber(m_project.version));
 		app::Application::get().getEngineContext().setDefaultHud(m_project.defaultHud);
 		app::Application::get().getEngineContext().setDefaultHudTheme(m_project.defaultHudTheme);
 		if (m_project.gamepadMappings != previousMappings)
@@ -1114,6 +1117,7 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	m_assetImport.onImGuiRender();
 	m_sceneSettings.onImGuiRender();
 	m_mixerPanel.onImGuiRender();
+	m_networkPanel.onImGuiRender(app::Application::get().getEngineContext());
 	m_extensionPanel.onImGuiRender();
 	if (m_sceneSettings.consumeDirtyFlag()) {
 		syncActiveDocumentPanels();

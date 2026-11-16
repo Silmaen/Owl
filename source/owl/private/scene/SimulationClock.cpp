@@ -45,6 +45,7 @@ void SimulationClock::reset() {
 	m_frameTicks = 0;
 	m_totalTicks = 0;
 	m_alpha = 0.f;
+	m_tickLimit.reset();
 }
 
 auto SimulationClock::advance(const core::Timestep& iFrame) -> uint32_t {
@@ -56,6 +57,14 @@ auto SimulationClock::advance(const core::Timestep& iFrame) -> uint32_t {
 	if (ticks > m_settings.maxTicksPerFrame) {
 		ticks = m_settings.maxTicksPerFrame;
 		m_accumulator = std::fmod(m_accumulator, step);
+	}
+	if (m_tickLimit.has_value()) {
+		const uint64_t allowed = *m_tickLimit > m_totalTicks ? *m_tickLimit - m_totalTicks : 0;
+		if (ticks > allowed) {
+			m_accumulator += static_cast<double>(ticks - allowed) * step;
+			ticks = static_cast<uint32_t>(allowed);
+		}
+		m_accumulator = std::min(m_accumulator, static_cast<double>(m_settings.maxTicksPerFrame) * step);
 	}
 	m_frameTicks = ticks;
 	m_totalTicks += ticks;

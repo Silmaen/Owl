@@ -705,22 +705,22 @@
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 98618.0,
-      "p25_ns": 98513.5,
-      "p75_ns": 98653.5,
-      "min_ns": 98409.0,
-      "max_ns": 106720.0
+      "median_ns": 116080.0,
+      "p25_ns": 107802.5,
+      "p75_ns": 116533.5,
+      "min_ns": 107069.0,
+      "max_ns": 125787.0
     },
     {
       "name": "physics/frame_empty/60hz",
       "items": 60,
       "batch": 1,
       "samples": 15,
-      "median_ns": 144575.0,
-      "p25_ns": 144365.0,
-      "p75_ns": 144679.5,
-      "min_ns": 144156.0,
-      "max_ns": 153235.0
+      "median_ns": 173770.0,
+      "p25_ns": 173420.5,
+      "p75_ns": 174363.0,
+      "min_ns": 172932.0,
+      "max_ns": 190113.0
     },
     {
       "name": "physics/init/1000_bodies",

@@ -597,6 +597,12 @@ void Scene::onStartRuntime() {
 	m_railsFactor = 1.0;
 	m_paused = false;
 	m_pendingSpawns.clear();
+	if (mp_engineContext != nullptr) {
+		if (auto hook = mp_engineContext->getNetworkHook(); hook != nullptr)
+			m_networkHook = std::move(hook);
+	}
+	if (m_networkHook != nullptr)
+		m_networkHook->onRuntimeStart(*this);
 	syncWorldPositions();
 	const auto heldInput = startReplay();
 	m_frameInput.reset(heldInput);
@@ -771,6 +777,13 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 	m_frameInput.advance(frameInput);
 	m_inputSampler.observe(frameInput);
 	m_frameActions.update(getActionMap(), m_frameInput);
+	// A script may open the game's session while the scene plays: the scene reports to it from then on.
+	if (m_networkHook == nullptr && mp_engineContext != nullptr && mp_engineContext->hasNetworkSession()) {
+		m_networkHook = mp_engineContext->getNetworkHook();
+		m_networkHook->onRuntimeStart(*this);
+	}
+	if (m_networkHook != nullptr)
+		m_networkHook->onFrameBegin(*this, frameStep);
 	if (status == Status::Victory || status == Status::Death) {
 		m_systems.run(SystemPhase::Ended, *this, {.timeStep = frameStep, .render = iRender});
 		endReplayFrame();
@@ -799,6 +812,8 @@ void Scene::onUpdateRuntime(const core::Timestep& iTimeStep, const bool iRender)
 	m_worldTransformCacheActive = true;
 	prepareWorldTransforms();
 	m_systems.run(SystemPhase::Late, *this, context);
+	if (m_networkHook != nullptr)
+		m_networkHook->onFrameEnd(*this);
 
 	const auto tRender = now();
 	if (iRender)
@@ -899,10 +914,13 @@ void Scene::runSimulationTicks(const SystemContext& iFrame) {
 	m_tickContext.tickCount = iFrame.tickCount;
 	m_tickContext.alpha = iFrame.alpha;
 	m_inTick = true;
+	const uint64_t firstTick = m_simulationClock.getTotalTickCount() - iFrame.tickCount;
 	for (uint32_t index = 0; index < iFrame.tickCount; ++index) {
 		m_tickContext.tickIndex = index;
 		m_tickInput.advance(m_inputSampler.take());
 		m_tickActions.update(getActionMap(), m_tickInput);
+		if (m_networkHook != nullptr)
+			m_networkHook->onTick(*this, firstTick + index);
 		for (const auto phase:
 			 {SystemPhase::Scripts, SystemPhase::PrePhysics, SystemPhase::Physics, SystemPhase::PostPhysics})
 			m_systems.runTick(phase, *this, m_tickContext);
@@ -4842,6 +4860,10 @@ template<>
 OWL_API void
 Scene::onComponentAdded<component::ShipController>([[maybe_unused]] const Entity& iEntity,
 												   [[maybe_unused]] component::ShipController& ioComponent) {}
+
+template<>
+OWL_API void Scene::onComponentAdded<component::Replicated>([[maybe_unused]] const Entity& iEntity,
+															[[maybe_unused]] component::Replicated& ioComponent) {}
 
 template<>
 OWL_API void Scene::onComponentAdded<component::VoxelPlayer>([[maybe_unused]] const Entity& iEntity,
