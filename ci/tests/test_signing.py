@@ -15,7 +15,7 @@ from ci.utils import signing
 @pytest.fixture
 def bin_dir(tmp_path: Path) -> Path:
     """A fake Windows bin/ folder holding the Owl binaries and a third-party DLL."""
-    for name in ("OwlNest.exe", "OwlRunner.exe", "OwlEngine.dll", "glfw3.dll"):
+    for name in ("OwlNest.exe", "OwlRunner.exe", "OwlGameRunner.exe", "OwlEngine.dll", "glfw3.dll"):
         (tmp_path / name).write_bytes(b"MZ")
     return tmp_path
 
@@ -65,7 +65,7 @@ def test_signtool_uses_the_certificate_store(bin_dir: Path, monkeypatch: pytest.
     command = fake.commands[0]
     assert command[:4] == ["C:/tools/signtool.exe", "sign", "/sha1", "0123456789abcdef"]
     assert signing.DEFAULT_TIMESTAMP_URL in command
-    assert command[-3:] == [str(bin_dir / name) for name in signing.SIGNED_BINARIES]
+    assert command[-len(signing.SIGNED_BINARIES) :] == [str(bin_dir / name) for name in signing.SIGNED_BINARIES]
 
 
 @pytest.mark.usefixtures("no_signing_env")

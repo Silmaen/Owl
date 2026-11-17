@@ -51,9 +51,9 @@ namespace {
 
 // Runner file name the exporter looks for on this platform.
 #ifdef OWL_PLATFORM_WINDOWS
-constexpr auto g_runnerFile = "OwlRunner.exe";
+constexpr auto g_runnerFile = "OwlGameRunner.exe";
 #else
-constexpr auto g_runnerFile = "OwlRunner";
+constexpr auto g_runnerFile = "OwlGameRunner";
 #endif
 
 void writeFile(const std::filesystem::path& iPath, const std::string& iContent) {
@@ -165,6 +165,9 @@ protected:
 																  (m_project / "textures" / "a.png").string()));
 		writeFile(m_runner / g_runnerFile, "RUNNER");
 		writeFile(m_runner / "libfake.so", "NEW-LIB");
+		// The shader compiler of Owl Nest, next to the runner in its folder.
+		writeFile(m_runner / "libslang-compiler.so.0.2026.22", "SLANG");
+		writeFile(m_runner / "slang.dll", "SLANG");
 		app::Application::get().addAssetDirectory({"Project: test", m_project});
 		// The engine shaders baked by the build, as Owl Nest finds them in its working directory.
 #ifdef OWL_BAKED_ASSETS_DIR
@@ -311,6 +314,9 @@ TEST_F(GameExporterFixture, ExportWritesAPlayableFolder) {
 	EXPECT_EQ(result->packFile, gameDir / "My_Game__Deluxe.owlpack");
 	EXPECT_GT(result->packBytes, 0u);
 	EXPECT_EQ(readFile(gameDir / "libfake.so"), "NEW-LIB");
+	// The game reads baked shaders only: Slang stays with Owl Nest.
+	EXPECT_FALSE(exists(gameDir / "libslang-compiler.so.0.2026.22"));
+	EXPECT_FALSE(exists(gameDir / "slang.dll"));
 	EXPECT_EQ(readFile(gameDir / "logo" / "icon.png"), "ICON");
 	EXPECT_EQ(readFile(result->executable), "RUNNER");
 #ifdef OWL_PLATFORM_LINUX
@@ -438,8 +444,9 @@ TEST_F(GameExporterFixture, ExportBakesTheShadersOfTheProject) {
 
 	const auto source = renderer::utils::readShaderSource("shaders/renderer2D/quad.slang");
 	ASSERT_NE(source.find("Project variant"), std::string::npos);
-	for (const auto& [api, forVulkan]: {std::pair{"vulkan", true}, std::pair{"opengl", false}}) {
-		const auto key = renderer::utils::getShaderCacheKey(source, "renderer2D/quad", forVulkan);
+	for (const auto& [api, target]: {std::pair{"vulkan", renderer::utils::ShaderTarget::Vulkan},
+									 std::pair{"opengl", renderer::utils::ShaderTarget::OpenGl}}) {
+		const auto key = renderer::utils::getShaderCacheKey(source, "renderer2D/quad", target);
 		for (const auto* stage: {"vert", "frag"}) {
 			const auto entry = std::format("shaders/renderer2D/spirv/{}/quad.{}.spv", api, stage);
 			EXPECT_FALSE(readPackEntry(exported->packFile, entry).empty()) << entry;
@@ -488,8 +495,9 @@ TEST_F(GameExporterFixture, ExportBakesTheShadersOfTheMaterialGraphs) {
 		const auto base = renderer::utils::readShaderSource(std::format("shaders/renderer3D/{}.slang", shader));
 		const auto source = renderer::insertMaterialProgram(base, program);
 		ASSERT_TRUE(source.has_value());
-		for (const auto& [api, forVulkan]: {std::pair{"vulkan", true}, std::pair{"opengl", false}}) {
-			const auto key = renderer::utils::getShaderCacheKey(*source, "renderer3D/" + name, forVulkan);
+		for (const auto& [api, target]: {std::pair{"vulkan", renderer::utils::ShaderTarget::Vulkan},
+										 std::pair{"opengl", renderer::utils::ShaderTarget::OpenGl}}) {
+			const auto key = renderer::utils::getShaderCacheKey(*source, "renderer3D/" + name, target);
 			for (const auto* stage: {"vert", "frag"}) {
 				const auto entry = std::format("shaders/renderer3D/spirv/{}/{}.{}.spv", api, name, stage);
 				EXPECT_FALSE(readPackEntry(exported->packFile, entry).empty()) << entry;
@@ -650,6 +658,9 @@ void checkProjectPlaysFromItsExportFolder(const std::filesystem::path& iBinDir, 
 	const auto moved = root / "moved" / exported.filename();
 	std::filesystem::create_directories(moved.parent_path());
 	std::filesystem::rename(exported, moved);
+	// The runner of the game links no shader compiler: every shader comes baked in the pack.
+	for (const auto& entry: std::filesystem::directory_iterator(moved))
+		EXPECT_EQ(entry.path().filename().string().find("slang"), std::string::npos) << entry.path();
 	// Without OWL_USER_DIR the game writes its settings and logs in its own folder.
 	const auto gameLog = moved / "user" / "logs" / "Owl.log";
 	const int exitCode =
@@ -688,8 +699,8 @@ class GameExportEndToEnd : public testing::TestWithParam<std::filesystem::path> 
 TEST_P(GameExportEndToEnd, PlaysFromItsExportFolder) {
 	std::error_code ec;
 	const auto binDir = std::filesystem::canonical("/proc/self/exe", ec).parent_path();
-	if (ec || !exists(binDir / "OwlNest") || !exists(binDir / "OwlRunner"))
-		GTEST_SKIP() << "OwlNest / OwlRunner not built next to the test.";
+	if (ec || !exists(binDir / "OwlNest") || !exists(binDir / "OwlGameRunner"))
+		GTEST_SKIP() << "OwlNest / OwlGameRunner not built next to the test.";
 	checkProjectPlaysFromItsExportFolder(binDir, GetParam());
 }
 

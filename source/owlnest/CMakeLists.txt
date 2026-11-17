@@ -54,18 +54,25 @@ if (NOT ${PROJECT_PREFIX}_BUILD_NEST)
     return()
 endif ()
 
+# Two players from the same sources: OwlRunner, with the shader compiler, plays projects for the scenarios and the
+# frame bench; OwlGameRunner, without it nor Slang, is the runner an export copies and reads baked shaders only.
 set(RUNNER_NAME ${CMAKE_PROJECT_NAME}Runner)
-add_executable(${RUNNER_NAME} ${SRCS_RUNNER} ${HDRS_RUNNER})
-set_target_properties(${RUNNER_NAME} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
-target_include_directories(${RUNNER_NAME} PRIVATE sources)
-target_compile_definitions(${RUNNER_NAME} PRIVATE OWL_ASSETS_LOCATION="source/owlnest/assets")
-target_link_libraries(${RUNNER_NAME} PRIVATE ${ENGINE_NAME} ${OWL_NEST_COMMANDS})
-set_target_properties(${RUNNER_NAME} PROPERTIES FOLDER "App")
-target_import_so_files(${RUNNER_NAME})
-owl_windows_application(${RUNNER_NAME} "Owl Runner, the game player of Owl Engine")
-
-# yaml
-owl_target_link_libraries(${RUNNER_NAME} PRIVATE yaml-cpp REQUIRED)
+set(GAME_RUNNER_NAME ${CMAKE_PROJECT_NAME}GameRunner)
+foreach (_owl_runner ${RUNNER_NAME} ${GAME_RUNNER_NAME})
+    add_executable(${_owl_runner} ${SRCS_RUNNER} ${HDRS_RUNNER})
+    set_target_properties(${_owl_runner} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+    target_include_directories(${_owl_runner} PRIVATE sources)
+    target_compile_definitions(${_owl_runner} PRIVATE OWL_ASSETS_LOCATION="source/owlnest/assets")
+    target_link_libraries(${_owl_runner} PRIVATE ${ENGINE_NAME} ${OWL_NEST_COMMANDS})
+    set_target_properties(${_owl_runner} PROPERTIES FOLDER "App")
+    target_import_so_files(${_owl_runner})
+    owl_windows_application(${_owl_runner} "Owl Runner, the game player of Owl Engine")
+    owl_target_link_libraries(${_owl_runner} PRIVATE yaml-cpp REQUIRED)
+endforeach ()
+unset(_owl_runner)
+if (TARGET ${CMAKE_PROJECT_NAME}ShaderCompiler)
+    target_link_libraries(${RUNNER_NAME} PRIVATE ${CMAKE_PROJECT_NAME}ShaderCompiler)
+endif ()
 # ----==== app Runner ====----
 
 #
@@ -125,7 +132,10 @@ add_executable(${OWL_PROJECT} sources/main.cpp)
 set_target_properties(${OWL_PROJECT} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 set_target_properties(${OWL_PROJECT} PROPERTIES FOLDER "App")
 target_link_libraries(${OWL_PROJECT} PRIVATE ${OWL_NEST_CORE})
-add_dependencies(${OWL_PROJECT} ${CMAKE_PROJECT_NAME}Runner)
+if (TARGET ${CMAKE_PROJECT_NAME}ShaderCompiler)
+    target_link_libraries(${OWL_PROJECT} PRIVATE ${CMAKE_PROJECT_NAME}ShaderCompiler)
+endif ()
+add_dependencies(${OWL_PROJECT} ${CMAKE_PROJECT_NAME}Runner ${CMAKE_PROJECT_NAME}GameRunner)
 owl_windows_application(${OWL_PROJECT} "Owl Nest, the editor of Owl Engine")
 
 target_import_so_files(${OWL_PROJECT})
@@ -137,7 +147,7 @@ if (${PROJECT_PREFIX}_BUILD_SHARED AND WIN32)
     )
 endif ()
 
-install(TARGETS ${OWL_PROJECT} ${RUNNER_NAME}
+install(TARGETS ${OWL_PROJECT} ${RUNNER_NAME} ${GAME_RUNNER_NAME}
         COMPONENT Nest
         LIBRARY DESTINATION ${${PROJECT_PREFIX}_INSTALL_BIN}
         RUNTIME DESTINATION ${${PROJECT_PREFIX}_INSTALL_BIN}

@@ -71,20 +71,24 @@ void expectRecompiledAfter(const std::function<void(const std::filesystem::path&
 	const auto cached =
 			renderer::utils::getShaderCachedPath("owl_empty", "owl_test_recover", "vulkan", ShaderType::Compute);
 	std::filesystem::remove_all(renderer::utils::getCacheDirectory("owl_test_recover", ""));
-	const auto first = renderer::utils::loadOrCompileSpirv(g_computeSource, "owl_empty", "owl_test_recover", true,
-														   {ShaderType::Compute});
+	const auto first =
+			renderer::utils::loadOrCompileSpirv(g_computeSource, "owl_empty", "owl_test_recover",
+												renderer::utils::ShaderTarget::Vulkan, {ShaderType::Compute});
 	ASSERT_TRUE(first.has_value());
-	const auto key = renderer::utils::getShaderCacheKey(g_computeSource, "owl_test_recover/owl_empty", true);
+	const auto key = renderer::utils::getShaderCacheKey(g_computeSource, "owl_test_recover/owl_empty",
+														renderer::utils::ShaderTarget::Vulkan);
 	iDamage(cached, key);
-	const auto again = renderer::utils::loadOrCompileSpirv(g_computeSource, "owl_empty", "owl_test_recover", true,
-														   {ShaderType::Compute});
+	const auto again =
+			renderer::utils::loadOrCompileSpirv(g_computeSource, "owl_empty", "owl_test_recover",
+												renderer::utils::ShaderTarget::Vulkan, {ShaderType::Compute});
 	ASSERT_TRUE(again.has_value());
 	EXPECT_TRUE(again->origin.empty());
 	EXPECT_EQ(again->stages.at(ShaderType::Compute), first->stages.at(ShaderType::Compute));
 	EXPECT_FALSE(renderer::utils::checkSpirv(again->stages.at(ShaderType::Compute)).has_value());
 	// Back in the cache: the next load reads it.
-	const auto third = renderer::utils::loadOrCompileSpirv(g_computeSource, "owl_empty", "owl_test_recover", true,
-														   {ShaderType::Compute});
+	const auto third =
+			renderer::utils::loadOrCompileSpirv(g_computeSource, "owl_empty", "owl_test_recover",
+												renderer::utils::ShaderTarget::Vulkan, {ShaderType::Compute});
 	ASSERT_TRUE(third.has_value());
 	EXPECT_FALSE(third->origin.empty());
 	EXPECT_EQ(third->stages.at(ShaderType::Compute), first->stages.at(ShaderType::Compute));
@@ -224,7 +228,8 @@ TEST(ShaderFileUtils, LoadOrCompileUsesThePrecompiledStagesWithoutSlang) {
 	std::filesystem::remove_all(folder);
 	// Not Slang: only a precompiled hit can succeed.
 	const std::string source = "not a slang source";
-	const auto key = renderer::utils::getShaderCacheKey(source, "owl_test_precompiled/fake", true);
+	const auto key = renderer::utils::getShaderCacheKey(source, "owl_test_precompiled/fake",
+														renderer::utils::ShaderTarget::Vulkan);
 	const std::vector<uint32_t> vert = minimalSpirv(0, 0);
 	const std::vector<uint32_t> frag = minimalSpirv(1);
 	for (const auto& [stage, data]: {std::pair{ShaderType::Vertex, vert}, std::pair{ShaderType::Fragment, frag}}) {
@@ -234,17 +239,20 @@ TEST(ShaderFileUtils, LoadOrCompileUsesThePrecompiledStagesWithoutSlang) {
 		ASSERT_TRUE(renderer::utils::writeCachedShader(file, data));
 		renderer::utils::writeShaderHash(file, key);
 	}
-	const auto stages = renderer::utils::loadOrCompileSpirv(source, "fake", "owl_test_precompiled", true,
+	const auto stages = renderer::utils::loadOrCompileSpirv(source, "fake", "owl_test_precompiled",
+															renderer::utils::ShaderTarget::Vulkan,
 															{ShaderType::Vertex, ShaderType::Fragment});
 	ASSERT_TRUE(stages.has_value());
 	EXPECT_EQ(stages->stages.at(ShaderType::Vertex), vert);
 	EXPECT_EQ(stages->stages.at(ShaderType::Fragment), frag);
 	EXPECT_EQ(stages->origin, folder / "spirv" / "vulkan");
 	// The OpenGL output was not baked, and an edited source does not match the stored hash: both compile, and fail.
-	EXPECT_FALSE(renderer::utils::loadOrCompileSpirv(source, "fake", "owl_test_precompiled", false,
+	EXPECT_FALSE(renderer::utils::loadOrCompileSpirv(source, "fake", "owl_test_precompiled",
+													 renderer::utils::ShaderTarget::OpenGl,
 													 {ShaderType::Vertex, ShaderType::Fragment})
 						 .has_value());
-	EXPECT_FALSE(renderer::utils::loadOrCompileSpirv(source + " edited", "fake", "owl_test_precompiled", true,
+	EXPECT_FALSE(renderer::utils::loadOrCompileSpirv(source + " edited", "fake", "owl_test_precompiled",
+													 renderer::utils::ShaderTarget::Vulkan,
 													 {ShaderType::Vertex, ShaderType::Fragment})
 						 .has_value());
 	std::filesystem::remove_all(folder);
@@ -258,15 +266,16 @@ TEST(ShaderFileUtils, LoadOrCompileFillsThenReadsTheCache) {
 	const auto cached =
 			renderer::utils::getShaderCachedPath("owl_empty", "owl_test_cache", "vulkan", ShaderType::Compute);
 	std::filesystem::remove_all(renderer::utils::getCacheDirectory("owl_test_cache", ""));
-	const auto compiled =
-			renderer::utils::loadOrCompileSpirv(source, "owl_empty", "owl_test_cache", true, {ShaderType::Compute});
+	const auto compiled = renderer::utils::loadOrCompileSpirv(
+			source, "owl_empty", "owl_test_cache", renderer::utils::ShaderTarget::Vulkan, {ShaderType::Compute});
 	ASSERT_TRUE(compiled.has_value());
 	ASSERT_FALSE(compiled->stages.at(ShaderType::Compute).empty());
 	EXPECT_TRUE(compiled->origin.empty());
-	const auto key = renderer::utils::getShaderCacheKey(source, "owl_test_cache/owl_empty", true);
+	const auto key = renderer::utils::getShaderCacheKey(source, "owl_test_cache/owl_empty",
+														renderer::utils::ShaderTarget::Vulkan);
 	EXPECT_TRUE(renderer::utils::isShaderCacheValid(cached, key));
-	const auto again =
-			renderer::utils::loadOrCompileSpirv(source, "owl_empty", "owl_test_cache", true, {ShaderType::Compute});
+	const auto again = renderer::utils::loadOrCompileSpirv(
+			source, "owl_empty", "owl_test_cache", renderer::utils::ShaderTarget::Vulkan, {ShaderType::Compute});
 	ASSERT_TRUE(again.has_value());
 	EXPECT_EQ(again->stages.at(ShaderType::Compute), compiled->stages.at(ShaderType::Compute));
 	EXPECT_EQ(again->origin, cached.parent_path());
@@ -366,14 +375,16 @@ TEST(ShaderFileUtils, CorruptPrecompiledSpirvIsRecompiled) {
 	const auto root = std::filesystem::current_path();
 	const auto folder = root / "shaders" / "owl_test_recover_pre";
 	std::filesystem::remove_all(folder);
-	const auto key = renderer::utils::getShaderCacheKey(g_computeSource, "owl_test_recover_pre/owl_empty", true);
+	const auto key = renderer::utils::getShaderCacheKey(g_computeSource, "owl_test_recover_pre/owl_empty",
+														renderer::utils::ShaderTarget::Vulkan);
 	const auto file = root / renderer::utils::getPrecompiledShaderPath("owl_empty", "owl_test_recover_pre", "vulkan",
 																	   ShaderType::Compute);
 	std::filesystem::create_directories(file.parent_path());
 	writeBytes(file, std::string(10, '\x01'));
 	renderer::utils::writeShaderHash(file, key);
-	const auto loaded = renderer::utils::loadOrCompileSpirv(g_computeSource, "owl_empty", "owl_test_recover_pre", true,
-															{ShaderType::Compute});
+	const auto loaded =
+			renderer::utils::loadOrCompileSpirv(g_computeSource, "owl_empty", "owl_test_recover_pre",
+												renderer::utils::ShaderTarget::Vulkan, {ShaderType::Compute});
 	ASSERT_TRUE(loaded.has_value());
 	EXPECT_TRUE(loaded->origin.empty());
 	EXPECT_FALSE(renderer::utils::checkSpirv(loaded->stages.at(ShaderType::Compute)).has_value());
@@ -386,16 +397,18 @@ TEST(ShaderFileUtils, RecompileSpirvReplacesRefusedStoredOutput) {
 	auto app = makeDummyApp("shaderRecompile");
 	std::filesystem::remove_all(renderer::utils::getCacheDirectory("owl_test_refused", ""));
 	// Just compiled: nothing better to try.
-	EXPECT_FALSE(renderer::utils::recompileSpirv(g_computeSource, "owl_empty", "owl_test_refused", true, {},
-												 "refused by the test")
+	EXPECT_FALSE(renderer::utils::recompileSpirv(g_computeSource, "owl_empty", "owl_test_refused",
+												 renderer::utils::ShaderTarget::Vulkan, {}, "refused by the test")
 						 .has_value());
 	const auto cached =
 			renderer::utils::getShaderCachedPath("owl_empty", "owl_test_refused", "vulkan", ShaderType::Compute);
-	const auto loaded = renderer::utils::recompileSpirv(g_computeSource, "owl_empty", "owl_test_refused", true,
-														cached.parent_path(), "refused by the test");
+	const auto loaded = renderer::utils::recompileSpirv(g_computeSource, "owl_empty", "owl_test_refused",
+														renderer::utils::ShaderTarget::Vulkan, cached.parent_path(),
+														"refused by the test");
 	ASSERT_TRUE(loaded.has_value());
 	EXPECT_TRUE(loaded->origin.empty());
-	const auto key = renderer::utils::getShaderCacheKey(g_computeSource, "owl_test_refused/owl_empty", true);
+	const auto key = renderer::utils::getShaderCacheKey(g_computeSource, "owl_test_refused/owl_empty",
+														renderer::utils::ShaderTarget::Vulkan);
 	EXPECT_TRUE(renderer::utils::isShaderCacheValid(cached, key));
 	std::filesystem::remove_all(renderer::utils::getCacheDirectory("owl_test_refused", ""));
 	app::Application::invalidate();

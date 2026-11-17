@@ -11,8 +11,13 @@ This page describes the high-level architecture of the Owl Engine.
 ```mermaid
 flowchart TD
     Nest["OwlNest<br/>editor"] --> Core
-    Runner["OwlRunner<br/>game runner"] --> Core
+    Runner["OwlRunner<br/>scenarios, benches, projects"] --> Core
+    GameRunner["OwlGameRunner<br/>exported game"] --> Core
     Bake["OwlShaderBake<br/>build tool"] --> Core
+    Compiler["OwlShaderCompiler<br/>Slang"] -.->|installed before main| Core
+    Nest -.-> Compiler
+    Runner -.-> Compiler
+    Bake -.-> Compiler
     Core["OwlEngine core<br/>app, scene, data, event, math, core"] --> Render["render<br/>renderer, window, input"]
     Core --> Phys["physics<br/>Jolt"]
     Core --> Audio["audio<br/>OpenAL, libsndfile"]
@@ -174,11 +179,13 @@ See [Sound System](sound.md) for the full user guide covering components, spatia
 
 The project produces several executables built on top of the `OwlEngine` shared library:
 
-| Application   | Directory                | Description                                                      |
-|---------------|--------------------------|------------------------------------------------------------------|
-| Owl Nest      | `source/owlnest/`        | Scene editor with project management (`OwlNest`)                 |
-| OwlRunner     | `source/owlnest/runner/` | Game runner: plays an exported game, scenarios and frame benches |
-| OwlShaderBake | `source/tools/`          | Build tool precompiling the engine shaders to SPIR-V             |
+| Application       | Directory                 | Description                                                                     |
+|-------------------|---------------------------|---------------------------------------------------------------------------------|
+| Owl Nest          | `source/owlnest/`         | Scene editor with project management (`OwlNest`)                                |
+| OwlRunner         | `source/owlnest/runner/`  | Development runner with the shader compiler: scenarios, frame benches, projects |
+| OwlGameRunner     | `source/owlnest/runner/`  | Same sources without shader compiler nor Slang: the runner an export copies     |
+| OwlShaderBake     | `source/tools/`           | Build tool precompiling the engine shaders (`--targets=` picks the formats)     |
+| OwlShaderCompiler | `source/shader_compiler/` | Object library holding Slang, linked by every program that compiles shaders     |
 
 ## Project System
 
@@ -195,7 +202,7 @@ flowchart LR
         As --- Cfg[game_settings.yml, input_actions.yml]
     end
     Project -->|open| Nest[Owl Nest: edit, Play]
-    Project -->|Pack Game / OwlNest --export| Pack[.owlpack + runner.yml + OwlRunner]
+    Project -->|Pack Game / OwlNest --export| Pack[.owlpack + runner.yml + OwlGameRunner]
     Pack --> Game[Exported game]
 ```
 
@@ -239,7 +246,8 @@ flowchart TD
     Bake["OwlShaderBake<br/>at build time"] --> Pre["precompiled SPIR-V<br/>spirv/&lt;api&gt;/"]
     Load -->|first| Cache[".spv cache"]
     Load -->|then| Pre
-    Load -->|no key match| Slang["compileSlangToSpirv<br/>Slang API"]
+    Load -->|no key match| Slang["compileShader<br/>installed compiler"]
+    Load -.->|no compiler, no match| Err["error: export again"]
     Cache --> Check[checkSpirv]
     Pre --> Check
     Check --> Refl["shaderReflect<br/>spirv-cross"]
@@ -253,22 +261,26 @@ flowchart TD
 Shaders are written in **Slang** (`.slang` files), a single-source shading language:
 
 1. **Source**: `engine_assets/shaders/<renderer>/<name>.slang`
-2. **Compilation**: `compileSlangToSpirv()` compiles Slang to SPIR-V at runtime using the Slang C++ API, with
-   `BACKEND_VULKAN` or `BACKEND_OPENGL` preprocessor defines
+2. **Compilation**: `compileShader(source, module, ShaderTarget)` hands the source to the compiler installed by
+   `OwlShaderCompiler` (`setShaderCompiler`, the only code that links Slang), with the `BACKEND_VULKAN`,
+   `BACKEND_OPENGL` or `BACKEND_WEBGPU` define of the target (`Vulkan`, `OpenGl`, `VulkanAndroid`, `WebGpu`); a program
+   without the library (`OwlGameRunner`) has no compiler
 3. **Reflection**: `shaderReflect()` uses spirv-cross to extract uniform buffers and sampled images from the SPIR-V
    bytecode
 4. **Caching**: SPIR-V binaries are cached as `.spv` files with hash-based validation
 5. **Precompiled**: the build runs the shader bake tool (`source/tools/shader_bake/main.cpp`), which writes the
-   SPIR-V of every engine shader, for both APIs, to `bin/assets/shaders/<renderer>/spirv/<api>/`
-   (`getPrecompiledShaderPath`); both CPack components install it and a game pack embeds it, with the project shaders
+   SPIR-V of every engine shader, for Vulkan and OpenGL (`--targets=` adds `vulkan_android` and `webgpu`), to
+   `bin/assets/shaders/<renderer>/spirv/<target>/` (`getPrecompiledShaderPath`; WGSL goes to
+   `wgsl/<name>.<stage>.wgsl`, `getPrecompiledWgslPath`); both CPack components install it and a game pack embeds it, with the project shaders
    compiled by the export. `loadOrCompileSpirv` reads the cache, then the open pack, then this output, and compiles
-   with Slang only when none matches the cache key of the current source (an edited shader, hot reload, another
-   Slang version)
+   only when none matches the cache key of the current source (an edited shader, hot reload, another Slang version)
+   and a compiler is installed; the exported game, which has none, logs an error naming the shader
 6. **Recovery**: stored SPIR-V is checked before a driver sees it (`checkSpirv`: header, instructions that fill the
    file, `OpFunctionEnd` last, an entry point of the expected stage); an absent, truncated, garbled or misplaced file,
    or one the driver still refuses (Vulkan module or pipeline creation, OpenGL compilation, spirv-cross translation of
    the GLSL fallback: `recompileSpirv`), is compiled again from the Slang source and the result goes to the cache,
-   which is read first at the next start. The log names the file, the reason and the recompilation
+   which is read first at the next start. The log names the file, the reason and the recompilation; without a
+   compiler the recompilation fails with a clear error
 
 See [Renderer > Shader System](renderer.md) for the shader class API.
 
@@ -414,7 +426,7 @@ flowchart TD
     Exp["GameExporter<br/>Pack Game"] --> Scan["AssetScanner<br/>from firstScene"]
     Scan -->|"scenes, scripts,<br/>textures, sounds, fonts"| Writer["PackWriter<br/>zstd per entry"]
     Writer --> Pack[".owlpack<br/>OWLP header, XOR TOC"]
-    Exp --> Folder["runner.yml, game_info.yml,<br/>OwlRunner"]
+    Exp --> Folder["runner.yml, game_info.yml,<br/>OwlGameRunner"]
     Folder -->|PackFile| Reader["PackReader::tryOpen"]
     Pack --> Reader
     Reader --> Bytes["readAssetBytes<br/>pack first, then asset folders"]

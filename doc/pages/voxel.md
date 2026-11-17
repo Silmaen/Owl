@@ -200,7 +200,7 @@ A voxel world reaches the screen through two pieces:
   disabled, so the blend composites correctly. The entity must carry a `RendererTag` routing it to the voxel layer;
   `Scene::render` only draws voxel worlds when the active layer is voxel-capable (mirroring the raycast path).
   Finished meshes are uploaded by `Scene::renderWithStack` before the first layer draws, so the editor viewport and
-  the exported game (`OwlRunner`) share the same path; `RendererVoxel::getStatistics(cache)` reports the cached and
+  the exported game (`OwlGameRunner`) share the same path; `RendererVoxel::getStatistics(cache)` reports the cached and
   drawn mesh counts and the meshing counters of a `VoxelMeshCache` (one per engine context, see
   [Architecture](architecture.md#engine-context)).
 

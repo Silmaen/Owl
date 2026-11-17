@@ -9,7 +9,6 @@
 #include "owlpch.h"
 
 #include "app/Application.h"
-#include "core/external/slang.h"
 #include "data/assets/AssetSearchPaths.h"
 #include "platform/UserDirectory.h"
 #include "shaderFileUtils.h"
@@ -33,7 +32,6 @@ OWL_DIAG_POP
 #include <fstream>
 #include <functional>
 #include <mutex>
-#include <slang-tag-version.h>
 #include <sstream>
 #include <system_error>
 #include <vector>
@@ -172,11 +170,61 @@ auto computeShaderHash(const std::string& iSource) -> std::string {
 	return std::to_string(hasher(iSource));
 }
 
-auto getShaderCacheKey(const std::string& iSource, const std::string& iModuleName, const bool iForVulkan)
+auto getShaderTargetFolder(const ShaderTarget iTarget) -> std::string {
+	switch (iTarget) {
+		case ShaderTarget::Vulkan:
+			return "vulkan";
+		case ShaderTarget::OpenGl:
+			return "opengl";
+		case ShaderTarget::VulkanAndroid:
+			return "vulkan_android";
+		case ShaderTarget::WebGpu:
+			return "webgpu";
+	}
+	return "unknown";
+}
+
+auto parseShaderTarget(const std::string_view iFolder) -> std::optional<ShaderTarget> {
+	for (const auto target:
+		 {ShaderTarget::Vulkan, ShaderTarget::OpenGl, ShaderTarget::VulkanAndroid, ShaderTarget::WebGpu}) {
+		if (getShaderTargetFolder(target) == iFolder)
+			return target;
+	}
+	return std::nullopt;
+}
+
+auto getShaderTargetProfile(const ShaderTarget iTarget) -> std::string_view {
+	switch (iTarget) {
+		case ShaderTarget::Vulkan:
+			return "spirv_1_6";
+		case ShaderTarget::OpenGl:
+			return "glsl_450";
+		case ShaderTarget::VulkanAndroid:
+			return "spirv_1_3";
+		case ShaderTarget::WebGpu:
+			return "wgsl";
+	}
+	return "";
+}
+
+auto getShaderTargetMacro(const ShaderTarget iTarget) -> std::string_view {
+	switch (iTarget) {
+		case ShaderTarget::Vulkan:
+		case ShaderTarget::VulkanAndroid:
+			return "BACKEND_VULKAN";
+		case ShaderTarget::OpenGl:
+			return "BACKEND_OPENGL";
+		case ShaderTarget::WebGpu:
+			return "BACKEND_WEBGPU";
+	}
+	return "";
+}
+
+auto getShaderCacheKey(const std::string& iSource, const std::string& iModuleName, const ShaderTarget iTarget)
 		-> std::string {
-	return std::format("backend={};module={};slang={};macros=BACKEND_{}=1;profile={};source={}",
-					   iForVulkan ? "vulkan" : "opengl", iModuleName, SLANG_TAG_VERSION,
-					   iForVulkan ? "VULKAN" : "OPENGL", iForVulkan ? "spirv_1_6" : "glsl_450", iSource);
+	return std::format("backend={};module={};slang={};macros={}=1;profile={};source={}", getShaderTargetFolder(iTarget),
+					   iModuleName, OWL_SLANG_VERSION, getShaderTargetMacro(iTarget), getShaderTargetProfile(iTarget),
+					   iSource);
 }
 
 auto remapBuiltinsForOpenGl(std::vector<uint32_t>& ioSpirv) -> uint32_t {
@@ -265,24 +313,6 @@ void writeShaderHash(const std::filesystem::path& iCachedPath, const std::string
 	}
 }
 
-namespace {
-auto getOrCreateGlobalSession() -> Slang::ComPtr<slang::IGlobalSession> {
-	static Slang::ComPtr<slang::IGlobalSession> session;
-	if (session == nullptr) {
-		if (SLANG_FAILED(slang::createGlobalSession(session.writeRef()))) {
-			OWL_CORE_ERROR("Slang: Cannot create the global session.")
-			return nullptr;
-		}
-	}
-	return session;
-}
-
-auto extractSpirv(slang::IBlob* iBlob) -> std::vector<uint32_t> {
-	const auto* data = static_cast<const uint32_t*>(iBlob->getBufferPointer());
-	const auto size = iBlob->getBufferSize() / sizeof(uint32_t);
-	return {data, data + size};
-}
-}// namespace
 
 namespace {
 // An include as the loaders find it: on disk, in the open pack, or relative to an asset folder.
@@ -345,105 +375,33 @@ auto readShaderSource(const std::filesystem::path& iFile) -> std::string {
 	return out;
 }
 
-auto compileSlangToSpirv(const std::string& iSource, const std::string& iModuleName, const bool iForVulkan)
+namespace {
+auto installedCompiler() -> ShaderCompiler& {
+	static ShaderCompiler compiler;
+	return compiler;
+}
+}// namespace
+
+auto setShaderCompiler(ShaderCompiler iCompiler) -> ShaderCompiler {
+	return std::exchange(installedCompiler(), std::move(iCompiler));
+}
+
+auto hasShaderCompiler() -> bool { return static_cast<bool>(installedCompiler()); }
+
+auto compileShader(const std::string& iSource, const std::string& iModuleName, const ShaderTarget iTarget)
 		-> SlangCompilationResult {
-	OWL_PROFILE_FUNCTION()
-
-	SlangCompilationResult result;
-	auto globalSession = getOrCreateGlobalSession();
-	if (globalSession == nullptr)
-		return result;
-
-	slang::TargetDesc targetDesc{};
-	targetDesc.format = SLANG_SPIRV;
-	targetDesc.profile = globalSession->findProfile(iForVulkan ? "spirv_1_6" : "glsl_450");
-	targetDesc.flags = SLANG_TARGET_FLAG_GENERATE_SPIRV_DIRECTLY;
-	const char* backendDefine = iForVulkan ? "BACKEND_VULKAN" : "BACKEND_OPENGL";
-	slang::PreprocessorMacroDesc macroDesc{};
-	macroDesc.name = backendDefine;
-	macroDesc.value = "1";
-	slang::SessionDesc sessionDesc{};
-	sessionDesc.targets = &targetDesc;
-	sessionDesc.targetCount = 1;
-	sessionDesc.preprocessorMacros = &macroDesc;
-	sessionDesc.preprocessorMacroCount = 1;
-	Slang::ComPtr<slang::ISession> session;
-	if (SLANG_FAILED(globalSession->createSession(sessionDesc, session.writeRef()))) {
-		OWL_CORE_ERROR("Slang: Cannot create a session for module '{}'.", iModuleName)
-		return result;
+	if (!hasShaderCompiler()) {
+		OWL_CORE_ERROR("Shader: Cannot compile '{}' for {}, this program has no shader compiler.", iModuleName,
+					   getShaderTargetFolder(iTarget))
+		return {};
 	}
+	return installedCompiler()(iSource, iModuleName, iTarget);
+}
 
-	Slang::ComPtr<slang::IBlob> diagnosticBlob;
-	auto* module = session->loadModuleFromSourceString(iModuleName.c_str(), iModuleName.c_str(), iSource.c_str(),
-													   diagnosticBlob.writeRef());
-	if (module == nullptr) {
-		if (diagnosticBlob != nullptr)
-
-			OWL_CORE_ERROR("Slang: Loading module '{}' failed: {}.", iModuleName,
-						   static_cast<const char*>(diagnosticBlob->getBufferPointer()))
-		return result;
-	}
-	if (diagnosticBlob != nullptr && diagnosticBlob->getBufferSize() > 0) {
-		const std::string_view diag(static_cast<const char*>(diagnosticBlob->getBufferPointer()),
-									diagnosticBlob->getBufferSize());
-		// Filter out harmless warning 41012 (capabilities auto-upgrade), "warning 41012" or "warning[E41012]"
-		if (diag.find("41012") == std::string_view::npos)
-
-			OWL_CORE_WARN("Slang: Warnings for '{}': {}.", iModuleName, diag)
-	}
-
-	struct EntryPointInfo {
-		const char* name;
-		gpu::ShaderType type;
-	};
-	constexpr EntryPointInfo entryPoints[] = {{"vertexMain", gpu::ShaderType::Vertex},
-											  {"fragmentMain", gpu::ShaderType::Fragment},
-											  {"computeMain", gpu::ShaderType::Compute}};
-
-	for (const auto& [name, type]: entryPoints) {
-		Slang::ComPtr<slang::IEntryPoint> entryPoint;
-		if (SLANG_FAILED(module->findEntryPointByName(name, entryPoint.writeRef()))) {
-			continue;
-		}
-
-		slang::IComponentType* const components[] = {module, entryPoint};
-		Slang::ComPtr<slang::IComponentType> composedProgram;
-		if (SLANG_FAILED(session->createCompositeComponentType(components, 2, composedProgram.writeRef(),
-															   diagnosticBlob.writeRef()))) {
-			OWL_CORE_ERROR("Slang: Cannot compose the program of entry point '{}' in module '{}'.", name, iModuleName)
-			return result;
-		}
-
-		Slang::ComPtr<slang::IComponentType> linkedProgram;
-		if (SLANG_FAILED(composedProgram->link(linkedProgram.writeRef(), diagnosticBlob.writeRef()))) {
-			if (diagnosticBlob != nullptr)
-
-				OWL_CORE_ERROR("Slang: Linking of '{}' failed: {}.", name,
-							   static_cast<const char*>(diagnosticBlob->getBufferPointer()))
-			return result;
-		}
-
-		Slang::ComPtr<slang::IBlob> spirvBlob;
-		if (SLANG_FAILED(linkedProgram->getEntryPointCode(0, 0, spirvBlob.writeRef(), diagnosticBlob.writeRef()))) {
-			if (diagnosticBlob != nullptr)
-
-				OWL_CORE_ERROR("Slang: Code generation of '{}' failed: {}.", name,
-							   static_cast<const char*>(diagnosticBlob->getBufferPointer()))
-			return result;
-		}
-
-		result.spirvData[type] = extractSpirv(spirvBlob);
-		OWL_CORE_TRACE("Slang: Compiled entry point '{}' ({}) -> {} SPIR-V words.", name, magic_enum::enum_name(type),
-					   result.spirvData[type].size())
-	}
-
-	if (result.spirvData.empty()) {
-		OWL_CORE_ERROR("Slang: Module '{}' has no known entry point.", iModuleName)
-		return result;
-	}
-
-	result.success = true;
-	return result;
+auto getPrecompiledWgslPath(const std::string& iShaderName, const std::string& iRenderer, const gpu::ShaderType& iType)
+		-> std::filesystem::path {
+	auto file = std::filesystem::path("shaders") / iRenderer / "wgsl" / (iShaderName + getCacheExtension(iType));
+	return file.replace_extension(".wgsl");
 }
 
 auto getPrecompiledShaderPath(const std::string& iShaderName, const std::string& iRenderer,
@@ -581,15 +539,15 @@ auto readStoredStages(const std::vector<gpu::ShaderType>& iStages, const std::st
 
 // Compile a shader from its Slang source and store the result in the working directory cache.
 auto compileAndCache(const std::string& iSource, const std::string& iShaderName, const std::string& iRenderer,
-					 const bool iForVulkan) -> std::optional<LoadedSpirv> {
-	const std::string api = iForVulkan ? "vulkan" : "opengl";
-	auto compiled = compileSlangToSpirv(iSource, iShaderName, iForVulkan);
+					 const ShaderTarget iTarget) -> std::optional<LoadedSpirv> {
+	const std::string api = getShaderTargetFolder(iTarget);
+	auto compiled = compileShader(iSource, iShaderName, iTarget);
 	if (!compiled.success) {
 		OWL_CORE_ERROR("Slang: Compilation of shader '{}/{}' ({}) failed.", iRenderer, iShaderName, api)
 		return std::nullopt;
 	}
 	if (app::Application::instanced()) {
-		const auto cacheKey = getShaderCacheKey(iSource, iRenderer + "/" + iShaderName, iForVulkan);
+		const auto cacheKey = getShaderCacheKey(iSource, iRenderer + "/" + iShaderName, iTarget);
 		createCacheDirectoryIfNeeded(iRenderer, api);
 		for (const auto& [stage, data]: compiled.spirvData) {
 			const auto cachedPath = getShaderCachedPath(iShaderName, iRenderer, api, stage);
@@ -603,12 +561,12 @@ auto compileAndCache(const std::string& iSource, const std::string& iShaderName,
 }// namespace
 
 auto loadOrCompileSpirv(const std::string& iSource, const std::string& iShaderName, const std::string& iRenderer,
-						const bool iForVulkan, const std::vector<gpu::ShaderType>& iStages)
+						const ShaderTarget iTarget, const std::vector<gpu::ShaderType>& iStages)
 		-> std::optional<LoadedSpirv> {
 	OWL_PROFILE_FUNCTION()
 
-	const std::string api = iForVulkan ? "vulkan" : "opengl";
-	const auto cacheKey = getShaderCacheKey(iSource, iRenderer + "/" + iShaderName, iForVulkan);
+	const std::string api = getShaderTargetFolder(iTarget);
+	const auto cacheKey = getShaderCacheKey(iSource, iRenderer + "/" + iShaderName, iTarget);
 	bool damaged = false;
 	// The cache is ours: a refused entry is removed, so that it is not refused again at every start.
 	const auto tryFolder = [&](const std::function<std::filesystem::path(gpu::ShaderType)>& iPathOf,
@@ -634,7 +592,7 @@ auto loadOrCompileSpirv(const std::string& iSource, const std::string& iShaderNa
 		return std::nullopt;
 	};
 	if (iStages.empty())
-		return compileAndCache(iSource, iShaderName, iRenderer, iForVulkan);
+		return compileAndCache(iSource, iShaderName, iRenderer, iTarget);
 	if (app::Application::instanced()) {
 		if (auto loaded = tryFolder(
 					[&](const gpu::ShaderType iStage) -> std::filesystem::path {
@@ -671,32 +629,42 @@ auto loadOrCompileSpirv(const std::string& iSource, const std::string& iShaderNa
 			return loaded;
 		}
 	}
+	if (!hasShaderCompiler()) {
+		OWL_CORE_ERROR("Shader: No baked {} shader '{}/{}' matches its source; export the game again.", api, iRenderer,
+					   iShaderName)
+		return std::nullopt;
+	}
 	if (!damaged) {
 		OWL_CORE_DEBUG("Slang: Compiling shader '{}/{}' for {}.", iRenderer, iShaderName, api)
-		return compileAndCache(iSource, iShaderName, iRenderer, iForVulkan);
+		return compileAndCache(iSource, iShaderName, iRenderer, iTarget);
 	}
 	OWL_CORE_WARN("Shader: No usable stored SPIR-V for '{}/{}' ({}), recompiling from the Slang source.", iRenderer,
 				  iShaderName, api)
-	auto loaded = compileAndCache(iSource, iShaderName, iRenderer, iForVulkan);
+	auto loaded = compileAndCache(iSource, iShaderName, iRenderer, iTarget);
 	if (loaded.has_value())
 		OWL_CORE_DEBUG("Shader: '{}/{}' ({}) recompiled, the cache holds the new SPIR-V.", iRenderer, iShaderName, api)
 	return loaded;
 }
 
 auto recompileSpirv(const std::string& iSource, const std::string& iShaderName, const std::string& iRenderer,
-					const bool iForVulkan, const std::filesystem::path& iOrigin, const std::string_view iReason)
+					const ShaderTarget iTarget, const std::filesystem::path& iOrigin, const std::string_view iReason)
 		-> std::optional<LoadedSpirv> {
 	OWL_PROFILE_FUNCTION()
 
-	const std::string api = iForVulkan ? "vulkan" : "opengl";
+	const std::string api = getShaderTargetFolder(iTarget);
 	if (iOrigin.empty()) {
 		OWL_CORE_ERROR("Shader: SPIR-V of '{}/{}' ({}) just compiled from the Slang source rejected, {}.", iRenderer,
 					   iShaderName, api, iReason)
 		return std::nullopt;
 	}
+	if (!hasShaderCompiler()) {
+		OWL_CORE_ERROR("Shader: Baked {} shader '{}/{}' from '{}' rejected, {}; no compiler here.", api, iRenderer,
+					   iShaderName, iOrigin.string(), iReason)
+		return std::nullopt;
+	}
 	OWL_CORE_WARN("Shader: Stored SPIR-V of '{}/{}' ({}) from '{}' rejected, {}; recompiling from the Slang source.",
 				  iRenderer, iShaderName, api, iOrigin.string(), iReason)
-	auto loaded = compileAndCache(iSource, iShaderName, iRenderer, iForVulkan);
+	auto loaded = compileAndCache(iSource, iShaderName, iRenderer, iTarget);
 	if (loaded.has_value())
 		OWL_CORE_DEBUG("Shader: '{}/{}' ({}) recompiled, the cache holds the new SPIR-V.", iRenderer, iShaderName, api)
 	return loaded;

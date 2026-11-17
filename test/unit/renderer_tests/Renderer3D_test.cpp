@@ -63,7 +63,8 @@ TEST(Renderer3D, Mesh3dShaderCompilesVulkan) {
 	core::Log::init(core::Log::Level::Off);
 	const auto source = loadMesh3d();
 	ASSERT_FALSE(source.empty());
-	const auto result = renderer::utils::compileSlangToSpirv(source, "mesh3d_vk_check", /*iForVulkan=*/true);
+	const auto result =
+			renderer::utils::compileShader(source, "mesh3d_vk_check", renderer::utils::ShaderTarget::Vulkan);
 	ASSERT_TRUE(result.success);
 	EXPECT_TRUE(result.spirvData.contains(renderer::gpu::ShaderType::Vertex));
 	EXPECT_TRUE(result.spirvData.contains(renderer::gpu::ShaderType::Fragment));
@@ -74,7 +75,8 @@ TEST(Renderer3D, Mesh3dShaderCompilesOpenGl) {
 	core::Log::init(core::Log::Level::Off);
 	const auto source = loadMesh3d();
 	ASSERT_FALSE(source.empty());
-	const auto result = renderer::utils::compileSlangToSpirv(source, "mesh3d_gl_check", /*iForVulkan=*/false);
+	const auto result =
+			renderer::utils::compileShader(source, "mesh3d_gl_check", renderer::utils::ShaderTarget::OpenGl);
 	EXPECT_TRUE(result.success);
 	core::Log::invalidate();
 }
@@ -83,7 +85,7 @@ TEST(Renderer3D, Mesh3dShaderBindings) {
 	core::Log::init(core::Log::Level::Off);
 	const auto source = loadMesh3d();
 	ASSERT_FALSE(source.empty());
-	const auto result = renderer::utils::compileSlangToSpirv(source, "mesh3d_reflect", /*iForVulkan=*/true);
+	const auto result = renderer::utils::compileShader(source, "mesh3d_reflect", renderer::utils::ShaderTarget::Vulkan);
 	ASSERT_TRUE(result.success);
 	const auto it = result.spirvData.find(renderer::gpu::ShaderType::Fragment);
 	ASSERT_NE(it, result.spirvData.end());
@@ -114,7 +116,8 @@ TEST(Renderer3D, Mesh3dOpenGlSamplesAtMost32Textures) {
 	core::Log::init(core::Log::Level::Off);
 	const auto source = loadMesh3d();
 	ASSERT_FALSE(source.empty());
-	const auto result = renderer::utils::compileSlangToSpirv(source, "mesh3d_gl_units", /*iForVulkan=*/false);
+	const auto result =
+			renderer::utils::compileShader(source, "mesh3d_gl_units", renderer::utils::ShaderTarget::OpenGl);
 	ASSERT_TRUE(result.success);
 	const auto it = result.spirvData.find(renderer::gpu::ShaderType::Fragment);
 	ASSERT_NE(it, result.spirvData.end());
@@ -141,8 +144,10 @@ TEST(Renderer3D, SkinnedShaderCompilesAndReadsThePaletteAtTheInstanceBinding) {
 	const auto path = findRoot() / "engine_assets" / "shaders" / "renderer3D" / "skinned3d.slang";
 	const auto source = renderer::utils::readShaderSource(path);
 	ASSERT_FALSE(source.empty());
-	EXPECT_TRUE(renderer::utils::compileSlangToSpirv(source, "skinned3d_gl_check", /*iForVulkan=*/false).success);
-	const auto result = renderer::utils::compileSlangToSpirv(source, "skinned3d_vk_check", /*iForVulkan=*/true);
+	EXPECT_TRUE(renderer::utils::compileShader(source, "skinned3d_gl_check", renderer::utils::ShaderTarget::OpenGl)
+						.success);
+	const auto result =
+			renderer::utils::compileShader(source, "skinned3d_vk_check", renderer::utils::ShaderTarget::Vulkan);
 	ASSERT_TRUE(result.success);
 	const auto it = result.spirvData.find(renderer::gpu::ShaderType::Vertex);
 	ASSERT_NE(it, result.spirvData.end());

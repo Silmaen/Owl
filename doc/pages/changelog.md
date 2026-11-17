@@ -43,6 +43,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Engine Demo: a **Mods** button in the main menu, the `demo.bounty` Script mod (a Bounty component paying gold) and the `demo.nodes` plugin, played by `mod_bounty.owltest` and `mod_screen.owltest`.
 - Plugins: the Visual Script palette lists the annotated Lua modules and graphs of the mounted packs, the material editor their custom nodes (`material.import_node`), the hierarchy their prefabs (`prefab.instantiate`) ([Mods](mods.md#mods-plugins)).
 - Owl Nest Extensions panel: entry script field and section (`extension.script`, game events, components) and a **Conflicts** section; `extension.set` takes `script`.
+- Shader targets `VulkanAndroid` (SPIR-V 1.3) and `WebGpu` (WGSL) for `renderer::utils::compileShader`, baked with `OwlShaderBake --targets=`.
+- `OwlGameRunner`, the runner an export copies, built without shader compiler nor Slang.
 
 ### Changed
 
@@ -51,6 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - OBJ meshes are read by ufbx, which already reads FBX: polygons are triangulated, `.mtl` files and textures are found as before.
 - Jolt 5.7.0 changes the simulation: the frozen world hashes, the Engine Demo tour replay and the dice scenario are recorded again.
 - Bench: the Linux baseline takes the empty physics frame at 174 µs (60 Hz) and 116 µs (144 Hz) measured with Jolt 5.7.0.
+- Slang leaves `libOwlEngine` for the `OwlShaderCompiler` library, linked by Owl Nest, `OwlRunner`, the tools and the tests.
+- An exported game no longer bundles Slang and fails with a clear error on a shader that is not baked.
 
 ### Removed
 

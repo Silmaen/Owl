@@ -12,7 +12,7 @@ set_target_properties(${OWL_SHADER_BAKE} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
         FOLDER "Tools")
 # The shader utilities are engine internals, as for the benchmarks.
-target_link_libraries(${OWL_SHADER_BAKE} PRIVATE ${ENGINE_NAME} ${ENGINE_NAME}Private)
+target_link_libraries(${OWL_SHADER_BAKE} PRIVATE ${ENGINE_NAME} ${ENGINE_NAME}Private ${CMAKE_PROJECT_NAME}ShaderCompiler)
 target_import_so_files(${OWL_SHADER_BAKE})
 
 if (CMAKE_CROSSCOMPILING AND NOT CMAKE_CROSSCOMPILING_EMULATOR)

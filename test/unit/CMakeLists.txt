@@ -79,6 +79,9 @@ foreach (child ${children})
             target_link_libraries(${PROJECT_PREFIX_LOWER}_${child}_unit_test ${ENGINE_NAME})
             target_link_libraries(${PROJECT_PREFIX_LOWER}_${child}_unit_test ${ENGINE_NAME}Private)
             target_link_libraries(${PROJECT_PREFIX_LOWER}_${child}_unit_test Owl_BaseTest)
+            if (TARGET ${CMAKE_PROJECT_NAME}ShaderCompiler)
+                target_link_libraries(${PROJECT_PREFIX_LOWER}_${child}_unit_test ${CMAKE_PROJECT_NAME}ShaderCompiler)
+            endif ()
             set(_owl_jolt_tests ${SRCS})
             list(FILTER _owl_jolt_tests INCLUDE REGEX "/Jolt[^/]*_test\\.cpp$")
             owl_jolt_sources(${PROJECT_PREFIX_LOWER}_${child}_unit_test ${_owl_jolt_tests})
@@ -204,7 +207,7 @@ foreach (child ${children})
                 # Hostile-script tests rely on the Lua quotas: a quota that never fires must fail, not hang.
                 set_tests_properties(${PROJECT_PREFIX_LOWER}_${child}_UTests PROPERTIES TIMEOUT 300)
             endif ()
-            # export_tests exports each shipped project with OwlNest and plays it with the exported OwlRunner.
+            # export_tests exports each shipped project with OwlNest and plays it with the exported OwlGameRunner.
             if (${child} STREQUAL "export_tests")
                 # One case exports and plays the whole Engine Demo: it grows with the demo (~2 min on GCC Debug).
                 set(exportTimeout 1200)
@@ -217,7 +220,7 @@ foreach (child ${children})
                 endif ()
                 # Started first when ctest has no timings yet (a fresh CI tree): the longest entries of the run.
                 set_tests_properties(${testNames} PROPERTIES TIMEOUT ${exportTimeout} COST 1000)
-                foreach (app_target ${CMAKE_PROJECT_NAME}Nest ${CMAKE_PROJECT_NAME}Runner)
+                foreach (app_target ${CMAKE_PROJECT_NAME}Nest ${CMAKE_PROJECT_NAME}GameRunner)
                     if (TARGET ${app_target})
                         add_dependencies(${PROJECT_PREFIX_LOWER}_${child}_unit_test ${app_target})
                     endif ()

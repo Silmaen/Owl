@@ -186,9 +186,9 @@ auto Shader::recompile(const std::string& iSlangSource) -> bool {
 auto Shader::buildProgram(const std::string& iSlangSource, renderer::utils::LoadedSpirv& ioSpirv) const -> uint32_t {
 	if (const uint32_t program = createProgram(ioSpirv.stages); program != 0)
 		return program;
-	auto again =
-			renderer::utils::recompileSpirv(iSlangSource, getName(), getRenderer(), /*iForVulkan=*/false,
-											ioSpirv.origin, "the OpenGL driver or the GLSL translation refused it");
+	auto again = renderer::utils::recompileSpirv(iSlangSource, getName(), getRenderer(),
+												 renderer::utils::ShaderTarget::OpenGl, ioSpirv.origin,
+												 "the OpenGL driver or the GLSL translation refused it");
 	if (!again.has_value())
 		return 0;
 	ioSpirv = std::move(*again);
@@ -199,9 +199,9 @@ auto Shader::compileOrGetOpenGlBinaries(const std::string& iSlangSource) const
 		-> std::optional<renderer::utils::LoadedSpirv> {
 	OWL_PROFILE_FUNCTION()
 
-	auto shaderData =
-			renderer::utils::loadOrCompileSpirv(iSlangSource, getName(), getRenderer(),
-												/*iForVulkan=*/false, {ShaderType::Vertex, ShaderType::Fragment});
+	auto shaderData = renderer::utils::loadOrCompileSpirv(iSlangSource, getName(), getRenderer(),
+														  renderer::utils::ShaderTarget::OpenGl,
+														  {ShaderType::Vertex, ShaderType::Fragment});
 	if (!shaderData.has_value())
 		return std::nullopt;
 	for (auto&& [stage, data]: shaderData->stages)

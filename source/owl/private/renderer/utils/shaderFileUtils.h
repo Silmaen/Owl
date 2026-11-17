@@ -13,6 +13,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
+#include <functional>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -24,6 +25,50 @@
  *  Namespace gathering utility functions used across different renderers.
  */
 namespace owl::renderer::utils {
+
+/// Shader formats a Slang source compiles to, one per target platform of a game.
+enum struct ShaderTarget : uint8_t {
+	/// SPIR-V 1.6 with `BACKEND_VULKAN`, for the desktop Vulkan backend.
+	Vulkan,
+	/// SPIR-V for `GL_ARB_gl_spirv` (`glsl_450` profile) with `BACKEND_OPENGL`.
+	OpenGl,
+	/// SPIR-V 1.3 with `BACKEND_VULKAN`, for Vulkan 1.1 Android devices.
+	VulkanAndroid,
+	/// WGSL with `BACKEND_WEBGPU`, for the browser.
+	WebGpu,
+};
+
+/**
+ * @brief
+ *  Folder of a target under `shaders/<renderer>/spirv/` and in the shader cache, also its name in the logs.
+ * @param[in] iTarget Shader target.
+ * @return `vulkan`, `opengl`, `vulkan_android` or `webgpu`.
+ */
+OWL_API auto getShaderTargetFolder(ShaderTarget iTarget) -> std::string;
+
+/**
+ * @brief
+ *  Find a shader target by its folder name.
+ * @param[in] iFolder Folder name (`getShaderTargetFolder`).
+ * @return The target, or nothing for an unknown name.
+ */
+OWL_API auto parseShaderTarget(std::string_view iFolder) -> std::optional<ShaderTarget>;
+
+/**
+ * @brief
+ *  Slang profile of a target.
+ * @param[in] iTarget Shader target.
+ * @return `spirv_1_6`, `glsl_450`, `spirv_1_3` or `wgsl`.
+ */
+OWL_API auto getShaderTargetProfile(ShaderTarget iTarget) -> std::string_view;
+
+/**
+ * @brief
+ *  Preprocessor macro a target defines to 1 for the shaders.
+ * @param[in] iTarget Shader target.
+ * @return `BACKEND_VULKAN` (both Vulkan targets), `BACKEND_OPENGL` or `BACKEND_WEBGPU`.
+ */
+OWL_API auto getShaderTargetMacro(ShaderTarget iTarget) -> std::string_view;
 
 /**
  * @brief
@@ -138,13 +183,14 @@ OWL_API auto computeShaderHash(const std::string& iSource) -> std::string;
 /**
  * @brief
  *  Build the cache key of a Slang shader: everything that changes the compiled output.
- *  Pass it to `isShaderCacheValid` / `writeShaderHash` instead of the bare source.
+ *  Pass it to `isShaderCacheValid` / `writeShaderHash` instead of the bare source. The Slang version comes from the
+ *  build, so that a runner without the compiler checks the keys of its baked shaders.
  * @param[in] iSource Slang source.
  * @param[in] iModuleName Shader name (the module path inside the asset tree).
- * @param[in] iForVulkan Target backend (selects the profile and the `BACKEND_*` macro).
- * @return The key: backend, module, Slang version, macros, profile and source.
+ * @param[in] iTarget Target format (selects the profile and the `BACKEND_*` macro).
+ * @return The key: target, module, Slang version, macros, profile and source.
  */
-OWL_API auto getShaderCacheKey(const std::string& iSource, const std::string& iModuleName, bool iForVulkan)
+OWL_API auto getShaderCacheKey(const std::string& iSource, const std::string& iModuleName, ShaderTarget iTarget)
 		-> std::string;
 
 /**
@@ -161,7 +207,7 @@ OWL_API auto remapBuiltinsForOpenGl(std::vector<uint32_t>& ioSpirv) -> uint32_t;
 
 /**
  * @brief
- *  Translate an OpenGL SPIR-V module (`compileSlangToSpirv(..., false)`) into GLSL 4.50 core source, for OpenGL
+ *  Translate an OpenGL SPIR-V module (`compileShader(..., ShaderTarget::OpenGl)`) into GLSL 4.50 core source, for OpenGL
  *  drivers without `GL_ARB_gl_spirv`. Bindings and locations are kept, so the reflection of the SPIR-V applies.
  * @param[in] iSpirv SPIR-V words of one entry point.
  * @param[in] iName Shader name, for the logs.
@@ -192,7 +238,7 @@ OWL_API void writeShaderHash(const std::filesystem::path& iCachedPath, const std
  *  Path of a stage compiled at build time, relative to an asset folder.
  * @param[in] iShaderName Shader name (file stem of the Slang source).
  * @param[in] iRenderer Renderer folder (`renderer2D`, `bitonic_sort`...).
- * @param[in] iRendererApi Graphics API folder (`vulkan` or `opengl`).
+ * @param[in] iRendererApi Target folder (`getShaderTargetFolder` of a SPIR-V target).
  * @param[in] iType Shader stage.
  * @return `shaders/<renderer>/spirv/<api>/<name>.<stage>.spv`, with its `.hash` next to it.
  */
@@ -234,16 +280,18 @@ struct LoadedSpirv {
  *  asset folder), then a Slang compilation whose output goes to that cache. Stored stages are used only when their
  *  hash matches `getShaderCacheKey` of the current source and `checkSpirv` accepts them, so an edited source (hot
  *  reload), another Slang version or a damaged file is compiled again; every rejected file is logged with its reason.
- *  The cache comes first so that a stored output a driver refused (`recompileSpirv`) stays replaced.
+ *  The cache comes first so that a stored output a driver refused (`recompileSpirv`) stays replaced. Without a shader
+ *  compiler (`hasShaderCompiler`, the runner of an exported game), a shader without usable stored stages fails with
+ *  an error that names it.
  * @param[in] iSource Slang source of the shader.
  * @param[in] iShaderName Shader name (Slang module name).
  * @param[in] iRenderer Renderer folder of the shader.
- * @param[in] iForVulkan True for the Vulkan target, false for OpenGL.
+ * @param[in] iTarget SPIR-V target of the running backend.
  * @param[in] iStages Stages that must all be found for a stored output to be used.
  * @return The SPIR-V per stage and its origin, or `std::nullopt` when the compilation fails.
  */
 OWL_API auto loadOrCompileSpirv(const std::string& iSource, const std::string& iShaderName,
-								const std::string& iRenderer, bool iForVulkan,
+								const std::string& iRenderer, ShaderTarget iTarget,
 								const std::vector<gpu::ShaderType>& iStages) -> std::optional<LoadedSpirv>;
 
 /**
@@ -251,23 +299,28 @@ OWL_API auto loadOrCompileSpirv(const std::string& iSource, const std::string& i
  *  Compile a shader again after a driver refused its stored SPIR-V, and put the result in the cache.
  *
  *  Logs the rejected folder, the reason and the outcome. SPIR-V that was just compiled (empty origin) is not
- *  compiled again: the same output would be refused the same way.
+ *  compiled again: the same output would be refused the same way, and without a shader compiler nothing is.
  * @param[in] iSource Slang source of the shader.
  * @param[in] iShaderName Shader name (Slang module name).
  * @param[in] iRenderer Renderer folder of the shader.
- * @param[in] iForVulkan True for the Vulkan target, false for OpenGL.
+ * @param[in] iTarget SPIR-V target of the running backend.
  * @param[in] iOrigin `LoadedSpirv::origin` of the refused SPIR-V.
  * @param[in] iReason What refused it, for the log.
  * @return The new SPIR-V (empty origin), or `std::nullopt` when nothing better can be produced.
  */
 OWL_API auto recompileSpirv(const std::string& iSource, const std::string& iShaderName, const std::string& iRenderer,
-							bool iForVulkan, const std::filesystem::path& iOrigin, std::string_view iReason)
+							ShaderTarget iTarget, const std::filesystem::path& iOrigin, std::string_view iReason)
 		-> std::optional<LoadedSpirv>;
 
-/// Output of `compileSlangToSpirv`.
+/// WGSL source per stage, as the WebGPU target produces it.
+using WgslStages = std::unordered_map<gpu::ShaderType, std::string>;
+
+/// Output of `compileShader`.
 struct SlangCompilationResult {
-	/// SPIR-V of every entry point found (`vertexMain`, `fragmentMain`, `computeMain`).
+	/// SPIR-V of every entry point found (`vertexMain`, `fragmentMain`, `computeMain`), for the SPIR-V targets.
 	SpirvStages spirvData;
+	/// WGSL of every entry point found, for `ShaderTarget::WebGpu`.
+	WgslStages wgslData;
 	/// True when the module loaded and at least one entry point compiled.
 	bool success = false;
 };
@@ -282,15 +335,46 @@ struct SlangCompilationResult {
  */
 OWL_API auto readShaderSource(const std::filesystem::path& iFile) -> std::string;
 
+/// A Slang compiler: source, module name and target in, code per stage out.
+using ShaderCompiler = std::function<SlangCompilationResult(const std::string& iSource, const std::string& iModuleName,
+															ShaderTarget iTarget)>;
+
 /**
  * @brief
- *  Compile a Slang source to SPIR-V, one module per entry point.
+ *  Install the Slang compiler. The `OwlShaderCompiler` library installs it in every program it is linked into (Owl
+ *  Nest, `OwlShaderBake`, the tests); the runner of an exported game links none and reads baked shaders only.
+ * @param[in] iCompiler The compiler, or an empty function to remove it.
+ * @return The compiler installed before, so that a caller (a test) can put it back.
+ */
+OWL_API auto setShaderCompiler(ShaderCompiler iCompiler) -> ShaderCompiler;
+
+/**
+ * @brief
+ *  Tell whether a shader compiler is installed.
+ * @return True in Owl Nest, the build tools and the tests; false in the runner of an exported game.
+ */
+OWL_API auto hasShaderCompiler() -> bool;
+
+/**
+ * @brief
+ *  Compile a Slang source for a target, one module per entry point, through the installed compiler.
  * @param[in] iSource Slang source.
  * @param[in] iModuleName Slang module name.
- * @param[in] iForVulkan True for `spirv_1_6` with `BACKEND_VULKAN`, false for `glsl_450` with `BACKEND_OPENGL`.
- * @return The SPIR-V per stage and the success flag.
+ * @param[in] iTarget Target format.
+ * @return The code per stage and the success flag; a failure, logged, when no compiler is installed.
  */
-OWL_API auto compileSlangToSpirv(const std::string& iSource, const std::string& iModuleName, bool iForVulkan)
+OWL_API auto compileShader(const std::string& iSource, const std::string& iModuleName, ShaderTarget iTarget)
 		-> SlangCompilationResult;
+
+/**
+ * @brief
+ *  Path of a WGSL stage compiled ahead of time, relative to an asset folder.
+ * @param[in] iShaderName Shader name (file stem of the Slang source).
+ * @param[in] iRenderer Renderer folder.
+ * @param[in] iType Shader stage.
+ * @return `shaders/<renderer>/wgsl/<name>.<stage>.wgsl`, with its `.hash` next to it.
+ */
+OWL_API auto getPrecompiledWgslPath(const std::string& iShaderName, const std::string& iRenderer,
+									const gpu::ShaderType& iType) -> std::filesystem::path;
 
 }// namespace owl::renderer::utils

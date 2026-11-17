@@ -42,7 +42,7 @@ OWL_API auto getShaderFormat() -> ShaderFormat;
  * @brief
  *  Create and compile one OpenGL shader object from the SPIR-V of a stage, in the format of `getShaderFormat`.
  * @param[in] iStage Shader stage.
- * @param[in] iSpirv OpenGL SPIR-V of the stage (`compileSlangToSpirv(..., false)`).
+ * @param[in] iSpirv OpenGL SPIR-V of the stage (`compileShader(..., ShaderTarget::OpenGl)`).
  * @param[in] iName Shader name, for the logs.
  * @return The shader object, or 0 on failure (logged).
  */

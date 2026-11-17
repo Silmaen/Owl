@@ -249,7 +249,8 @@ TEST(MaterialGraph, InsertedProgramsCompileWithSlang) {
 			ASSERT_TRUE(program.isValid());
 			const auto inserted = insertMaterialProgram(source, program);
 			ASSERT_TRUE(inserted.has_value());
-			const auto result = utils::compileSlangToSpirv(*inserted, shader + "_material_test", /*iForVulkan=*/true);
+			const auto result =
+					utils::compileShader(*inserted, shader + "_material_test", renderer::utils::ShaderTarget::Vulkan);
 			EXPECT_TRUE(result.success) << shader;
 			EXPECT_EQ(result.spirvData.size(), 2u) << shader;
 		}
@@ -276,7 +277,7 @@ TEST(MaterialGraph, EngineDemoGraphsCompile) {
 		ASSERT_TRUE(program.isValid()) << entry.path();
 		const auto inserted = insertMaterialProgram(source, program);
 		ASSERT_TRUE(inserted.has_value());
-		EXPECT_TRUE(utils::compileSlangToSpirv(*inserted, "demo_material", /*iForVulkan=*/true).success)
+		EXPECT_TRUE(utils::compileShader(*inserted, "demo_material", renderer::utils::ShaderTarget::Vulkan).success)
 				<< entry.path();
 	}
 	EXPECT_GE(graphs, 2u);
@@ -300,7 +301,7 @@ TEST(MaterialGraph, SampleGameGraphsCompile) {
 		ASSERT_TRUE(program.isValid()) << entry.path();
 		const auto inserted = insertMaterialProgram(source, program);
 		ASSERT_TRUE(inserted.has_value());
-		EXPECT_TRUE(utils::compileSlangToSpirv(*inserted, "sample_material", /*iForVulkan=*/true).success)
+		EXPECT_TRUE(utils::compileShader(*inserted, "sample_material", renderer::utils::ShaderTarget::Vulkan).success)
 				<< entry.path();
 	}
 	EXPECT_GE(graphs, 3u);

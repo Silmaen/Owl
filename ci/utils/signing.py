@@ -35,7 +35,7 @@ TIMESTAMP_ENV = "OWL_SIGN_TIMESTAMP_URL"
 DEFAULT_TIMESTAMP_URL = "http://timestamp.digicert.com"
 """Default timestamp server (the timestamp protocol signs its answer, plain HTTP is the norm)."""
 
-SIGNED_BINARIES: tuple[str, ...] = ("OwlNest.exe", "OwlRunner.exe", "OwlEngine.dll")
+SIGNED_BINARIES: tuple[str, ...] = ("OwlNest.exe", "OwlRunner.exe", "OwlGameRunner.exe", "OwlEngine.dll")
 """Owl's own binaries in the build's bin/; third-party DLLs keep their vendor's signature, or none."""
 
 

@@ -98,7 +98,7 @@ a progress dialog (spaces and reserved characters of the name become `_`):
 | File                       | Content                                                                                                                                                  |
 |----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `<GameName>.owlpack`       | The assets the scenes reference, the shaders of the renderers the game uses (project shaders compiled), the fonts and their atlases, `game_settings.yml` |
-| `<GameName>` / `.exe`      | The game executable (a copy of `OwlRunner`)                                                                                                              |
+| `<GameName>` / `.exe`      | The game executable (a copy of `OwlGameRunner`)                                                                                                          |
 | `*.so` / `*.dll`           | The shared libraries of the engine                                                                                                                       |
 | `runner.yml`               | First scene, pack, window, renderer stack, renderer families, ImGui, icon                                                                                |
 | `game_info.yml`            | Name, version, author, description, engine version, date, platform                                                                                       |

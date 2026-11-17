@@ -42,11 +42,11 @@ TEST(RendererVoxel, VoxelShaderCompiles) {
 	core::Log::init(core::Log::Level::Off);
 	const auto source = loadVoxelShader();
 	ASSERT_FALSE(source.empty());
-	const auto vk = renderer::utils::compileSlangToSpirv(source, "voxel_vk_check", /*iForVulkan=*/true);
+	const auto vk = renderer::utils::compileShader(source, "voxel_vk_check", renderer::utils::ShaderTarget::Vulkan);
 	EXPECT_TRUE(vk.success);
 	EXPECT_TRUE(vk.spirvData.contains(renderer::gpu::ShaderType::Vertex));
 	EXPECT_TRUE(vk.spirvData.contains(renderer::gpu::ShaderType::Fragment));
-	const auto gl = renderer::utils::compileSlangToSpirv(source, "voxel_gl_check", /*iForVulkan=*/false);
+	const auto gl = renderer::utils::compileShader(source, "voxel_gl_check", renderer::utils::ShaderTarget::OpenGl);
 	EXPECT_TRUE(gl.success);
 	core::Log::invalidate();
 }

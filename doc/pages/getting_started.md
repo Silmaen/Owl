@@ -45,7 +45,7 @@ can copy anywhere; fix the validation warnings first (a reference listed there i
 flowchart LR
     P[Project folder<br/>owl_project.yml, scenes, scripts, assets] --> E[Pack Game<br/>validation]
     E --> F[Export folder]
-    F --> X[Game executable<br/>OwlRunner + shared libraries]
+    F --> X[Game executable<br/>OwlGameRunner + shared libraries]
     F --> K[One .owlpack<br/>every asset]
     F --> R[runner.yml]
     F --> L[launch.sh on Linux]

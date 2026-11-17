@@ -1113,7 +1113,7 @@ A draw is fully described by two explicit objects, so no draw inherits state fro
 `ComputeShader`, `Texture2D`, `Framebuffer`, `UniformBuffer`, `StorageBuffer`, `VertexBuffer` / `IndexBuffer` under
 `private/renderer/gpu/<backend>/`, add the `RenderAPI::Type` enumerator, a case to each `create` factory and a
 `RendererDescriptors` branch. Renderers only see `DrawData`, `PipelineState`, the blocks and `RenderCommand`; Slang
-(`renderer::utils::compileSlangToSpirv`) also targets WGSL and Metal. Backend selection at startup:
+(`renderer::utils::compileShader`, `ShaderTarget::WebGpu`) also targets WGSL and Metal. Backend selection at startup:
 [Architecture](architecture.md).
 
 ### Vulkan device requirements and OpenGL fallback {#renderer-vulkan-requirements}

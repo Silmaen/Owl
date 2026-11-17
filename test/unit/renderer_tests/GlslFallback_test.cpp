@@ -51,7 +51,8 @@ TEST(GlslFallback, everyShippedShaderTranslatesToGlsl450) {
 		if (entry.path().extension() != ".slang")
 			continue;
 		const auto name = entry.path().stem().string();
-		const auto compiled = renderer::utils::compileSlangToSpirv(readFile(entry.path()), name, /*iForVulkan=*/false);
+		const auto compiled =
+				renderer::utils::compileShader(readFile(entry.path()), name, renderer::utils::ShaderTarget::OpenGl);
 		ASSERT_TRUE(compiled.success) << name;
 		for (const auto& [stage, spirv]: compiled.spirvData) {
 			const auto glsl = renderer::utils::crossCompileToGlsl(spirv, name);
@@ -69,7 +70,7 @@ TEST(GlslFallback, everyShippedShaderTranslatesToGlsl450) {
 TEST(GlslFallback, openGlSpirvUsesOpenGlInstanceBuiltin) {
 	core::Log::init(core::Log::Level::Off);
 	const auto source = readFile(findRoot() / "engine_assets" / "shaders" / "renderer2D" / "quad.slang");
-	auto compiled = renderer::utils::compileSlangToSpirv(source, "quad_builtins", /*iForVulkan=*/false);
+	auto compiled = renderer::utils::compileShader(source, "quad_builtins", renderer::utils::ShaderTarget::OpenGl);
 	ASSERT_TRUE(compiled.success);
 	auto& vertex = compiled.spirvData[ShaderType::Vertex];
 	EXPECT_GE(renderer::utils::remapBuiltinsForOpenGl(vertex), 1u);
@@ -83,7 +84,8 @@ TEST(GlslFallback, openGlSpirvUsesOpenGlInstanceBuiltin) {
 TEST(GlslFallback, openGlSpirvFragmentOriginIsLowerLeft) {
 	core::Log::init(core::Log::Level::Off);
 	const auto source = readFile(findRoot() / "engine_assets" / "shaders" / "color_encode" / "color_encode.slang");
-	auto compiled = renderer::utils::compileSlangToSpirv(source, "color_encode_origin", /*iForVulkan=*/false);
+	auto compiled =
+			renderer::utils::compileShader(source, "color_encode_origin", renderer::utils::ShaderTarget::OpenGl);
 	ASSERT_TRUE(compiled.success);
 	auto& fragment = compiled.spirvData[ShaderType::Fragment];
 	EXPECT_GE(renderer::utils::remapBuiltinsForOpenGl(fragment), 1u);
@@ -102,11 +104,13 @@ TEST(GlslFallback, crossCompileRejectsEmptySpirv) {
 }
 
 TEST(GlslFallback, cacheKeyCoversBackendModuleAndSource) {
-	const auto key = renderer::utils::getShaderCacheKey("src", "renderer2D/quad", /*iForVulkan=*/false);
-	EXPECT_NE(key, renderer::utils::getShaderCacheKey("src", "renderer2D/quad", /*iForVulkan=*/true));
-	EXPECT_NE(key, renderer::utils::getShaderCacheKey("src", "renderer2D/text", /*iForVulkan=*/false));
-	EXPECT_NE(key, renderer::utils::getShaderCacheKey("src2", "renderer2D/quad", /*iForVulkan=*/false));
-	EXPECT_EQ(key, renderer::utils::getShaderCacheKey("src", "renderer2D/quad", /*iForVulkan=*/false));
+	const auto key =
+			renderer::utils::getShaderCacheKey("src", "renderer2D/quad", renderer::utils::ShaderTarget::OpenGl);
+	EXPECT_NE(key, renderer::utils::getShaderCacheKey("src", "renderer2D/quad", renderer::utils::ShaderTarget::Vulkan));
+	EXPECT_NE(key, renderer::utils::getShaderCacheKey("src", "renderer2D/text", renderer::utils::ShaderTarget::OpenGl));
+	EXPECT_NE(key,
+			  renderer::utils::getShaderCacheKey("src2", "renderer2D/quad", renderer::utils::ShaderTarget::OpenGl));
+	EXPECT_EQ(key, renderer::utils::getShaderCacheKey("src", "renderer2D/quad", renderer::utils::ShaderTarget::OpenGl));
 	EXPECT_NE(key.find("slang="), std::string::npos);
 	EXPECT_NE(key.find("BACKEND_OPENGL=1"), std::string::npos);
 }

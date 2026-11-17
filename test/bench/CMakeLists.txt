@@ -11,6 +11,9 @@ set_target_properties(${OWL_BENCH} PROPERTIES
 target_include_directories(${OWL_BENCH} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 # The private interface exposes engine internals (shader utilities) like the unit tests do.
 target_link_libraries(${OWL_BENCH} PRIVATE ${ENGINE_NAME} ${ENGINE_NAME}Private)
+if (TARGET ${CMAKE_PROJECT_NAME}ShaderCompiler)
+    target_link_libraries(${OWL_BENCH} PRIVATE ${CMAKE_PROJECT_NAME}ShaderCompiler)
+endif ()
 # MCP round trips through the editor's server, on a headless session.
 target_link_libraries(${OWL_BENCH} PRIVATE ${CMAKE_PROJECT_NAME}NestMcp)
 target_compile_definitions(${OWL_BENCH} PRIVATE OWL_BENCH_SOURCE_DIR="${CMAKE_SOURCE_DIR}")

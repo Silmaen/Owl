@@ -346,7 +346,9 @@ auto buildMaterialShader([[maybe_unused]] const std::string& iName, [[maybe_unus
 		return nullptr;
 	const auto api = gpu::RenderCommand::getApi();
 	if (api != gpu::RenderAPI::Type::Null &&
-		!utils::loadOrCompileSpirv(*source, iName, k_ShaderFolder, api == gpu::RenderAPI::Type::Vulkan,
+		!utils::loadOrCompileSpirv(*source, iName, k_ShaderFolder,
+								   api == gpu::RenderAPI::Type::Vulkan ? utils::ShaderTarget::Vulkan
+																	   : utils::ShaderTarget::OpenGl,
 								   {gpu::ShaderType::Vertex, gpu::ShaderType::Fragment})
 				 .has_value()) {
 		OWL_CORE_ERROR("Renderer3D: The material graph shader '{}' does not compile, the parameters draw instead.",

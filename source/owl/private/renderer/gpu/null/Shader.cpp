@@ -46,7 +46,7 @@ void Shader::setMat4(const std::string&, const math::mat4&) {}
 
 #if OWL_WITH_RENDER
 auto Shader::recompile(const std::string& iSlangSource) -> bool {
-	return renderer::utils::compileSlangToSpirv(iSlangSource, getName(), /*iForVulkan=*/true).success;
+	return renderer::utils::compileShader(iSlangSource, getName(), renderer::utils::ShaderTarget::Vulkan).success;
 }
 #else
 auto Shader::recompile([[maybe_unused]] const std::string& iSlangSource) -> bool {

@@ -8,10 +8,11 @@ How Owl Nest is built, for those who change it. The user side of each part is in
 ([The Owl Nest window](editor.md) and the pages after it). Sources: `source/owlnest/sources/`; the rules every panel
 follows are in the [Owl Nest style guide](design/nest-style-guide.md).
 
-| Executable  | Purpose                                                                 |
-|-------------|-------------------------------------------------------------------------|
-| `OwlNest`   | The editor: docking UI, gizmos, project tools, export                   |
-| `OwlRunner` | The game runner: plays a packed or unpacked project, scenarios, benches |
+| Executable      | Purpose                                                                        |
+|-----------------|--------------------------------------------------------------------------------|
+| `OwlNest`       | The editor: docking UI, gizmos, project tools, export                          |
+| `OwlRunner`     | The development runner: plays a packed or unpacked project, scenarios, benches |
+| `OwlGameRunner` | The runner an export copies: no shader compiler, no Slang                      |
 
 ## Structure
 

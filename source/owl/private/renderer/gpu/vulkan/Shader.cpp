@@ -136,8 +136,8 @@ auto Shader::recompile(const std::string& iSlangSource) -> bool {
 }
 
 auto Shader::recoverRejectedSpirv(const std::string_view iReason) -> bool {
-	auto binaries = renderer::utils::recompileSpirv(m_slangSource, getName(), getRenderer(), /*iForVulkan=*/true,
-													m_spirvOrigin, iReason);
+	auto binaries = renderer::utils::recompileSpirv(m_slangSource, getName(), getRenderer(),
+													renderer::utils::ShaderTarget::Vulkan, m_spirvOrigin, iReason);
 	if (!binaries.has_value())
 		return false;
 	m_vulkanSpirv = std::move(binaries->stages);
@@ -151,9 +151,9 @@ auto Shader::compileOrGetVulkanBinaries(const std::string& iSlangSource) const
 		-> std::optional<renderer::utils::LoadedSpirv> {
 	OWL_PROFILE_FUNCTION()
 
-	auto shaderData =
-			renderer::utils::loadOrCompileSpirv(iSlangSource, getName(), getRenderer(),
-												/*iForVulkan=*/true, {ShaderType::Vertex, ShaderType::Fragment});
+	auto shaderData = renderer::utils::loadOrCompileSpirv(iSlangSource, getName(), getRenderer(),
+														  renderer::utils::ShaderTarget::Vulkan,
+														  {ShaderType::Vertex, ShaderType::Fragment});
 	if (!shaderData.has_value())
 		return std::nullopt;
 	for (auto&& [stage, data]: shaderData->stages)

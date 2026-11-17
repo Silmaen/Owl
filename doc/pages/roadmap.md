@@ -90,8 +90,8 @@ per target, Android and the Web.
   release ([Game export](design/game-export.md#game-export-templates))
 - ![Planned][planned] Every target exported from every host: the five release runners bundled in each Owl Nest
   ([Game export](design/game-export.md#game-export-targets))
-- ![Planned][planned] Shaders baked by the host for each target, a runner without shader compiler
-  ([Game export](design/game-export.md#game-export-shaders))
+- ![In Progress][progress] Shaders baked by the host for each target, a runner without shader compiler: done on desktop,
+  the Android and Web targets with their runners ([Game export](design/game-export.md#game-export-shaders))
 - ![Planned][planned] Signing at export: Authenticode from a `.pfx` or a custom command, APK v2 / v3, debug and release
   keystores ([Game export](design/game-export.md#game-export-signing))
 - ![Planned][planned] Exported Windows games carry their project icon in the executable, not only on the window

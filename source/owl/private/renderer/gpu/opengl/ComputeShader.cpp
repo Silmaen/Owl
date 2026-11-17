@@ -72,8 +72,8 @@ ComputeShader::ComputeShader(const std::string& iShaderName, const std::string& 
 	const std::string source = loadSlangSource(iShaderName, iRenderer);
 	if (source.empty())
 		return;
-	const auto compiled = renderer::utils::loadOrCompileSpirv(source, iShaderName, iRenderer, /*iForVulkan=*/false,
-															  {ShaderType::Compute});
+	const auto compiled = renderer::utils::loadOrCompileSpirv(
+			source, iShaderName, iRenderer, renderer::utils::ShaderTarget::OpenGl, {ShaderType::Compute});
 	if (!compiled.has_value()) {
 		OWL_CORE_ERROR("OpenGL: Slang compilation of the compute shader '{}' failed.", m_name)
 		return;
@@ -87,9 +87,9 @@ ComputeShader::ComputeShader(const std::string& iShaderName, const std::string& 
 	if (m_programId != 0)
 		return;
 	// Stored SPIR-V the driver (or the GLSL translation) refuses: compile it again once, and retry.
-	if (const auto again =
-				renderer::utils::recompileSpirv(source, iShaderName, iRenderer, /*iForVulkan=*/false, compiled->origin,
-												"the OpenGL driver or the GLSL translation refused it");
+	if (const auto again = renderer::utils::recompileSpirv(source, iShaderName, iRenderer,
+														   renderer::utils::ShaderTarget::OpenGl, compiled->origin,
+														   "the OpenGL driver or the GLSL translation refused it");
 		again.has_value() && again->stages.contains(ShaderType::Compute))
 		m_programId = linkProgram(again->stages.at(ShaderType::Compute), m_name);
 }

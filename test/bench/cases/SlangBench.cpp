@@ -41,17 +41,18 @@ void runSlangBenches(Runner& ioRunner) {
 	if (quad.empty() || voxel.empty())
 		return;
 	renderer::utils::SlangCompilationResult first;
-	ioRunner.measureOnce("slang/compile_cold/quad_vulkan_first_in_process",
-						 [&]() -> void { first = renderer::utils::compileSlangToSpirv(quad, "quad", true); });
+	ioRunner.measureOnce("slang/compile_cold/quad_vulkan_first_in_process", [&]() -> void {
+		first = renderer::utils::compileShader(quad, "quad", renderer::utils::ShaderTarget::Vulkan);
+	});
 	ioRunner.metric("slang/compile_cold/success", first.success ? 1.0 : 0.0, "bool");
 	ioRunner.measure("slang/compile_warm/quad_vulkan", 1, [&]() -> void {
-		doNotOptimize(renderer::utils::compileSlangToSpirv(quad, "quad", true).success);
+		doNotOptimize(renderer::utils::compileShader(quad, "quad", renderer::utils::ShaderTarget::Vulkan).success);
 	});
 	ioRunner.measure("slang/compile_warm/quad_opengl", 1, [&]() -> void {
-		doNotOptimize(renderer::utils::compileSlangToSpirv(quad, "quad", false).success);
+		doNotOptimize(renderer::utils::compileShader(quad, "quad", renderer::utils::ShaderTarget::OpenGl).success);
 	});
 	ioRunner.measure("slang/compile_warm/voxel_vulkan", 1, [&]() -> void {
-		doNotOptimize(renderer::utils::compileSlangToSpirv(voxel, "voxel", true).success);
+		doNotOptimize(renderer::utils::compileShader(voxel, "voxel", renderer::utils::ShaderTarget::Vulkan).success);
 	});
 	std::vector<std::pair<std::string, std::string>> all;
 	for (const auto& entry: std::filesystem::recursive_directory_iterator(shaders))
@@ -60,7 +61,7 @@ void runSlangBenches(Runner& ioRunner) {
 	ioRunner.metric("slang/engine_shader_files", static_cast<double>(all.size()), "files");
 	ioRunner.measure("slang/compile_warm/all_engine_shaders_vulkan", all.size(), [&]() -> void {
 		for (const auto& [name, source]: all)
-			doNotOptimize(renderer::utils::compileSlangToSpirv(source, name, true).success);
+			doNotOptimize(renderer::utils::compileShader(source, name, renderer::utils::ShaderTarget::Vulkan).success);
 	});
 	if (!first.success || first.spirvData.empty())
 		return;

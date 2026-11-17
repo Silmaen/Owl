@@ -66,7 +66,8 @@ void computeMain(uint3 dispatchID : SV_DispatchThreadID) {
 
 TEST(SlangCompute, compilesSingleSsboVulkan) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	const auto result = owl::renderer::utils::compileSlangToSpirv(kDoubleShader, "double_ssbo", /*iForVulkan=*/true);
+	const auto result = owl::renderer::utils::compileShader(kDoubleShader, "double_ssbo",
+															owl::renderer::utils::ShaderTarget::Vulkan);
 	ASSERT_TRUE(result.success);
 	const auto it = result.spirvData.find(owl::renderer::gpu::ShaderType::Compute);
 	ASSERT_NE(it, result.spirvData.end());
@@ -76,8 +77,8 @@ TEST(SlangCompute, compilesSingleSsboVulkan) {
 
 TEST(SlangCompute, compilesSingleSsboOpenGl) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	const auto result =
-			owl::renderer::utils::compileSlangToSpirv(kDoubleShader, "double_ssbo_gl", /*iForVulkan=*/false);
+	const auto result = owl::renderer::utils::compileShader(kDoubleShader, "double_ssbo_gl",
+															owl::renderer::utils::ShaderTarget::OpenGl);
 	ASSERT_TRUE(result.success);
 	const auto it = result.spirvData.find(owl::renderer::gpu::ShaderType::Compute);
 	ASSERT_NE(it, result.spirvData.end());
@@ -87,7 +88,8 @@ TEST(SlangCompute, compilesSingleSsboOpenGl) {
 
 TEST(SlangCompute, reflectsSsboBindings) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
-	const auto result = owl::renderer::utils::compileSlangToSpirv(kTwoSsboShader, "two_ssbo", /*iForVulkan=*/true);
+	const auto result =
+			owl::renderer::utils::compileShader(kTwoSsboShader, "two_ssbo", owl::renderer::utils::ShaderTarget::Vulkan);
 	ASSERT_TRUE(result.success);
 	const auto it = result.spirvData.find(owl::renderer::gpu::ShaderType::Compute);
 	ASSERT_NE(it, result.spirvData.end());
@@ -114,7 +116,8 @@ TEST(SlangCompute, rejectsMissingEntryPoint) {
 		[[vk::binding(0)]]
 		RWStructuredBuffer<float> values;
 	)SLANG";
-	const auto result = owl::renderer::utils::compileSlangToSpirv(noEntry, "no_entry", /*iForVulkan=*/true);
+	const auto result =
+			owl::renderer::utils::compileShader(noEntry, "no_entry", owl::renderer::utils::ShaderTarget::Vulkan);
 	EXPECT_FALSE(result.success);
 	owl::core::Log::invalidate();
 }
@@ -145,7 +148,8 @@ TEST(SlangCompute, shippedBitonicSortShaderCompiles) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
 	const auto source = loadShipped("bitonic_sort", "bitonic_sort");
 	ASSERT_FALSE(source.empty());
-	const auto result = owl::renderer::utils::compileSlangToSpirv(source, "bitonic_sort_check", /*iForVulkan=*/true);
+	const auto result = owl::renderer::utils::compileShader(source, "bitonic_sort_check",
+															owl::renderer::utils::ShaderTarget::Vulkan);
 	EXPECT_TRUE(result.success);
 	owl::core::Log::invalidate();
 }
@@ -154,7 +158,8 @@ TEST(SlangCompute, shippedFrustumCullingShaderCompiles) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
 	const auto source = loadShipped("frustum_culling", "frustum_culling");
 	ASSERT_FALSE(source.empty());
-	const auto result = owl::renderer::utils::compileSlangToSpirv(source, "frustum_culling_check", /*iForVulkan=*/true);
+	const auto result = owl::renderer::utils::compileShader(source, "frustum_culling_check",
+															owl::renderer::utils::ShaderTarget::Vulkan);
 	EXPECT_TRUE(result.success);
 	owl::core::Log::invalidate();
 }
@@ -163,7 +168,8 @@ TEST(SlangCompute, shippedRaycastDDAShaderCompiles) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
 	const auto source = loadShipped("raycast_dda", "raycast_dda");
 	ASSERT_FALSE(source.empty());
-	const auto result = owl::renderer::utils::compileSlangToSpirv(source, "raycast_dda_check", /*iForVulkan=*/true);
+	const auto result = owl::renderer::utils::compileShader(source, "raycast_dda_check",
+															owl::renderer::utils::ShaderTarget::Vulkan);
 	EXPECT_TRUE(result.success);
 	owl::core::Log::invalidate();
 }
@@ -172,11 +178,11 @@ TEST(SlangCompute, shippedRaycastStripeShaderCompiles) {
 	owl::core::Log::init(owl::core::Log::Level::Off);
 	const auto source = loadShipped("raycast_stripe", "raycast_stripe");
 	ASSERT_FALSE(source.empty());
-	const auto resultVk =
-			owl::renderer::utils::compileSlangToSpirv(source, "raycast_stripe_vk_check", /*iForVulkan=*/true);
+	const auto resultVk = owl::renderer::utils::compileShader(source, "raycast_stripe_vk_check",
+															  owl::renderer::utils::ShaderTarget::Vulkan);
 	EXPECT_TRUE(resultVk.success);
-	const auto resultGl =
-			owl::renderer::utils::compileSlangToSpirv(source, "raycast_stripe_gl_check", /*iForVulkan=*/false);
+	const auto resultGl = owl::renderer::utils::compileShader(source, "raycast_stripe_gl_check",
+															  owl::renderer::utils::ShaderTarget::OpenGl);
 	EXPECT_TRUE(resultGl.success);
 	owl::core::Log::invalidate();
 }
@@ -189,8 +195,9 @@ TEST(SlangCompute, shippedShadersGiveEachStorageBufferItsOwnBlockType) {
 		if (entry.path().extension() != ".slang")
 			continue;
 		const auto name = entry.path().stem().string();
-		const auto result = owl::renderer::utils::compileSlangToSpirv(
-				owl::renderer::utils::readShaderSource(entry.path()), name + "_gl_blocks", false);
+		const auto result =
+				owl::renderer::utils::compileShader(owl::renderer::utils::readShaderSource(entry.path()),
+													name + "_gl_blocks", owl::renderer::utils::ShaderTarget::OpenGl);
 		ASSERT_TRUE(result.success) << name;
 		for (const auto& spirv: result.spirvData | std::views::values) {
 			const spirv_cross::Compiler compiler(spirv);

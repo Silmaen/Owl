@@ -21,7 +21,7 @@ file(GLOB_RECURSE HDRS_PUBLIC CONFIGURE_DEPENDS
 set(_owl_excluded "")
 if (NOT ${PROJECT_PREFIX}_MODULE_RENDER)
     list(APPEND _owl_excluded "/private/renderer/gpu/(opengl|vulkan)/" "/private/(window|input)/glfw/"
-            "/private/renderer/utils/shaderFileUtils\\.(cpp|h)$" "/private/core/external/(glfw3|opengl46|slang|lunasvg)\\.h$")
+            "/private/renderer/utils/shaderFileUtils\\.(cpp|h)$" "/private/core/external/(glfw3|opengl46|lunasvg)\\.h$")
 endif ()
 if (${PROJECT_PREFIX}_MODULE_PHYSICS)
     list(APPEND _owl_excluded "/private/physics/disabled/")
@@ -138,8 +138,11 @@ if (${PROJECT_PREFIX}_PROFILER_BACKEND STREQUAL "tracy")
     owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE Tracy CONFIG REQUIRED MODULE_TARGET "Tracy::TracyClient")
 endif ()
 
-# render: GPU backends, GLFW, the window icon (lunasvg), Vulkan, SPIRV-Cross and Slang
+# render: GPU backends, GLFW, the window icon (lunasvg), Vulkan and SPIRV-Cross; Slang is OwlShaderCompiler's
 if (${PROJECT_PREFIX}_MODULE_RENDER)
+    # Only its version, part of the cache key of the baked shaders: the engine does not link Slang.
+    find_package(slang REQUIRED)
+    target_compile_definitions(${ENGINE_NAME} PRIVATE ${PROJECT_PREFIX}_SLANG_VERSION="${slang_VERSION}")
     owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE glad 2.0 REQUIRED)
     owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE glfw3 MODULE_TARGET glfw REQUIRED)
     owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE lunasvg REQUIRED)
@@ -218,11 +221,6 @@ if (${PROJECT_PREFIX}_PLATFORM_WINDOWS)
                         COMMENT "Copy the vulkan shared dll"
                 )
             endforeach ()
-            add_custom_command(TARGET ${ENGINE_NAME} POST_BUILD
-                    COMMAND ${CMAKE_COMMAND} -E copy_if_different "${slang_DIR}/../../bin/slang.dll" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
-                    COMMAND_EXPAND_LISTS
-                    COMMENT "Copy the slang shared dll"
-            )
         endif ()
         if (${PROJECT_PREFIX}_MODULE_AUDIO)
             add_custom_command(TARGET ${ENGINE_NAME} POST_BUILD

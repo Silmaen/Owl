@@ -112,7 +112,8 @@ A new source or header file needs no configure by hand: the source globs use `CO
 notices it and configures again. The Clang presets link with lld (`CMAKE_LINKER_TYPE`). No C++ module is used, so
 CMake does not scan the sources for imports (`CMAKE_CXX_SCAN_FOR_MODULES` off). A program is not linked again when only
 a shared library it uses changed (`CMAKE_LINK_DEPENDS_NO_SHARED`): after an engine `.cpp` edit only `libOwlEngine.so`
-is linked, and the engine shaders are baked again.
+is linked, and the engine shaders are baked again
+(`OwlShaderBake <shaders> <assets> [--targets=vulkan,opengl,vulkan_android,webgpu]`, Vulkan and OpenGL by default).
 
 ### Available Presets
 
@@ -164,10 +165,10 @@ desktop has it): the Owl Nest file dialogues go through `xdg-desktop-portal` (na
 `portal` option, set in `conanfile.py`), so they need a running portal with a desktop backend (GNOME, KDE or GTK) and
 no GTK in the process. Without a portal, opening a dialogue logs an error and returns no path.
 
-On Windows `OwlNest.exe` and `OwlRunner.exe` carry the Owl icon and the version information of the project
+On Windows `OwlNest.exe`, `OwlRunner.exe` and `OwlGameRunner.exe` carry the Owl icon and the version information of the project
 (`owl_windows_application` in `cmake/OwlUtils.cmake`, resource script `source/owlnest/resources/OwlApp.rc.in`). The
 icon `source/owlnest/resources/owl.ico` (16 to 256 px) is generated from `engine_assets/logo/logo_owl.png` by
-`./docker_run.sh poetry run python tools/editor/generate_app_icon.py`. An exported game is a copy of `OwlRunner.exe`:
+`./docker_run.sh poetry run python tools/editor/generate_app_icon.py`. An exported game is a copy of `OwlGameRunner.exe`:
 it shows the Owl icon in the Explorer, the project icon on its window and task bar button.
 
 Both are GUI programs on Windows: no console window opens with them. Started from cmd or PowerShell they write their
@@ -177,7 +178,7 @@ wait for it (`start /wait OwlRunner.exe --smoke-test` in cmd, `Start-Process -Wa
 (`.\OwlRunner.exe --smoke-test | Out-Host`).
 
 Windows has no RPATH: Conan's runtime deployer copies every DLL of the dependencies next to the binaries at configure
-time, `cmake/Vulkan.cmake` adds the Slang standard modules, and the package leaves out `slang-llvm.dll` (CPU targets,
+time, `source/shader_compiler/CMakeLists.txt` adds the Slang standard modules, and the package leaves out `slang-llvm.dll` (CPU targets,
 never loaded by the engine).
 
 A package holds `assets/` (fonts, shaders, project templates, logo, help and, for Owl Nest, the editor sounds, trigger
@@ -193,9 +194,9 @@ a development build.
 #### Code signing
 
 Windows SmartScreen warns about a downloaded program that is not signed, or signed by a publisher it does not know
-yet ("Windows protected your PC"). The `Package` action signs `OwlNest.exe`, `OwlRunner.exe` and `OwlEngine.dll` in
-the build tree before `cpack` when a certificate is configured, through the agent's environment (never the command
-line), and does nothing otherwise (`ci/utils/signing.py`):
+yet ("Windows protected your PC"). The `Package` action signs `OwlNest.exe`, `OwlRunner.exe`, `OwlGameRunner.exe` and
+`OwlEngine.dll` in the build tree before `cpack` when a certificate is configured, through the agent's environment
+(never the command line), and does nothing otherwise (`ci/utils/signing.py`):
 
 | Variable                 | Meaning                                                                                |
 |--------------------------|----------------------------------------------------------------------------------------|
@@ -443,7 +444,7 @@ its public API stays, backed by the Null backend or a no-op, so a game compiles 
 
 - The code sees `OWL_WITH_<MODULE>` (`0` or `1`), a public definition of `Owl::OwlEngine`; a consumer checks a module
   with `find_package(OwlEngine COMPONENTS Physics)` (components `Render`, `Physics`, `Audio`, `Network`, `Script`, `Gui`).
-- `OWL_MODULE_GUI` needs `OWL_MODULE_RENDER` (turned off otherwise). Owl Nest, OwlRunner, the benchmarks and the
+- `OWL_MODULE_GUI` needs `OWL_MODULE_RENDER` (turned off otherwise). Owl Nest, both runners, the benchmarks and the
   fuzzers need every module: `OWL_BUILD_NEST`, `OWL_BENCHMARK` and `OWL_FUZZING` are turned off when one is missing.
 - Tests: `physics_tests`, `script_tests` and `gui_tests` go with their module; a test elsewhere that needs a module
   starts with `OWL_REQUIRE_MODULE(PHYSICS)` (`testHelper.h`), which skips it.

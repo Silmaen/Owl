@@ -52,10 +52,10 @@ namespace owl::data::assets::pack {
 namespace {
 
 #ifdef OWL_PLATFORM_WINDOWS
-constexpr std::array<const char*, 1> g_runnerNames = {"OwlRunner.exe"};
+constexpr std::array<const char*, 1> g_runnerNames = {"OwlGameRunner.exe"};
 constexpr auto g_platformName = "windows-x64";
 #else
-constexpr std::array<const char*, 1> g_runnerNames = {"OwlRunner"};
+constexpr std::array<const char*, 1> g_runnerNames = {"OwlGameRunner"};
 constexpr auto g_platformName = "linux-x64";
 #endif
 
@@ -177,6 +177,8 @@ auto selectEngineFiles(const ExportSettings& iSettings, const renderer::Renderer
 #if OWL_WITH_RENDER
 constexpr std::array g_shaderStages{renderer::gpu::ShaderType::Vertex, renderer::gpu::ShaderType::Fragment,
 									renderer::gpu::ShaderType::Compute};
+// The shader targets of a desktop game; the Android and Web targets join with their runners.
+constexpr std::array g_shaderTargets{renderer::utils::ShaderTarget::Vulkan, renderer::utils::ShaderTarget::OpenGl};
 
 // True when the stored SPIR-V of every stage of a shader matches its source, for one API.
 auto hasCurrentSpirv(const std::vector<AssetReference>& iAssets, const std::string& iName, const std::string& iRenderer,
@@ -218,15 +220,15 @@ void useBakedFile(std::vector<AssetReference>& ioAssets, const std::string& iPac
 		ioAssets.push_back({.packPath = iPackPath, .diskPath = iDiskPath, .assetType = AssetType::Other});
 }
 
-// Compiles a shader source for both APIs when its SPIR-V is missing or outdated, into the cook cache.
+// Compiles a shader source for every target when its SPIR-V is missing or outdated, into the cook cache.
 auto bakeShaderSource(std::vector<AssetReference>& ioAssets, const std::filesystem::path& iCacheDir,
 					  const std::string& iSource, const std::string& iName, const std::string& iRenderer)
 		-> expected<bool, ExportError> {
 	const auto moduleName = std::format("{}/{}", iRenderer, iName);
 	bool compiled = false;
-	for (const bool forVulkan: {true, false}) {
-		const std::string api = forVulkan ? "vulkan" : "opengl";
-		const auto cacheKey = renderer::utils::getShaderCacheKey(iSource, moduleName, forVulkan);
+	for (const auto target: g_shaderTargets) {
+		const std::string api = renderer::utils::getShaderTargetFolder(target);
+		const auto cacheKey = renderer::utils::getShaderCacheKey(iSource, moduleName, target);
 		if (hasCurrentSpirv(ioAssets, iName, iRenderer, api, cacheKey))
 			continue;
 		compiled = true;
@@ -237,7 +239,7 @@ auto bakeShaderSource(std::vector<AssetReference>& ioAssets, const std::filesyst
 			}
 			continue;
 		}
-		const auto result = renderer::utils::compileSlangToSpirv(iSource, iName, forVulkan);
+		const auto result = renderer::utils::compileShader(iSource, iName, target);
 		if (!result.success) {
 			OWL_CORE_ERROR("GameExporter: Cannot compile shader '{}' for {}.", moduleName, api)
 			return unexpected{ExportError::CookFailed};
@@ -377,8 +379,11 @@ void copySharedLibs(const std::filesystem::path& iSrcDir, const std::filesystem:
 		if (!entry.is_regular_file() && !entry.is_symlink())
 			continue;
 		const auto ext = entry.path().extension().string();
-		if (const auto filename = entry.path().filename().string();
-			ext != ".so" && filename.find(".so.") == std::string::npos && ext != ".dll")
+		const auto filename = entry.path().filename().string();
+		if (ext != ".so" && filename.find(".so.") == std::string::npos && ext != ".dll")
+			continue;
+		// The shader compiler of Owl Nest: the game reads baked shaders only.
+		if (filename.starts_with("slang") || filename.starts_with("libslang"))
 			continue;
 		const auto dest = iDestDir / entry.path().filename();
 		std::error_code copyEc;
@@ -532,7 +537,7 @@ auto GameExporter::getErrorMessage(const ExportError iError) -> std::string_view
 		case ExportError::PackWrite:
 			return "cannot write the game pack";
 		case ExportError::RunnerNotFound:
-			return "OwlRunner executable not found";
+			return "OwlGameRunner executable not found";
 		case ExportError::RunnerCopy:
 			return "cannot copy the runner executable";
 		case ExportError::Cancelled:
@@ -606,8 +611,9 @@ auto GameExporter::validate(const ExportSettings& iSettings, std::vector<AssetRe
 	if (oAssets.empty())
 		warnings.emplace_back("No assets to pack — check firstScene and its references");
 	if (!findRunner(iSettings.runnerDirectory))
-		warnings.emplace_back(std::format("OwlRunner executable not found in '{}' — packed game will not be playable",
-										  iSettings.runnerDirectory.string()));
+		warnings.emplace_back(
+				std::format("OwlGameRunner executable not found in '{}' — packed game will not be playable",
+							iSettings.runnerDirectory.string()));
 	if (!iSettings.icon.empty() && !resolveIcon(iSettings))
 		warnings.emplace_back(std::format("Icon '{}' not found", iSettings.icon));
 	if (!iSettings.gamepadMappings.empty() && !exists(iSettings.projectDirectory / iSettings.gamepadMappings))
