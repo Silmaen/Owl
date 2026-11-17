@@ -224,6 +224,43 @@ public:
 
 	/**
 	 * @brief
+	 *  Scene of the mod screen opened by `mods.open_screen`: the project's `ModScreen`, else the screen of the engine.
+	 * @return The asset path.
+	 */
+	[[nodiscard]] auto getModScreen() const -> const std::string& {
+		return m_modScreen.empty() ? defaultModScreen() : m_modScreen;
+	}
+
+	/**
+	 * @brief
+	 *  Set the scene of the mod screen.
+	 * @param[in] iPath The asset path, empty for the screen of the engine.
+	 */
+	void setModScreen(const std::string& iPath) { m_modScreen = iPath; }
+
+	/**
+	 * @brief
+	 *  Scene of the mod screen of the engine, shipped in its assets.
+	 * @return The asset path (`mods/mod_manager.owl`).
+	 */
+	[[nodiscard]] static auto defaultModScreen() -> const std::string&;
+
+	/**
+	 * @brief
+	 *  Level the mod screen goes back to (`mods.open_screen`).
+	 * @return The asset path, empty when the screen was not opened by `mods.open_screen`.
+	 */
+	[[nodiscard]] auto getModReturnLevel() const -> const std::string& { return m_modReturnLevel; }
+
+	/**
+	 * @brief
+	 *  Set the level the mod screen goes back to.
+	 * @param[in] iPath The asset path.
+	 */
+	void setModReturnLevel(const std::string& iPath) { m_modReturnLevel = iPath; }
+
+	/**
+	 * @brief
 	 *  The `.owlhudtheme` files read so far, shared by the scenes and HUDs.
 	 * @return The theme library.
 	 */
@@ -363,6 +400,10 @@ private:
 	std::string m_defaultHud;
 	/// HUD theme of the scenes and HUDs that name none.
 	std::string m_defaultHudTheme;
+	/// Scene of the mod screen of the game; empty for the screen of the engine.
+	std::string m_modScreen;
+	/// Level the mod screen goes back to.
+	std::string m_modReturnLevel;
 	/// Loaded HUD themes.
 	uniq<scene::HudThemeLibrary> mp_hudThemeLibrary;
 	/// Languages and string tables of the game.

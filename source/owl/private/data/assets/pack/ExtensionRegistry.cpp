@@ -15,10 +15,12 @@
 #include <cstdint>
 #include <filesystem>
 #include <format>
+#include <map>
 #include <optional>
 #include <ranges>
 #include <set>
 #include <string>
+#include <string_view>
 #include <system_error>
 #include <tuple>
 #include <unordered_map>
@@ -144,9 +146,11 @@ auto ExtensionRegistry::listSources(const std::filesystem::path& iFolder, const 
 	return sources;
 }
 
-auto ExtensionRegistry::mount(const std::vector<std::filesystem::path>& iSources) -> size_t {
+auto ExtensionRegistry::mount(const std::vector<std::filesystem::path>& iSources,
+							  const std::unordered_map<std::string, int32_t>& iLoadOrder) -> size_t {
 	OWL_PROFILE_FUNCTION()
 
+	for (const auto& [id, rank]: iLoadOrder) m_loadOrder[id] = rank;
 	for (const auto& source: iSources) {
 		std::error_code error;
 		auto path = std::filesystem::weakly_canonical(source, error);
@@ -164,7 +168,11 @@ auto ExtensionRegistry::mount(const std::vector<std::filesystem::path>& iSources
 	}
 	std::vector<ExtensionManifest> manifests;
 	manifests.reserve(m_candidates.size());
-	for (const auto& candidate: m_candidates) manifests.push_back(candidate.getManifest());
+	for (const auto& candidate: m_candidates) {
+		manifests.push_back(candidate.getManifest());
+		if (const auto rank = m_loadOrder.find(manifests.back().id); rank != m_loadOrder.end())
+			manifests.back().loadOrder = rank->second;
+	}
 	auto resolution = resolveLoadOrder(manifests);
 	m_order = std::move(resolution.order);
 	m_issues = m_openIssues;
@@ -194,6 +202,7 @@ void ExtensionRegistry::clear() {
 	m_candidates.clear();
 	m_issues.clear();
 	m_openIssues.clear();
+	m_loadOrder.clear();
 }
 
 auto ExtensionRegistry::getPacks() const -> std::vector<const ExtensionPack*> {
@@ -232,6 +241,30 @@ auto ExtensionRegistry::listEntries() const -> std::vector<std::string> {
 	for (const size_t index: m_order)
 		entries.insert(m_candidates[index].listEntries().begin(), m_candidates[index].listEntries().end());
 	return {entries.begin(), entries.end()};
+}
+
+auto ExtensionRegistry::getConflicts() const -> std::vector<ExtensionConflict> {
+	std::map<std::string, std::vector<std::string>> providers;
+	for (const size_t index: m_order)
+		for (const auto& entry: m_candidates[index].listEntries())
+			providers[entry].push_back(m_candidates[index].getManifest().id);
+	std::vector<ExtensionConflict> conflicts;
+	for (auto& [path, ids]: providers)
+		if (ids.size() > 1)
+			conflicts.push_back({.path = path, .providers = std::move(ids)});
+	return conflicts;
+}
+
+auto ExtensionRegistry::findEntries(const std::string_view iExtension) const -> std::vector<ExtensionEntry> {
+	std::map<std::string, std::string> served;
+	for (const size_t index: m_order)
+		for (const auto& entry: m_candidates[index].listEntries())
+			if (std::filesystem::path{entry}.extension() == iExtension)
+				served[entry] = m_candidates[index].getManifest().id;
+	std::vector<ExtensionEntry> entries;
+	entries.reserve(served.size());
+	for (auto& [path, id]: served) entries.push_back({.id = std::move(id), .path = path});
+	return entries;
 }
 
 }// namespace owl::data::assets::pack

@@ -13,6 +13,7 @@
 
 #include <data/assets/pack/ExtensionManifest.h>
 #include <scene/Scene.h>
+#include <script/ScriptEngine.h>
 
 #include <cstddef>
 #include <filesystem>
@@ -158,6 +159,12 @@ public:
 		std::filesystem::path folder;
 		/// Its manifest.
 		data::assets::pack::ExtensionManifest manifest;
+		/// Functions of its entry script, with their line.
+		std::vector<script::ScriptFunction> functions;
+		/// Components its entry script declares.
+		std::vector<script::ScriptComponentDeclaration> components;
+		/// Last write of its entry script (the panel reads it again when it changes).
+		std::filesystem::file_time_type scriptTime;
 	};
 
 	/**
@@ -220,6 +227,19 @@ private:
 
 	/**
 	 * @brief
+	 *  Draw the entry script of the selected pack: its file, the game events it handles and its components.
+	 * @param[in] iEntry The selected pack.
+	 */
+	void renderScript(const Entry& iEntry);
+
+	/**
+	 * @brief
+	 *  Draw the assets several mounted packs hold, and the pack serving each one.
+	 */
+	static void renderConflicts();
+
+	/**
+	 * @brief
 	 *  Fill the text fields from the selected manifest.
 	 */
 	void loadDrafts();
@@ -257,6 +277,8 @@ private:
 	std::string m_author;
 	/// Description field being edited.
 	std::string m_description;
+	/// Draft of the entry script path.
+	std::string m_script;
 	/// Id of the dependency to add.
 	std::string m_dependencyId;
 	/// Version of the dependency to add.

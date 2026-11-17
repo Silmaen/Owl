@@ -18,6 +18,8 @@
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <string_view>
+#include <unordered_map>
 #include <vector>
 
 namespace owl::data::assets::pack {
@@ -35,6 +37,28 @@ struct OWL_API ExtensionIssue {
 	ExtensionLoadError error{ExtensionLoadError::CannotOpen};
 	/// The dependency concerned, when the error is about one.
 	std::string detail;
+};
+
+/**
+ * @brief
+ *  An asset several mounted packs hold: the last one serves it.
+ */
+struct OWL_API ExtensionConflict {
+	/// Asset path.
+	std::string path;
+	/// Ids of the packs holding it, in load order: the last one wins.
+	std::vector<std::string> providers;
+};
+
+/**
+ * @brief
+ *  An asset a mounted pack serves.
+ */
+struct OWL_API ExtensionEntry {
+	/// Id of the pack serving it (the last one mounted holding it).
+	std::string id;
+	/// Asset path.
+	std::string path;
 };
 
 /**
@@ -121,9 +145,12 @@ public:
 	 * @brief
 	 *  Open extension packs and mount them with the ones already mounted, all ordered again.
 	 * @param[in] iSources `.owlmod` files or source folders.
+	 * @param[in] iLoadOrder Rank of some packs by id, replacing the `loadOrder` of their manifest (kept by the next
+	 *  mounts); the dependencies still come first.
 	 * @return The number of packs mounted after the call.
 	 */
-	auto mount(const std::vector<std::filesystem::path>& iSources) -> size_t;
+	auto mount(const std::vector<std::filesystem::path>& iSources,
+			   const std::unordered_map<std::string, int32_t>& iLoadOrder = {}) -> size_t;
 
 	/**
 	 * @brief
@@ -199,6 +226,22 @@ public:
 	 */
 	[[nodiscard]] auto listEntries() const -> std::vector<std::string>;
 
+	/**
+	 * @brief
+	 *  The assets held by more than one mounted pack.
+	 * @return The conflicts, ordered by path.
+	 */
+	[[nodiscard]] auto getConflicts() const -> std::vector<ExtensionConflict>;
+
+	/**
+	 * @brief
+	 *  The assets of one kind the mounted packs serve, each with the pack serving it: what the editor offers as
+	 *  plugin nodes (`.lua`, `.owlvs`, `.owlmat`) and templates (`.owlprefab`).
+	 * @param[in] iExtension File extension, dot included (`.owlprefab`).
+	 * @return The entries, ordered by path.
+	 */
+	[[nodiscard]] auto findEntries(std::string_view iExtension) const -> std::vector<ExtensionEntry>;
+
 private:
 	/// Every pack opened, mounted or left out.
 	std::vector<ExtensionPack> m_candidates;
@@ -208,6 +251,8 @@ private:
 	std::vector<ExtensionIssue> m_issues;
 	/// Packs that could not be opened (kept for the issues of the next mounts).
 	std::vector<ExtensionIssue> m_openIssues;
+	/// Ranks replacing the `loadOrder` of the manifests, by id.
+	std::unordered_map<std::string, int32_t> m_loadOrder;
 };
 
 }// namespace owl::data::assets::pack

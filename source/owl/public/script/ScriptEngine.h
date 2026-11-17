@@ -93,6 +93,17 @@ struct OWL_API ScriptFunction {
 
 /**
  * @brief
+ *  Component type a script declares in its global `components` table (`components = { ["mod.Key"] = { fields } }`).
+ */
+struct OWL_API ScriptComponentDeclaration {
+	/// Key of the component (`demo.rules.Health`), what scenes and scripts name it by.
+	std::string key;
+	/// Fields of the component, declared like script properties; their value is the default.
+	std::vector<ScriptProperty> fields;
+};
+
+/**
+ * @brief
  *  Resource limits of one Lua state (one per script instance).
  *
  * A limit set to zero is disabled. The defaults are generous: a gameplay script stays orders of magnitude
@@ -193,6 +204,16 @@ public:
 	 * @return The hook names, in the order the inspector lists them.
 	 */
 	[[nodiscard]] static auto getHookNames() -> const std::vector<std::string>&;
+
+	/**
+	 * @brief
+	 *  Read the component types a script declares (its global `components` table) without running any hook.
+	 * @param[in] iData The script source.
+	 * @param[in] iName Chunk name, for the error messages.
+	 * @return The declarations ordered by key; empty when the script declares none or does not load.
+	 */
+	[[nodiscard]] static auto extractComponentsFromBuffer(const std::vector<uint8_t>& iData, const std::string& iName)
+			-> std::vector<ScriptComponentDeclaration>;
 
 	/**
 	 * @brief

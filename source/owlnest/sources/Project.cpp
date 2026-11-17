@@ -62,6 +62,8 @@ void readProjectConfig(const YAML::Node& iConfig, Project& oProject) {
 		oProject.defaultHud = iConfig["DefaultHud"].as<std::string>();
 	if (iConfig["DefaultHudTheme"])
 		oProject.defaultHudTheme = iConfig["DefaultHudTheme"].as<std::string>();
+	if (iConfig["ModScreen"])
+		oProject.modScreen = iConfig["ModScreen"].as<std::string>();
 	if (iConfig["version"])
 		oProject.version = iConfig["version"].as<std::string>();
 	if (iConfig["author"])
@@ -134,6 +136,7 @@ auto Project::makeExportSettings(const std::filesystem::path& iOutputDir, const 
 			.icon = icon,
 			.defaultHud = defaultHud,
 			.defaultHudTheme = defaultHudTheme,
+			.modScreen = modScreen,
 			.gamepadMappings = gamepadMappings,
 			.projectDirectory = projectDirectory,
 			.outputDirectory = iOutputDir,
@@ -169,6 +172,8 @@ auto Project::saveToFile(const std::filesystem::path& iFile) const -> bool {
 		out << YAML::Key << "DefaultHud" << YAML::Value << defaultHud;
 	if (!defaultHudTheme.empty())
 		out << YAML::Key << "DefaultHudTheme" << YAML::Value << defaultHudTheme;
+	if (!modScreen.empty())
+		out << YAML::Key << "ModScreen" << YAML::Value << modScreen;
 	if (!version.empty())
 		out << YAML::Key << "version" << YAML::Value << version;
 	if (!author.empty())

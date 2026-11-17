@@ -1,0 +1,8 @@
+# The mod screen of the engine with the mods of the Engine Demo: it lists them, and a script error or a missing
+# widget fails the run.
+scene: ../../../engine_assets/mods/mod_manager.owl
+mods: ../../../engine_demo/extensions
+steps:
+  - frames: 10
+  - expect: {entity: ModList, exists: true}
+  - expect: {entity: ModApply, exists: true}

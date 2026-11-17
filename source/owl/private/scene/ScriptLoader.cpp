@@ -10,11 +10,13 @@
 #include "ScriptLoader.h"
 
 #include "app/Application.h"
+#include "data/assets/pack/ExtensionRegistry.h"
 #include "platform/FileUtils.h"
 
 #include <algorithm>
 #include <cstdint>
 #include <filesystem>
+#include <format>
 #include <optional>
 #include <string>
 #include <variant>
@@ -88,6 +90,23 @@ auto loadScriptInstance(Scene& ioScene, const component::LuaScript& iScript, con
 	}
 	for (const auto& property: iScript.properties) instance->setProperty(property);
 	return instance;
+}
+
+auto loadModScripts(Scene& ioScene) -> std::vector<component::LuaScript> {
+	std::vector<component::LuaScript> scripts;
+	if (!app::Application::instanced())
+		return scripts;
+	for (const auto* pack: app::Application::get().getExtensions().getPacks()) {
+		const auto& manifest = pack->getManifest();
+		if (manifest.kind != data::assets::pack::ExtensionKind::Script || manifest.script.empty())
+			continue;
+		component::LuaScript script;
+		script.scriptPath = manifest.script;
+		script.instance = loadScriptInstance(ioScene, script, 0, std::format("mod {}", manifest.id));
+		if (script.instance)
+			scripts.push_back(std::move(script));
+	}
+	return scripts;
 }
 
 }// namespace owl::scene

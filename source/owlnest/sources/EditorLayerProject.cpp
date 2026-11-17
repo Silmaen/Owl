@@ -1023,6 +1023,7 @@ void EditorLayer::openProject(const std::filesystem::path& iDir) {
 	std::ignore = app::Application::get().getEngineContext().loadLocalisation(m_project.projectDirectory);
 	app::Application::get().getEngineContext().setDefaultHud(m_project.defaultHud);
 	app::Application::get().getEngineContext().setDefaultHudTheme(m_project.defaultHudTheme);
+	app::Application::get().getEngineContext().setModScreen(m_project.modScreen);
 	loadGameSettings(m_project.name, m_project.projectDirectory);
 	std::ignore = m_project.loadGamepadMappings();
 	m_contentBrowser.attach();
@@ -1123,6 +1124,7 @@ void EditorLayer::closeProject() {
 	app.getEngineContext().setLocalisation({});
 	app.getEngineContext().setDefaultHud(m_project.defaultHud);
 	app.getEngineContext().setDefaultHudTheme(m_project.defaultHudTheme);
+	app.getEngineContext().setModScreen(m_project.modScreen);
 	loadGameSettings(m_project.name, m_project.projectDirectory);
 	newScene();
 	m_contentBrowser.attach();

@@ -168,6 +168,8 @@ struct OWL_API ExtensionManifest {
 	std::string description;
 	/// Packs mounted before this one.
 	std::vector<ExtensionDependency> dependencies;
+	/// Entry script of a `Script` pack (asset path, `scripts/mymod/main.lua`), run while a scene plays; empty for none.
+	std::string script;
 
 	/**
 	 * @brief

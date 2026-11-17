@@ -132,10 +132,10 @@ per target, Android and the Web.
   ([Mods and extension packs](mods.md))
 - ![Done][done] Mod loading system (`.owlmod` packs, manifest, load order, asset overrides)
   ([Mods and extension packs](mods.md))
-- ![Planned][planned] Lua mod API (custom components, game event hooks, sandboxed)
-- ![Planned][planned] In-game mod manager (enable / disable / reorder, conflict detection)
-- ![In Progress][progress] Data and script plugins: material and script nodes, templates, game rules, shared by a project
-  on every target ([Plugins](design/modding-platforms.md#modding-plugins))
+- ![Done][done] Lua mod API (custom components, game event hooks, sandboxed) ([Mods and extension packs](mods.md))
+- ![Done][done] In-game mod manager (enable / disable / reorder, conflict detection) ([Mods and extension packs](mods.md))
+- ![Done][done] Data and script plugins: material and script nodes, templates, game rules, shared by a project
+  on every target ([Mods and extension packs](mods.md))
 - ![Planned][planned] Owl Nest plugins: panels, commands, inspector drawers, document types, importers
   ([Plugins](design/modding-platforms.md#modding-plugins))
 - ![Planned][planned] Every open engine gap of the sample games closed (Lua voxel table, saved procedural chunks,

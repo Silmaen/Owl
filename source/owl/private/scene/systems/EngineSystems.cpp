@@ -226,6 +226,9 @@ void updateScripts(Scene& ioScene, const SystemContext& iContext) {
 	for (const auto* script: {&std::as_const(ioScene).getSceneScript(), &ioScene.getHudScript()})
 		if (script->instance && script->instance->isValid())
 			script->instance->onUpdate(iContext.timeStep.getSeconds());
+	for (const auto& script: ioScene.getModScripts())
+		if (script.instance && script.instance->isValid())
+			script.instance->onUpdate(iContext.timeStep.getSeconds());
 	ioScene.registry.view<component::NativeScript>().each(
 			[&ioScene, &iContext](const entt::entity iEntity, component::NativeScript& ioNsc) -> void {
 				if (!ioScene.isEffectivelyVisible(Entity{iEntity, &ioScene}, /*iEditorMode=*/false))
@@ -253,6 +256,9 @@ void tickScripts(Scene& ioScene, const SystemContext& iContext) {
 	for (const auto* script: {&std::as_const(ioScene).getSceneScript(), &ioScene.getHudScript()})
 		if (script->instance && script->instance->isValid())
 			script->instance->onTick(iContext.timeStep.getSeconds());
+	for (const auto& script: ioScene.getModScripts())
+		if (script.instance && script.instance->isValid())
+			script.instance->onTick(iContext.timeStep.getSeconds());
 	for (const auto view = ioScene.registry.view<component::NativeScript>(); const auto entity: view) {
 		if (const auto& nsc = view.get<component::NativeScript>(entity);
 			nsc.instance != nullptr && ioScene.isEffectivelyVisible(Entity{entity, &ioScene}, /*iEditorMode=*/false))

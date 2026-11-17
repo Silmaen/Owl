@@ -36,6 +36,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Owl Nest mounts the enabled extension packs of the project as plugins while editing and in Play, and mounts them again when they change, reloading the textures already loaded (`Application::setExtensionSources`, `Texture2D::reloadFromAssets`).
 - Engine Demo: the `demo.recolour` mod recolours the first-aid kit of the raycast level, played by `mod_recolour.owltest`.
 - A replay played while recording is recorded again with the world hashes of the current build, to refresh a replay after a simulation change ([Simulation](design/simulation-networking.md#simulation-replay)).
+- Mod entry scripts: the `script:` field of a Script pack runs in its own Lua state during Play, with the game events `on_scene_load`, `on_entity_spawn` and `on_entity_destroy` ([Mods](mods.md#mods-script)).
+- Lua components: the `components` table of an entry script registers `<packid>.Name` components saved with scenes, copied by prefabs, drawn by the inspector and read with `entity.get_field` / `set_field` ([Mods](mods.md#mods-components)).
+- `ModManager`: the player's order and disabled mods saved in `mods.yml`, applied by `Application::applyMods`, conflicts listed by `ExtensionRegistry::getConflicts` ([Mods](mods.md#mods-manager)).
+- Lua `mods` table (`get`, `set_enabled`, `move`, `apply`, `conflicts`, `open_screen`...) and the default mod screen of the engine, replaceable by the project setting **Mod Screen**.
+- Engine Demo: a **Mods** button in the main menu, the `demo.bounty` Script mod (a Bounty component paying gold) and the `demo.nodes` plugin, played by `mod_bounty.owltest` and `mod_screen.owltest`.
+- Plugins: the Visual Script palette lists the annotated Lua modules and graphs of the mounted packs, the material editor their custom nodes (`material.import_node`), the hierarchy their prefabs (`prefab.instantiate`) ([Mods](mods.md#mods-plugins)).
+- Owl Nest Extensions panel: entry script field and section (`extension.script`, game events, components) and a **Conflicts** section; `extension.set` takes `script`.
 
 ### Changed
 

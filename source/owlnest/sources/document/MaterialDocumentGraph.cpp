@@ -13,6 +13,7 @@
 
 #include <app/Application.h>
 #include <app/EngineContext.h>
+#include <data/assets/pack/ExtensionRegistry.h>
 #include <gui/IconFont.h>
 #include <gui/Theme.h>
 #include <gui/UiLayer.h>
@@ -44,6 +45,7 @@ OWL_DIAG_POP
 #include <cstdint>
 #include <filesystem>
 #include <format>
+#include <iterator>
 #include <map>
 #include <optional>
 #include <span>
@@ -198,6 +200,36 @@ struct PaletteEntry {
 	std::string description;
 };
 
+// Custom nodes and functions of the `.owlmat` files the plugin packs serve, read again every few seconds.
+auto pluginEntries() -> const std::vector<PaletteEntry>& {
+	static std::vector<PaletteEntry> s_entries;
+	static int s_scanFrame = -1000;
+	if (!app::Application::instanced() || ImGui::GetFrameCount() - s_scanFrame < 180)
+		return s_entries;
+	s_scanFrame = ImGui::GetFrameCount();
+	s_entries.clear();
+	const auto& extensions = app::Application::get().getExtensions();
+	for (const auto& [id, path]: extensions.findEntries(".owlmat")) {
+		const auto bytes = extensions.readEntry(path);
+		const auto library = bytes ? renderer::MaterialAsset::fromYaml({bytes->begin(), bytes->end()}) : std::nullopt;
+		if (!library || !library->graph.has_value())
+			continue;
+		const auto category = std::format("Plugin {}", id);
+		for (const auto& custom: library->graph->customNodes)
+			s_entries.push_back({.entry = std::format("import|{}|{}", path, custom.name),
+								 .label = custom.title.empty() ? custom.name : custom.title,
+								 .category = category,
+								 .description = std::format("A Slang node of {}, copied into the graph.", path)});
+		for (const auto& function: library->graph->functions)
+			s_entries.push_back(
+					{.entry = std::format("import|{}|{}", path, function.name),
+					 .label = function.name,
+					 .category = category,
+					 .description = std::format("A material function of {}, copied into the graph.", path)});
+	}
+	return s_entries;
+}
+
 auto paletteEntries(const MaterialGraph& iGraph, const std::string& iScope) -> std::vector<PaletteEntry> {
 	std::vector<PaletteEntry> entries;
 	for (const auto& type: renderer::getMaterialNodeTypes()) {
@@ -234,6 +266,7 @@ auto paletteEntries(const MaterialGraph& iGraph, const std::string& iScope) -> s
 						   .category = "Functions",
 						   .description = "A material function of the graph."});
 	}
+	std::ranges::copy(pluginEntries(), std::back_inserter(entries));
 	return entries;
 }
 
@@ -652,12 +685,22 @@ void MaterialDocument::renderCanvasMenu() {
 
 void MaterialDocument::addPaletteNode(const std::string_view iEntry, const std::array<float, 2> iPosition) {
 	const auto bar = iEntry.find('|');
-	commands::CommandArgs args{{"type", std::string{iEntry.substr(0, bar)}},
-							   {"x", double{iPosition[0]}},
-							   {"y", double{iPosition[1]}}};
-	if (bar != std::string_view::npos)
-		args.set("item", std::string{iEntry.substr(bar + 1)});
-	if (const auto result = runCommand("material.add_node", scoped(std::move(args), m_scope)); result.has_value()) {
+	const bool import = iEntry.substr(0, bar) == "import";
+	commands::CommandArgs args{{"x", double{iPosition[0]}}, {"y", double{iPosition[1]}}};
+	if (import) {
+		// `import|<library path>|<custom node or function>`.
+		const auto rest = iEntry.substr(bar + 1);
+		const auto second = rest.rfind('|');
+		args.set("source", std::string{rest.substr(0, second)});
+		args.set("item", std::string{rest.substr(second + 1)});
+	} else {
+		args.set("type", std::string{iEntry.substr(0, bar)});
+		if (bar != std::string_view::npos)
+			args.set("item", std::string{iEntry.substr(bar + 1)});
+	}
+	if (const auto result =
+				runCommand(import ? "material.import_node" : "material.add_node", scoped(std::move(args), m_scope));
+		result.has_value()) {
 		if (const auto node = result->data.find("node"); node != result->data.end())
 			if (const auto* text = std::get_if<std::string>(&node->second); text != nullptr)
 				m_selectedNode = core::UUID{std::stoull(*text)};

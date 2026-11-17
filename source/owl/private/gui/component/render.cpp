@@ -2322,6 +2322,16 @@ void renderProps(LuaScript& ioComponent) {
 	}
 }
 
+void renderProps(ScriptedComponent& ioComponent) {
+	if (ioComponent.fields.empty())
+		widgets::notice("The mod declares no field for this component.");
+	for (size_t idx = 0; idx < ioComponent.fields.size(); ++idx) {
+		ImGui::PushID(static_cast<int>(idx));
+		drawScriptProperty(ioComponent.fields[idx]);
+		ImGui::PopID();
+	}
+}
+
 // Combo over every value of an enum, named by magic_enum.
 template<typename Enum>
 void enumCombo(const char* iLabel, Enum& ioValue) {

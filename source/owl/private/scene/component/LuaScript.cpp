@@ -7,6 +7,7 @@
  */
 #include "owlpch.h"
 
+#include "ScriptValueYaml.h"
 #include "core/SerializerImpl.h"
 #include "core/YamlNode.h"
 #include "data/assets/AssetReference.h"
@@ -31,7 +32,9 @@ void writeComponents(YAML::Emitter& ioEmitter, const std::array<float, Count>& i
 	ioEmitter << YAML::EndSeq;
 }
 
-void writeValue(YAML::Emitter& ioEmitter, const script::ScriptProperty& iProperty) {
+}// namespace
+
+void writeScriptValue(YAML::Emitter& ioEmitter, const script::ScriptProperty& iProperty) {
 	switch (iProperty.type) {
 		case script::ScriptPropertyType::Float:
 			ioEmitter << std::get<float>(iProperty.value);
@@ -70,6 +73,8 @@ void writeValue(YAML::Emitter& ioEmitter, const script::ScriptProperty& iPropert
 	}
 }
 
+namespace {
+
 template<size_t Count>
 auto readComponents(const core::YamlNode& iNode, const std::array<float, Count>& iFallback)
 		-> std::array<float, Count> {
@@ -80,7 +85,9 @@ auto readComponents(const core::YamlNode& iNode, const std::array<float, Count>&
 	return values;
 }
 
-auto readValue(const core::YamlNode& iNode, const script::ScriptPropertyType iType) -> script::ScriptValue {
+}// namespace
+
+auto readScriptValue(const core::YamlNode& iNode, const script::ScriptPropertyType iType) -> script::ScriptValue {
 	using Type = script::ScriptPropertyType;
 	switch (iType) {
 		case Type::Float:
@@ -117,6 +124,8 @@ auto readValue(const core::YamlNode& iNode, const script::ScriptPropertyType iTy
 	return 0.0f;
 }
 
+namespace {
+
 void writeFields(YAML::Emitter& ioEmitter, const LuaScript& iScript) {
 	ioEmitter << YAML::BeginMap;
 	ioEmitter << YAML::Key << "scriptPath" << YAML::Value << data::assets::toAssetReference(iScript.scriptPath);
@@ -128,7 +137,7 @@ void writeFields(YAML::Emitter& ioEmitter, const LuaScript& iScript) {
 			ioEmitter << YAML::Key << "type" << YAML::Value
 					  << std::string{script::ScriptEngine::propertyTypeName(prop.type)};
 			ioEmitter << YAML::Key << "value" << YAML::Value;
-			writeValue(ioEmitter, prop);
+			writeScriptValue(ioEmitter, prop);
 			ioEmitter << YAML::EndMap;
 		}
 		ioEmitter << YAML::EndSeq;
@@ -179,7 +188,7 @@ void LuaScript::deserialize(const core::Serializer& iNode) {
 					prop.type = *type;
 					prop.value = script::ScriptEngine::defaultValueFor(*type);
 					if (propNode["value"])
-						prop.value = readValue(propNode["value"], *type);
+						prop.value = readScriptValue(propNode["value"], *type);
 					prop.defaultValue = prop.value;
 				}
 			}

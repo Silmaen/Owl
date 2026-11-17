@@ -14,10 +14,11 @@ Design of the planned modding support, the new platforms and the plugins. The ne
 
 - Mod loading and the extension pack format (manifest, dependencies, load order, asset overrides): done, see
   [Mods and extension packs](../mods.md)
-- Lua mod API on Luau ([Visual scripting](visual-scripting.md#visual-scripting-luau)): custom components registered
-  from Lua on the open component registry, hooks into game events (`on_scene_load`, `on_entity_spawn`...), sandboxed
-  execution on the Lua quotas (no filesystem access by default)
-- In-game mod manager: enable, disable and reorder mods, conflict detection
+- Lua mod API: custom components registered from Lua on the component registry, hooks into game events
+  (`on_scene_load`, `on_entity_spawn`...), sandboxed execution on the Lua quotas (no filesystem access); done, see
+  [Entry script and game events](../mods.md#mods-script)
+- In-game mod manager: enable, disable and reorder mods, conflict detection; done, see
+  [Mod manager](../mods.md#mods-manager)
 
 ## Platforms
 
@@ -55,13 +56,13 @@ Besides MinGW (kept), a Windows build with the MSVC ABI so the SDK links from Vi
 
 Plugins extend the engine and Owl Nest; teams of developers and designers share them. Mods and plugins are one
 mechanism: an extension pack (manifest, version, dependencies, load order) that a game loads as a mod, a project or
-Owl Nest as a plugin ([Mods and extension packs](../mods.md)). Data, script and Owl Nest plugins are planned;
-native plugins are to be evaluated after 1.0.
+Owl Nest as a plugin ([Mods and extension packs](../mods.md)). Data and script plugins are done
+([Plugins](../mods.md#mods-plugins)); Owl Nest plugins are planned; native plugins are to be evaluated after 1.0.
 
 | Kind     | What it adds                                                                     | Targets                          |
 |----------|----------------------------------------------------------------------------------|----------------------------------|
-| Data     | Material nodes (Slang functions and their pins), script nodes, templates, assets | Every target                     |
-| Script   | Game rules, domain functions, components, in the scripting language              | Every target                     |
+| Data     | Material nodes (done), script nodes (done), templates (done), assets             | Every target                     |
+| Script   | Game rules, domain functions, components, in the scripting language (done)       | Every target                     |
 | Native   | Engine functions, render layers, renderers, backends, in C++                     | The binaries its authors provide |
 | Owl Nest | Panels, `CommandRegistry` commands, inspector drawers, document types, importers | The editor hosts                 |
 

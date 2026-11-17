@@ -1,0 +1,10 @@
+FormatVersion: 1
+OwlExtension:
+  id: demo.bounty
+  name: Pickup bounty
+  version: 1.0.0
+  kind: Script
+  loadOrder: 0
+  author: Silmaen
+  description: Puts a bounty on the first ammo box of the raycast level; picking it up earns its gold.
+  script: scripts/mods/demo.bounty/main.lua

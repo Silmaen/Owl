@@ -130,24 +130,27 @@ end
 
 ### Lifecycle Callbacks
 
-| Callback                      | When                                                                             | Arguments                     |
-|-------------------------------|----------------------------------------------------------------------------------|-------------------------------|
-| `on_create()`                 | Scene enters Play mode                                                           | None                          |
-| `on_update(dt)`               | Every frame during Play mode                                                     | `dt`: delta time (seconds)    |
-| `on_tick(dt)`                 | Every fixed simulation tick (60 Hz)                                              | `dt`: tick duration (seconds) |
-| `on_destroy()`                | Entity destroyed, or Play mode ends                                              | None                          |
-| `on_collision(other_id)`      | Body starts touching another entity's body                                       | `other_id`: handle            |
-| `on_collision_exit(other_id)` | Last contact with another entity's body ends                                     | `other_id`: handle            |
-| `on_joint_break(other_id)`    | A breakable joint of the entity, or linked to it, breaks under its load          | `other_id`: handle, 0 = world |
-| `on_demoted()`                | The entity's `SimulationLod` demotes it                                          | None                          |
-| `on_promoted()`               | The entity's `SimulationLod` promotes it                                         | None                          |
-| `on_coarse_tick(dt)`          | Every `coarseInterval` ticks while demoted, instead of `on_update` and `on_tick` | `dt`: seconds covered         |
-| `on_player_join(player)`      | A player joins the lobby of the network session                                  | `player`: player number       |
-| `on_player_leave(player)`     | A player leaves the session                                                      | `player`: player number       |
-| `on_lobby_changed()`          | The lobby changes (players, ready flags, input types)                            | None                          |
-| `on_match_start()`            | The match of the network session starts                                          | None                          |
-| `on_desync(tick)`             | A lockstep match diverged                                                        | `tick`: first diverging tick  |
-| `on_disconnected(reason)`     | The network session ended or was refused                                         | `reason`: text                |
+| Callback                      | When                                                                                 | Arguments                     |
+|-------------------------------|--------------------------------------------------------------------------------------|-------------------------------|
+| `on_create()`                 | Scene enters Play mode                                                               | None                          |
+| `on_update(dt)`               | Every frame during Play mode                                                         | `dt`: delta time (seconds)    |
+| `on_tick(dt)`                 | Every fixed simulation tick (60 Hz)                                                  | `dt`: tick duration (seconds) |
+| `on_destroy()`                | Entity destroyed, or Play mode ends                                                  | None                          |
+| `on_collision(other_id)`      | Body starts touching another entity's body                                           | `other_id`: handle            |
+| `on_collision_exit(other_id)` | Last contact with another entity's body ends                                         | `other_id`: handle            |
+| `on_joint_break(other_id)`    | A breakable joint of the entity, or linked to it, breaks under its load              | `other_id`: handle, 0 = world |
+| `on_demoted()`                | The entity's `SimulationLod` demotes it                                              | None                          |
+| `on_promoted()`               | The entity's `SimulationLod` promotes it                                             | None                          |
+| `on_coarse_tick(dt)`          | Every `coarseInterval` ticks while demoted, instead of `on_update` and `on_tick`     | `dt`: seconds covered         |
+| `on_scene_load()`             | Every script of the level is created; reaches mod entry scripts                      | None                          |
+| `on_entity_spawn(id)`         | An entity is spawned at run time (a prefab, for instance); reaches mod entry scripts | `id`: handle                  |
+| `on_entity_destroy(id)`       | An entity is destroyed at run time, before it goes; reaches mod entry scripts        | `id`: handle                  |
+| `on_player_join(player)`      | A player joins the lobby of the network session                                      | `player`: player number       |
+| `on_player_leave(player)`     | A player leaves the session                                                          | `player`: player number       |
+| `on_lobby_changed()`          | The lobby changes (players, ready flags, input types)                                | None                          |
+| `on_match_start()`            | The match of the network session starts                                              | None                          |
+| `on_desync(tick)`             | A lockstep match diverged                                                            | `tick`: first diverging tick  |
+| `on_disconnected(reason)`     | The network session ended or was refused                                             | `reason`: text                |
 
 All callbacks are optional — missing callbacks are silently skipped.
 

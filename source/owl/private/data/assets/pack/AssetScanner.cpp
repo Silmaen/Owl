@@ -1030,34 +1030,32 @@ auto AssetScanner::scanScene(const std::filesystem::path& iSceneFile, std::vecto
 	return assets;
 }
 
-auto AssetScanner::scanProject(const std::filesystem::path& iProjectDir, const std::string& iFirstScene,
-							   std::vector<std::string>* oWarnings, const std::string& iDefaultHud,
-							   const std::string& iDefaultHudTheme) -> std::vector<AssetReference> {
-	// Resolve the first scene path.
-	std::filesystem::path firstScenePath;
-	std::string resolvedName = iFirstScene;
+namespace {
+
+// A scene of the project on disk: in an asset folder, then in the project folder, at its path or under `scenes/`.
+auto findProjectScene(const std::filesystem::path& iProjectDir, const std::string& iScene) -> std::filesystem::path {
+	std::string resolvedName = iScene;
 	if (std::filesystem::path(resolvedName).extension() != ".owl")
 		resolvedName += ".owl";
+	std::vector<std::filesystem::path> roots;
+	if (app::Application::instanced())
+		for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories())
+			roots.push_back(assetsPath);
+	roots.push_back(iProjectDir);
+	for (const auto& root: roots)
+		for (const auto& path: {root / resolvedName, root / "scenes" / resolvedName})
+			if (exists(path))
+				return path;
+	return {};
+}
 
-	if (app::Application::instanced()) {
-		for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
-			if (const auto p = assetsPath / resolvedName; exists(p)) {
-				firstScenePath = p;
-				break;
-			}
-			if (const auto p = assetsPath / "scenes" / resolvedName; exists(p)) {
-				firstScenePath = p;
-				break;
-			}
-		}
-	}
-	if (firstScenePath.empty()) {
-		// Fallback: try project directory directly.
-		if (const auto p = iProjectDir / resolvedName; exists(p))
-			firstScenePath = p;
-		else if (const auto p2 = iProjectDir / "scenes" / resolvedName; exists(p2))
-			firstScenePath = p2;
-	}
+}// namespace
+
+auto AssetScanner::scanProject(const std::filesystem::path& iProjectDir, const std::string& iFirstScene,
+							   std::vector<std::string>* oWarnings, const std::string& iDefaultHud,
+							   const std::string& iDefaultHudTheme, const std::string& iModScreen)
+		-> std::vector<AssetReference> {
+	const auto firstScenePath = findProjectScene(iProjectDir, iFirstScene);
 
 	if (firstScenePath.empty()) {
 		if (oWarnings != nullptr)
@@ -1067,6 +1065,12 @@ auto AssetScanner::scanProject(const std::filesystem::path& iProjectDir, const s
 
 	auto assets = scanScene(firstScenePath, oWarnings);
 	std::set<std::string> visited;
+	if (!iModScreen.empty()) {
+		if (const auto modScreenPath = findProjectScene(iProjectDir, iModScreen); !modScreenPath.empty())
+			scanSceneRecursive(modScreenPath, visited, assets, oWarnings);
+		else if (oWarnings != nullptr)
+			oWarnings->push_back(std::format("Mod screen '{}' not found", iModScreen));
+	}
 	scanHud(iDefaultHud, "the project's DefaultHud", visited, assets, oWarnings);
 	scanHudTheme(iDefaultHudTheme, "the project's DefaultHudTheme", assets, oWarnings);
 	scanLocalisationFonts(iProjectDir, assets, oWarnings);

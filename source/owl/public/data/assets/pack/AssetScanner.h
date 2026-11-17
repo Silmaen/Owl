@@ -56,12 +56,13 @@ public:
 	 * @param[out] oWarnings Optional output filled with messages for unresolvable references.
 	 * @param[in] iDefaultHud Relative path to the project's default HUD (scenes naming their own are followed anyway).
 	 * @param[in] iDefaultHudTheme Relative path to the project's default HUD theme.
+	 * @param[in] iModScreen Scene of the mod screen, packed with what it references; none when empty.
 	 * @return Deduplicated list of all assets across all reachable scenes.
 	 */
 	[[nodiscard]] static auto scanProject(const std::filesystem::path& iProjectDir, const std::string& iFirstScene,
 										  std::vector<std::string>* oWarnings = nullptr,
-										  const std::string& iDefaultHud = {}, const std::string& iDefaultHudTheme = {})
-			-> std::vector<AssetReference>;
+										  const std::string& iDefaultHud = {}, const std::string& iDefaultHudTheme = {},
+										  const std::string& iModScreen = {}) -> std::vector<AssetReference>;
 };
 
 }// namespace owl::data::assets::pack

@@ -16,15 +16,20 @@
 #include <app/Application.h>
 #include <data/assets/pack/ExtensionManifest.h>
 #include <data/assets/pack/ExtensionPack.h>
+#include <data/assets/pack/ExtensionRegistry.h>
 #include <platform/FileUtils.h>
+#include <renderer/Material.h>
 #include <scene/Scene.h>
+#include <script/visual/VisualScript.h>
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <string>
+#include <tuple>
 #include <variant>
 #include <vector>
 
@@ -281,4 +286,56 @@ TEST_F(ExtensionCommandsTest, PanelEditsThroughCommands) {
 	EXPECT_TRUE(panel.getEntries().empty());
 	panel.toggle();
 	EXPECT_FALSE(panel.isVisible());
+}
+
+TEST_F(ExtensionCommandsTest, ScriptGivesThePackItsEntryScript) {
+	ASSERT_TRUE(run("extension.create", {{"id", std::string{"rules"}}}));
+	const auto folder = getExtensionsFolder(m_root) / "rules";
+	ASSERT_TRUE(run("extension.script", {{"path", folder.string()}}));
+	const auto manifest = manifestOf("rules");
+	EXPECT_EQ(manifest.kind, ExtensionKind::Script);
+	EXPECT_EQ(manifest.script, "scripts/rules/main.lua");
+	ASSERT_TRUE(std::filesystem::exists(folder / manifest.script));
+	// The template declares no component yet, and every game event it defines is listed by the panel.
+	panel::ExtensionPanel panel;
+	panel.setCommandRegistry(&m_registry);
+	panel.setProjectDirectory(m_root);
+	panel.refresh();
+	ASSERT_TRUE(panel.select("rules"));
+	const auto& entry = *panel.getSelected();
+	EXPECT_TRUE(entry.components.empty());
+	EXPECT_TRUE(std::ranges::contains(entry.functions, std::string{"on_scene_load"}, &script::ScriptFunction::name));
+	std::ofstream{folder / manifest.script, std::ios::app}
+			<< "components = { [\"rules.Health\"] = { { name = \"hp\", type = \"int\", default = 3 } } }\n";
+	ASSERT_TRUE(run("extension.script", {{"path", folder.string()}}));
+	panel.refresh();
+	ASSERT_EQ(panel.getSelected()->components.size(), 1u);
+	EXPECT_EQ(panel.getSelected()->components[0].key, "rules.Health");
+	ASSERT_TRUE(run("extension.set", {{"path", folder.string()}, {"script", std::string{"scripts/other.lua"}}}));
+	EXPECT_EQ(manifestOf("rules").script, "scripts/other.lua");
+	EXPECT_EQ(run("extension.script", {{"path", std::string{"nowhere"}}}).error().error, CommandError::InvalidArgument);
+}
+
+TEST_F(ExtensionCommandsTest, EngineDemoPluginsShareNodesAndTemplates) {
+	const auto folder = owl::test::getRootPath() / "engine_demo" / "extensions";
+	ASSERT_GE(m_app->setExtensionSources(data::assets::pack::ExtensionRegistry::listSources(folder)), 3u);
+	const auto& extensions = m_app->getExtensions();
+	const auto modules = extensions.findEntries(".lua");
+	const auto module = std::ranges::find(modules, std::string{"scripts/lib/demo_nodes.lua"},
+										  &data::assets::pack::ExtensionEntry::path);
+	ASSERT_NE(module, modules.end());
+	const auto source = extensions.readEntry(module->path);
+	ASSERT_TRUE(source.has_value());
+	EXPECT_EQ(script::visual::parseLuaFunctions(std::string{source->begin(), source->end()}).size(), 2u);
+	const auto materials = extensions.findEntries(".owlmat");
+	ASSERT_EQ(materials.size(), 1u);
+	const auto library = extensions.readEntry(materials.front().path);
+	ASSERT_TRUE(library.has_value());
+	const auto asset = renderer::MaterialAsset::fromYaml(std::string{library->begin(), library->end()});
+	ASSERT_TRUE(asset.has_value() && asset->graph.has_value());
+	EXPECT_NE(asset->graph->findCustomNode("pulse"), nullptr);
+	const auto prefabs = extensions.findEntries(".owlprefab");
+	ASSERT_EQ(prefabs.size(), 1u);
+	EXPECT_EQ(prefabs.front().id, "demo.nodes");
+	std::ignore = m_app->setExtensionSources({});
 }

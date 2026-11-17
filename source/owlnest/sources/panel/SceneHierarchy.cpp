@@ -18,6 +18,8 @@
 #include "../commands/PrefabCommands.h"
 #include "../document/Document.h"
 
+#include <app/Application.h>
+#include <data/assets/pack/ExtensionRegistry.h>
 #include <gui/IconBank.h>
 #include <gui/IconFont.h>
 #include <gui/UiLayer.h>
@@ -38,6 +40,7 @@
 #include <renderer/Renderer.h>
 #include <scene/ComponentRegistry.h>
 #include <scene/PrefabSerializer.h>
+#include <scene/ScriptedComponents.h>
 #include <scene/component/AdaptiveMusic.h>
 #include <scene/component/Camera.h>
 #include <scene/component/Canvas.h>
@@ -349,6 +352,26 @@ void drawCreateAudioMenu(const auto& iTarget, const std::optional<commands::ArgV
 	ImGui::EndMenu();
 }
 
+// "Plugins" submenu: the prefabs the enabled plugin packs serve, the templates they share with the project.
+void drawCreatePluginMenu(const auto& iTarget) {
+	if (!app::Application::instanced())
+		return;
+	const auto& extensions = app::Application::get().getExtensions();
+	const auto prefabs = extensions.findEntries(".owlprefab");
+	if (prefabs.empty() || !ImGui::BeginMenu("Plugins"))
+		return;
+	for (const auto& [id, path]: prefabs) {
+		const auto* pack = extensions.find(id);
+		if (pack == nullptr || pack->isPacked())
+			continue;
+		const auto label = std::format("{} / {}", id, std::filesystem::path{path}.stem().string());
+		if (gui::widgets::menuItem({.glyph = gui::icon::package, .label = label.c_str()}))
+			std::ignore = iTarget.execute("prefab.instantiate",
+										  {{"path", (pack->getSource() / path).string()}, {"asset_path", path}});
+	}
+	ImGui::EndMenu();
+}
+
 auto componentIconName(const char* iCompName) -> const char* {
 	static const std::unordered_map<std::string_view, const char*> map = {
 			{"Transform", "comp_transform"},
@@ -451,6 +474,7 @@ void SceneHierarchy::renderHierarchy() {
 			drawCreateLightMenu(getCommandTarget(), std::nullopt);
 			drawCreateEffectsMenu(getCommandTarget(), std::nullopt);
 			drawCreateAudioMenu(getCommandTarget(), std::nullopt);
+			drawCreatePluginMenu(getCommandTarget());
 			ImGui::EndPopup();
 		}
 		ImGui::PopID();
@@ -1077,6 +1101,8 @@ void drawGameComponents(scene::Entity& ioEntity, const commands::CommandTarget& 
 			ioInspector.beginComponent(ioEntity, desc.key);
 			if (desc.inspect)
 				std::ignore = desc.inspect(ioEntity);
+			else if (auto* scripted = scene::ScriptedComponents::get(ioEntity, desc.key); scripted != nullptr)
+				gui::component::renderProps(*scripted);
 			else
 				ImGui::TextDisabled("No inspector registered for this component.");
 			ioInspector.endComponent(desc.key, desc.name, iCommands);

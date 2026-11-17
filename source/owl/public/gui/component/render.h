@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "scene/ScriptedComponents.h"
 #include "scene/component/components.h"
 #include <core/Core.h>
 #include <core/UUID.h>
@@ -261,6 +262,13 @@ OWL_API void renderProps(scene::component::AdaptiveMusic& ioComponent);
  * @param ioComponent The component to edit.
  */
 OWL_API void renderProps(scene::component::LuaScript& ioComponent);
+
+/**
+ * @brief
+ *  Render a Gui for editing a component declared by a mod: one row per field, each with its reset button.
+ * @param ioComponent The component to edit.
+ */
+OWL_API void renderProps(scene::component::ScriptedComponent& ioComponent);
 
 /**
  * @brief

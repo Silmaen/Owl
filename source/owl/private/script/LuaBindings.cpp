@@ -13,12 +13,15 @@
 #include "EntityHandle.h"
 #include "LuaNetBindings.h"
 
+#include "app/Application.h"
 #include "app/EngineContext.h"
 #include "core/Core.h"
 #include "core/Macros.h"
 #include "core/external/lua.h"
 #include "data/assets/AssetReference.h"
 #include "data/assets/AssetSearchPaths.h"
+#include "data/assets/pack/ExtensionRegistry.h"
+#include "data/assets/pack/ModManager.h"
 #include "data/dialogue/DialogueLibrary.h"
 #include "data/table/DataTableLibrary.h"
 #include "input/ActionFrame.h"
@@ -39,6 +42,7 @@
 #include "scene/Scene.h"
 #include "scene/ScenePicking.h"
 #include "scene/ScreenTransition.h"
+#include "scene/ScriptedComponents.h"
 #include "scene/SequencePlayback.h"
 #include "scene/SettingsManager.h"
 #include "scene/TilemapTerrain.h"
@@ -1403,6 +1407,133 @@ auto luaEngineVersion(lua_State* iState) -> int {
 	return 1;
 }
 
+// The mod manager of the game, null outside an application.
+auto modManager() -> data::assets::pack::ModManager* {
+	return app::Application::instanced() ? &app::Application::get().getModManager() : nullptr;
+}
+
+auto luaModsIsManaged(lua_State* iState) -> int {
+	const auto* mods = modManager();
+	lua_pushboolean(iState, mods != nullptr && mods->isConfigured() ? 1 : 0);
+	return 1;
+}
+
+auto luaModsCount(lua_State* iState) -> int {
+	const auto* mods = modManager();
+	pushInteger(iState, mods != nullptr ? static_cast<int64_t>(mods->getMods().size()) : 0);
+	return 1;
+}
+
+auto luaModsGet(lua_State* iState) -> int {
+	const auto index = luaL_checkinteger(iState, 1);
+	const auto* mods = modManager();
+	if (mods == nullptr || index < 1 || static_cast<size_t>(index) > mods->getMods().size())
+		return 0;
+	const auto& mod = mods->getMods()[static_cast<size_t>(index - 1)];
+	lua_createtable(iState, 0, 8);
+	const auto setString = [iState](const char* iKey, const std::string& iValue) -> void {
+		lua_pushlstring(iState, iValue.data(), iValue.size());
+		lua_setfield(iState, -2, iKey);
+	};
+	setString("id", mod.manifest.id);
+	setString("name", mod.manifest.getDisplayName());
+	setString("version", mod.manifest.version.toString());
+	setString("author", mod.manifest.author);
+	setString("description", mod.manifest.description);
+	setString("issue", mod.issue);
+	lua_pushboolean(iState, mod.enabled ? 1 : 0);
+	lua_setfield(iState, -2, "enabled");
+	lua_pushboolean(iState, mod.mounted ? 1 : 0);
+	lua_setfield(iState, -2, "mounted");
+	return 1;
+}
+
+auto luaModsSetEnabled(lua_State* iState) -> int {
+	const char* id = luaL_checkstring(iState, 1);
+	const bool enabled = lua_toboolean(iState, 2) != 0;
+	auto* mods = modManager();
+	lua_pushboolean(iState, mods != nullptr && mods->setEnabled(id, enabled) ? 1 : 0);
+	return 1;
+}
+
+auto luaModsMove(lua_State* iState) -> int {
+	const char* id = luaL_checkstring(iState, 1);
+	const auto offset = static_cast<int32_t>(luaL_checkinteger(iState, 2));
+	auto* mods = modManager();
+	lua_pushboolean(iState, mods != nullptr && mods->move(id, offset) ? 1 : 0);
+	return 1;
+}
+
+auto luaModsIsDirty(lua_State* iState) -> int {
+	const auto* mods = modManager();
+	lua_pushboolean(iState, mods != nullptr && mods->isDirty() ? 1 : 0);
+	return 1;
+}
+
+auto luaModsApply(lua_State* iState) -> int {
+	auto* activeScene = getBoundScene(iState);
+	const auto* mods = modManager();
+	if (activeScene == nullptr || mods == nullptr || !mods->isConfigured()) {
+		lua_pushboolean(iState, 0);
+		return 1;
+	}
+	activeScene->teleportRequest.pending = true;
+	activeScene->teleportRequest.applyMods = true;
+	activeScene->teleportRequest.levelName = data::assets::toAssetPath(luaL_optstring(iState, 1, ""));
+	activeScene->teleportRequest.targetName.clear();
+	activeScene->teleportRequest.initialVelocity = {0.f, 0.f};
+	activeScene->teleportRequest.rotationDelta = 0.f;
+	lua_pushboolean(iState, 1);
+	return 1;
+}
+
+auto luaModsOpenScreen(lua_State* iState) -> int {
+	auto* activeScene = getBoundScene(iState);
+	auto* context = contextOf(iState);
+	if (activeScene == nullptr || context == nullptr)
+		return 0;
+	context->setModReturnLevel(data::assets::toAssetPath(luaL_checkstring(iState, 1)));
+	activeScene->teleportRequest.pending = true;
+	activeScene->teleportRequest.applyMods = false;
+	activeScene->teleportRequest.levelName = context->getModScreen();
+	activeScene->teleportRequest.targetName.clear();
+	activeScene->teleportRequest.initialVelocity = {0.f, 0.f};
+	activeScene->teleportRequest.rotationDelta = 0.f;
+	return 0;
+}
+
+auto luaModsReturnLevel(lua_State* iState) -> int {
+	const auto* context = contextOf(iState);
+	const std::string level = context != nullptr ? context->getModReturnLevel() : std::string{};
+	lua_pushlstring(iState, level.data(), level.size());
+	return 1;
+}
+
+auto luaModsConflicts(lua_State* iState) -> int {
+	if (!app::Application::instanced()) {
+		lua_createtable(iState, 0, 0);
+		return 1;
+	}
+	const auto conflicts = app::Application::get().getExtensions().getConflicts();
+	lua_createtable(iState, static_cast<int>(conflicts.size()), 0);
+	for (size_t index = 0; index < conflicts.size(); ++index) {
+		const auto& conflict = conflicts[index];
+		lua_createtable(iState, 0, 3);
+		lua_pushlstring(iState, conflict.path.data(), conflict.path.size());
+		lua_setfield(iState, -2, "path");
+		lua_pushlstring(iState, conflict.providers.back().data(), conflict.providers.back().size());
+		lua_setfield(iState, -2, "winner");
+		lua_createtable(iState, static_cast<int>(conflict.providers.size()), 0);
+		for (size_t provider = 0; provider < conflict.providers.size(); ++provider) {
+			lua_pushlstring(iState, conflict.providers[provider].data(), conflict.providers[provider].size());
+			lua_rawseti(iState, -2, static_cast<int>(provider + 1));
+		}
+		lua_setfield(iState, -2, "providers");
+		lua_rawseti(iState, -2, static_cast<int>(index + 1));
+	}
+	return 1;
+}
+
 auto luaTimeDelta(lua_State* iState) -> int {
 	lua_pushnumber(iState, static_cast<lua_Number>(LuaEngine::getDeltaTime(iState)));
 	return 1;
@@ -1538,6 +1669,8 @@ auto luaEntityHasComponent(lua_State* iState) -> int {
 		has = entity->hasComponent<scene::component::UiScrollView>();
 	else if (compName == "UiList")
 		has = entity->hasComponent<scene::component::UiList>();
+	else if (const auto* descriptor = scene::ComponentRegistry::find(std::string{compName}); descriptor != nullptr)
+		has = descriptor->has(*entity);
 	lua_pushboolean(iState, has ? 1 : 0);
 	return 1;
 }
@@ -1553,6 +1686,184 @@ auto luaEntityAddComponent(lua_State* iState) -> int {
 	if (!descriptor->has(*entity))
 		descriptor->add(*entity);
 	lua_pushboolean(iState, 1);
+	return 1;
+}
+
+// A table of named numbers (`{x = 1, y = 2}`) from the components of a vector or a colour.
+template<size_t Count>
+void pushNamedNumbers(lua_State* iState, const std::array<float, Count>& iValues,
+					  const std::array<const char*, Count>& iKeys) {
+	lua_createtable(iState, 0, static_cast<int>(Count));
+	for (size_t index = 0; index < Count; ++index) {
+		lua_pushnumber(iState, static_cast<double>(iValues[index]));
+		lua_setfield(iState, -2, iKeys[index]);
+	}
+}
+
+template<size_t Count>
+auto readNamedNumbers(lua_State* iState, const int iIndex, const std::array<const char*, Count>& iKeys,
+					  std::array<float, Count> ioValues) -> std::array<float, Count> {
+	if (lua_type(iState, iIndex) != LUA_TTABLE)
+		return ioValues;
+	for (size_t index = 0; index < Count; ++index) {
+		lua_getfield(iState, iIndex, iKeys[index]);
+		if (lua_isnumber(iState, -1) != 0)
+			ioValues[index] = static_cast<float>(lua_tonumber(iState, -1));
+		lua_pop(iState, 1);
+	}
+	return ioValues;
+}
+
+constexpr std::array<const char*, 2> g_vec2Keys{"x", "y"};
+constexpr std::array<const char*, 3> g_vec3Keys{"x", "y", "z"};
+constexpr std::array<const char*, 4> g_colorKeys{"r", "g", "b", "a"};
+
+void pushFieldValue(lua_State* iState, const script::ScriptProperty& iField) {
+	using Type = script::ScriptPropertyType;
+	switch (iField.type) {
+		case Type::Float:
+			lua_pushnumber(iState, static_cast<double>(std::get<float>(iField.value)));
+			return;
+		case Type::Int:
+			pushInteger(iState, std::get<int64_t>(iField.value));
+			return;
+		case Type::String:
+			lua_pushstring(iState, std::get<std::string>(iField.value).c_str());
+			return;
+		case Type::Bool:
+			lua_pushboolean(iState, std::get<bool>(iField.value) ? 1 : 0);
+			return;
+		case Type::Color:
+			pushNamedNumbers(iState, std::get<std::array<float, 4>>(iField.value), g_colorKeys);
+			return;
+		case Type::Vec2:
+			pushNamedNumbers(iState, std::get<std::array<float, 2>>(iField.value), g_vec2Keys);
+			return;
+		case Type::Vec3:
+			pushNamedNumbers(iState, std::get<std::array<float, 3>>(iField.value), g_vec3Keys);
+			return;
+		case Type::Entity:
+			pushEntity(iState, core::UUID{std::get<uint64_t>(iField.value)});
+			return;
+		case Type::Numbers:
+			{
+				const auto& numbers = std::get<std::vector<double>>(iField.value);
+				lua_createtable(iState, static_cast<int>(numbers.size()), 0);
+				for (size_t index = 0; index < numbers.size(); ++index) {
+					lua_pushnumber(iState, numbers[index]);
+					lua_rawseti(iState, -2, static_cast<int>(index + 1));
+				}
+				return;
+			}
+		case Type::Strings:
+			{
+				const auto& strings = std::get<std::vector<std::string>>(iField.value);
+				lua_createtable(iState, static_cast<int>(strings.size()), 0);
+				for (size_t index = 0; index < strings.size(); ++index) {
+					lua_pushstring(iState, strings[index].c_str());
+					lua_rawseti(iState, -2, static_cast<int>(index + 1));
+				}
+				return;
+			}
+	}
+}
+
+// The value at a stack index as the type of a field; false when it is of another type.
+auto readFieldValue(lua_State* iState, const int iIndex, script::ScriptProperty& ioField) -> bool {
+	using Type = script::ScriptPropertyType;
+	switch (ioField.type) {
+		case Type::Float:
+			if (lua_isnumber(iState, iIndex) == 0)
+				return false;
+			ioField.value = static_cast<float>(lua_tonumber(iState, iIndex));
+			return true;
+		case Type::Int:
+			if (lua_isnumber(iState, iIndex) == 0)
+				return false;
+			ioField.value = static_cast<int64_t>(lua_tonumber(iState, iIndex));
+			return true;
+		case Type::String:
+			if (lua_type(iState, iIndex) != LUA_TSTRING)
+				return false;
+			ioField.value = std::string{lua_tostring(iState, iIndex)};
+			return true;
+		case Type::Bool:
+			if (lua_type(iState, iIndex) != LUA_TBOOLEAN)
+				return false;
+			ioField.value = lua_toboolean(iState, iIndex) != 0;
+			return true;
+		case Type::Color:
+			if (lua_type(iState, iIndex) != LUA_TTABLE)
+				return false;
+			ioField.value =
+					readNamedNumbers(iState, iIndex, g_colorKeys, std::get<std::array<float, 4>>(ioField.value));
+			return true;
+		case Type::Vec2:
+			if (lua_type(iState, iIndex) != LUA_TTABLE)
+				return false;
+			ioField.value = readNamedNumbers(iState, iIndex, g_vec2Keys, std::get<std::array<float, 2>>(ioField.value));
+			return true;
+		case Type::Vec3:
+			if (lua_type(iState, iIndex) != LUA_TTABLE)
+				return false;
+			ioField.value = readNamedNumbers(iState, iIndex, g_vec3Keys, std::get<std::array<float, 3>>(ioField.value));
+			return true;
+		case Type::Entity:
+			{
+				auto* activeScene = getBoundScene(iState);
+				if (activeScene == nullptr || lua_isnumber(iState, iIndex) == 0)
+					return false;
+				ioField.value = static_cast<uint64_t>(
+						getEntityHandleUuid(*activeScene, static_cast<uint64_t>(lua_tonumber(iState, iIndex))));
+				return true;
+			}
+		case Type::Numbers:
+		case Type::Strings:
+			{
+				if (lua_type(iState, iIndex) != LUA_TTABLE)
+					return false;
+				std::vector<double> numbers;
+				std::vector<std::string> strings;
+				for (int index = 1; lua_rawgeti(iState, iIndex, index) != LUA_TNIL; ++index) {
+					if (lua_isnumber(iState, -1) != 0)
+						numbers.push_back(lua_tonumber(iState, -1));
+					if (lua_type(iState, -1) == LUA_TSTRING)
+						strings.emplace_back(lua_tostring(iState, -1));
+					lua_pop(iState, 1);
+				}
+				lua_pop(iState, 1);
+				if (ioField.type == Type::Numbers)
+					ioField.value = std::move(numbers);
+				else
+					ioField.value = std::move(strings);
+				return true;
+			}
+	}
+	return false;
+}
+
+auto luaEntityGetField(lua_State* iState) -> int {
+	const std::string key = luaL_checkstring(iState, 2);
+	const char* name = luaL_checkstring(iState, 3);
+	const auto entity = findEntity(iState);
+	const auto* values = entity ? scene::ScriptedComponents::get(*entity, key) : nullptr;
+	const auto* field = values != nullptr ? values->find(name) : nullptr;
+	if (field == nullptr) {
+		lua_pushnil(iState);
+		return 1;
+	}
+	pushFieldValue(iState, *field);
+	return 1;
+}
+
+auto luaEntitySetField(lua_State* iState) -> int {
+	const std::string key = luaL_checkstring(iState, 2);
+	const char* name = luaL_checkstring(iState, 3);
+	luaL_checkany(iState, 4);
+	const auto entity = findEntity(iState);
+	auto* values = entity ? scene::ScriptedComponents::get(*entity, key) : nullptr;
+	auto* field = values != nullptr ? values->find(name) : nullptr;
+	lua_pushboolean(iState, field != nullptr && readFieldValue(iState, 4, *field) ? 1 : 0);
 	return 1;
 }
 
@@ -4579,6 +4890,41 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "engine", .name = "version", .function = guarded<luaEngineVersion>,
 		 .description = "Version of the engine running the game, as `major.minor.patch`.",
 		 .returns = {{"version", String}}},
+		{.table = "mods", .name = "is_managed", .function = guarded<luaModsIsManaged>,
+		 .description = "Whether the player chooses the mods of this game: true in a game runner with a mods folder, "
+						"false in Owl Nest (the plugins of the project are set in its Extensions panel).",
+		 .returns = {{"managed", Boolean}}},
+		{.table = "mods", .name = "count", .function = guarded<luaModsCount>,
+		 .description = "Number of mods in the mods folder, enabled or not.", .returns = {{"count", Integer}}},
+		{.table = "mods", .name = "get", .function = guarded<luaModsGet>,
+		 .description = "The mod at a place of the list (1 loads first): a table with `id`, `name`, `version`, "
+						"`author`, `description`, `enabled`, `mounted` and `issue` (why an enabled mod is not "
+						"mounted); nil past the end.",
+		 .params = {{"index", Integer}}, .returns = {{"mod", Table}}},
+		{.table = "mods", .name = "set_enabled", .function = guarded<luaModsSetEnabled>,
+		 .description = "Enable or disable a mod, applied by `mods.apply`; false for an unknown id.",
+		 .params = {{"id", String}, {"enabled", Boolean}}, .returns = {{"known", Boolean}}},
+		{.table = "mods", .name = "move", .function = guarded<luaModsMove>,
+		 .description = "Move a mod up (negative offset, loads earlier) or down (loads later, wins the assets it "
+						"shares), applied by `mods.apply`; false when it does not move.",
+		 .params = {{"id", String}, {"offset", Integer}}, .returns = {{"moved", Boolean}}},
+		{.table = "mods", .name = "is_dirty", .function = guarded<luaModsIsDirty>,
+		 .description = "Whether a choice changed since the mods were last applied.", .returns = {{"dirty", Boolean}}},
+		{.table = "mods", .name = "apply", .function = guarded<luaModsApply>,
+		 .description = "After this frame, mount the mods chosen, save the choices and load a level (this one when "
+						"none is given); false when the player does not choose the mods of this game.",
+		 .params = {{"level", String, true}}, .returns = {{"applied", Boolean}}},
+		{.table = "mods", .name = "open_screen", .function = guarded<luaModsOpenScreen>,
+		 .description = "After this frame, load the mod screen of the game (its `ModScreen`, else the one of the "
+						"engine), which goes back to the level given when the player leaves it.",
+		 .params = {{"return_level", String}}},
+		{.table = "mods", .name = "return_level", .function = guarded<luaModsReturnLevel>,
+		 .description = "Level the mod screen goes back to (empty when it was not opened by `mods.open_screen`).",
+		 .returns = {{"level", String}}},
+		{.table = "mods", .name = "conflicts", .function = guarded<luaModsConflicts>,
+		 .description = "The assets several mounted mods hold: a list of tables with `path`, `winner` (the id of the "
+						"mod serving it) and `providers` (every id holding it, in load order).",
+		 .returns = {{"conflicts", Table}}},
 		{.table = "time", .name = "delta", .function = guarded<luaTimeDelta>,
 		 .description = "Duration of the current frame, or of the fixed tick inside `on_tick`, in seconds.",
 		 .returns = {{"seconds", Number}}},
@@ -4613,13 +4959,23 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .description = "Log a message at error level.", .params = {{"message", String}}},
 		{.table = "entity", .name = "has_component", .function = guarded<luaEntityHasComponent>,
 		 .description = "Whether the entity has a component: `Transform`, `PhysicBody`, `SpriteRenderer`, "
-						"`MeshRenderer`, `Light`, `Light2D`, `Camera`, `Text`, `SoundSource`, `Canvas` or a `Ui*` "
-						"component.",
+						"`MeshRenderer`, `Light`, `Light2D`, `Camera`, `Text`, `SoundSource`, `Canvas`, a `Ui*` "
+						"component, or any other by its YAML key (a game or mod component).",
 		 .params = {entityId, {"component", String}}, .returns = {{"has", Boolean}}},
 		{.table = "entity", .name = "add_component", .function = guarded<luaEntityAddComponent>,
 		 .description = "Add a component with its default values by YAML key (`SpriteRenderer`, `PhysicBody`, ...), "
 						"kept when the entity has it already; false for an unknown or mandatory component.",
 		 .params = {entityId, {"component", String}}, .returns = {{"added", Boolean}}},
+		{.table = "entity", .name = "get_field", .function = guarded<luaEntityGetField>,
+		 .description = "Value of a field of a component declared by a mod (`components` table of its entry script): a "
+						"number, string, boolean, entity, `{x, y[, z]}`, `{r, g, b, a}` or a list; nil when the entity "
+						"has no such component or field.",
+		 .params = {entityId, {"component", String}, {"field", String}}, .returns = {{"value", Any}}},
+		{.table = "entity", .name = "set_field", .function = guarded<luaEntitySetField>,
+		 .description = "Set a field of a component declared by a mod; false when the entity has no such component or "
+						"field, or the value is not of the type of the field.",
+		 .params = {entityId, {"component", String}, {"field", String}, {"value", Any}},
+		 .returns = {{"set", Boolean}}},
 		{.table = "entity", .name = "get_name", .function = guarded<luaEntityGetName>,
 		 .description = "Tag of the entity (empty when unknown).", .params = {entityId}, .returns = {{"name", String}}},
 		{.table = "entity", .name = "get_link", .function = guarded<luaEntityGetLink>,
@@ -5502,6 +5858,9 @@ auto getLuaTables() -> const std::vector<LuaTable>& {
 			{.name = "net",
 			 .description = "Multiplayer: the session and its lobby, the remote calls, the replicated entities, the "
 							"lockstep inputs and the lag compensation."},
+			{.name = "mods",
+			 .description = "The mods of the game: list them, enable, disable and reorder them, see their conflicts "
+							"and apply the choices of the player."},
 	};
 	return s_tables;
 }
@@ -5532,6 +5891,7 @@ auto getLuaReferencePages() -> const std::vector<LuaReferencePage>& {
 			{.file = "lua-api-dialogue.md", .title = "Dialogues", .tables = {"dialogue"}},
 			{.file = "lua-api-sequence.md", .title = "Cutscene sequences", .tables = {"sequence"}},
 			{.file = "lua-api-network.md", .title = "Multiplayer", .tables = {"net"}},
+			{.file = "lua-api-mods.md", .title = "Mods", .tables = {"mods"}},
 	};
 	return s_pages;
 }

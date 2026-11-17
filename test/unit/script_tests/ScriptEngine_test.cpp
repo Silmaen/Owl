@@ -15,11 +15,13 @@
 #include <script/ScriptEngine.h>
 #include <script/ScriptInstance.h>
 
+#include <algorithm>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
 #include <string>
 #include <tuple>
+#include <variant>
 #include <vector>
 
 using namespace owl;
@@ -145,7 +147,38 @@ TEST(ScriptEngine, extractFunctionsGivesTheLineOfEachGlobalFunction) {
 
 TEST(ScriptEngine, hookNamesListTheEngineCallbacks) {
 	const auto& hooks = ScriptEngine::getHookNames();
-	EXPECT_EQ(hooks.size(), 21u);
+	EXPECT_EQ(hooks.size(), 24u);
 	EXPECT_EQ(hooks.front(), "on_create");
-	EXPECT_EQ(hooks.back(), "on_disconnected");
+	EXPECT_EQ(hooks.back(), "on_entity_destroy");
+	EXPECT_TRUE(std::ranges::contains(hooks, "on_scene_load"));
+}
+
+TEST(ScriptEngine, componentsTableDeclaresComponentTypes) {
+	core::Log::init(core::Log::Level::Off);
+	const std::string source = R"(
+components = {
+	["demo.rules.Health"] = {
+		{ name = "hp", type = "int", default = 100, min = 0 },
+		{ name = "regen", type = "float", default = 0.5 },
+	},
+	["demo.rules.Team"] = { { name = "colour", type = "color", default = { 1, 0, 0, 1 } } },
+	broken = 3,
+}
+)";
+	const std::vector<uint8_t> data(source.begin(), source.end());
+	const auto components = ScriptEngine::extractComponentsFromBuffer(data, "mod.lua");
+	ASSERT_EQ(components.size(), 2u);
+	EXPECT_EQ(components[0].key, "demo.rules.Health");
+	ASSERT_EQ(components[0].fields.size(), 2u);
+	EXPECT_EQ(components[0].fields[0].name, "hp");
+	EXPECT_EQ(components[0].fields[0].type, ScriptPropertyType::Int);
+	EXPECT_EQ(std::get<int64_t>(components[0].fields[0].value), 100);
+	EXPECT_EQ(components[0].fields[0].min, 0.f);
+	EXPECT_FLOAT_EQ(std::get<float>(components[0].fields[1].value), 0.5f);
+	EXPECT_EQ(components[1].fields[0].type, ScriptPropertyType::Color);
+	const std::string none = "local x = 1";
+	EXPECT_TRUE(ScriptEngine::extractComponentsFromBuffer({none.begin(), none.end()}, "none.lua").empty());
+	const std::string invalid = "this is not lua";
+	EXPECT_TRUE(ScriptEngine::extractComponentsFromBuffer({invalid.begin(), invalid.end()}, "bad.lua").empty());
+	core::Log::invalidate();
 }

@@ -1030,6 +1030,8 @@ public:
 		math::vec2f initialVelocity = {0.f, 0.f};
 		/// Rotation delta between trigger and target.
 		float rotationDelta = 0.f;
+		/// Mount the mods the player chose before loading the level (`mods.apply`).
+		bool applyMods = false;
 	};
 	/// Pending teleport request (used for cross-level teleport).
 	TeleportRequest teleportRequest;
@@ -1702,6 +1704,23 @@ public:
 
 	/**
 	 * @brief
+	 *  The entry scripts of the mounted `Script` extension packs, run in Play after the scene script in load order,
+	 *  with the hooks of a scene script and the game events (`on_scene_load`, `on_entity_spawn`,
+	 *  `on_entity_destroy`). Runtime only.
+	 * @return The scripts; empty when no pack has one or the scene is not playing.
+	 */
+	[[nodiscard]] auto getModScripts() const -> const std::vector<component::LuaScript>& { return m_modScripts; }
+
+	/**
+	 * @brief
+	 *  Call a game event on every mod script that defines it.
+	 * @param[in] iEvent Name of the hook (`on_entity_spawn`...).
+	 * @param[in] iEntity Entity given to the hook, as its script handle; none when 0.
+	 */
+	void notifyModScripts(const std::string& iEvent, core::UUID iEntity = core::UUID{0}) const;
+
+	/**
+	 * @brief
 	 *  Path of the HUD asset the scene draws: its own `Hud:` key, else the project's `DefaultHud`.
 	 * @return The asset path, empty when the scene has no HUD.
 	 */
@@ -1874,6 +1893,8 @@ private:
 	component::LuaScript m_sceneScript;
 	/// The script of the HUD, copied from the `.owlhud` and run in Play.
 	component::LuaScript m_hudScript;
+	/// Entry scripts of the mounted `Script` extension packs, in load order (runtime only).
+	std::vector<component::LuaScript> m_modScripts;
 	/// Systems run every runtime frame, phase by phase.
 	SystemSchedule m_systems;
 	/// Engine state used by the scene (not owned).

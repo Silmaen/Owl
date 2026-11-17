@@ -461,3 +461,33 @@ TEST(MaterialCommands, PinsRoundTripThroughText) {
 	EXPECT_TRUE(copyMaterialNodes(renderer::getParameterMaterialGraph(), {}, {}).empty());
 	EXPECT_EQ(getMaterialScopeNodes(renderer::getParameterMaterialGraph(), "missing"), nullptr);
 }
+
+TEST_F(MaterialGraphDocumentTest, ImportCopiesALibraryNodeIntoTheGraph) {
+	renderer::MaterialAsset library;
+	library.graph = renderer::MaterialGraph{};
+	library.graph->customNodes.push_back(
+			{.name = "glow",
+			 .title = "Glow",
+			 .inputs = {{.name = "value", .type = renderer::MaterialPinType::Float, .defaultValue = "0"}},
+			 .outputs = {{.name = "result", .type = renderer::MaterialPinType::Float, .defaultValue = "0"}},
+			 .code = "result = value * 2.0;"});
+	library.graph->functions.push_back({.name = "fade", .inputs = {}, .outputs = {}, .nodes = {}, .links = {}});
+	const auto libraryFile = m_dir / "library.owlmat";
+	ASSERT_TRUE(library.save(libraryFile));
+	ASSERT_TRUE(run("material.convert_to_graph", {}).has_value());
+	const auto source = libraryFile.generic_string();
+	ASSERT_TRUE(run("material.import_node", {{"source", source}, {"item", std::string{"glow"}}, {"x", 0.0}, {"y", 0.0}})
+						.has_value());
+	ASSERT_NE(graph().findCustomNode("glow"), nullptr);
+	ASSERT_TRUE(run("material.import_node", {{"source", source}, {"item", std::string{"glow"}}}).has_value());
+	EXPECT_EQ(graph().customNodes.size(), 1u) << "a second node shares the copied definition";
+	ASSERT_TRUE(run("material.import_node", {{"source", source}, {"item", std::string{"fade"}}}).has_value());
+	EXPECT_NE(graph().findFunction("fade"), nullptr);
+	EXPECT_FALSE(run("material.import_node", {{"source", source}, {"item", std::string{"none"}}}).has_value());
+	EXPECT_FALSE(run("material.import_node", {{"source", std::string{"missing.owlmat"}}, {"item", std::string{"glow"}}})
+						 .has_value());
+	ASSERT_TRUE(run("material.set_custom_node", {{"name", std::string{"glow"}}, {"code", std::string{"result = 0.0;"}}})
+						.has_value());
+	EXPECT_FALSE(run("material.import_node", {{"source", source}, {"item", std::string{"glow"}}}).has_value())
+			<< "a changed custom node of the same name is not replaced";
+}

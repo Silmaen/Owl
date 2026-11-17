@@ -617,22 +617,22 @@
       "items": 1,
       "batch": 2,
       "samples": 15,
-      "median_ns": 5658926.0,
-      "p25_ns": 5656830.8,
-      "p75_ns": 5664530.8,
-      "min_ns": 5654316.5,
-      "max_ns": 5682498.0
+      "median_ns": 6554598.0,
+      "p25_ns": 6551839.2,
+      "p75_ns": 6555854.8,
+      "min_ns": 6546845.0,
+      "max_ns": 6558369.5
     },
     {
       "name": "path/long_query/hierarchical/1024x1024_open_cold",
       "items": 1,
       "batch": 1,
       "samples": 15,
-      "median_ns": 11237603.0,
-      "p25_ns": 11233307.0,
-      "p75_ns": 11242351.5,
-      "min_ns": 11227755.0,
-      "max_ns": 11266936.0
+      "median_ns": 13044032.0,
+      "p25_ns": 13033695.0,
+      "p75_ns": 13047559.0,
+      "min_ns": 13028038.0,
+      "max_ns": 13056884.0
     },
     {
       "name": "path/long_query/hierarchical/1024x1024_streets",

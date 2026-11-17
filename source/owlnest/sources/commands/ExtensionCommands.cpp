@@ -132,6 +132,8 @@ auto applyArgs(const CommandArgs& iArgs, ExtensionManifest& ioManifest) -> std::
 		ioManifest.author = iArgs.getText("author");
 	if (iArgs.has("description"))
 		ioManifest.description = iArgs.getText("description");
+	if (iArgs.has("script"))
+		ioManifest.script = iArgs.getText("script");
 	if (const auto order = iArgs.get<int64_t>("load_order"); order)
 		ioManifest.loadOrder = static_cast<int32_t>(*order);
 	if (iArgs.has("version")) {
@@ -223,6 +225,53 @@ auto setManifest(const shared<scene::Scene>& /*ioScene*/, const CommandArgs& iAr
 						   .applied = false,
 						   .entity = core::UUID{0},
 						   .data = {{"id", manifest.id}, {"dependencies", formatDependencies(manifest.dependencies)}}};
+}
+
+constexpr auto g_entryScriptTemplate =
+		R"(-- Entry script of the {0} pack: run while a scene plays, after the scene script.
+
+-- Components of the pack, added to entities in the inspector or by `entity.add_component`.
+components = {{
+    -- ["{0}.Example"] = {{ {{ name = "value", type = "int", default = 1 }} }},
+}}
+
+function on_scene_load()
+end
+
+function on_entity_spawn(id)
+end
+
+function on_entity_destroy(id)
+end
+)";
+
+auto createEntryScript(const CommandContext& iContext, const CommandArgs& iArgs)
+		-> expected<CommandResult, CommandFailure> {
+	const auto folder = resolvePackFolder(iArgs.getText("path"), iContext.projectDirectory);
+	if (!folder)
+		return fail(CommandError::InvalidArgument, std::format("`{}` holds no extension.yml", iArgs.getText("path")));
+	const auto read = readManifestFile(*folder);
+	if (!read)
+		return fail(CommandError::NotApplicable, std::format("the manifest of `{}` cannot be read", folder->string()));
+	auto manifest = read->second;
+	if (manifest.script.empty())
+		manifest.script = std::format("scripts/{}/main.lua", manifest.id);
+	manifest.kind = ExtensionKind::Script;
+	const auto file = *folder / manifest.script;
+	std::error_code error;
+	if (!std::filesystem::exists(file, error)) {
+		std::filesystem::create_directories(file.parent_path(), error);
+		if (!platform::writeFileAtomic(file, std::format(g_entryScriptTemplate, manifest.id)))
+			return fail(CommandError::NotApplicable, std::format("cannot write `{}`", file.string()));
+	}
+	if (manifest != read->second &&
+		!platform::writeFileAtomic(*folder / g_extensionManifestEntry, manifest.serialize()))
+		return fail(CommandError::NotApplicable, std::format("cannot write the manifest of `{}`", manifest.id));
+	if (iContext.onExtensionsChanged)
+		iContext.onExtensionsChanged();
+	return CommandResult{.entity = core::UUID{0},
+						 .description = std::format("Create the entry script of `{}`", manifest.id),
+						 .data = {{"path", file.string()}}};
 }
 
 auto enableExtension(const CommandContext& iContext, const CommandArgs& iArgs)
@@ -334,6 +383,10 @@ void addExtensionCommands(CommandRegistry& ioRegistry) {
 			 .description = "Rank among the packs that do not depend on each other: lower first, the later wins."},
 			{.name = "author", .type = ArgType::Text, .description = "Author or studio."},
 			{.name = "description", .type = ArgType::Text, .description = "Short description."},
+			{.name = "script",
+			 .type = ArgType::Text,
+			 .description = "Entry script of a Script pack, an asset path inside the pack (`scripts/<id>/main.lua`); "
+							"empty for none."},
 			{.name = "dependencies",
 			 .type = ArgType::Text,
 			 .description = "Packs needed, `id@version` separated by commas (`id` alone for any version)."}};
@@ -363,6 +416,15 @@ void addExtensionCommands(CommandRegistry& ioRegistry) {
 					.args = std::move(setArgs),
 					.factory = setManifest,
 					.allowedInPlay = true});
+	ioRegistry.add({.name = "extension.script",
+					.description = "Give an extension pack its entry script: written from a template when missing "
+								   "(`scripts/<id>/main.lua` when the manifest names none), and the pack made a "
+								   "Script pack (writes files, not an undo entry).",
+					.args = {pathSpec},
+					.factory = {},
+					.run = createEntryScript,
+					.allowedInPlay = false,
+					.needsScene = false});
 	ioRegistry.add({.name = "extension.enable",
 					.description = "Enable or disable an extension pack of the project: mounted as a plugin in Owl "
 								   "Nest and embedded as a mod by Pack Game when enabled (saves the project, not an "

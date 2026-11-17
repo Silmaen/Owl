@@ -11,16 +11,20 @@
 #include "../DockLayout.h"
 #include "../commands/ExtensionCommands.h"
 
+#include <app/Application.h>
 #include <data/assets/pack/ExtensionPack.h>
 #include <data/assets/pack/ExtensionRegistry.h>
 #include <gui/IconFont.h>
+#include <gui/component/render.h>
 #include <gui/utils.h>
+#include <gui/widgets/Badge.h>
 #include <gui/widgets/Combo.h>
 #include <gui/widgets/EmptyState.h>
 #include <gui/widgets/IconButton.h>
 #include <gui/widgets/PropertyGrid.h>
 #include <gui/widgets/SectionHeader.h>
 #include <gui/widgets/Toggle.h>
+#include <platform/FileUtils.h>
 
 #include <algorithm>
 #include <array>
@@ -40,6 +44,28 @@ namespace {
 
 constexpr std::array<const char*, 2> g_kindNames{"Data", "Script"};
 constexpr std::array<const char*, 2> g_kindLabels{"Data (assets only)", "Script (assets and scripts)"};
+
+// Game events a mod handles in its entry script, in the order the panel lists them.
+constexpr std::array<const char*, 6> g_modHooks{"on_create",         "on_scene_load", "on_entity_spawn",
+												"on_entity_destroy", "on_update",     "on_tick"};
+
+// Functions and components of the entry script of a pack, read from its folder.
+void readEntryScript(ExtensionPanel::Entry& ioEntry) {
+	ioEntry.functions.clear();
+	ioEntry.components.clear();
+	ioEntry.scriptTime = {};
+	if (ioEntry.manifest.script.empty())
+		return;
+	const auto file = ioEntry.folder / ioEntry.manifest.script;
+	std::error_code error;
+	if (!std::filesystem::is_regular_file(file, error))
+		return;
+	ioEntry.scriptTime = std::filesystem::last_write_time(file, error);
+	const auto text = platform::fileToString(file);
+	const std::vector<uint8_t> source{text.begin(), text.end()};
+	ioEntry.functions = script::ScriptEngine::extractFunctionsFromBuffer(source, ioEntry.manifest.script);
+	ioEntry.components = script::ScriptEngine::extractComponentsFromBuffer(source, ioEntry.manifest.script);
+}
 
 auto formatDependencies(const std::vector<data::assets::pack::ExtensionDependency>& iDependencies,
 						const size_t iSkipped) -> std::string {
@@ -72,8 +98,14 @@ void ExtensionPanel::refresh() {
 		return;
 	for (const auto& source:
 		 data::assets::pack::ExtensionRegistry::listSources(commands::getExtensionsFolder(m_projectDirectory))) {
-		if (auto manifest = data::assets::pack::ExtensionPack::readManifest(source); manifest)
-			m_entries.push_back({.folder = source, .manifest = std::move(*manifest)});
+		if (auto manifest = data::assets::pack::ExtensionPack::readManifest(source); manifest) {
+			m_entries.push_back({.folder = source,
+								 .manifest = std::move(*manifest),
+								 .functions = {},
+								 .components = {},
+								 .scriptTime = {}});
+			readEntryScript(m_entries.back());
+		}
 	}
 	if (!selectedId.empty())
 		std::ignore = select(selectedId);
@@ -103,6 +135,7 @@ void ExtensionPanel::loadDrafts() {
 	m_version = entry->manifest.version.toString();
 	m_author = entry->manifest.author;
 	m_description = entry->manifest.description;
+	m_script = entry->manifest.script;
 	std::error_code error;
 	m_manifestTime =
 			std::filesystem::last_write_time(entry->folder / data::assets::pack::g_extensionManifestEntry, error);
@@ -213,6 +246,10 @@ void ExtensionPanel::renderManifest(const Entry& iEntry) {
 			std::ignore = run("extension.set", {{"load_order", int64_t{0}}});
 		textField("Author", m_author, "author", nullptr, "Author or studio.");
 		textField("Description", m_description, "description", nullptr, "One sentence about the pack.");
+		if (manifest.kind == data::assets::pack::ExtensionKind::Script)
+			textField("Entry script", m_script, "script", "scripts/<id>/main.lua",
+					  "Script run while a scene plays: the game events of the mod and its components, an asset path "
+					  "inside the pack.");
 		gui::widgets::endProperties();
 	}
 	gui::widgets::endSection();
@@ -255,6 +292,81 @@ void ExtensionPanel::renderDependencies(const Entry& iEntry) {
 	gui::widgets::endSection();
 }
 
+void ExtensionPanel::renderScript(const Entry& iEntry) {
+	if (iEntry.manifest.kind != data::assets::pack::ExtensionKind::Script)
+		return;
+	if (!gui::widgets::sectionHeader("Entry script", gui::icon::fileCode2, false).open)
+		return;
+	const auto file = iEntry.folder / iEntry.manifest.script;
+	std::error_code error;
+	if (iEntry.manifest.script.empty() || !std::filesystem::is_regular_file(file, error)) {
+		gui::widgets::notice("No entry script: the pack runs no code while a scene plays.");
+		if (gui::widgets::button("##createScript", {.glyph = gui::icon::filePlus,
+													.label = "Create",
+													.tooltip = "Create the entry script",
+													.description = "A script with the game events and a components "
+																   "table, named by the manifest."}))
+			std::ignore = run("extension.script", {});
+		gui::widgets::endSection();
+		return;
+	}
+	if (gui::widgets::button("##openScript", {.glyph = gui::icon::externalLink,
+											  .label = "Open",
+											  .tooltip = "Open the entry script in the code editor"}))
+		std::ignore = gui::component::openAsset(file);
+	ImGui::SameLine();
+	ImGui::TextDisabled("%s", iEntry.manifest.script.c_str());
+	for (const auto* hook: g_modHooks) {
+		ImGui::PushID(hook);
+		const auto found = std::ranges::find(iEntry.functions, std::string{hook}, &script::ScriptFunction::name);
+		const bool defined = found != iEntry.functions.end();
+		if (gui::widgets::iconButton("##openHook",
+									 {.glyph = gui::icon::externalLink,
+									  .tooltip = defined ? "Open the code editor at the function" : "Not defined",
+									  .disabled = !defined}))
+			std::ignore = gui::component::openAssetAtLine(file, found->line);
+		ImGui::SameLine();
+		if (defined)
+			ImGui::Text("%s  (line %u)", hook, found->line);
+		else
+			ImGui::TextDisabled("%s  (not defined)", hook);
+		ImGui::PopID();
+	}
+	if (!iEntry.components.empty()) {
+		ImGui::SeparatorText("Components");
+		for (const auto& component: iEntry.components) {
+			std::string fields;
+			for (const auto& field: component.fields)
+				fields += std::format("{}{}: {}", fields.empty() ? "" : ", ", field.name,
+									  script::ScriptEngine::propertyTypeName(field.type));
+			ImGui::BulletText("%s", component.key.c_str());
+			if (ImGui::IsItemHovered())
+				ImGui::SetTooltip("%s", fields.empty() ? "No field." : fields.c_str());
+			if (!component.key.starts_with(iEntry.manifest.id + ".")) {
+				ImGui::SameLine();
+				ImGui::TextDisabled("(not registered: the key must start with %s.)", iEntry.manifest.id.c_str());
+			}
+		}
+	}
+	gui::widgets::endSection();
+}
+
+void ExtensionPanel::renderConflicts() {
+	if (!app::Application::instanced())
+		return;
+	const auto conflicts = app::Application::get().getExtensions().getConflicts();
+	if (conflicts.empty() || !gui::widgets::sectionHeader("Conflicts", gui::icon::triangleAlert, false).open)
+		return;
+	ImGui::TextWrapped("These assets are held by several enabled packs: the last one mounted serves each.");
+	for (const auto& conflict: conflicts) {
+		std::string others;
+		for (size_t index = 0; index + 1 < conflict.providers.size(); ++index)
+			others += std::format("{}{}", others.empty() ? "" : ", ", conflict.providers[index]);
+		ImGui::BulletText("%s: %s (over %s)", conflict.path.c_str(), conflict.providers.back().c_str(), others.c_str());
+	}
+	gui::widgets::endSection();
+}
+
 void ExtensionPanel::onImGuiRender() {
 	if (!m_visible)
 		return;
@@ -277,12 +389,16 @@ void ExtensionPanel::onImGuiRender() {
 		if (std::filesystem::last_write_time(entry->folder / data::assets::pack::g_extensionManifestEntry, error) !=
 			m_manifestTime)
 			m_dirty = true;
+		if (!entry->manifest.script.empty() &&
+			std::filesystem::last_write_time(entry->folder / entry->manifest.script, error) != entry->scriptTime)
+			m_dirty = true;
 	}
 	if (m_dirty)
 		refresh();
 	renderList();
 	if (const auto* entry = getSelected(); entry != nullptr) {
 		renderManifest(*entry);
+		renderScript(*entry);
 		renderDependencies(*entry);
 		if (gui::widgets::button("##exportPack",
 								 {.glyph = gui::icon::upload,
@@ -295,6 +411,7 @@ void ExtensionPanel::onImGuiRender() {
 		if (gui::widgets::button("##refreshPacks", {.glyph = gui::icon::refreshCw, .label = "Refresh"}))
 			refresh();
 	}
+	renderConflicts();
 	if (!m_status.empty())
 		ImGui::TextDisabled("%s", m_status.c_str());
 	ImGui::End();

@@ -80,6 +80,14 @@ void invokeCallback(const Scene* iSurface, const Scene* iActive, const Entity& i
 		std::ignore = script->instance->callFunction(iCallbackName);
 		return;
 	}
+	// A mod adds widgets and defines their callbacks in its entry script.
+	for (const auto& script: iActive->getModScripts()) {
+		if (!script.instance || !script.instance->isValid() || !script.instance->hasFunction(iCallbackName))
+			continue;
+		iPrepare(*script.instance);
+		std::ignore = script.instance->callFunction(iCallbackName);
+		return;
+	}
 	if (iActive == iSurface)
 		return;
 	for (const auto view = iActive->registry.view<component::LuaScript>(); const auto entity: view) {

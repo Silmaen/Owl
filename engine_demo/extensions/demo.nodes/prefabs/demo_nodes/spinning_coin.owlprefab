@@ -1,0 +1,22 @@
+Prefab: SpinningCoin
+Version: 1
+Entities:
+- Entity: 5190000000000000001
+  Tag:
+    tag: SpinningCoin
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  AnimatedSpriteRenderer:
+    color: [1, 1, 1, 1]
+    texture: gid:b73ffdaedb487204:textures/atlases/platformer_atlas.png
+    columns: 20
+    rows: 16
+    firstFrame: 151
+    lastFrame: 152
+    frameDuration: 0.25
+    loop: true
+  Visibility:
+    gameVisible: true
+  Hierarchy: {}

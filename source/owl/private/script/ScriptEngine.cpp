@@ -194,6 +194,37 @@ auto readProperties(lua_State* iState) -> std::vector<ScriptProperty> {
 	return props;
 }
 
+auto readComponents(lua_State* iState) -> std::vector<ScriptComponentDeclaration> {
+	lua_pushglobaltable(iState);
+	if (rawField(iState, -1, "components") != LUA_TTABLE) {
+		lua_pop(iState, 2);
+		return {};
+	}
+	const int tableIndex = lua_gettop(iState);
+	std::vector<ScriptComponentDeclaration> components;
+	lua_pushnil(iState);
+	while (lua_next(iState, tableIndex) != 0) {
+		if (lua_type(iState, -2) == LUA_TSTRING && lua_type(iState, -1) == LUA_TTABLE) {
+			ScriptComponentDeclaration component{.key = lua_tostring(iState, -2), .fields = {}};
+			const int fieldsIndex = lua_gettop(iState);
+			for (int index = 1;; ++index) {
+				if (lua_rawgeti(iState, fieldsIndex, index) != LUA_TTABLE) {
+					lua_pop(iState, 1);
+					break;
+				}
+				if (auto field = parseProperty(iState, lua_gettop(iState)); !field.name.empty())
+					component.fields.push_back(std::move(field));
+				lua_pop(iState, 1);
+			}
+			components.push_back(std::move(component));
+		}
+		lua_pop(iState, 1);
+	}
+	lua_pop(iState, 2);
+	std::ranges::sort(components, {}, &ScriptComponentDeclaration::key);
+	return components;
+}
+
 auto readFunctions(lua_State* iState) -> std::vector<ScriptFunction> {
 	std::vector<ScriptFunction> functions;
 	lua_pushglobaltable(iState);
@@ -301,12 +332,20 @@ auto ScriptEngine::extractFunctionsFromBuffer(const std::vector<uint8_t>& iData,
 
 auto ScriptEngine::getHookNames() -> const std::vector<std::string>& {
 	static const std::vector<std::string> names{
-			"on_create",         "on_update",        "on_tick",          "on_destroy",     "on_collision",
-			"on_collision_exit", "on_trigger_enter", "on_trigger_exit",  "on_triggered",   "on_interact",
-			"on_timer",          "on_demoted",       "on_promoted",      "on_coarse_tick", "on_joint_break",
-			"on_player_join",    "on_player_leave",  "on_lobby_changed", "on_match_start", "on_desync",
-			"on_disconnected"};
+			"on_create",         "on_update",        "on_tick",          "on_destroy",       "on_collision",
+			"on_collision_exit", "on_trigger_enter", "on_trigger_exit",  "on_triggered",     "on_interact",
+			"on_timer",          "on_demoted",       "on_promoted",      "on_coarse_tick",   "on_joint_break",
+			"on_player_join",    "on_player_leave",  "on_lobby_changed", "on_match_start",   "on_desync",
+			"on_disconnected",   "on_scene_load",    "on_entity_spawn",  "on_entity_destroy"};
 	return names;
+}
+
+auto ScriptEngine::extractComponentsFromBuffer(const std::vector<uint8_t>& iData, const std::string& iName)
+		-> std::vector<ScriptComponentDeclaration> {
+	const LuaEngine tempEngine;
+	if (!tempEngine.isValid() || !tempEngine.loadBuffer(iData, iName))
+		return {};
+	return readComponents(tempEngine.getState());
 }
 
 auto ScriptEngine::extractProperties(const std::filesystem::path& iPath) -> std::vector<ScriptProperty> {

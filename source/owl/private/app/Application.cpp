@@ -24,6 +24,7 @@
 #include "renderer/RendererVoxel.h"
 #include "renderer/gpu/RenderCommand.h"
 #include "scene/HudLibrary.h"
+#include "scene/ScriptedComponents.h"
 #include "sound/SoundSystem.h"
 #if OWL_WITH_GUI
 #include "gui/UiLayer.h"
@@ -767,16 +768,27 @@ auto Application::packContains(const std::string& iPath) const -> bool {
 	return m_packReader.contains(iPath);
 }
 
-auto Application::setExtensionSources(const std::vector<std::filesystem::path>& iSources) -> size_t {
+auto Application::setExtensionSources(const std::vector<std::filesystem::path>& iSources,
+									  const std::unordered_map<std::string, int32_t>& iLoadOrder) -> size_t {
 	auto changed = m_extensions.listEntries();
 	m_extensions.clear();
-	const size_t mounted = iSources.empty() ? 0 : m_extensions.mount(iSources);
+	const size_t mounted = iSources.empty() ? 0 : m_extensions.mount(iSources, iLoadOrder);
+	std::ignore = scene::ScriptedComponents::sync(m_extensions);
 	const auto entries = m_extensions.listEntries();
 	changed.insert(changed.end(), entries.begin(), entries.end());
 	std::ranges::sort(changed);
 	const auto [first, last] = std::ranges::unique(changed);
 	changed.erase(first, last);
 	std::ignore = m_hotReload.reloadAssets(changed);
+	return mounted;
+}
+
+auto Application::applyMods() -> size_t {
+	if (!m_modManager.isConfigured())
+		return 0;
+	const size_t mounted = setExtensionSources(m_modManager.getEnabledSources(), m_modManager.getLoadOrder());
+	m_modManager.update(m_extensions);
+	std::ignore = m_modManager.save();
 	return mounted;
 }
 

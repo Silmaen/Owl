@@ -11,6 +11,7 @@
 #include "data/assets/pack/GameExporter.h"
 
 #include "app/Application.h"
+#include "app/EngineContext.h"
 #include "core/external/yaml.h"
 #include "data/assets/AssetRegistry.h"
 #include "data/assets/cook/CookCache.h"
@@ -413,6 +414,8 @@ void writeRunnerConfig(const ExportSettings& iSettings, const std::filesystem::p
 		out << YAML::Key << "DefaultHud" << YAML::Value << iSettings.defaultHud;
 	if (!iSettings.defaultHudTheme.empty())
 		out << YAML::Key << "DefaultHudTheme" << YAML::Value << iSettings.defaultHudTheme;
+	if (!iSettings.modScreen.empty())
+		out << YAML::Key << "ModScreen" << YAML::Value << iSettings.modScreen;
 	out << YAML::Key << "TickRate" << YAML::Value << iSettings.tickRate;
 	out << YAML::Key << "MaxTicksPerFrame" << YAML::Value << iSettings.maxTicksPerFrame;
 	if (!iSettings.rendererStackYaml.empty())
@@ -586,11 +589,20 @@ auto GameExporter::relocateAbsolutePaths(const std::string& iText, const std::ve
 	return result;
 }
 
+namespace {
+
+// The mod screen a game packs: the one of the project, else the one of the engine.
+auto modScreenOf(const ExportSettings& iSettings) -> std::string {
+	return iSettings.modScreen.empty() ? app::EngineContext::defaultModScreen() : iSettings.modScreen;
+}
+
+}// namespace
+
 auto GameExporter::validate(const ExportSettings& iSettings, std::vector<AssetReference>& oAssets)
 		-> std::vector<std::string> {
 	std::vector<std::string> warnings;
 	oAssets = AssetScanner::scanProject(iSettings.projectDirectory, iSettings.firstScene, &warnings,
-										iSettings.defaultHud, iSettings.defaultHudTheme);
+										iSettings.defaultHud, iSettings.defaultHudTheme, modScreenOf(iSettings));
 	if (oAssets.empty())
 		warnings.emplace_back("No assets to pack — check firstScene and its references");
 	if (!findRunner(iSettings.runnerDirectory))
@@ -612,7 +624,7 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 	if (assets.empty()) {
 		report(iProgress, 0.f, "Scanning assets...");
 		assets = AssetScanner::scanProject(iSettings.projectDirectory, iSettings.firstScene, nullptr,
-										   iSettings.defaultHud, iSettings.defaultHudTheme);
+										   iSettings.defaultHud, iSettings.defaultHudTheme, modScreenOf(iSettings));
 	}
 	if (assets.empty()) {
 		OWL_CORE_ERROR("GameExporter: No asset found to pack for first scene '{}'.", iSettings.firstScene)

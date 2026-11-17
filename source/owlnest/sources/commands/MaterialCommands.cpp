@@ -11,6 +11,8 @@
 #include "CommandRegistry.h"
 #include "DocumentCommands.h"
 
+#include <data/assets/AssetSearchPaths.h>
+
 #include <algorithm>
 #include <array>
 #include <cctype>
@@ -627,6 +629,42 @@ auto addCustomNode(const MaterialAsset& iAsset, const CommandArgs& iArgs) -> exp
 	return edit;
 }
 
+// Copies a library node (custom node or function) into the graph then adds it: the material keeps working without it.
+auto importNode(const MaterialAsset& iAsset, const CommandArgs& iArgs) -> expected<MaterialEdit, CommandFailure> {
+	if (!iAsset.graph.has_value())
+		return fail(CommandError::NotApplicable, "the material has no graph");
+	const auto source = iArgs.getText("source");
+	const auto text = data::assets::readAssetText(source);
+	const auto library = text ? MaterialAsset::fromYaml(*text) : std::nullopt;
+	if (!library || !library->graph.has_value())
+		return invalid(std::format("`{}` is no material graph", source));
+	const auto name = iArgs.getText("item");
+	auto copy = iAsset;
+	auto& graph = *copy.graph;
+	std::string type;
+	if (const auto* custom = library->graph->findCustomNode(name); custom != nullptr) {
+		if (const auto* existing = graph.findCustomNode(name); existing == nullptr)
+			graph.customNodes.push_back(*custom);
+		else if (*existing != *custom)
+			return invalid(std::format("the graph has another custom node `{}`", name));
+		type = "custom";
+	} else if (const auto* function = library->graph->findFunction(name); function != nullptr) {
+		if (const auto* existing = graph.findFunction(name); existing == nullptr)
+			graph.functions.push_back(*function);
+		else if (*existing != *function)
+			return invalid(std::format("the graph has another function `{}`", name));
+		type = "function.call";
+	} else {
+		return invalid(std::format("`{}` has no custom node or function `{}`", source, name));
+	}
+	auto args = iArgs;
+	args.set("type", type);
+	auto edit = addNode(copy, args);
+	if (edit)
+		edit->description = std::format("Import {}", name);
+	return edit;
+}
+
 auto removeCustomNode(const MaterialAsset& iAsset, const CommandArgs& iArgs) -> expected<MaterialEdit, CommandFailure> {
 	MaterialEdit edit{.asset = iAsset, .description = "Remove custom node"};
 	if (!edit.asset.graph.has_value())
@@ -971,6 +1009,13 @@ void addMaterialCommands(CommandRegistry& ioRegistry) {
 		  text("item", "Parameter, custom node or function a `param.get`, `custom` or `function.call` node names."),
 		  functionArg()},
 		 addNode);
+	edit("material.import_node",
+		 "Add a node of a library material (a plugin pack, the project): its custom node or function is copied into "
+		 "the graph first.",
+		 {text("source", "Asset path of the library `.owlmat`.", true),
+		  text("item", "Custom node or function of the library.", true), number("x", "Canvas position of the node."),
+		  number("y", "Canvas position of the node."), functionArg()},
+		 importNode);
 	edit("material.remove_nodes", "Delete nodes of a material graph and their links.",
 		 {text("nodes", "Node identifiers, separated by spaces.", true), functionArg()}, removeNodes);
 	edit("material.move_nodes", "Move nodes of a material graph.",

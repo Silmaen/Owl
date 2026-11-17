@@ -13,6 +13,7 @@
 #include "external/imgui_text_edit.h"
 
 #include <app/Application.h>
+#include <data/assets/pack/ExtensionRegistry.h>
 #include <gui/IconFont.h>
 #include <gui/UiLayer.h>
 #include <gui/utils.h>
@@ -1950,8 +1951,13 @@ void VisualScriptDocument::refreshLibraries() {
 	std::vector<LibraryEntry> libraries;
 	std::vector<LuaModuleEntry> modules;
 	std::error_code error;
+	const auto& extensions = app::Application::get().getExtensions();
 	for (const auto& [title, directory]: app::Application::get().getAssetDirectories()) {
 		for (const auto& entry: std::filesystem::recursive_directory_iterator(directory, error)) {
+			// The packs of extensions/ are read below, at the paths their mounted assets have.
+			if (const auto relative = entry.path().lexically_relative(directory);
+				!extensions.isEmpty() && !relative.empty() && *relative.begin() == "extensions")
+				continue;
 			if (entry.is_regular_file() && entry.path().extension() == ".lua") {
 				auto functions = vs::parseLuaFunctions(platform::fileToString(entry.path()));
 				if (functions.empty())
@@ -1971,6 +1977,26 @@ void VisualScriptDocument::refreshLibraries() {
 			libraries.push_back({.path = entry.path().lexically_relative(directory).generic_string(),
 								 .functions = graph->functions});
 		}
+	}
+	for (const auto& [id, path]: extensions.findEntries(".lua")) {
+		const auto bytes = extensions.readEntry(path);
+		const std::string text = bytes ? std::string{bytes->begin(), bytes->end()} : std::string{};
+		auto functions = vs::parseLuaFunctions(text);
+		if (functions.empty())
+			continue;
+		auto module = std::filesystem::path{path}.replace_extension().generic_string();
+		std::ranges::replace(module, '/', '.');
+		std::erase_if(modules, [&module](const LuaModuleEntry& iEntry) -> bool { return iEntry.module == module; });
+		modules.push_back({.module = std::move(module), .functions = std::move(functions)});
+	}
+	for (const auto& [id, path]: extensions.findEntries(std::string{vs::g_VisualScriptExtension})) {
+		const auto bytes = extensions.readEntry(path);
+		const std::string text = bytes ? std::string{bytes->begin(), bytes->end()} : std::string{};
+		const auto graph = vs::deserialize(text, path);
+		if (!graph || graph->functions.empty())
+			continue;
+		std::erase_if(libraries, [&path](const LibraryEntry& iEntry) -> bool { return iEntry.path == path; });
+		libraries.push_back({.path = path, .functions = graph->functions});
 	}
 	m_libraries = std::move(libraries);
 	m_luaModules = std::move(modules);

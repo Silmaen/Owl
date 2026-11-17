@@ -61,16 +61,17 @@ tileset and map of the templates.
 **Home > Project > Settings** edits the project in six tabs, the dialog fitting the screen; **OK** writes `owl_project.yml`, **Cancel** drops
 the changes (they are not undo steps).
 
-| Section        | Fields                                                                                             |
-|----------------|----------------------------------------------------------------------------------------------------|
-| General        | Name, first scene, default HUD (for the scenes that name none), version, author, description, icon |
-| Window         | Width (320 to 7680), height (240 to 4320), fullscreen, resizable, ImGui overlay                    |
-| Input          | Gamepad mappings file (SDL_GameControllerDB format), **Edit Input Actions**                        |
-| Simulation     | Tick rate (1 to 1000 per second, 60 by default), max ticks per frame (1 to 64, 8 by default)       |
-| Renderer Stack | The layers that draw every scene, in order, with their configuration                               |
-| Network        | The rules of the matches: model, players, crossplay, minimum machine, lockstep and snapshot rates  |
+| Section        | Fields                                                                                                                            |
+|----------------|-----------------------------------------------------------------------------------------------------------------------------------|
+| General        | Name, first scene, default HUD (for the scenes that name none), default HUD theme, mod screen, version, author, description, icon |
+| Window         | Width (320 to 7680), height (240 to 4320), fullscreen, resizable, ImGui overlay                                                   |
+| Input          | Gamepad mappings file (SDL_GameControllerDB format), **Edit Input Actions**                                                       |
+| Simulation     | Tick rate (1 to 1000 per second, 60 by default), max ticks per frame (1 to 64, 8 by default)                                      |
+| Renderer Stack | The layers that draw every scene, in order, with their configuration                                                              |
+| Network        | The rules of the matches: model, players, crossplay, minimum machine, lockstep and snapshot rates                                 |
 
 The **Network** tab writes the `network:` block ([match rules](networking.md#networking-rules)).
+**Mod Screen** (`ModScreen`, forwarded to `runner.yml`) names the scene `mods.open_screen` opens; empty, the game uses the screen of the engine ([Mods](mods.md#mods-manager)).
 An empty version follows the engine version and an empty icon gives the Owl logo. **ImGui overlay** (off by default)
 makes the exported game create an ImGui layer and pack its fonts, for a game whose C++ code draws with ImGui; a game
 drawing its interface with HUDs leaves it off. The tick rate applies from the next Play

@@ -40,6 +40,8 @@ struct Project {
 	std::string defaultHud;
 	/// HUD theme of the scenes and HUDs that name none (`DefaultHudTheme`), relative to an asset folder.
 	std::string defaultHudTheme;
+	/// Scene of the mod screen (`ModScreen`), relative to an asset folder; empty for the screen of the engine.
+	std::string modScreen;
 	/// Relative path to the project icon (PNG, relative to project directory).
 	std::string icon;
 	/// Optional gamepad mapping file (SDL_GameControllerDB format), relative to the project directory.

@@ -1106,6 +1106,7 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 																  network::getVersionNumber(m_project.version));
 		app::Application::get().getEngineContext().setDefaultHud(m_project.defaultHud);
 		app::Application::get().getEngineContext().setDefaultHudTheme(m_project.defaultHudTheme);
+		app::Application::get().getEngineContext().setModScreen(m_project.modScreen);
 		if (m_project.gamepadMappings != previousMappings)
 			std::ignore = m_project.loadGamepadMappings();
 

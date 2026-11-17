@@ -9,6 +9,7 @@
 #include "testHelper.h"
 
 #include <app/Application.h>
+#include <app/EngineContext.h>
 #include <core/external/yaml.h>
 #include <data/assets/AssetMeta.h>
 #include <data/assets/AssetRegistry.h>
@@ -190,6 +191,7 @@ protected:
 				.icon = "logo/icon.png",
 				.defaultHud = {},
 				.defaultHudTheme = {},
+				.modScreen = {},
 				.gamepadMappings = "input/gamecontrollerdb.txt",
 				.projectDirectory = m_project,
 				.outputDirectory = m_root / "out",
@@ -612,8 +614,10 @@ void checkProjectPlaysFromItsExportFolder(const std::filesystem::path& iBinDir, 
 
 	PackReader reader;
 	ASSERT_TRUE(reader.open(pack));
-	size_t sceneCount = 0;
-	// The smoke test plays every scene of the pack, the world partition cells under `scenes/` included.
+	// The smoke test plays every scene of the pack: the mod screen of the engine, and those under `scenes/`, the world
+	// partition cells included.
+	EXPECT_TRUE(reader.contains(app::EngineContext::defaultModScreen()));
+	size_t sceneCount = 1;
 	for (const auto& entry: std::filesystem::recursive_directory_iterator(iProject / "scenes")) {
 		if (entry.path().extension() != ".owl")
 			continue;

@@ -27,6 +27,7 @@
 #include <scene/SaveManager.h>
 #include <scene/SceneSerializer.h>
 #include <scene/ScreenTransition.h>
+#include <scene/ScriptedComponents.h>
 #include <scene/SettingsManager.h>
 #include <scene/UiInputSystem.h>
 #include <scene/component/components.h>
@@ -39,6 +40,7 @@
 #include <filesystem>
 #include <format>
 #include <fstream>
+#include <iterator>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -124,6 +126,7 @@ void RunnerConfig::loadYaml(const std::filesystem::path& iPath) {
 		get(appConfig, "GamepadMappings", gamepadMappings);
 		get(appConfig, "DefaultHud", defaultHud);
 		get(appConfig, "DefaultHudTheme", defaultHudTheme);
+		get(appConfig, "ModScreen", modScreen);
 		get(appConfig, "WindowWidth", windowWidth);
 		get(appConfig, "WindowHeight", windowHeight);
 		get(appConfig, "Fullscreen", fullscreen);
@@ -182,6 +185,8 @@ void RunnerConfig::saveYaml(const std::filesystem::path& iPath) const {
 		out << YAML::Key << "DefaultHud" << YAML::Value << defaultHud;
 	if (!defaultHudTheme.empty())
 		out << YAML::Key << "DefaultHudTheme" << YAML::Value << defaultHudTheme;
+	if (!modScreen.empty())
+		out << YAML::Key << "ModScreen" << YAML::Value << modScreen;
 	out << YAML::Key << "WindowWidth" << YAML::Value << windowWidth;
 	out << YAML::Key << "WindowHeight" << YAML::Value << windowHeight;
 	out << YAML::Key << "Fullscreen" << YAML::Value << fullscreen;
@@ -200,15 +205,24 @@ void RunnerConfig::saveYaml(const std::filesystem::path& iPath) const {
 }
 
 void RunnerLayer::mountMods(const std::vector<std::filesystem::path>& iPaths) {
-	auto& extensions = app::Application::get().getExtensions();
+	auto& app = app::Application::get();
+	std::vector<std::filesystem::path> packs;
 	for (const auto& path: iPaths) {
 		std::error_code error;
 		if (path.extension() == data::assets::pack::g_extensionPackExtension ||
 			std::filesystem::is_regular_file(path / data::assets::pack::g_extensionManifestEntry, error))
-			std::ignore = extensions.mount({path});
+			packs.push_back(path);
+		else if (!app.getModManager().isConfigured())
+			// A folder of packs is the mods folder of the game: the player chooses among its mods.
+			app.getModManager().configure(path, {});
 		else
-			std::ignore = extensions.mountFolder(path);
+			std::ranges::copy(data::assets::pack::ExtensionRegistry::listSources(path), std::back_inserter(packs));
 	}
+	if (app.getModManager().isConfigured())
+		std::ignore = app.applyMods();
+	if (!packs.empty())
+		std::ignore = app.getExtensions().mount(packs);
+	std::ignore = scene::ScriptedComponents::sync(app.getExtensions());
 }
 
 RunnerLayer::RunnerLayer(const SmokeTest& iSmokeTest) : Layer("RunnerLayer"), m_smokeTest{iSmokeTest} {}
@@ -251,24 +265,31 @@ void RunnerLayer::onAttach() {
 		}
 		m_config.loadYaml(config);
 	}
-	if (!m_config.modsDirectory.empty()) {
-		auto modsFolder = std::filesystem::path{m_config.modsDirectory};
-		if (modsFolder.is_relative())
-			modsFolder = app.getWorkingDirectory() / modsFolder;
-		mountMods({modsFolder});
-	}
 	app::Application::get().getEngineContext().setSimulationSettings(m_config.simulation);
 	app::Application::get().getEngineContext().setNetworkRules(m_config.network);
 	app::Application::get().getEngineContext().setNetworkGame(m_config.gameName,
 															  network::getVersionNumber(m_config.version));
 	app::Application::get().getEngineContext().setDefaultHud(m_config.defaultHud);
 	app::Application::get().getEngineContext().setDefaultHudTheme(m_config.defaultHudTheme);
+	app::Application::get().getEngineContext().setModScreen(m_config.modScreen);
 
 	// Initialize settings system.
 	if (!m_config.gameName.empty()) {
 		app::Application::get().getEngineContext().getSettings().setGameName(m_config.gameName);
 
 		scene::SaveManager::setGameName(m_config.gameName);
+	}
+	if (!m_config.modsDirectory.empty()) {
+		auto modsFolder = std::filesystem::path{m_config.modsDirectory};
+		if (modsFolder.is_relative())
+			modsFolder = app.getWorkingDirectory() / modsFolder;
+		// The choices of the player live beside the settings of the game; a game without a name keeps none.
+		app.getModManager().configure(modsFolder,
+									  m_config.gameName.empty()
+											  ? std::filesystem::path{}
+											  : app.getEngineContext().getSettings().getUserDirectory() / "mods.yml");
+		std::ignore = app.applyMods();
+		std::ignore = scene::ScriptedComponents::sync(app.getExtensions());
 	}
 
 	// Populate defaults from runner config.
@@ -511,6 +532,7 @@ auto RunnerLayer::attachSourceScene(const std::filesystem::path& iProject, const
 				get(project, "gamepadMappings", m_config.gamepadMappings);
 				get(project, "DefaultHud", m_config.defaultHud);
 				get(project, "DefaultHudTheme", m_config.defaultHudTheme);
+				get(project, "ModScreen", m_config.modScreen);
 			}
 		} catch (const std::exception& iEx) {
 			OWL_WARN("{}: Cannot read '{}/owl_project.yml' ({}).", iMode, iProject.string(), iEx.what())
@@ -530,6 +552,7 @@ auto RunnerLayer::attachSourceScene(const std::filesystem::path& iProject, const
 															  network::getVersionNumber(m_config.version));
 	app::Application::get().getEngineContext().setDefaultHud(m_config.defaultHud);
 	app::Application::get().getEngineContext().setDefaultHudTheme(m_config.defaultHudTheme);
+	app::Application::get().getEngineContext().setModScreen(m_config.modScreen);
 	m_viewportSize = app.getWindow().getSize();
 	m_activeScene = mkShared<scene::Scene>();
 	if (const scene::SceneSerializer sc(m_activeScene); !sc.deserialize(iScene)) {
@@ -843,8 +866,14 @@ void RunnerLayer::handleTeleportRequest() {
 	if (!m_activeScene->teleportRequest.pending)
 		return;
 	// Copy request and reset.
-	const auto request = m_activeScene->teleportRequest;
+	auto request = m_activeScene->teleportRequest;
 	m_activeScene->teleportRequest.pending = false;
+	if (request.applyMods) {
+		// Mounted before the level is read, so the level and its scripts come from the mods chosen.
+		std::ignore = app::Application::get().applyMods();
+		if (request.levelName.empty())
+			request.levelName = m_scenePath.generic_string();
+	}
 
 	auto transition = mkShared<PendingTransition>();
 	transition->velocity = request.initialVelocity;

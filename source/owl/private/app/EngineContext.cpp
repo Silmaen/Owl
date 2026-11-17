@@ -45,6 +45,11 @@ auto EngineContext::getNetworkSession() -> network::GameSession& {
 
 auto EngineContext::getNetworkHook() const -> shared<scene::NetworkHook> { return mp_networkSession; }
 
+auto EngineContext::defaultModScreen() -> const std::string& {
+	static const std::string s_path{"mods/mod_manager.owl"};
+	return s_path;
+}
+
 void EngineContext::resetNetworkSession() { mp_networkSession.reset(); }
 
 void EngineContext::setNetworkGame(const std::string& iGameId, const uint32_t iVersion) {

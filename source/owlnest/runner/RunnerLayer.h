@@ -50,6 +50,8 @@ struct RunnerConfig {
 	std::string defaultHud;
 	/// HUD theme of the scenes and HUDs that name none (`DefaultHudTheme`); empty for none.
 	std::string defaultHudTheme;
+	/// Scene of the mod screen (`ModScreen`); empty for the screen of the engine.
+	std::string modScreen;
 	/// Window width in pixels.
 	uint32_t windowWidth{1280};
 	/// Window height in pixels.

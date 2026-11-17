@@ -45,7 +45,8 @@ auto manifestOf(const std::string& iId, const std::vector<ExtensionDependency>& 
 							 .loadOrder = iLoadOrder,
 							 .author = {},
 							 .description = {},
-							 .dependencies = iDependencies};
+							 .dependencies = iDependencies,
+							 .script = {}};
 }
 
 auto idsOf(const ExtensionResolution& iResolution, const std::vector<ExtensionManifest>& iManifests)
@@ -104,7 +105,8 @@ TEST(ExtensionManifest, serializeRoundTrips) {
 			.loadOrder = -4,
 			.author = "Silmaen",
 			.description = "Items in other colours.",
-			.dependencies = {{.id = "base.items", .minVersion = *ExtensionVersion::parse("0.5")}}};
+			.dependencies = {{.id = "base.items", .minVersion = *ExtensionVersion::parse("0.5")}},
+			.script = "scripts/items/main.lua"};
 	const auto text = manifest.serialize();
 	EXPECT_NE(text.find("OwlExtension:"), std::string::npos);
 	EXPECT_NE(text.find("FormatVersion: 1"), std::string::npos);

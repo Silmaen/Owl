@@ -1,0 +1,11 @@
+# The demo script mod: `demo.bounty` declares a Lua component, puts it on the first ammo box of the raycast level
+# when the level loads, and pays its gold into the game state when the box is picked up (`on_entity_destroy`).
+scene: ../../../engine_demo/scenes/raycast_demo.owl
+mods: ../../../engine_demo/extensions
+steps:
+  - frames: 20
+  - expect: {entity: PickupAmmo1, exists: true}
+  - actions: {walk: 1, frames: 60}
+  - frames: 3
+  - expect: {gamestate: inv_ammo, equals: 1}
+  - expect: {gamestate: mod_gold, equals: 5}

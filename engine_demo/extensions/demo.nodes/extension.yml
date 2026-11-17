@@ -1,0 +1,9 @@
+FormatVersion: 1
+OwlExtension:
+  id: demo.nodes
+  name: Demo nodes
+  version: 1.0.0
+  kind: Script
+  loadOrder: 0
+  author: Silmaen
+  description: Shares a script node, a material node and a coin template with the project.

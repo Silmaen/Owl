@@ -258,6 +258,10 @@ void ProjectSettings::renderGeneralTab() {
 		drawDefaultAsset("Default HUD Theme",
 						 "Theme of the widgets of the scenes and HUDs that name none (their `HudTheme:` key).",
 						 "##defaultHudTheme", m_localProject.defaultHudTheme, m_availableHudThemes);
+		drawDefaultAsset("Mod Screen",
+						 "Scene the game opens with `mods.open_screen` to choose its mods; none for the screen of the "
+						 "engine.",
+						 "##modScreen", m_localProject.modScreen, m_availableScenes);
 		const auto engineVersion = getVersionString();
 		std::ignore = gui::widgets::propertyText("Version", m_versionBuffer, engineVersion.c_str(),
 												 "Version of the game; empty, it follows the engine version.");

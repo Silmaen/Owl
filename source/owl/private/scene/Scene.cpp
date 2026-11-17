@@ -685,6 +685,9 @@ void Scene::onStartRuntime() {
 			m_hudScript.instance->onCreate();
 		++luaCount;
 	}
+	m_modScripts = loadModScripts(*this);
+	for (const auto& modScript: m_modScripts) modScript.instance->onCreate();
+	luaCount += m_modScripts.size();
 	// Initialize Lua scripting
 	for (const auto view = registry.view<component::LuaScript>(); const auto entity: view) {
 		auto& luaScript = view.get<component::LuaScript>(entity);
@@ -699,6 +702,7 @@ void Scene::onStartRuntime() {
 	}
 	OWL_CORE_DEBUG("Scene: Runtime start, {} Lua scripts compiled and created in {:.1f} ms.", luaCount,
 				   ms(clk::now() - luaStart))
+	notifyModScripts("on_scene_load");
 
 	// Reset animated sprites
 	for (const auto view = registry.view<component::AnimatedSpriteRenderer>(); const auto entity: view) {
@@ -748,6 +752,11 @@ void Scene::onEndRuntime() {
 			luaScript.instance->onDestroy();
 		luaScript.instance.reset();
 	}
+	// Destroyed last: a mod outlives the entities it watches.
+	for (auto& modScript: std::views::reverse(m_modScripts))
+		if (modScript.instance && modScript.instance->isValid())
+			modScript.instance->onDestroy();
+	m_modScripts.clear();
 
 	physics::PhysicCommand::destroy(*this);
 	status = Status::Editing;
@@ -874,6 +883,19 @@ void Scene::flushPendingSpawns() {
 		if (!root || isPendingDestructionInTree(root))
 			continue;
 		for (const auto& member: collectSubtree(*this, root)) startSpawnedEntity(member);
+		notifyModScripts("on_entity_spawn", uuid);
+	}
+}
+
+void Scene::notifyModScripts(const std::string& iEvent, const core::UUID iEntity) const {
+	for (const auto& modScript: m_modScripts) {
+		const auto* instance = modScript.instance.get();
+		if (instance == nullptr || !instance->isValid() || !instance->hasFunction(iEvent))
+			continue;
+		if (iEntity == core::UUID{0})
+			std::ignore = instance->callFunction(iEvent);
+		else
+			std::ignore = instance->callFunction(iEvent, static_cast<uint64_t>(iEntity));
 	}
 }
 
@@ -4399,6 +4421,7 @@ void Scene::flushPendingDestructions() {
 			const Entity root = findEntityByUUID(uuid);
 			if (!root)
 				continue;
+			notifyModScripts("on_entity_destroy", uuid);
 			for (const auto& member: collectSubtree(*this, root)) releaseRuntimeResources(member);
 			if (Entity alive = findEntityByUUID(uuid); alive)
 				destroyEntityWithChildren(alive);

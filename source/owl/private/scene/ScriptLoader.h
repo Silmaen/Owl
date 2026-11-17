@@ -11,6 +11,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 namespace owl::scene {
 
@@ -28,5 +29,14 @@ class Scene;
  */
 auto loadScriptInstance(Scene& ioScene, const component::LuaScript& iScript, uint64_t iEntityId,
 						const std::string& iEntityName) -> uniq<script::ScriptInstance>;
+
+/**
+ * @brief
+ *  Load the entry script of every mounted `Script` extension pack that names one, in load order. `on_create` is
+ *  not called.
+ * @param[in,out] ioScene The scene the scripts act on.
+ * @return The scripts that loaded; a pack whose script is missing or does not compile is logged and skipped.
+ */
+auto loadModScripts(Scene& ioScene) -> std::vector<component::LuaScript>;
 
 }// namespace owl::scene

@@ -18,6 +18,7 @@
 #include "core/task/Task.h"
 #include "data/assets/AssetRegistry.h"
 #include "data/assets/pack/ExtensionRegistry.h"
+#include "data/assets/pack/ModManager.h"
 #include "data/assets/pack/PackReader.h"
 #include "data/fonts/FontLibrary.h"
 #include "event/AppEvent.h"
@@ -33,6 +34,7 @@
 #include <list>
 #include <optional>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -584,9 +586,33 @@ public:
 	 *  Replace the mounted extension packs by these ones, then reload the loaded assets that a pack overrides or no
 	 *  longer overrides (`HotReload::reloadAssets`).
 	 * @param[in] iSources `.owlmod` files or pack folders; empty unmounts every pack.
+	 * @param[in] iLoadOrder Rank of some packs by id, replacing the `loadOrder` of their manifest.
 	 * @return The number of packs mounted.
 	 */
-	auto setExtensionSources(const std::vector<std::filesystem::path>& iSources) -> size_t;
+	auto setExtensionSources(const std::vector<std::filesystem::path>& iSources,
+							 const std::unordered_map<std::string, int32_t>& iLoadOrder = {}) -> size_t;
+
+	/**
+	 * @brief
+	 *  Access the choices of the player over the mods of the game (configured by the game runner).
+	 * @return The mod manager.
+	 */
+	[[nodiscard]] auto getModManager() -> data::assets::pack::ModManager& { return m_modManager; }
+
+	/**
+	 * @brief
+	 *  Access the choices of the player over the mods of the game, read only.
+	 * @return The mod manager.
+	 */
+	[[nodiscard]] auto getModManager() const -> const data::assets::pack::ModManager& { return m_modManager; }
+
+	/**
+	 * @brief
+	 *  Mount the mods the player enabled, in the order chosen, and save the choices; nothing when the mod manager is
+	 *  not configured.
+	 * @return The number of packs mounted.
+	 */
+	auto applyMods() -> size_t;
 
 	/**
 	 * @brief
@@ -701,6 +727,8 @@ private:
 	data::assets::pack::PackReader m_packReader;
 	/// Extension packs mounted over the assets, asked before the pack.
 	data::assets::pack::ExtensionRegistry m_extensions;
+	/// Choices of the player over the mods of the game.
+	data::assets::pack::ModManager m_modManager;
 	/// Mark the main entrypoint function as friend.
 	friend auto ::main(int iArgc, char** iArgv) -> int;
 };
