@@ -39,6 +39,9 @@ endif ()
 if (${PROJECT_PREFIX}_PLATFORM_STR MATCHES "windows")
     set(${PROJECT_PREFIX}_PLATFORM_WINDOWS ON)
     target_compile_definitions(${CMAKE_PROJECT_NAME}_Base INTERFACE ${PROJECT_PREFIX}_PLATFORM_WINDOWS)
+elseif (${PROJECT_PREFIX}_PLATFORM_STR MATCHES "android")
+    set(${PROJECT_PREFIX}_PLATFORM_ANDROID ON)
+    target_compile_definitions(${CMAKE_PROJECT_NAME}_Base INTERFACE ${PROJECT_PREFIX}_PLATFORM_ANDROID)
 elseif (${PROJECT_PREFIX}_PLATFORM_STR MATCHES "linux")
     set(${PROJECT_PREFIX}_PLATFORM_LINUX ON)
     target_compile_definitions(${CMAKE_PROJECT_NAME}_Base INTERFACE ${PROJECT_PREFIX}_PLATFORM_LINUX)
@@ -121,7 +124,10 @@ elseif (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
                 -Wno-unsafe-buffer-usage-in-libc-call
         )
     endif ()
-    if (${CMAKE_CXX_COMPILER_VERSION} VERSION_GREATER_EQUAL 21)
+    # Probed rather than versioned: the NDK's Clang says 21 without the warning.
+    include(CheckCXXCompilerFlag)
+    check_cxx_compiler_flag(-Wnrvo ${PROJECT_PREFIX}_HAS_WARNING_NRVO)
+    if (${PROJECT_PREFIX}_HAS_WARNING_NRVO)
         target_compile_options(${CMAKE_PROJECT_NAME}_Base INTERFACE
                 -Wno-nrvo
         )

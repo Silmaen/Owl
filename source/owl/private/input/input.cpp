@@ -12,8 +12,11 @@
 #include "input/null/Input.h"
 #include "platform/FileUtils.h"
 #include "window/Window.h"
-#if OWL_WITH_RENDER
+#if OWL_WITH_DESKTOP
 #include "input/glfw/Input.h"
+#endif
+#ifdef OWL_PLATFORM_ANDROID
+#include "input/android/Input.h"
 #endif
 
 #include <array>
@@ -54,12 +57,12 @@ auto injectedGamepad(const std::size_t iPad) -> GamepadState& {
 
 }// namespace
 
-window::Type Input::m_type = window::Type::Glfw;
+window::Type Input::m_type = window::g_NativeType;
 uniq<Input> Input::m_instance = nullptr;
 
 Input::~Input() = default;
 
-void Input::init() { init(window::Type::Glfw); }
+void Input::init() { init(window::g_NativeType); }
 
 void Input::init(const window::Type& iType) {
 	if (m_instance)
@@ -72,8 +75,13 @@ void Input::init(const window::Type& iType) {
 #endif
 	switch (m_type) {
 		case window::Type::Glfw:
-#if OWL_WITH_RENDER
+#if OWL_WITH_DESKTOP
 			m_instance = mkUniq<glfw::Input>();
+#endif
+			return;
+		case window::Type::Android:
+#ifdef OWL_PLATFORM_ANDROID
+			m_instance = mkUniq<android::Input>();
 #endif
 			return;
 		case window::Type::Null:

@@ -24,11 +24,15 @@ Design of the planned modding support, the new platforms and the plugins. The ne
 
 ### Android {#platforms-android}
 
-- Vulkan renderer, OpenAL Soft sound
-- Conan NDK cross build
-- An Android window and input backend next to GLFW and Null (GLFW does not support Android; it stays on desktop)
-- Touch input as prerequisite
-- APK packaging and signing, see [Game export](game-export.md)
+Built by the `android-arm64` preset, see [Building](../building.md#android-build): Vulkan on the system loader,
+OpenAL Soft, the native activity window and input next to GLFW and Null, a debug-signed APK of the runner and an
+exported game. Still to come:
+
+- Window lifecycle: the game pauses when the system takes its window (background, screen off) and resumes on the new
+  one; today it closes
+- Touch input beyond the first finger ([Input](windowing-input.md)), gamepads
+- The APK from Owl Nest itself on every host, release signing, see [Game export](game-export.md)
+- The network transport and the smoke test on the tablet
 
 ### Web {#platforms-web}
 
@@ -48,8 +52,7 @@ Design of the planned modding support, the new platforms and the plugins. The ne
 
 Besides MinGW (kept), a Windows build with the MSVC ABI so the SDK links from Visual Studio.
 
-- First path to evaluate: clang-cl with the Windows SDK and CRT through xwin inside the Docker image, compiled on the
-  Linux runners, tested on Windows
+- Built and tested natively on the Windows agent (`hecate`), no Docker image: clang-cl first
 - Real `cl.exe` only if a user needs it
 
 ## Plugins {#modding-plugins}

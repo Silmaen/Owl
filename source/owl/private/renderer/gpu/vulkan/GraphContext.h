@@ -8,8 +8,10 @@
 
 #pragma once
 
-#include "core/external/glfw3.h"
 #include "renderer/gpu/GraphContext.h"
+
+#include <vector>
+#include <vulkan/vulkan.h>
 
 namespace owl::renderer::gpu::vulkan {
 /**
@@ -29,9 +31,9 @@ public:
 	/**
 	 * @brief
 	 *  Default constructor.
-	 * @param[in] ioWindow The windows draw surface.
+	 * @param[in] ioWindow The native window to draw in: a `GLFWwindow` on the desktop, an `ANativeWindow` on Android.
 	 */
-	explicit GraphContext(GLFWwindow* ioWindow);
+	explicit GraphContext(void* ioWindow);
 
 	/**
 	 * @brief
@@ -68,6 +70,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Instance extensions the window system needs to create a surface.
+	 * @return The extension names.
+	 */
+	[[nodiscard]] static auto getRequiredInstanceExtensions() -> std::vector<const char*>;
+
+	/**
+	 * @brief
 	 *  Destroy the Window surface.
 	 * @param[in] iInstance The Vulkan instance.
 	 */
@@ -87,8 +96,8 @@ public:
 	void waitIdle() override;
 
 private:
-	/// The window.
-	GLFWwindow* mp_wnd = nullptr;
+	/// The native window.
+	void* mp_wnd = nullptr;
 	/// the presenting surface.
 	VkSurfaceKHR m_surface = nullptr;
 };

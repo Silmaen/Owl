@@ -134,7 +134,10 @@ class OwlEngineConan(ConanFile):
         self.requires("ktx/4.4.2")
         self.requires("magic_enum/0.9.8")
         self.requires("msdf-atlas-gen/1.4")
-        self.requires("nativefiledialog-extended/1.4.1")
+        # Android: no file dialogue, no GLFW nor OpenGL 4.5, the system Vulkan loader, shaders baked by the host.
+        android = self.settings.os == "Android"
+        if not android:
+            self.requires("nativefiledialog-extended/1.4.1")
         self.requires("spdlog/1.17.0")
         # Newer than the one tinygltf pins.
         self.requires("stb/cci.20261021", force=True)
@@ -148,13 +151,14 @@ class OwlEngineConan(ConanFile):
         self.requires("yaml-cpp/0.9.0")
         self.requires("zstd/1.5.7")
         if self.options.render:
-            self.requires("glad/2.0.8")
-            self.requires("glfw/3.5.1")
+            if not android:
+                self.requires("glad/2.0.8")
+                self.requires("glfw/3.5.1")
+                self.requires("slang/2026.22")
+                self.requires("vulkan-loader/1.4.357.0")
             self.requires("lunasvg/3.5.0")
-            self.requires("slang/2026.22")
             self.requires("spirv-cross/1.4.357.0")
             self.requires("vulkan-headers/1.4.357.0")
-            self.requires("vulkan-loader/1.4.357.0")
             self.requires("vulkan-memory-allocator/3.3.0")
             self.requires("vulkan-utility-libraries/1.4.357.0")
         if self.options.physics:

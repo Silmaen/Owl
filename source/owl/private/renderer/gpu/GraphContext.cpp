@@ -9,7 +9,9 @@
 
 #include "null/GraphContext.h"
 #if OWL_WITH_RENDER
+#if OWL_WITH_DESKTOP
 #include "opengl/GraphContext.h"
+#endif
 #include "vulkan/GraphContext.h"
 #endif
 #include "renderer/Renderer.h"
@@ -23,10 +25,15 @@ auto GraphContext::create(void* ioWindow) -> uniq<GraphContext> {
 		case RenderAPI::Type::Null:
 			return mkUniq<null::GraphContext>(ioWindow);
 #if OWL_WITH_RENDER
+#if OWL_WITH_DESKTOP
 		case RenderAPI::Type::OpenGL:
 			return mkUniq<opengl::GraphContext>(static_cast<GLFWwindow*>(ioWindow));
+#else
+		case RenderAPI::Type::OpenGL:
+			break;// No OpenGL backend on Android
+#endif
 		case RenderAPI::Type::Vulkan:
-			return mkUniq<vulkan::GraphContext>(static_cast<GLFWwindow*>(ioWindow));
+			return mkUniq<vulkan::GraphContext>(ioWindow);
 #else
 		case RenderAPI::Type::OpenGL:
 		case RenderAPI::Type::Vulkan:

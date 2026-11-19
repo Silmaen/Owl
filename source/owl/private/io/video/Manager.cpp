@@ -30,6 +30,8 @@ void Manager::updateDeviceList(const bool iReset) {
 	windows::updateList(m_devices);
 #elif defined(OWL_PLATFORM_LINUX)
 	linux64::updateList(m_devices);
+#elif defined(OWL_PLATFORM_ANDROID)
+	// No camera through V4L2 for an Android application: the list stays empty.
 #else
 #error "Unsupported platform"
 #endif

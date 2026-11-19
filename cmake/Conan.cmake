@@ -26,15 +26,18 @@ if (${PROJECT_PREFIX}_CONAN_INSTALL)
             set(_owl_conan_compiler gcc)
         endif ()
         string(TOLOWER "${CMAKE_SYSTEM_NAME}" _owl_conan_os)
-        set(_owl_conan_native "${CMAKE_SOURCE_DIR}/conan/profiles/${_owl_conan_os}-${_owl_conan_compiler}")
-        # Cross compiling: the host profile of the target architecture (Conan's name), the build one is native.
+        string(TOLOWER "${CMAKE_HOST_SYSTEM_NAME}" _owl_conan_host_os)
+        set(_owl_conan_target "${CMAKE_SOURCE_DIR}/conan/profiles/${_owl_conan_os}-${_owl_conan_compiler}")
+        # Cross compiling: the host profile of the target system and architecture (Conan's name), the build one is
+        # the build machine's.
         if (CMAKE_CROSSCOMPILING AND CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64|arm64|ARM64")
-            set(${PROJECT_PREFIX}_CONAN_PROFILE "${_owl_conan_native}-armv8")
+            set(${PROJECT_PREFIX}_CONAN_PROFILE "${_owl_conan_target}-armv8")
         else ()
-            set(${PROJECT_PREFIX}_CONAN_PROFILE "${_owl_conan_native}")
+            set(${PROJECT_PREFIX}_CONAN_PROFILE "${_owl_conan_target}")
         endif ()
         if (NOT ${PROJECT_PREFIX}_CONAN_BUILD_PROFILE)
-            set(${PROJECT_PREFIX}_CONAN_BUILD_PROFILE "${_owl_conan_native}")
+            set(${PROJECT_PREFIX}_CONAN_BUILD_PROFILE
+                    "${CMAKE_SOURCE_DIR}/conan/profiles/${_owl_conan_host_os}-${_owl_conan_compiler}")
         endif ()
     endif ()
     if (NOT ${PROJECT_PREFIX}_CONAN_BUILD_PROFILE)
@@ -92,7 +95,8 @@ if (${PROJECT_PREFIX}_CONAN_INSTALL)
     endif ()
     # Cross compiling against a sysroot, pkg-config reads the target's .pc files there: for the recipes built here and
     # for the system packages (dbus, xorg...), whose package_info() calls pkg-config outside any build environment.
-    if (CMAKE_CROSSCOMPILING AND CMAKE_SYSROOT)
+    # Not for Android: the NDK sysroot holds no package, every dependency comes from Conan.
+    if (CMAKE_CROSSCOMPILING AND CMAKE_SYSROOT AND NOT ANDROID)
         set(_owl_conan_pc "${CMAKE_SYSROOT}/usr/lib/${CMAKE_LIBRARY_ARCHITECTURE}/pkgconfig")
         list(APPEND _owl_conan_env "PKG_CONFIG_SYSROOT_DIR=${CMAKE_SYSROOT}"
                 "PKG_CONFIG_LIBDIR=${_owl_conan_pc}:${CMAKE_SYSROOT}/usr/lib/pkgconfig:${CMAKE_SYSROOT}/usr/share/pkgconfig")
@@ -384,7 +388,8 @@ set(${PROJECT_PREFIX}_CONAN_INCLUDE_SUBDIR_lunasvg lunasvg)
 
 unset(_owl_conan_compiler)
 unset(_owl_conan_os)
-unset(_owl_conan_native)
+unset(_owl_conan_target)
+unset(_owl_conan_host_os)
 unset(_owl_conan_profile)
 unset(_owl_conan_pc)
 unset(_owl_conan_extra_vars)

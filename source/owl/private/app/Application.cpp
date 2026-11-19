@@ -280,7 +280,7 @@ Application::Application(AppParams iAppParams)// NOLINT(readability-function-cog
 
 void Application::createMainWindow() {
 	mp_appWindow = window::Window::create({
-			.winType = m_initParams.isDummy ? window::Type::Null : window::Type::Glfw,
+			.winType = m_initParams.isDummy ? window::Type::Null : window::g_NativeType,
 			.title = m_initParams.name,
 			.iconPath = m_initParams.icon.empty()
 								? ""

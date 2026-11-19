@@ -12,12 +12,12 @@
 #include "StorageBuffer.h"
 #include "Texture.h"
 #include "app/Application.h"
-#include "core/external/glfw3.h"
 #include "internal/Descriptors.h"
 #include "internal/FrameProfiler.h"
 #include "internal/RendererDescriptors.h"
 #include "internal/VulkanCore.h"
 #include "internal/VulkanHandler.h"
+#include <vulkan/vulkan.h>
 
 namespace owl::renderer::gpu::vulkan {
 

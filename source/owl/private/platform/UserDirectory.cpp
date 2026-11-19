@@ -12,6 +12,7 @@
 
 #include "core/Environment.h"
 #include "core/Log.h"
+#include "platform/AndroidApp.h"
 
 #ifdef OWL_PLATFORM_WINDOWS
 #ifndef WIN32_LEAN_AND_MEAN
@@ -90,6 +91,11 @@ auto getState() -> UserDirectoryState& {
 }// namespace
 
 auto getExecutableDirectory() -> std::filesystem::path {
+#ifdef OWL_PLATFORM_ANDROID
+	// The process is the system's app_process: the game lives in the internal storage, where its assets are extracted.
+	if (auto dataDir = android::getDataDirectory(); !dataDir.empty())
+		return dataDir;
+#endif
 	if (const auto path = getExecutablePath(); path.has_value())
 		return path->parent_path();
 	return std::filesystem::current_path();

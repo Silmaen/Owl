@@ -22,7 +22,7 @@
 #else
 #define OWL_API
 #endif
-#elif defined(OWL_PLATFORM_LINUX)
+#elif defined(OWL_PLATFORM_LINUX) || defined(OWL_PLATFORM_ANDROID)
 // libOwlEngine.so is built with hidden visibility: only what OWL_API marks is exported.
 #define OWL_API __attribute__((visibility("default")))
 #else
@@ -38,8 +38,6 @@
 #else
 #error "Unknown Apple platform!"
 #endif
-#elif defined(__ANDROID__)
-#error "Android is not supported!"
 #else
 #error "Unknown compile platform so: not supported!"
 #endif

@@ -9,7 +9,9 @@
 
 #include "null/DrawData.h"
 #if OWL_WITH_RENDER
+#if OWL_WITH_DESKTOP
 #include "opengl/DrawData.h"
+#endif
 #include "vulkan/DrawData.h"
 #endif
 #include "renderer/Renderer.h"
@@ -25,8 +27,13 @@ auto DrawData::create() -> shared<DrawData> {
 		case RenderAPI::Type::Null:
 			return mkShared<null::DrawData>();
 #if OWL_WITH_RENDER
+#if OWL_WITH_DESKTOP
 		case RenderAPI::Type::OpenGL:
 			return mkShared<opengl::DrawData>();
+#else
+		case RenderAPI::Type::OpenGL:
+			break;// No OpenGL backend on Android
+#endif
 		case RenderAPI::Type::Vulkan:
 			return mkShared<vulkan::DrawData>();
 #else

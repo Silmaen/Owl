@@ -15,7 +15,9 @@
 #include "renderer/gpu/Shader.h"
 #include "renderer/utils/shaderFileUtils.h"
 #if OWL_WITH_RENDER
+#if OWL_WITH_DESKTOP
 #include "opengl/Shader.h"
+#endif
 #include "vulkan/Shader.h"
 #endif
 
@@ -86,9 +88,14 @@ auto Shader::create(const std::filesystem::path& iFile) -> shared<Shader> {
 			shader = mkShared<null::Shader>(name, renderer, sources);
 			break;
 #if OWL_WITH_RENDER
+#if OWL_WITH_DESKTOP
 		case RenderAPI::Type::OpenGL:
 			shader = mkShared<opengl::Shader>(name, renderer, sources);
 			break;
+#else
+		case RenderAPI::Type::OpenGL:
+			break;// No OpenGL backend on Android
+#endif
 		case RenderAPI::Type::Vulkan:
 			shader = mkShared<vulkan::Shader>(name, renderer, sources);
 			break;
@@ -115,8 +122,13 @@ auto Shader::createFromSource(const std::string& iShaderName, const std::string&
 		case RenderAPI::Type::Null:
 			return mkShared<null::Shader>(iShaderName, iRenderer, std::vector<std::filesystem::path>{});
 #if OWL_WITH_RENDER
+#if OWL_WITH_DESKTOP
 		case RenderAPI::Type::OpenGL:
 			return mkShared<opengl::Shader>(iShaderName, iRenderer, iSlangSource);
+#else
+		case RenderAPI::Type::OpenGL:
+			break;// No OpenGL backend on Android
+#endif
 		case RenderAPI::Type::Vulkan:
 			return mkShared<vulkan::Shader>(iShaderName, iRenderer, iSlangSource);
 #else

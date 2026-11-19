@@ -32,8 +32,16 @@ namespace owl::window {
  */
 enum struct Type : uint8_t {
 	Null,///< Windows null
-	Glfw///< Windows managed by Glfw library.
+	Glfw,///< Windows managed by Glfw library.
+	Android///< Window of the Android native activity.
 };
+
+/// Window type of the platform: the native activity on Android, GLFW elsewhere.
+#ifdef OWL_PLATFORM_ANDROID
+constexpr Type g_NativeType = Type::Android;
+#else
+constexpr Type g_NativeType = Type::Glfw;
+#endif
 
 /**
  * @brief
@@ -113,6 +121,7 @@ enum struct Platform : uint8_t {
 	Wayland,///< Native Wayland.
 	X11,///< X11 (native X server or XWayland).
 	Win32,///< Windows desktop.
+	Android,///< Android native activity.
 	None///< No native platform (null window, headless, unsupported).
 };
 
@@ -160,7 +169,7 @@ OWL_API auto makeAppId(std::string_view iName) -> std::string;
  */
 struct Properties {
 	/// Type of Window manager.
-	Type winType = Type::Glfw;
+	Type winType = g_NativeType;
 	/// Window title.
 	std::string title = "Owl Engine";
 	/// Path to the icons in the assets.

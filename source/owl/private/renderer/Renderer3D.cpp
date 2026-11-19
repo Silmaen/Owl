@@ -347,7 +347,7 @@ auto buildMaterialShader([[maybe_unused]] const std::string& iName, [[maybe_unus
 	const auto api = gpu::RenderCommand::getApi();
 	if (api != gpu::RenderAPI::Type::Null &&
 		!utils::loadOrCompileSpirv(*source, iName, k_ShaderFolder,
-								   api == gpu::RenderAPI::Type::Vulkan ? utils::ShaderTarget::Vulkan
+								   api == gpu::RenderAPI::Type::Vulkan ? utils::g_VulkanTarget
 																	   : utils::ShaderTarget::OpenGl,
 								   {gpu::ShaderType::Vertex, gpu::ShaderType::Fragment})
 				 .has_value()) {

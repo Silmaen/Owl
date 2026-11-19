@@ -142,6 +142,7 @@ is linked, and the engine shaders are baked again
 | `linux-include-check`                | Strict-libc++ include check  |
 | `linux-clang-minimal`                | Every optional module off    |
 | `linux-cross-arm64`                  | arm64 cross build (Release)  |
+| `android-arm64`                      | Android game runner and APK  |
 | `linux-bench`                        | `owl_bench` harness          |
 | `linux-fuzz`                         | libFuzzer targets            |
 
@@ -256,6 +257,37 @@ find "$sysroot" -type l -lname '/*' -exec sh -c \
 ```
 
 A sysroot outside the repository is mounted with `OWL_DOCKER_MOUNTS`.
+
+### Android {#android-build}
+
+`android-arm64` builds the game runner for Android arm64-v8a, API 33 (Android 13, the first level whose system loader
+exports Vulkan 1.3), in the Android build image builder-android-ubuntu2604 of the CI registry (NDK, SDK platform and
+build tools, JDK). Android is not yet a supported platform: it joins the table above with its test device in the CI.
+
+- **Toolchain**: the NDK's `android.toolchain.cmake`, libc++ shared; the Conan host profile is
+  `conan/profiles/android-clang-armv8`, the build profile `linux-clang`.
+- **Backends**: Vulkan on the system loader, the native activity window and input
+  (`source/owl/private/window/android/`, `source/owl/private/input/android/`: the first finger is the cursor and the
+  left button), OpenAL Soft, logs in logcat under the tag `Owl`. No OpenGL, no GLFW, no file dialogue, no Slang: the
+  host bakes the shaders (SPIR-V 1.3, target `VulkanAndroid`).
+- **Output**: the `OwlGameRunner` shared library, loaded by `android.app.NativeActivity`; nothing else is built (no
+  editor, no tests).
+- **APK**: `OwlGameRunnerApk` packs the runner, the shared libraries it needs (stripped) and a game exported for
+  Android by a host Owl Nest into an APK next to the runner, signed with the debug key (`~/.android/debug.keystore`,
+  created when missing). The game is extracted to the internal storage at its first launch.
+
+```bash
+./docker_run.sh output/build/linux-clang-release/bin/OwlNest --export samples/<game> output/android --target android
+OWL_DOCKER_IMAGE=registry.argawaen.net/builder/builder-android-ubuntu2604 ./docker_run.sh bash -c \
+    'cmake --preset android-arm64 -S . -DOWL_ANDROID_GAME_DIR=output/android/<Game> &&
+     cmake --build output/build/android-arm64 --target OwlGameRunnerApk'
+./docker_run.sh --adb adb install -r output/build/android-arm64/bin/OwlGameRunner.apk
+```
+
+`./docker_run.sh --adb[=host:port]` runs the Android image on the host network with `ADB_SERVER_SOCKET` set to the
+adb server that owns the device (default `localhost:5037`, e.g. an SSH tunnel to the machine it is plugged in): the
+container only runs the client, the server keeps the USB device and its authorization key. The nightly pipeline
+builds the preset without testing it, no device reaching the CI yet.
 
 ## Running Tests
 

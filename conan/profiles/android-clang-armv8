@@ -1,0 +1,25 @@
+{# Android arm64-v8a, the NDK's Clang and libc++ (host profile of the android-arm64 preset; the build profile is
+   linux-clang). The NDK comes from ANDROID_NDK_ROOT, set by the Android build image. API 33 (Android 13) is the first
+   level whose system Vulkan loader exports Vulkan 1.3, which the engine needs. #}
+{% set ndk = os.getenv("ANDROID_NDK_ROOT", "/opt/android-ndk") %}
+[settings]
+os=Android
+os.api_level=33
+arch=armv8
+compiler=clang
+compiler.version=21
+compiler.libcxx=c++_shared
+compiler.cppstd=23
+build_type=Release
+
+[conf]
+tools.android:ndk_path={{ ndk }}
+tools.cmake.cmaketoolchain:generator=Ninja
+
+[buildenv]
+# CMake 4 refuses cmake_minimum_required below 3.5, still declared by some upstream projects.
+CMAKE_POLICY_VERSION_MINIMUM=3.5
+
+[replace_tool_requires]
+cmake/*: cmake/4.4.4
+pkgconf/*: pkgconf/2.5.1

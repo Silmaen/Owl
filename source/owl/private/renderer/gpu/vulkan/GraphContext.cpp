@@ -13,11 +13,18 @@
 #include "internal/FrameProfiler.h"
 #include "internal/VulkanHandler.h"
 
+#ifdef OWL_PLATFORM_ANDROID
+#include <android/native_window.h>
+#include <vulkan/vulkan_android.h>
+#else
+#include "core/external/glfw3.h"
+#endif
+
 #include <cstdint>
 
 namespace owl::renderer::gpu::vulkan {
 
-GraphContext::GraphContext(GLFWwindow* ioWindow) : mp_wnd(ioWindow) {}
+GraphContext::GraphContext(void* ioWindow) : mp_wnd(ioWindow) {}
 
 GraphContext::~GraphContext() = default;
 
@@ -35,7 +42,29 @@ auto GraphContext::getVersion() const -> Version {
 }
 
 auto GraphContext::createSurface(const VkInstance& iInstance) -> VkResult {
-	return glfwCreateWindowSurface(iInstance, mp_wnd, nullptr, &m_surface);
+#ifdef OWL_PLATFORM_ANDROID
+	const VkAndroidSurfaceCreateInfoKHR createInfo{.sType = VK_STRUCTURE_TYPE_ANDROID_SURFACE_CREATE_INFO_KHR,
+												   .pNext = nullptr,
+												   .flags = 0,
+												   .window = static_cast<ANativeWindow*>(mp_wnd)};
+	return vkCreateAndroidSurfaceKHR(iInstance, &createInfo, nullptr, &m_surface);
+#else
+	return glfwCreateWindowSurface(iInstance, static_cast<GLFWwindow*>(mp_wnd), nullptr, &m_surface);
+#endif
+}
+
+auto GraphContext::getRequiredInstanceExtensions() -> std::vector<const char*> {
+#ifdef OWL_PLATFORM_ANDROID
+	return {VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_ANDROID_SURFACE_EXTENSION_NAME};
+#else
+	uint32_t count = 0;
+	const char** extensions = glfwGetRequiredInstanceExtensions(&count);
+	if (extensions == nullptr)
+		return {VK_KHR_SURFACE_EXTENSION_NAME};
+	std::vector<const char*> result(extensions, extensions + count);
+	result.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
+	return result;
+#endif
 }
 
 void GraphContext::destroySurface(const VkInstance& iInstance) {

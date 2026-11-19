@@ -12,7 +12,9 @@
 
 #ifdef OWL_PLATFORM_WINDOWS
 #include <windows.h>
-#elif OWL_PLATFORM_LINUX
+#elif defined(OWL_PLATFORM_ANDROID)
+// No serial port reachable by an Android application.
+#elif defined(OWL_PLATFORM_LINUX)
 #include <cerrno>
 #include <fcntl.h>
 #include <linux/serial.h>
@@ -41,7 +43,9 @@ void enumerateSerialDevices(Manager::DeviceList& ioListToUpdate) {
 		}
 		if (::GetLastError() == ERROR_INSUFFICIENT_BUFFER) {}
 	}
-#elif OWL_PLATFORM_LINUX
+#elif defined(OWL_PLATFORM_ANDROID)
+	static_cast<void>(ioListToUpdate);
+#elif defined(OWL_PLATFORM_LINUX)
 	if (const std::filesystem::path base{"/dev/serial/by-id"}; exists(base)) {
 		for (const auto& devLink: std::filesystem::directory_iterator(base)) {
 			if (is_symlink(devLink.symlink_status())) {

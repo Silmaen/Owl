@@ -41,6 +41,7 @@
 #include <fstream>
 #include <iterator>
 #include <set>
+#include <span>
 #include <sstream>
 #include <string>
 #include <system_error>
@@ -177,8 +178,16 @@ auto selectEngineFiles(const ExportSettings& iSettings, const renderer::Renderer
 #if OWL_WITH_RENDER
 constexpr std::array g_shaderStages{renderer::gpu::ShaderType::Vertex, renderer::gpu::ShaderType::Fragment,
 									renderer::gpu::ShaderType::Compute};
-// The shader targets of a desktop game; the Android and Web targets join with their runners.
-constexpr std::array g_shaderTargets{renderer::utils::ShaderTarget::Vulkan, renderer::utils::ShaderTarget::OpenGl};
+// The shader targets of a game per platform; the Web target joins with its runner.
+constexpr std::array g_desktopShaderTargets{renderer::utils::ShaderTarget::Vulkan,
+											renderer::utils::ShaderTarget::OpenGl};
+constexpr std::array g_androidShaderTargets{renderer::utils::ShaderTarget::VulkanAndroid};
+
+auto shaderTargetsOf(const ExportTarget iTarget) -> std::span<const renderer::utils::ShaderTarget> {
+	if (iTarget == ExportTarget::Android)
+		return g_androidShaderTargets;
+	return g_desktopShaderTargets;
+}
 
 // True when the stored SPIR-V of every stage of a shader matches its source, for one API.
 auto hasCurrentSpirv(const std::vector<AssetReference>& iAssets, const std::string& iName, const std::string& iRenderer,
@@ -222,11 +231,11 @@ void useBakedFile(std::vector<AssetReference>& ioAssets, const std::string& iPac
 
 // Compiles a shader source for every target when its SPIR-V is missing or outdated, into the cook cache.
 auto bakeShaderSource(std::vector<AssetReference>& ioAssets, const std::filesystem::path& iCacheDir,
-					  const std::string& iSource, const std::string& iName, const std::string& iRenderer)
-		-> expected<bool, ExportError> {
+					  const std::string& iSource, const std::string& iName, const std::string& iRenderer,
+					  const std::span<const renderer::utils::ShaderTarget> iTargets) -> expected<bool, ExportError> {
 	const auto moduleName = std::format("{}/{}", iRenderer, iName);
 	bool compiled = false;
-	for (const auto target: g_shaderTargets) {
+	for (const auto target: iTargets) {
 		const std::string api = renderer::utils::getShaderTargetFolder(target);
 		const auto cacheKey = renderer::utils::getShaderCacheKey(iSource, moduleName, target);
 		if (hasCurrentSpirv(ioAssets, iName, iRenderer, api, cacheKey))
@@ -262,7 +271,8 @@ auto bakeShaderSource(std::vector<AssetReference>& ioAssets, const std::filesyst
 }
 
 // The variants of the mesh shaders the material graphs of the pack draw with, one per root graph and mesh shader.
-auto bakeMaterialGraphs(std::vector<AssetReference>& ioAssets, const std::filesystem::path& iCacheDir)
+auto bakeMaterialGraphs(std::vector<AssetReference>& ioAssets, const std::filesystem::path& iCacheDir,
+						const std::span<const renderer::utils::ShaderTarget> iTargets)
 		-> expected<size_t, ExportError> {
 	std::vector<std::filesystem::path> materials;
 	for (const auto& ref: ioAssets) {
@@ -292,7 +302,7 @@ auto bakeMaterialGraphs(std::vector<AssetReference>& ioAssets, const std::filesy
 			if (!source.has_value())
 				continue;
 			const auto compiled = bakeShaderSource(ioAssets, iCacheDir, *source, name,
-												   std::string{renderer::g_materialGraphRenderer});
+												   std::string{renderer::g_materialGraphRenderer}, iTargets);
 			if (!compiled.has_value())
 				return unexpected{compiled.error()};
 			if (*compiled)
@@ -303,8 +313,9 @@ auto bakeMaterialGraphs(std::vector<AssetReference>& ioAssets, const std::filesy
 }
 
 // Compiles the packed shaders and the material graph variants whose SPIR-V is outdated; the game compiles none.
-auto bakeShaders(std::vector<AssetReference>& ioAssets, const std::filesystem::path& iCacheDir)
-		-> expected<size_t, ExportError> {
+auto bakeShaders(std::vector<AssetReference>& ioAssets, const std::filesystem::path& iCacheDir,
+				 const ExportTarget iTarget) -> expected<size_t, ExportError> {
+	const auto targets = shaderTargetsOf(iTarget);
 	std::vector<AssetReference> sources;
 	std::ranges::copy_if(ioAssets, std::back_inserter(sources), [](const AssetReference& iRef) -> bool {
 		const std::filesystem::path path{iRef.packPath};
@@ -314,14 +325,15 @@ auto bakeShaders(std::vector<AssetReference>& ioAssets, const std::filesystem::p
 	for (const auto& ref: sources) {
 		const std::filesystem::path packPath{ref.packPath};
 		// Expanded as the game expands it from its pack, so that the keys match.
-		const auto compiled = bakeShaderSource(ioAssets, iCacheDir, renderer::utils::readShaderSource(packPath),
-											   packPath.stem().string(), packPath.parent_path().filename().string());
+		const auto compiled =
+				bakeShaderSource(ioAssets, iCacheDir, renderer::utils::readShaderSource(packPath),
+								 packPath.stem().string(), packPath.parent_path().filename().string(), targets);
 		if (!compiled.has_value())
 			return unexpected{compiled.error()};
 		if (*compiled)
 			++baked;
 	}
-	const auto graphs = bakeMaterialGraphs(ioAssets, iCacheDir);
+	const auto graphs = bakeMaterialGraphs(ioAssets, iCacheDir, targets);
 	if (!graphs.has_value())
 		return unexpected{graphs.error()};
 	return baked + *graphs;
@@ -329,7 +341,8 @@ auto bakeShaders(std::vector<AssetReference>& ioAssets, const std::filesystem::p
 #else
 // Without the render module no shader compiler is built: the shaders are packed as they are.
 auto bakeShaders([[maybe_unused]] std::vector<AssetReference>& ioAssets,
-				 [[maybe_unused]] const std::filesystem::path& iCacheDir) -> expected<size_t, ExportError> {
+				 [[maybe_unused]] const std::filesystem::path& iCacheDir, [[maybe_unused]] const ExportTarget iTarget)
+		-> expected<size_t, ExportError> {
 	return size_t{0};
 }
 #endif
@@ -450,7 +463,8 @@ void writeMetadata(const ExportSettings& iSettings, const std::filesystem::path&
 		out << YAML::Key << "Description" << YAML::Value << iSettings.description;
 	out << YAML::Key << "EngineVersion" << YAML::Value << owl::getVersionString();
 	out << YAML::Key << "PackDate" << YAML::Value << std::format("{:%Y-%m-%d}", ymd);
-	out << YAML::Key << "Platform" << YAML::Value << g_platformName;
+	out << YAML::Key << "Platform" << YAML::Value
+		<< (iSettings.target == ExportTarget::Android ? "android-arm64" : g_platformName);
 	out << YAML::EndMap;
 	out << YAML::EndMap;
 	std::ofstream file(iGameDir / "game_info.yml");
@@ -636,8 +650,9 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 		OWL_CORE_ERROR("GameExporter: No asset found to pack for first scene '{}'.", iSettings.firstScene)
 		return unexpected{ExportError::NoAssets};
 	}
-	const auto runnerExe = findRunner(iSettings.runnerDirectory);
-	if (!runnerExe) {
+	const bool android = iSettings.target == ExportTarget::Android;
+	const auto runnerExe = android ? std::nullopt : findRunner(iSettings.runnerDirectory);
+	if (!android && !runnerExe) {
 		OWL_CORE_ERROR("GameExporter: OwlRunner executable not found in '{}'.", iSettings.runnerDirectory.string())
 		return unexpected{ExportError::RunnerNotFound};
 	}
@@ -650,7 +665,7 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 	const auto cookDirectory = iSettings.cookCacheDirectory.empty()
 									   ? iSettings.projectDirectory / ".owl" / "cache" / "cooked"
 									   : iSettings.cookCacheDirectory;
-	const auto shadersBaked = bakeShaders(assets, cookDirectory / "shaders");
+	const auto shadersBaked = bakeShaders(assets, cookDirectory / "shaders", iSettings.target);
 	if (!shadersBaked)
 		return unexpected{shadersBaked.error()};
 	std::string rendererList{"Renderer2D"};
@@ -786,6 +801,15 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 		return unexpected{ExportError::Cancelled};
 	}
 
+	if (android) {
+		// The APK packaging adds the runner libraries next to this folder, its assets.
+		std::error_code sizeEc;
+		result.packBytes = std::filesystem::file_size(result.packFile, sizeEc);
+		report(iProgress, 1.f, "Done.");
+		OWL_CORE_INFO("GameExporter: Exported '{}' for Android ({} assets) to '{}'.", iSettings.gameName,
+					  result.assetCount, result.gameDirectory.string())
+		return result;
+	}
 	report(iProgress, 0.88f, "Copying runner...");
 #ifdef OWL_PLATFORM_WINDOWS
 	result.executable = result.gameDirectory / (baseName + ".exe");

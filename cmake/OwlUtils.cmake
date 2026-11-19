@@ -90,26 +90,36 @@ function(owl_conan_imgui_bindings)
     endif ()
     set(Staged "${CMAKE_BINARY_DIR}/imgui_bindings")
     file(COPY "${ImguiRoot}/res/bindings/" DESTINATION "${Staged}/backends")
-    find_package(glfw3 REQUIRED)
     find_package(VulkanHeaders REQUIRED)
-    find_package(VulkanLoader REQUIRED)
-    find_package(OpenGL REQUIRED)
     # imgui_stdlib declares its functions IMGUI_API (dllimport from a shared imgui on Windows) but is compiled into
     # the engine: staged without the macro (file(CONFIGURE) rewrites it only when it changes).
     file(READ "${ImguiRoot}/res/misc/cpp/imgui_stdlib.h" StdlibHeader)
     string(REPLACE "IMGUI_API " "" StdlibHeader "${StdlibHeader}")
     file(CONFIGURE OUTPUT "${Staged}/misc/imgui_stdlib.h" CONTENT "${StdlibHeader}" @ONLY)
     file(COPY "${ImguiRoot}/res/misc/cpp/imgui_stdlib.cpp" DESTINATION "${Staged}/misc")
-    add_library(${BindingsTarget} STATIC
-            "${Staged}/backends/imgui_impl_glfw.cpp"
-            "${Staged}/backends/imgui_impl_opengl2.cpp"
-            "${Staged}/backends/imgui_impl_opengl3.cpp"
-            "${Staged}/backends/imgui_impl_vulkan.cpp"
-            "${Staged}/misc/imgui_stdlib.cpp")
+    # Android: the native activity backend and Vulkan; elsewhere GLFW, OpenGL and Vulkan.
+    if (${PROJECT_PREFIX}_PLATFORM_ANDROID)
+        add_library(${BindingsTarget} STATIC
+                "${Staged}/backends/imgui_impl_android.cpp"
+                "${Staged}/backends/imgui_impl_vulkan.cpp"
+                "${Staged}/misc/imgui_stdlib.cpp")
+        target_link_libraries(${BindingsTarget} PRIVATE Vulkan::Headers vulkan android log)
+    else ()
+        find_package(glfw3 REQUIRED)
+        find_package(VulkanLoader REQUIRED)
+        find_package(OpenGL REQUIRED)
+        add_library(${BindingsTarget} STATIC
+                "${Staged}/backends/imgui_impl_glfw.cpp"
+                "${Staged}/backends/imgui_impl_opengl2.cpp"
+                "${Staged}/backends/imgui_impl_opengl3.cpp"
+                "${Staged}/backends/imgui_impl_vulkan.cpp"
+                "${Staged}/misc/imgui_stdlib.cpp")
+        target_link_libraries(${BindingsTarget} PRIVATE glfw Vulkan::Headers Vulkan::Loader OpenGL::GL)
+    endif ()
     # Third-party sources: never analysed by clang-tidy.
     set_target_properties(${BindingsTarget} PROPERTIES POSITION_INDEPENDENT_CODE ON FOLDER "External" CXX_CLANG_TIDY "")
     target_include_directories(${BindingsTarget} SYSTEM PUBLIC "${Staged}" "${Staged}/misc")
-    target_link_libraries(${BindingsTarget} PUBLIC imgui::imgui PRIVATE glfw Vulkan::Headers Vulkan::Loader OpenGL::GL)
+    target_link_libraries(${BindingsTarget} PUBLIC imgui::imgui)
     # The backends default to IMGUI_API, dllimport from a shared imgui on Windows; they live in the engine instead.
     target_compile_definitions(${BindingsTarget} PUBLIC IMGUI_IMPL_API=)
 endfunction()

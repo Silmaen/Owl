@@ -164,7 +164,7 @@ public:
 	 * @param[in] iViewProj The view-projection matrix.
 	 * @return The 6 frustum planes (left, right, bottom, top, near, far).
 	 */
-	OWL_API [[nodiscard]] static auto extractFrustumPlanes(const math::mat4& iViewProj) -> std::array<math::vec4, 6>;
+	[[nodiscard]] OWL_API static auto extractFrustumPlanes(const math::mat4& iViewProj) -> std::array<math::vec4, 6>;
 
 	/**
 	 * @brief
@@ -180,7 +180,7 @@ public:
 	 * @param[in] iMax The box max corner.
 	 * @return True when the box is at least partially inside the frustum.
 	 */
-	OWL_API [[nodiscard]] static auto isAabbVisible(const std::array<math::vec4, 6>& iFrustumPlanes,
+	[[nodiscard]] OWL_API static auto isAabbVisible(const std::array<math::vec4, 6>& iFrustumPlanes,
 													const math::vec3& iMin, const math::vec3& iMax) -> bool;
 
 private:

@@ -82,8 +82,8 @@ ComputeShader::ComputeShader(const std::string& iShaderName, const std::string& 
 	const std::string source = loadSlangSource(iShaderName, iRenderer);
 	if (source.empty())
 		return;
-	const auto compiled = renderer::utils::loadOrCompileSpirv(
-			source, iShaderName, iRenderer, renderer::utils::ShaderTarget::Vulkan, {ShaderType::Compute});
+	const auto compiled = renderer::utils::loadOrCompileSpirv(source, iShaderName, iRenderer,
+															  renderer::utils::g_VulkanTarget, {ShaderType::Compute});
 	if (!compiled.has_value()) {
 		OWL_CORE_ERROR("Vulkan: Slang compilation of the compute shader '{}' failed.", m_name)
 		return;
@@ -114,8 +114,8 @@ ComputeShader::ComputeShader(const std::string& iShaderName, const std::string& 
 
 	if (auto problem = createPipeline(spirv); problem.has_value()) {
 		// Stored SPIR-V the driver refuses: compile it again once, and retry.
-		const auto again = renderer::utils::recompileSpirv(
-				source, iShaderName, iRenderer, renderer::utils::ShaderTarget::Vulkan, compiled->origin, *problem);
+		const auto again = renderer::utils::recompileSpirv(source, iShaderName, iRenderer,
+														   renderer::utils::g_VulkanTarget, compiled->origin, *problem);
 		const auto* const retry = again.has_value() && again->stages.contains(ShaderType::Compute)
 										  ? &again->stages.at(ShaderType::Compute)
 										  : nullptr;

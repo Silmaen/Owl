@@ -18,6 +18,9 @@ OWL_DIAG_DISABLE_CLANG("-Wundefined-func-template")
 #include <spdlog/sinks/base_sink.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
+#ifdef OWL_PLATFORM_ANDROID
+#include <spdlog/sinks/android_sink.h>
+#endif
 OWL_DIAG_POP
 
 #include <algorithm>
@@ -148,6 +151,10 @@ void Log::init(const Level& iLevel, const uint64_t iFrequency) {
 	}
 	std::vector<spdlog::sink_ptr> logSinks;
 	logSinks.emplace_back(mkShared<spdlog::sinks::stdout_color_sink_mt>());
+#ifdef OWL_PLATFORM_ANDROID
+	// An Android application has no console: logcat shows the log, under the tag "Owl".
+	logSinks.emplace_back(mkShared<spdlog::sinks::android_sink_mt>("Owl"));
+#endif
 	const auto logFile = platform::getUserDirectory() / "logs" / "Owl.log";
 #ifdef SPDLOG_WCHAR_FILENAMES
 	logSinks.emplace_back(mkShared<spdlog::sinks::basic_file_sink_mt>(logFile.wstring(), true));

@@ -10,7 +10,9 @@
 #include "null/RenderAPI.h"
 #include "renderer/gpu/RenderAPI.h"
 #if OWL_WITH_RENDER
+#if OWL_WITH_DESKTOP
 #include "opengl/RenderAPI.h"
+#endif
 #include "vulkan/RenderAPI.h"
 #endif
 
@@ -23,8 +25,13 @@ auto RenderAPI::create(const Type& iType) -> uniq<RenderAPI> {
 		case Type::Null:
 			return mkUniq<null::RenderAPI>();
 #if OWL_WITH_RENDER
+#if OWL_WITH_DESKTOP
 		case Type::OpenGL:
 			return mkUniq<opengl::RenderAPI>();
+#else
+		case Type::OpenGL:
+			break;// No OpenGL backend on Android
+#endif
 		case Type::Vulkan:
 			return mkUniq<vulkan::RenderAPI>();
 #else

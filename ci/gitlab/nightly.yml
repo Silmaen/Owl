@@ -92,6 +92,15 @@ include-check:
     - poetry run python3 ci_action.py Clean "$PRESET"
     - poetry run python3 ci_action.py IncludeCheck "$PRESET"
 
+# The engine and the game runner cross compiled with the NDK; no device reaches the CI yet, so the preset builds
+# without the tests.
+android-arm64:
+  extends: [.build-linux, .nightly-job]
+  stage: build
+  image: registry.argawaen.net/builder/builder-android-ubuntu2604
+  variables:
+    PRESET: android-arm64
+
 # Informative: never fails.
 dependency-report:
   extends: [.linux, .nightly-job]

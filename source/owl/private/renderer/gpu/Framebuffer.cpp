@@ -9,7 +9,9 @@
 
 #include "null/Framebuffer.h"
 #if OWL_WITH_RENDER
+#if OWL_WITH_DESKTOP
 #include "opengl/Framebuffer.h"
+#endif
 #include "vulkan/Framebuffer.h"
 #endif
 #include "renderer/Renderer.h"
@@ -27,8 +29,13 @@ auto Framebuffer::create(const FramebufferSpecification& iSpec) -> shared<Frameb
 		case RenderAPI::Type::Null:
 			return mkShared<null::Framebuffer>(iSpec);
 #if OWL_WITH_RENDER
+#if OWL_WITH_DESKTOP
 		case RenderAPI::Type::OpenGL:
 			return mkShared<opengl::Framebuffer>(iSpec);
+#else
+		case RenderAPI::Type::OpenGL:
+			break;// No OpenGL backend on Android
+#endif
 		case RenderAPI::Type::Vulkan:
 			return mkShared<vulkan::Framebuffer>(iSpec);
 #else

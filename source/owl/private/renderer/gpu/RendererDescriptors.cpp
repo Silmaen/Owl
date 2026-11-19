@@ -87,11 +87,13 @@ auto getOwnedBlocks() -> std::unordered_map<std::string, uniq<vulkan::internal::
 }// namespace
 
 void RendererDescriptors::declare(const std::string& iRenderer, std::span<const BindingDecl> iBindings) {
+#if OWL_WITH_DESKTOP
 	if (const auto api = RenderCommand::getApi(); api == RenderAPI::Type::OpenGL) {
 		opengl::BindingTable::release(iRenderer);
 		getSlots()[getId(iRenderer)].openGl = &opengl::BindingTable::getForRenderer(iRenderer);
 		return;
 	}
+#endif
 	if (const auto api = RenderCommand::getApi(); api != RenderAPI::Type::Vulkan) {
 		return;
 	}
@@ -116,7 +118,9 @@ void RendererDescriptors::release(const std::string& iRenderer) {
 	slot.openGl = nullptr;
 	slot.vulkan = nullptr;
 	getOwnedBlocks().erase(iRenderer);
+#if OWL_WITH_DESKTOP
 	opengl::BindingTable::release(iRenderer);
+#endif
 }
 
 void RendererDescriptors::releaseAll() {
@@ -125,7 +129,9 @@ void RendererDescriptors::releaseAll() {
 		slot.vulkan = nullptr;
 	}
 	getOwnedBlocks().clear();
+#if OWL_WITH_DESKTOP
 	opengl::BindingTable::releaseAll();
+#endif
 }
 
 RendererDescriptors::ScopedActive::ScopedActive(const RendererId iRenderer) {
@@ -133,6 +139,7 @@ RendererDescriptors::ScopedActive::ScopedActive(const RendererId iRenderer) {
 	if (iRenderer >= slots.size())
 		return;
 	auto& slot = slots[iRenderer];
+#if OWL_WITH_DESKTOP
 	if (const auto api = RenderCommand::getApi(); api == RenderAPI::Type::OpenGL) {
 		if (slot.openGl == nullptr)
 			slot.openGl = &opengl::BindingTable::getForRenderer(slot.name);
@@ -142,6 +149,7 @@ RendererDescriptors::ScopedActive::ScopedActive(const RendererId iRenderer) {
 		m_openGl = true;
 		return;
 	}
+#endif
 	if (const auto api = RenderCommand::getApi(); api != RenderAPI::Type::Vulkan || slot.vulkan == nullptr) {
 		return;
 	}
@@ -153,10 +161,12 @@ RendererDescriptors::ScopedActive::ScopedActive(const RendererId iRenderer) {
 RendererDescriptors::ScopedActive::~ScopedActive() {
 	if (!m_engaged)
 		return;
+#if OWL_WITH_DESKTOP
 	if (m_openGl) {
 		opengl::BindingTable::setActive(static_cast<opengl::BindingTable*>(mp_state));
 		return;
 	}
+#endif
 	vulkan::internal::RendererDescriptors::setActive(static_cast<vulkan::internal::RendererDescriptors*>(mp_state));
 }
 #else

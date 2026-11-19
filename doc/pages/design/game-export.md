@@ -127,6 +127,10 @@ Design of the export for the five targets; the platforms themselves are in
 - Release runners only, no debug runner: diagnostics come from the `runner.yml` log level and console, the crash
   reporter ([Crash reporter](crash-reporter.md)) and Play in the Nest.
 - A Windows game carries its project icon in its executable (PE resource patch at export).
+- An Android game is an APK the Nest assembles on any host, without the Android SDK nor a JDK on the workstation:
+  the Android runner ships as a template APK (compiled manifest, stripped libraries); the Nest adds the game's assets,
+  writes the package name, label, version and icon into the binary manifest, aligns the archive and signs it
+  ([Signing](#game-export-signing)). Games are developed on the desktop, never on the device.
 
 ### Runner templates {#game-export-templates}
 
@@ -135,8 +139,9 @@ Design of the export for the five targets; the platforms themselves are in
 - Size: about 10 MB compressed per runner once Slang leaves the runner (Slang is most of the runner's libraries).
 - Release pipeline: each runner is built once, then each Nest package is assembled with all of them; the Android,
   Web and arm64 runners are built at night and at release, on a pull request only when its diff touches their backend.
-- Build image: the Android NDK, emsdk, xwin with `clang-cl` and `lld-link`, and a headless browser join the build image
-  (the maintainer extends the image).
+- Build images (made by the maintainer): the Android NDK and emsdk with a headless browser each get their own image,
+  like the arm64 cross image; `docker_run.sh` reaches them through `OWL_DOCKER_IMAGE`. Windows runners are built
+  natively on the Windows agent.
 
 ### Shaders per target {#game-export-shaders}
 
@@ -201,4 +206,4 @@ Every target is exported and played in CI:
 | Linux   | Linux agents                                                                         |
 | Windows | `hecate` agent                                                                       |
 | Web     | Headless browser                                                                     |
-| Android | The maintainer's tablet over adb, nightly; device setup decided when the port starts |
+| Android | A device on the adb server of `artemis`, nightly; until a device with Android 13 and Vulkan 1.3 is there, the nightly job only builds |

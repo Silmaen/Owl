@@ -34,3 +34,15 @@ function(owl_target_link_vulkan target_name)
 
     set(CMAKE_MAP_IMPORTED_CONFIG_DEBUG ${StateSave})
 endfunction()
+
+# Android: the Vulkan headers and utility libraries from Conan, the loader of the system (libvulkan.so).
+function(owl_target_link_vulkan_android target_name)
+    find_package(VulkanHeaders REQUIRED)
+    target_link_libraries(${target_name} PRIVATE Vulkan::Headers vulkan)
+    find_package(VulkanUtilityLibraries REQUIRED)
+    target_link_libraries(${target_name} PRIVATE Vulkan::LayerSettings)
+    target_link_libraries(${target_name} PRIVATE Vulkan::UtilityHeaders)
+    target_compile_definitions(${target_name} PRIVATE VK_USE_PLATFORM_ANDROID_KHR)
+    find_package(spirv-cross REQUIRED)
+    target_link_libraries(${target_name}Private INTERFACE spirv-cross-cpp)
+endfunction()

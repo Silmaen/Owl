@@ -201,10 +201,7 @@ void VulkanCore::createInstance() {
 	std::vector<std::string> requestedExtensions;
 	{
 		std::set<const char*> uniqueExtensions;
-		uint32_t glfwExtensionCount = 0;
-		const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-		uniqueExtensions.insert(glfwExtensions, glfwExtensions + glfwExtensionCount);
-		uniqueExtensions.emplace(VK_KHR_SURFACE_EXTENSION_NAME);
+		for (const char* extension: GraphContext::getRequiredInstanceExtensions()) uniqueExtensions.emplace(extension);
 		if (m_debugMessage) {
 			uniqueExtensions.emplace(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 		}

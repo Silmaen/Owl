@@ -11,7 +11,9 @@
 #include "renderer/gpu/ComputeShader.h"
 #include "renderer/gpu/null/ComputeShader.h"
 #if OWL_WITH_RENDER
+#if OWL_WITH_DESKTOP
 #include "renderer/gpu/opengl/ComputeShader.h"
+#endif
 #include "renderer/gpu/vulkan/ComputeShader.h"
 #endif
 
@@ -24,8 +26,13 @@ auto ComputeShader::create([[maybe_unused]] const std::string& iShaderName,
 		case RenderAPI::Type::Null:
 			return mkShared<null::ComputeShader>();
 #if OWL_WITH_RENDER
+#if OWL_WITH_DESKTOP
 		case RenderAPI::Type::OpenGL:
 			return mkShared<opengl::ComputeShader>(iShaderName, iRenderer);
+#else
+		case RenderAPI::Type::OpenGL:
+			break;// No OpenGL backend on Android
+#endif
 		case RenderAPI::Type::Vulkan:
 			return mkShared<vulkan::ComputeShader>(iShaderName, iRenderer);
 #else

@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
 # Run a command inside the Owl build image, mirroring CLion's "Docker Owl" toolchain.
 #
-# Usage: ./docker_run.sh [--gui] [--gpu=auto|intel|nvidia] [--platform=auto|wayland|x11] [--perf] [--] <command...>
+# Usage: ./docker_run.sh [--gui] [--gpu=auto|intel|nvidia] [--platform=auto|wayland|x11] [--perf] [--adb[=host:port]] [--] <command...>
 #   --gui       expose the GPU, X11/Wayland display, PulseAudio and the host desktop entries (run OwlNest, GPU tests).
 #   --gpu=      on a hybrid laptop, pin Vulkan, EGL and GLX to one GPU (nvidia = PRIME render offload); implies --gui.
 #   --platform= windowing platform of the engine (sets OWL_WINDOW_PLATFORM); implies --gui.
 #   --perf      allow perf / gdb / valgrind / TSan (ptrace + perf events, no seccomp/AppArmor confinement).
+#   --adb       Android image on the host network, adb talking to the server at host:port (default localhost:5037,
+#               e.g. an SSH tunnel to the machine the device is plugged in).
 #
 # Examples:
 #   ./docker_run.sh cmake --preset linux-clang-release -S .
@@ -14,6 +16,7 @@
 #   ./docker_run.sh poetry run python ci_action.py CodeStyle linux-clang-release
 #   ./docker_run.sh --gui output/build/linux-clang-release/bin/OwlNest
 #   ./docker_run.sh --gpu=nvidia --platform=x11 output/build/linux-clang-release/bin/OwlRunner
+#   ./docker_run.sh --adb adb install -r output/build/android-arm64/bin/OwlGameRunner.apk
 #
 # Environment overrides:
 #   OWL_DOCKER_IMAGE  image to use (default: the CI builder image).
@@ -23,7 +26,6 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-image="${OWL_DOCKER_IMAGE:-registry.argawaen.net/builder/devel-ubuntu2604:latest}"
 # The default $HOME sits next to the main checkout, also when running from a git worktree.
 main_root="${repo_root}"
 if [[ -f "${repo_root}/.git" ]]; then
@@ -36,6 +38,7 @@ gid="$(id -g)"
 
 gui=0
 perf=0
+adb=""
 gpu="auto"
 platform="${OWL_WINDOW_PLATFORM:-}"
 while [[ $# -gt 0 ]]; do
@@ -44,6 +47,8 @@ while [[ $# -gt 0 ]]; do
 	--gpu=*) gpu="${1#--gpu=}"; gui=1; shift ;;
 	--platform=*) platform="${1#--platform=}"; gui=1; shift ;;
 	--perf) perf=1; shift ;;
+	--adb) adb="localhost:5037"; shift ;;
+	--adb=*) adb="${1#--adb=}"; shift ;;
 	--) shift; break ;;
 	*) break ;;
 	esac
@@ -51,6 +56,9 @@ done
 if [[ $# -eq 0 ]]; then
 	set -- bash
 fi
+default_image="registry.argawaen.net/builder/devel-ubuntu2604:latest"
+[[ -n "${adb}" ]] && default_image="registry.argawaen.net/builder/builder-android-ubuntu2604:latest"
+image="${OWL_DOCKER_IMAGE:-${default_image}}"
 
 mkdir -p "${docker_home}"
 
@@ -133,6 +141,11 @@ fi
 
 if [[ ${perf} -eq 1 ]]; then
 	args+=(--cap-add SYS_PTRACE --cap-add PERFMON --cap-add SYS_ADMIN --security-opt seccomp=unconfined --security-opt apparmor=unconfined)
+fi
+
+# The adb server owns the device and its authorization key: the container only runs the client.
+if [[ -n "${adb}" ]]; then
+	args+=(--network host -e ADB_SERVER_SOCKET="tcp:${adb}")
 fi
 
 exec docker "${args[@]}" "${image}" "$@"

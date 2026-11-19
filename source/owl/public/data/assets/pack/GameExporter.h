@@ -22,6 +22,17 @@
 namespace owl::data::assets::pack {
 /**
  * @brief
+ *  Platform an export is made for.
+ */
+enum struct ExportTarget : uint8_t {
+	/// The platform of the exporting Owl Nest: the runner executable and its libraries join the game.
+	Host,
+	/// Android arm64: shaders baked as SPIR-V 1.3, no executable; the folder becomes the `assets/` of the APK.
+	Android,
+};
+
+/**
+ * @brief
  *  Everything needed to export a game: project metadata, window defaults and locations.
  */
 struct OWL_API ExportSettings {
@@ -49,8 +60,10 @@ struct OWL_API ExportSettings {
 	std::filesystem::path projectDirectory;
 	/// Parent folder of the exported game; the game lands in `outputDirectory / sanitized(gameName)`.
 	std::filesystem::path outputDirectory;
-	/// Folder holding the `OwlRunner` executable and the shared libraries to bundle.
+	/// Folder holding the `OwlRunner` executable and the shared libraries to bundle (unused for Android).
 	std::filesystem::path runnerDirectory;
+	/// Platform of the exported game.
+	ExportTarget target{ExportTarget::Host};
 	/// Default window size in pixels.
 	math::vec2ui windowSize{1280, 720};
 	/// Whether the game starts in fullscreen mode.

@@ -13,22 +13,35 @@
 #include "debug/TrackerClient.h"
 #include "platform/Console.h"
 
+#ifdef OWL_PLATFORM_ANDROID
+#include "platform/AndroidApp.h"
+
+#include <array>
+#include <filesystem>
+#endif
+
 #include <cstddef>
 #include <string>
 #include <unordered_map>
 
+namespace owl::app::detail {
 /**
  * @brief
- *  Main entry point for the program.
+ *  Start, run and stop the application of createApplication().
  * @param[in] iArgc Number of argument.
  * @param[in] iArgv List of arguments.
  * @return Execution code.
  */
 // NOLINTBEGIN(misc-definitions-in-headers)
-auto main(int iArgc, char* iArgv[]) -> int {
+inline auto runMain(int iArgc, char* iArgv[]) -> int {
 	// A GUI program on Windows: its command-line output goes to the console it was started from, if any.
 	owl::platform::attachParentConsole();
 	owl::core::Log::init();
+#ifdef OWL_PLATFORM_ANDROID
+	// The game runs from the internal storage, where the APK assets are copied.
+	if (const auto dataDir = owl::platform::android::extractAssets(); !dataDir.empty())
+		std::filesystem::current_path(dataDir);
+#endif
 	int exitCode = 0;
 	{
 		// Startup
@@ -94,4 +107,29 @@ auto main(int iArgc, char* iArgv[]) -> int {
 	owl::core::Log::invalidate();
 	return exitCode;
 }
+}// namespace owl::app::detail
+
+#ifdef OWL_PLATFORM_ANDROID
+/**
+ * @brief
+ *  Entry point of the Android native activity, called by the native app glue on its own thread.
+ * @param[in,out] ioApp The activity.
+ */
+extern "C" void android_main(android_app* ioApp) {
+	owl::platform::android::setApp(ioApp);
+	std::string name{"owl"};
+	std::array<char*, 2> argv{name.data(), nullptr};
+	owl::app::detail::runMain(1, argv.data());
+	owl::platform::android::finishActivity();
+}
+#else
+/**
+ * @brief
+ *  Main entry point for the program.
+ * @param[in] iArgc Number of argument.
+ * @param[in] iArgv List of arguments.
+ * @return Execution code.
+ */
+auto main(int iArgc, char* iArgv[]) -> int { return owl::app::detail::runMain(iArgc, iArgv); }
+#endif
 // NOLINTEND(misc-definitions-in-headers)

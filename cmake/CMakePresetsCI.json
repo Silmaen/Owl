@@ -94,6 +94,25 @@
       }
     },
     {
+      "name": "android-arm64",
+      "inherits": "base",
+      "toolchainFile": "$env{ANDROID_NDK_ROOT}/build/cmake/android.toolchain.cmake",
+      "cacheVariables": {
+        "ANDROID_ABI": "arm64-v8a",
+        "ANDROID_PLATFORM": "android-33",
+        "ANDROID_STL": "c++_shared",
+        "OWL_BUILD_NEST": "OFF",
+        "OWL_TESTING": "OFF",
+        "OWL_ENABLE_DOCUMENTATION": "OFF"
+      },
+      "vendor": {
+        "silmaen": {
+          "package": true,
+          "publish_doc": false
+        }
+      }
+    },
+    {
       "name": "linux-bench",
       "inherits": "linux-clang-release",
       "cacheVariables": {

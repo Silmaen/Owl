@@ -11,7 +11,9 @@
 #include "renderer/gpu/StorageBuffer.h"
 #include "renderer/gpu/null/StorageBuffer.h"
 #if OWL_WITH_RENDER
+#if OWL_WITH_DESKTOP
 #include "renderer/gpu/opengl/StorageBuffer.h"
+#endif
 #include "renderer/gpu/vulkan/StorageBuffer.h"
 #endif
 
@@ -26,8 +28,13 @@ auto StorageBuffer::create(const uint32_t iSize, const uint32_t iBinding, [[mayb
 		case RenderAPI::Type::Null:
 			return mkShared<null::StorageBuffer>(iSize, iBinding);
 #if OWL_WITH_RENDER
+#if OWL_WITH_DESKTOP
 		case RenderAPI::Type::OpenGL:
 			return mkShared<opengl::StorageBuffer>(iSize, iBinding);
+#else
+		case RenderAPI::Type::OpenGL:
+			break;// No OpenGL backend on Android
+#endif
 		case RenderAPI::Type::Vulkan:
 			return mkShared<vulkan::StorageBuffer>(iSize, iBinding);
 #else

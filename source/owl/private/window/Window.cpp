@@ -11,8 +11,11 @@
 #include "core/Log.h"
 #include "null/Window.h"
 #include "window/Window.h"
-#if OWL_WITH_RENDER
+#if OWL_WITH_DESKTOP
 #include "glfw/Window.h"
+#endif
+#ifdef OWL_PLATFORM_ANDROID
+#include "android/Window.h"
 #endif
 
 #include <cctype>
@@ -38,6 +41,8 @@ auto parsePlatform(const std::string_view iName) -> std::optional<Platform> {
 		return Platform::X11;
 	if (name == "win32" || name == "windows")
 		return Platform::Win32;
+	if (name == "android")
+		return Platform::Android;
 	if (name == "none" || name == "null")
 		return Platform::None;
 	return std::nullopt;
@@ -53,6 +58,8 @@ auto platformName(const Platform iPlatform) -> std::string_view {
 			return "x11";
 		case Platform::Win32:
 			return "win32";
+		case Platform::Android:
+			return "android";
 		case Platform::None:
 			return "none";
 	}
@@ -90,12 +97,19 @@ auto makeAppId(const std::string_view iName) -> std::string {
 auto Window::create(const Properties& iProps) -> uniq<Window> {
 	switch (iProps.winType) {
 		case Type::Glfw:
-#if OWL_WITH_RENDER
+#if OWL_WITH_DESKTOP
 			return mkUniq<glfw::Window>(iProps);
 #else
 			// GLFW not built (OWL_MODULE_RENDER=OFF): the engine runs headless.
 			OWL_CORE_INFO("Window: GLFW not built in (OWL_MODULE_RENDER=OFF), using the Null window.")
 			return mkUniq<null::Window>(iProps);
+#endif
+		case Type::Android:
+#ifdef OWL_PLATFORM_ANDROID
+			return mkUniq<android::Window>(iProps);
+#else
+			OWL_CORE_ERROR("Window: The Android window exists on Android only.")
+			return nullptr;
 #endif
 		case Type::Null:
 			return mkUniq<null::Window>(iProps);

@@ -1006,8 +1006,9 @@ auto luaInputGetGamepadAxis(lua_State* iState) -> int {
 auto luaInputGetGamepadStick(lua_State* iState) -> int {
 	const auto pad = checkGamepadSlot(iState, 1);
 	const auto stick = checkInteger(iState, 2) == 1 ? input::gamepad::Stick::Right : input::gamepad::Stick::Left;
-	const input::AxisResponse response{.deadZone = static_cast<float>(luaL_optnumber(
-											   iState, 3, lua_Number{input::AxisResponse::defaultDeadZone}))};
+	const input::AxisResponse response{
+			.deadZone = static_cast<float>(
+					luaL_optnumber(iState, 3, static_cast<lua_Number>(input::AxisResponse::defaultDeadZone)))};
 	const auto shaped = input::applyStickResponse(inputStateOf(iState).getGamepad(pad).getStick(stick), response);
 	lua_pushnumber(iState, static_cast<lua_Number>(shaped.x()));
 	lua_pushnumber(iState, static_cast<lua_Number>(shaped.y()));

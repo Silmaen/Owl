@@ -11,7 +11,9 @@
 #include "renderer/gpu/UniformBuffer.h"
 #include "renderer/gpu/null/UniformBuffer.h"
 #if OWL_WITH_RENDER
+#if OWL_WITH_DESKTOP
 #include "renderer/gpu/opengl/UniformBuffer.h"
+#endif
 #include "renderer/gpu/vulkan/UniformBuffer.h"
 #endif
 
@@ -26,8 +28,13 @@ auto UniformBuffer::create(uint32_t iSize, uint32_t iBinding, [[maybe_unused]] c
 		case RenderAPI::Type::Null:
 			return mkShared<null::UniformBuffer>(iSize, iBinding);
 #if OWL_WITH_RENDER
+#if OWL_WITH_DESKTOP
 		case RenderAPI::Type::OpenGL:
 			return mkShared<opengl::UniformBuffer>(iSize, iBinding);
+#else
+		case RenderAPI::Type::OpenGL:
+			break;// No OpenGL backend on Android
+#endif
 		case RenderAPI::Type::Vulkan:
 			return mkShared<vulkan::UniformBuffer>(iSize, iBinding, iRenderer);
 #else

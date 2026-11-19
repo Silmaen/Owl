@@ -11,7 +11,9 @@
 #include "gui/UiLayer.h"
 
 #include "app/Application.h"
+#if OWL_WITH_DESKTOP
 #include "core/external/glfw3.h"
+#endif
 #include "core/external/imgui.h"
 #include "data/assets/AssetSearchPaths.h"
 #include "gui/FontPreviewCache.h"
@@ -343,6 +345,8 @@ void UiLayer::onAttach() {
 	// ViewPort configuration
 	if (m_withApp && app::Application::get().getWindow().getPlatform() == window::Platform::Wayland) {
 		OWL_CORE_DEBUG("UiLayer: Multi-viewports disabled under Wayland (GLFW cannot position windows).")
+	} else if (m_withApp && app::Application::get().getWindow().getType() == window::Type::Android) {
+		OWL_CORE_DEBUG("UiLayer: Multi-viewports disabled on Android (a single full-screen window).")
 	} else {
 		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 	}
@@ -350,8 +354,12 @@ void UiLayer::onAttach() {
 	io.ConfigViewportsNoAutoMerge = false;
 
 	const float uiSize = g_uiFontSize;
+#if OWL_WITH_DESKTOP
 	if (m_withApp && app::Application::get().getWindow().getType() == window::Type::Glfw)
 		g_dpiScale = ImGui_ImplGlfw_GetContentScaleForMonitor(glfwGetPrimaryMonitor());
+#endif
+	if (m_withApp && app::Application::get().getWindow().getType() == window::Type::Android)
+		g_dpiScale = app::Application::get().getWindow().getContentScale().x();
 	g_bodyFont = nullptr;
 	g_strongFont = nullptr;
 	g_monoFont = nullptr;
@@ -385,6 +393,7 @@ void UiLayer::onAttach() {
 
 	setTheme();
 
+#if OWL_WITH_DESKTOP
 	if (m_withApp && app::Application::get().getWindow().getType() == window::Type::Glfw) {
 		auto* window = static_cast<GLFWwindow*>(app::Application::get().getWindow().getNativeWindow());
 		if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::OpenGL) {
@@ -401,6 +410,16 @@ void UiLayer::onAttach() {
 		ImGui_ImplVulkan_InitInfo info = vkh.toImGuiInfo(formats);
 		ImGui_ImplVulkan_Init(&info);
 	}
+#else
+	if (m_withApp && app::Application::get().getWindow().getType() == window::Type::Android)
+		ImGui_ImplAndroid_Init(static_cast<ANativeWindow*>(app::Application::get().getWindow().getNativeWindow()));
+	if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::Vulkan) {
+		auto& vkh = renderer::gpu::vulkan::internal::VulkanHandler::get();
+		std::vector<VkFormat> formats;
+		ImGui_ImplVulkan_InitInfo info = vkh.toImGuiInfo(formats);
+		ImGui_ImplVulkan_Init(&info);
+	}
+#endif
 }
 
 void UiLayer::onDetach() {
@@ -408,8 +427,10 @@ void UiLayer::onDetach() {
 
 	// Free font-preview framebuffers before tearing down the renderer.
 	FontPreviewCache::get().clear();
+#if OWL_WITH_DESKTOP
 	if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::OpenGL)
 		ImGui_ImplOpenGL3_Shutdown();
+#endif
 	if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::Vulkan) {
 		const auto& vkc = renderer::gpu::vulkan::internal::VulkanCore::get();
 		renderer::gpu::vulkan::internal::FrameProfiler::get().deviceWaitIdle(vkc.getLogicalDevice());
@@ -417,9 +438,14 @@ void UiLayer::onDetach() {
 	}
 	// Flush textures deferred after the last rendered frame; end() clears this only per-frame, so they would else leak.
 	g_deferredTextureReleases.clear();
+#if OWL_WITH_DESKTOP
 	if (m_withApp && app::Application::get().getWindow().getType() == window::Type::Glfw) {
 		ImGui_ImplGlfw_Shutdown();
 	}
+#else
+	if (m_withApp && app::Application::get().getWindow().getType() == window::Type::Android)
+		ImGui_ImplAndroid_Shutdown();
+#endif
 	ImGui::DestroyContext();
 }
 
@@ -437,9 +463,11 @@ void UiLayer::deferTextureRelease(shared<renderer::gpu::Texture> iTexture) {
 }
 
 void UiLayer::begin() const {
-	if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::OpenGL)
+	if (const auto api = renderer::gpu::RenderCommand::getApi(); api == renderer::gpu::RenderAPI::Type::OpenGL) {
+#if OWL_WITH_DESKTOP
 		ImGui_ImplOpenGL3_NewFrame();
-	else if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::Vulkan) {
+#endif
+	} else if (api == renderer::gpu::RenderAPI::Type::Vulkan) {
 		ImGui_ImplVulkan_NewFrame();
 	} else {
 		const ImGuiIO& io = ImGui::GetIO();
@@ -449,8 +477,15 @@ void UiLayer::begin() const {
 		int height = 0;
 		io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
 	}
-	if (m_withApp && app::Application::get().getWindow().getType() == window::Type::Glfw) {
+	const auto windowType = m_withApp ? app::Application::get().getWindow().getType() : window::Type::Null;
+	if (windowType == window::Type::Glfw) {
+#if OWL_WITH_DESKTOP
 		ImGui_ImplGlfw_NewFrame();
+#endif
+	} else if (windowType == window::Type::Android) {
+#ifdef OWL_PLATFORM_ANDROID
+		ImGui_ImplAndroid_NewFrame();
+#endif
 	} else {
 		ImGuiIO& io = ImGui::GetIO();
 		// dummy data
@@ -481,9 +516,11 @@ void UiLayer::end() const {
 		renderer::gpu::RenderCommand::getApi() != renderer::gpu::RenderAPI::Type::Vulkan)
 		return;
 	ImGui::Render();
-	if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::OpenGL)
+	if (const auto api = renderer::gpu::RenderCommand::getApi(); api == renderer::gpu::RenderAPI::Type::OpenGL) {
+#if OWL_WITH_DESKTOP
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-	else if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::Vulkan) {
+#endif
+	} else if (api == renderer::gpu::RenderAPI::Type::Vulkan) {
 		const auto& vkh = renderer::gpu::vulkan::internal::VulkanHandler::get();
 		renderer::gpu::RenderCommand::beginBatch();
 		renderer::gpu::RenderCommand::nextSubpass();
@@ -495,6 +532,7 @@ void UiLayer::end() const {
 	}
 	g_deferredTextureReleases.clear();
 
+#if OWL_WITH_DESKTOP
 	if ((io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0) {
 		GLFWwindow* backupCurrentContext = glfwGetCurrentContext();
 		ImGui::UpdatePlatformWindows();
@@ -503,6 +541,7 @@ void UiLayer::end() const {
 		if (renderer::gpu::RenderCommand::getApi() == renderer::gpu::RenderAPI::Type::OpenGL)
 			glfwMakeContextCurrent(backupCurrentContext);
 	}
+#endif
 }
 
 OWL_DIAG_PUSH

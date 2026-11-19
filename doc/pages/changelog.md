@@ -45,9 +45,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Owl Nest Extensions panel: entry script field and section (`extension.script`, game events, components) and a **Conflicts** section; `extension.set` takes `script`.
 - Shader targets `VulkanAndroid` (SPIR-V 1.3) and `WebGpu` (WGSL) for `renderer::utils::compileShader`, baked with `OwlShaderBake --targets=`.
 - `OwlGameRunner`, the runner an export copies, built without shader compiler nor Slang.
+- Android arm64 build (`android-arm64` preset, API 33): the game runner as the native activity library, Vulkan on the system loader, an Android window and touch input, logcat logs ([Building](building.md#android-build)).
+- `OwlGameRunnerApk`: an APK of the runner and a game exported for Android, signed with the debug key, its assets extracted at the first launch ([Building](building.md#android-build)).
+- `OwlNest --export --target android` (`ExportTarget::Android`): a game folder with SPIR-V 1.3 shaders and no executable, the assets of the APK.
+- Nightly `android-arm64` job: the Android runner built every night, not yet tested on a device.
+- `docker_run.sh --adb`: adb from the Android image against the adb server that owns the device ([Building](building.md#android-build)).
 
 ### Changed
 
+- Conan picks its build profile from the build machine, not the target: an Android tree builds its tools with `linux-clang`.
 - Dependencies: Slang 2026.22, Jolt 5.7.0, Luau 0.747, Tracy 0.14.1, freetype 2.15.0, msdfgen 1.13.1, md4c 0.6.0, cpp-httplib 0.65.0, imgui-color-text-edit 1.93.0, stb cci.20261021, zlib 1.4, libpng 1.6.59, wayland-protocols 1.50; EnTT from ConanCenter.
 - freetype is built without brotli and bzip2, and tinygltf without `stb_image_write`: two packages and an override less.
 - OBJ meshes are read by ufbx, which already reads FBX: polygons are triangulated, `.mtl` files and textures are found as before.

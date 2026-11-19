@@ -38,6 +38,13 @@ enum struct ShaderTarget : uint8_t {
 	WebGpu,
 };
 
+/// Target of the Vulkan backend of the running platform: SPIR-V 1.3 on Android, 1.6 elsewhere.
+#ifdef OWL_PLATFORM_ANDROID
+constexpr ShaderTarget g_VulkanTarget = ShaderTarget::VulkanAndroid;
+#else
+constexpr ShaderTarget g_VulkanTarget = ShaderTarget::Vulkan;
+#endif
+
 /**
  * @brief
  *  Folder of a target under `shaders/<renderer>/spirv/` and in the shader cache, also its name in the logs.

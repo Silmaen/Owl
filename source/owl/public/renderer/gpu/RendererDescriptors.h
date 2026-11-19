@@ -160,8 +160,8 @@ public:
 		void* mp_state = nullptr;
 		/// True when this scope actually installed itself as active.
 		bool m_engaged = false;
-		/// True when the installed block is an OpenGL binding table.
-		bool m_openGl = false;
+		/// True when the installed block is an OpenGL binding table (never on Android, which has no OpenGL backend).
+		[[maybe_unused]] bool m_openGl = false;
 	};
 };
 

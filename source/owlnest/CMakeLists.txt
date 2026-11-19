@@ -28,6 +28,35 @@ target_include_directories(${OWL_NEST_COMMANDS} PUBLIC sources)
 target_link_libraries(${OWL_NEST_COMMANDS} PUBLIC ${ENGINE_NAME})
 owl_target_link_libraries(${OWL_NEST_COMMANDS} PUBLIC yaml-cpp REQUIRED ${THIRD_PARTY_RELEASE})
 
+# Android: the game runner only, as the shared library the native activity loads (android_main, app/EntryPoint.h).
+if (${PROJECT_PREFIX}_PLATFORM_ANDROID)
+    set(GAME_RUNNER_NAME ${CMAKE_PROJECT_NAME}GameRunner)
+    add_library(${GAME_RUNNER_NAME} SHARED ${SRCS_RUNNER} ${HDRS_RUNNER})
+    set_target_properties(${GAME_RUNNER_NAME} PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin" FOLDER "App")
+    target_include_directories(${GAME_RUNNER_NAME} PRIVATE sources)
+    target_compile_definitions(${GAME_RUNNER_NAME} PRIVATE OWL_ASSETS_LOCATION="source/owlnest/assets")
+    target_link_libraries(${GAME_RUNNER_NAME} PRIVATE ${ENGINE_NAME} ${OWL_NEST_COMMANDS})
+    owl_target_link_libraries(${GAME_RUNNER_NAME} PRIVATE yaml-cpp REQUIRED)
+    # OwlGameRunnerApk: the APK of a game exported for Android by a host Owl Nest
+    # (`OwlNest --export <project> <dir> --target android`), written next to the runner library.
+    set(${PROJECT_PREFIX}_ANDROID_GAME_DIR "" CACHE PATH "Game folder exported for Android, packed by the APK target")
+    set(${PROJECT_PREFIX}_ANDROID_PACKAGE "net.argawaen.owl.game" CACHE STRING "Android package name of the APK")
+    set(${PROJECT_PREFIX}_ANDROID_LABEL "Owl Game" CACHE STRING "Launcher name of the APK")
+    add_custom_target(${GAME_RUNNER_NAME}Apk
+            COMMAND ${Python3_EXECUTABLE} -u ${PROJECT_SOURCE_DIR}/cmake/androidApk.py
+            "$<TARGET_FILE:${GAME_RUNNER_NAME}>" "${${PROJECT_PREFIX}_ANDROID_GAME_DIR}"
+            "${CMAKE_BINARY_DIR}/bin/${GAME_RUNNER_NAME}.apk"
+            --conan "${CMAKE_BINARY_DIR}/conan" --ndk "${ANDROID_NDK}" --sdk "$ENV{ANDROID_HOME}"
+            --min-sdk "${ANDROID_PLATFORM_LEVEL}" --package "${${PROJECT_PREFIX}_ANDROID_PACKAGE}"
+            --label "${${PROJECT_PREFIX}_ANDROID_LABEL}" --version-name "${PROJECT_VERSION}"
+            DEPENDS ${GAME_RUNNER_NAME}
+            COMMENT "Package the Android APK"
+            USES_TERMINAL
+            VERBATIM)
+    set_target_properties(${GAME_RUNNER_NAME}Apk PROPERTIES FOLDER "App")
+    return()
+endif ()
+
 #
 #  MCP server: JSON-RPC 2.0 dispatcher over an editor session (tools from the command registry, resources) and its
 #  Streamable HTTP transport on 127.0.0.1 (cpp-httplib, no TLS), whose messages the main loop runs.

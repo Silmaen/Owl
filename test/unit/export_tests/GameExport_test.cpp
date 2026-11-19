@@ -461,6 +461,47 @@ TEST_F(GameExporterFixture, ExportBakesTheShadersOfTheProject) {
 	EXPECT_EQ(again->shadersBaked, 1u);
 }
 
+TEST_F(GameExporterFixture, ExportForAndroidWritesTheApkAssets) {
+	auto settings = makeSettings();
+	settings.target = ExportTarget::Android;
+	// No runner to copy: the APK packaging brings the runner library.
+	settings.runnerDirectory = m_root / "nowhere";
+	const auto result = GameExporter::exportGame(settings, {});
+	ASSERT_TRUE(result.has_value());
+	const auto& gameDir = result->gameDirectory;
+	EXPECT_TRUE(result->executable.empty());
+	EXPECT_FALSE(exists(gameDir / "libfake.so"));
+	EXPECT_FALSE(exists(gameDir / "launch.sh"));
+	EXPECT_TRUE(exists(result->packFile));
+	EXPECT_TRUE(exists(gameDir / "runner.yml"));
+	const auto info = YAML::LoadFile((gameDir / "game_info.yml").string())["GameInfo"];
+	ASSERT_TRUE(info);
+	EXPECT_EQ(info["Platform"].as<std::string>(), "android-arm64");
+}
+
+TEST_F(GameExporterFixture, ExportForAndroidBakesSpirv13) {
+	const auto engineQuad = data::assets::readAssetText("shaders/renderer2D/quad.slang");
+	if (!engineQuad || m_bakedAssets.empty())
+		GTEST_SKIP() << "No engine shaders baked by the build in the asset directories of the test.";
+	writeFile(m_project / "shaders" / "renderer2D" / "quad.slang", *engineQuad + "\n// Project variant.\n");
+	auto settings = makeSettings();
+	settings.target = ExportTarget::Android;
+	settings.cookCacheDirectory = m_root / "cook";
+	const auto exported = GameExporter::exportGame(settings, {});
+	ASSERT_TRUE(exported.has_value());
+	// The build bakes the engine shaders for the desktop only: the export bakes them too, besides the project's.
+	EXPECT_GT(exported->shadersBaked, 1u);
+
+	const auto source = renderer::utils::readShaderSource("shaders/renderer2D/quad.slang");
+	const auto key =
+			renderer::utils::getShaderCacheKey(source, "renderer2D/quad", renderer::utils::ShaderTarget::VulkanAndroid);
+	for (const auto* stage: {"vert", "frag"}) {
+		const auto entry = std::format("shaders/renderer2D/spirv/vulkan_android/quad.{}.spv", stage);
+		EXPECT_FALSE(readPackEntry(exported->packFile, entry).empty()) << entry;
+		EXPECT_EQ(readPackEntry(exported->packFile, entry + ".hash"), renderer::utils::computeShaderHash(key)) << entry;
+	}
+}
+
 TEST_F(GameExporterFixture, ExportBakesTheShadersOfTheMaterialGraphs) {
 	if (!data::assets::readAssetText("shaders/renderer3D/mesh3d.slang") || m_bakedAssets.empty())
 		GTEST_SKIP() << "No engine shaders baked by the build in the asset directories of the test.";

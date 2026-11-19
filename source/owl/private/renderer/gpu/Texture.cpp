@@ -18,7 +18,9 @@
 #include "renderer/Renderer.h"
 #include "renderer/TextureDecoder.h"
 #if OWL_WITH_RENDER
+#if OWL_WITH_DESKTOP
 #include "opengl/Texture.h"
+#endif
 #include "vulkan/Texture.h"
 #endif
 
@@ -177,6 +179,7 @@ auto Texture2D::create(const std::filesystem::path& iFile) -> shared<Texture2D> 
 				return nullptr;
 			}
 #if OWL_WITH_RENDER
+#if OWL_WITH_DESKTOP
 		case RenderAPI::Type::OpenGL:
 			{
 				if (auto texture = mkShared<opengl::Texture2D>(iFile); texture->isLoaded())
@@ -184,6 +187,10 @@ auto Texture2D::create(const std::filesystem::path& iFile) -> shared<Texture2D> 
 				OWL_CORE_WARN("Texture: Cannot load '{}' (OpenGL backend).", iFile.string())
 				return nullptr;
 			}
+#else
+		case RenderAPI::Type::OpenGL:
+			break;// No OpenGL backend on Android
+#endif
 		case RenderAPI::Type::Vulkan:
 			{
 				if (auto texture = mkShared<vulkan::Texture2D>(iFile); texture->isLoaded())
@@ -209,8 +216,13 @@ auto Texture2D::create(const Specification& iSpecs) -> shared<Texture2D> {
 		case RenderAPI::Type::Null:
 			return mkShared<null::Texture2D>(iSpecs);
 #if OWL_WITH_RENDER
+#if OWL_WITH_DESKTOP
 		case RenderAPI::Type::OpenGL:
 			return mkShared<opengl::Texture2D>(iSpecs);
+#else
+		case RenderAPI::Type::OpenGL:
+			break;// No OpenGL backend on Android
+#endif
 		case RenderAPI::Type::Vulkan:
 			return mkShared<vulkan::Texture2D>(iSpecs);
 #else
@@ -602,8 +614,13 @@ auto TextureCube::create(const Specification& iSpecs) -> shared<TextureCube> {
 		case RenderAPI::Type::Null:
 			return mkShared<null::TextureCube>(iSpecs);
 #if OWL_WITH_RENDER
+#if OWL_WITH_DESKTOP
 		case RenderAPI::Type::OpenGL:
 			return mkShared<opengl::TextureCube>(iSpecs);
+#else
+		case RenderAPI::Type::OpenGL:
+			break;// No OpenGL backend on Android
+#endif
 		case RenderAPI::Type::Vulkan:
 			return mkShared<vulkan::TextureCube>(iSpecs);
 #else

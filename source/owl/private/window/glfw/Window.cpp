@@ -64,6 +64,7 @@ void glfwErrorCallback(int iError, const char* iDescription) {
 			return GLFW_PLATFORM_X11;
 		case Platform::Win32:
 			return GLFW_PLATFORM_WIN32;
+		case Platform::Android:
 		case Platform::None:
 			return GLFW_PLATFORM_NULL;
 		case Platform::Auto:

@@ -38,8 +38,10 @@
 #include <utility>
 #include <vector>
 
-// Forward declaration of the program entry point (definition in EntryPoint.h).
-auto main(int iArgc, char* iArgv[]) -> int;
+namespace owl::app::detail {
+// Forward declaration of the body of the program entry point (definition in EntryPoint.h).
+inline auto runMain(int iArgc, char* iArgv[]) -> int;
+}// namespace owl::app::detail
 
 namespace owl::gui {
 class UiLayer;
@@ -729,8 +731,8 @@ private:
 	data::assets::pack::ExtensionRegistry m_extensions;
 	/// Choices of the player over the mods of the game.
 	data::assets::pack::ModManager m_modManager;
-	/// Mark the main entrypoint function as friend.
-	friend auto ::main(int iArgc, char** iArgv) -> int;
+	/// Mark the body of the entry point (main, android_main) as friend.
+	friend auto detail::runMain(int iArgc, char** iArgv) -> int;
 };
 
 /**
