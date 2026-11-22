@@ -116,8 +116,8 @@ per target, Android and the Web.
   ([Crash reporter](design/crash-reporter.md))
 - ![In Progress][progress] Network transport layer (reliable UDP, authoritative server, connection management): done on
   desktop, Android left ([Networking](networking.md))
-- ![In Progress][progress] Network transport in the browser: WebSocket to a native server, a Web client in every networked
-  game: the WebSocket transport done, a server for ENet and WebSocket clients at once left ([Networking](design/simulation-networking.md#networking-multiplayer))
+- ![Done][done] Network transport in the browser: WebSocket to a native server, a Web client in every networked
+  game, a desktop server taking ENet and WebSocket clients at once ([Networking](design/simulation-networking.md#networking-multiplayer))
 - ![Done][done] Entity replication (replicated components, interpolation, prediction, authority)
   ([Replication](networking.md#networking-replication))
 - ![Done][done] Lockstep network model on the bit-exact simulation, desync detection by world hash

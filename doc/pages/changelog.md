@@ -58,6 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - WebGPU compute shaders, indexed indirect draws and cube textures: the culling, raycast, particle and sort passes and the 3D renderer run in the browser ([Building](building.md#web-build)).
 - 3D and lit isometric drawing on WebGPU within sixteen textures per stage: shadow maps and probes in texture arrays, the environment as mips, half-size isometric batches ([Building](building.md#web-build)).
 - `Transport::Type::WebSocket`: a WebSocket server on desktop (cpp-httplib) and the WebSocket client of a page, the network module of the Web build ([Networking](networking.md#networking-transports)).
+- `MixedTransport` (`Transport::Type::Mixed`): a desktop `GameSession` hosts ENet and WebSocket clients on one port, so desktop and Web players share a match ([Networking](networking.md#networking-transports)).
 - `OwlNest --export --target web` (`ExportTarget::Web`): WGSL shaders in the pack, the runner page as `index.html` and the `files.json` it fetches, a folder to serve as it is ([Building](building.md#web-build)).
 - Web build: `web-release` and `web-minimal` presets on the emsdk of the Web build image, the engine and its tests in WebAssembly under Node, `OwlGameRunner.html` run in a browser, `tools/web/browser_run.py` to play it in headless Chrome ([Building](building.md#web-build)).
 

@@ -34,17 +34,23 @@ flowchart LR
 
 ## Transports {#networking-transports}
 
-| Backend             | `Transport::Type` | What it is                                                                          | Module                      |
-|---------------------|-------------------|-------------------------------------------------------------------------------------|-----------------------------|
-| `EnetTransport`     | `Enet`            | Reliable UDP on ENet: retransmission, ordering, fragmentation, timeouts             | `OWL_MODULE_NETWORK` (ENet) |
-| `LoopbackTransport` | `Loopback`        | Links between transports of one process, no socket; every message arrives, in order | always built                |
-| `WebSocketTransport`| `WebSocket`       | Binary WebSocket messages on `ws://<host>:<port>/owl`, a channel byte first, over TCP | `OWL_MODULE_NETWORK` (cpp-httplib on desktop, the browser's WebSocket on the Web) |
+| Backend              | `Transport::Type` | What it is                                                                            | Module                                                                            |
+|----------------------|-------------------|---------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
+| `EnetTransport`      | `Enet`            | Reliable UDP on ENet: retransmission, ordering, fragmentation, timeouts               | `OWL_MODULE_NETWORK` (ENet)                                                       |
+| `LoopbackTransport`  | `Loopback`        | Links between transports of one process, no socket; every message arrives, in order   | always built                                                                      |
+| `WebSocketTransport` | `WebSocket`       | Binary WebSocket messages on `ws://<host>:<port>/owl`, a channel byte first, over TCP | `OWL_MODULE_NETWORK` (cpp-httplib on desktop, the browser's WebSocket on the Web) |
+| `MixedTransport`     | `Mixed`           | Several backends as one: ENet and WebSocket listening on the same port number         | `OWL_MODULE_NETWORK`, desktop                                                     |
 
 `WebSocketTransport` is the transport of a page, which has no UDP: a desktop server listens with cpp-httplib (a thread
 per peer, the events queued until `poll`) and a page connects through Emscripten's WebSocket API; a page cannot listen.
 TCP delivers every message once and in order, the unreliable ones too, and hides the round trip and the losses
-(`getStats` gives the bytes only). A `GameSession` uses ENet on the desktop and WebSocket in a page
-(`setTransportType`): a Web client joins a server that listens on WebSocket.
+(`getStats` gives the bytes only).
+
+`MixedTransport` listens with each of its backends on the port the first one got, and gives every peer of every
+backend an identifier of its own (`getPeerType` tells which backend it came through); `connect` goes through the
+first backend. A `GameSession` uses `Mixed` (ENet, then WebSocket) on the desktop and WebSocket in a page
+(`setTransportType`): a desktop host takes desktop clients over UDP and Web clients over TCP in one match, on one port
+number.
 
 `Transport::create(type)` returns the backend, or `NetworkError::BackendUnavailable` when ENet is not built in. A
 loopback listener is named by its port within the process: tests, local play and a host playing on its own server use
@@ -331,7 +337,6 @@ flies over the loft. The scenario `test/unit/scenarios/hub_pigeon_loft.owltest` 
 ## Not yet
 
 - Android: the ENet backend built and run on the device.
-- A server that accepts ENet and WebSocket clients at once, so that desktop and Web players share a match.
 
 ## Message bytes {#networking-bytes}
 

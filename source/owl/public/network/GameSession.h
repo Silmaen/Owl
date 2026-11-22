@@ -161,7 +161,8 @@ public:
 
 	/**
 	 * @brief
-	 *  Transport of the next `host()` or `join()`: ENet by default, the loopback for a session within one process.
+	 *  Transport of the next `host()` or `join()`: on the desktop ENet and WebSocket at once by default (a client
+	 *  connects through ENet), WebSocket in a page, the loopback for a session within one process.
 	 * @param[in] iType The transport type.
 	 */
 	void setTransportType(const Transport::Type iType) { m_transportType = iType; }
@@ -602,7 +603,7 @@ private:
 #ifdef OWL_PLATFORM_WEB
 	Transport::Type m_transportType = Transport::Type::WebSocket;
 #else
-	Transport::Type m_transportType = Transport::Type::Enet;
+	Transport::Type m_transportType = Transport::Type::Mixed;
 #endif
 	/// Simulated conditions of the outgoing messages.
 	LinkConditions m_conditions;
