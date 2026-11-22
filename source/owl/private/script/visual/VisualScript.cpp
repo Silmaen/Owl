@@ -12,6 +12,7 @@
 #include "BindingNodes.h"
 #include "core/FormatVersionYaml.h"
 #include "core/external/yaml.h"
+#include "core/utils/LookupTable.h"
 #include "data/assets/AssetSearchPaths.h"
 
 #include <algorithm>
@@ -1064,8 +1065,9 @@ auto annotationType(std::string_view iType) -> PinType {
 		iType.remove_suffix(1);
 	if (iType.ends_with("|nil"))
 		iType.remove_suffix(4);
-	const auto* const found = std::ranges::find(g_pinTypeKeys, iType, &std::pair<PinType, std::string_view>::second);
-	if (found == g_pinTypeKeys.end() || found->first == PinType::Exec)
+	const auto* const found =
+			core::utils::findEntry(g_pinTypeKeys, iType, &std::pair<PinType, std::string_view>::second);
+	if (found == nullptr || found->first == PinType::Exec)
 		return PinType::Any;
 	return found->first;
 }
@@ -1226,13 +1228,15 @@ auto findNodeLuaFunction(const GraphNode& iNode) -> const LuaFunction* {
 }
 
 auto getPinTypeKey(const PinType iType) -> std::string_view {
-	const auto* const found = std::ranges::find(g_pinTypeKeys, iType, &std::pair<PinType, std::string_view>::first);
-	return found == g_pinTypeKeys.end() ? "any" : found->second;
+	const auto* const found =
+			core::utils::findEntry(g_pinTypeKeys, iType, &std::pair<PinType, std::string_view>::first);
+	return found == nullptr ? "any" : found->second;
 }
 
 auto parsePinTypeKey(const std::string_view iName) -> std::optional<PinType> {
-	const auto* const found = std::ranges::find(g_pinTypeKeys, iName, &std::pair<PinType, std::string_view>::second);
-	if (found == g_pinTypeKeys.end())
+	const auto* const found =
+			core::utils::findEntry(g_pinTypeKeys, iName, &std::pair<PinType, std::string_view>::second);
+	if (found == nullptr)
 		return std::nullopt;
 	return found->first;
 }

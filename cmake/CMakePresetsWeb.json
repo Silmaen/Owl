@@ -1,0 +1,48 @@
+{
+  "version": 5,
+  "cmakeMinimumRequired": {
+    "major": 4,
+    "minor": 4,
+    "patch": 0
+  },
+  "include": [
+    "CMakePresetsBase.json"
+  ],
+  "configurePresets": [
+    {
+      "name": "web-release",
+      "inherits": "base",
+      "toolchainFile": "$env{EMSDK}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake",
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      },
+      "cacheVariables": {
+        "OWL_BUILD_SHARED": "OFF",
+        "OWL_BUILD_NEST": "OFF",
+        "OWL_BENCHMARK": "OFF",
+        "OWL_RENDER_TESTS": "OFF",
+        "OWL_ENABLE_DOCUMENTATION": "OFF",
+        "OWL_MODULE_RENDER": "ON",
+        "OWL_MODULE_GUI": "OFF",
+        "OWL_MODULE_NETWORK": "ON"
+      },
+      "vendor": {
+        "silmaen": {
+          "package": false
+        }
+      }
+    },
+    {
+      "name": "web-minimal",
+      "inherits": "web-release",
+      "cacheVariables": {
+        "OWL_MODULE_RENDER": "OFF",
+        "OWL_MODULE_PHYSICS": "OFF",
+        "OWL_MODULE_AUDIO": "OFF",
+        "OWL_MODULE_SCRIPT": "OFF"
+      }
+    }
+  ]
+}

@@ -661,6 +661,29 @@ private:
 
 	/**
 	 * @brief
+	 *  Runs one frame of the main loop, as the browser calls it on the Web.
+	 * @return False once the application stops running.
+	 */
+	auto runFrame() -> bool;
+
+#if defined(OWL_PLATFORM_WEB)
+	/**
+	 * @brief
+	 *  Hands the main loop to the browser: one frame per animation frame, then the shutdown and the exit of the page
+	 *  with the application's exit code.
+	 * @param[in] iApp The application, kept until its last frame.
+	 */
+	static void runInBrowser(shared<Application> iApp);
+
+	/**
+	 * @brief
+	 *  Writes the files the page fetched before main (the game: `files.json`) into the file system of the program.
+	 */
+	static void installPageFiles();
+#endif
+
+	/**
+	 * @brief
 	 *  Action on window close.
 	 * @param[in] iEvent The close event.
 	 * @return True if succeeded.
@@ -697,6 +720,8 @@ private:
 	std::chrono::milliseconds m_idleWait{0};
 	/// Iterations since the last event.
 	uint32_t m_quietFrames = 0;
+	/// Frames run since the start (runFrame).
+	uint64_t m_frameCount = 0;
 	/// The stack of layers.
 	app::layer::LayerStack m_layerStack;
 	/// Base Path to the working Directory.

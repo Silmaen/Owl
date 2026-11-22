@@ -29,6 +29,8 @@ enum struct ExportTarget : uint8_t {
 	Host,
 	/// Android arm64: shaders baked as SPIR-V 1.3, no executable; the folder becomes the `assets/` of the APK.
 	Android,
+	/// The browser: WGSL shaders, the Web runner page as `index.html` and the `files.json` it fetches.
+	Web,
 };
 
 /**
@@ -60,7 +62,7 @@ struct OWL_API ExportSettings {
 	std::filesystem::path projectDirectory;
 	/// Parent folder of the exported game; the game lands in `outputDirectory / sanitized(gameName)`.
 	std::filesystem::path outputDirectory;
-	/// Folder holding the `OwlRunner` executable and the shared libraries to bundle (unused for Android).
+	/// Folder of the runner to bundle: its executable and libraries, the page of a Web build (unused for Android).
 	std::filesystem::path runnerDirectory;
 	/// Platform of the exported game.
 	ExportTarget target{ExportTarget::Host};
@@ -121,7 +123,7 @@ struct OWL_API ExportReport {
 	std::filesystem::path gameDirectory;
 	/// Path of the written `.owlpack`.
 	std::filesystem::path packFile;
-	/// Path of the copied runner executable.
+	/// Path of the copied runner executable, its page (`index.html`) for the Web, empty for Android.
 	std::filesystem::path executable;
 	/// Number of packed assets.
 	size_t assetCount{0};

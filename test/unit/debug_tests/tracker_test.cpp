@@ -83,7 +83,7 @@ TEST(Tracker, stacktrace) {
 }
 
 TEST(MemorySize, formatting) {
-	std::size_t st{488};
+	uint64_t st{488};
 	EXPECT_STREQ(owl::core::utils::sizeToString(st).c_str(), "488 B");
 	st += 1024;
 	EXPECT_STREQ(owl::core::utils::sizeToString(st).c_str(), "1.48 KB");

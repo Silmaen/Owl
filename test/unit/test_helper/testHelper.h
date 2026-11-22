@@ -20,6 +20,11 @@
 	if constexpr (!OWL_WITH_##module)                                                                                  \
 	GTEST_SKIP() << "OWL_MODULE_" #module " is OFF"
 
+// Skip the current test when the build has no shader compiler: the Web build reads the shaders baked on the desktop.
+#define OWL_REQUIRE_SHADER_COMPILER                                                                                    \
+	if constexpr (!OWL_WITH_SHADER_COMPILER)                                                                           \
+	GTEST_SKIP() << "no shader compiler in this build"
+
 template<typename T>
 class TestWithParam : public ::testing::Test, public ::testing::WithParamInterface<T> {};
 

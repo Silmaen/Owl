@@ -13,12 +13,17 @@ struct Camera {
 [[vk::binding(0)]]
 ConstantBuffer<Camera> gCamera;
 
+#if defined(BACKEND_WEBGPU)
+#include "webgpu_textures.slangh"
+OWL_WEBGPU_TEXTURE_TABLE(gTextures)
+#else
 #ifdef BACKEND_VULKAN
 [[vk::binding(1)]]
 #else
 [[vk::binding(0)]]
 #endif
 Sampler2D gTextures[32];
+#endif
 
 struct BoxInstance {
 	int worldIndex;

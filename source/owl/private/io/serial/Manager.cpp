@@ -19,14 +19,14 @@
 #include <fcntl.h>
 #include <linux/serial.h>
 #include <sys/ioctl.h>
-#else
-#error "Unsupported plateform"
+#elif !defined(OWL_PLATFORM_WEB)
+#error "Unsupported platform"
 #endif
 
 namespace owl::io::serial {
 
 namespace {
-void enumerateSerialDevices(Manager::DeviceList& ioListToUpdate) {
+void enumerateSerialDevices([[maybe_unused]] Manager::DeviceList& ioListToUpdate) {
 #ifdef OWL_PLATFORM_WINDOWS
 	constexpr int maxPort = 32;
 	char lpTargetPath[5000];// buffer to store the path of the COMPORTS
@@ -60,6 +60,7 @@ void enumerateSerialDevices(Manager::DeviceList& ioListToUpdate) {
 		OWL_CORE_WARN("Serial: Cannot list the serial devices by id.")
 	}
 #endif
+	// A page reaches no serial port: the list stays empty on the Web.
 }
 
 }// namespace

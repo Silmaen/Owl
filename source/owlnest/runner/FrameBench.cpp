@@ -81,6 +81,8 @@ auto backendName(const renderer::gpu::RenderAPI::Type iType) -> std::string_view
 			return "opengl";
 		case renderer::gpu::RenderAPI::Type::Vulkan:
 			return "vulkan";
+		case renderer::gpu::RenderAPI::Type::WebGpu:
+			return "webgpu";
 	}
 	return "unknown";
 }

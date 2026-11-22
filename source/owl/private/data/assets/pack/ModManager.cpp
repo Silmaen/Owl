@@ -153,7 +153,7 @@ auto ModManager::move(const std::string& iId, const int32_t iOffset) -> bool {
 		return false;
 	auto mod = std::move(*found);
 	m_mods.erase(found);
-	m_mods.insert(m_mods.begin() + to, std::move(mod));
+	m_mods.insert(m_mods.begin() + static_cast<std::ptrdiff_t>(to), std::move(mod));
 	m_dirty = true;
 	return true;
 }

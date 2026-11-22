@@ -21,7 +21,12 @@ struct HizTexel {
 };
 
 [[vk::binding(0)]]
+#if defined(BACKEND_WEBGPU)
+// WGSL splits a combined sampler into a texture and a sampler, which would take binding 1: the texels are loaded.
+Texture2D depth;
+#else
 Sampler2D depth;
+#endif
 
 [[vk::binding(1)]]
 StructuredBuffer<HizParams> params;
@@ -37,5 +42,10 @@ void computeMain(uint3 dispatchId : SV_DispatchThreadID) {
 		return;
 	// Sampled at the texel centre: a texel fetch from a combined sampler is not portable.
 	const float2 uv = (float2(dispatchId.xy) + 0.5f) / float2(p.dstWidth, p.dstHeight);
+#if defined(BACKEND_WEBGPU)
+	const int2 texel = int2(uv * float2(p.srcWidth, p.srcHeight));
+	pyramid[p.dstOffset + dispatchId.y * p.dstWidth + dispatchId.x].depth = depth.Load(int3(texel, 0)).r;
+#else
 	pyramid[p.dstOffset + dispatchId.y * p.dstWidth + dispatchId.x].depth = depth.SampleLevel(uv, 0.0f).r;
+#endif
 }

@@ -43,7 +43,12 @@ struct HizTexel {
 
 struct DrawCommand {
 	uint indexCount;
+#if defined(BACKEND_WEBGPU)
+	// WGSL increments only an atomic type, of the same size.
+	Atomic<uint> instanceCount;
+#else
 	uint instanceCount;
+#endif
 	uint firstIndex;
 	int baseVertex;
 	uint baseInstance;
@@ -142,7 +147,11 @@ void computeMain(uint3 dispatchId : SV_DispatchThreadID) {
 	}
 	if (p.hizLevels > 0 && occluded(p, item.boxMin.xyz, item.boxMax.xyz))
 		return;
+#if defined(BACKEND_WEBGPU)
+	const uint slot = commands[item.group].instanceCount.add(1u);
+#else
 	uint slot;
 	InterlockedAdd(commands[item.group].instanceCount, 1u, slot);
+#endif
 	visible[groups[item.group].visibleBase + slot].index = index;
 }

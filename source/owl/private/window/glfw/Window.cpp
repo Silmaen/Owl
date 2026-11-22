@@ -49,13 +49,32 @@ Platform g_GlfwPlatform = Platform::None;
 void* g_JoystickTarget = nullptr;
 
 void glfwErrorCallback(int iError, const char* iDescription) {
+#if defined(OWL_PLATFORM_WEB)
+	// The Emscripten port reports what a page cannot do (close or drop callbacks) as error 0.
+	if (iError == 0) {
+		OWL_CORE_DEBUG("GLFW: {}.", iDescription)
+		return;
+	}
+#else
 	if (iError == GLFW_FEATURE_UNAVAILABLE) {
 		OWL_CORE_DEBUG("GLFW: Feature unavailable on this platform ({}).", iDescription)
 		return;
 	}
+#endif
 	OWL_CORE_ERROR("GLFW: Error {}: {}.", iError, iDescription)
 }
 
+#if defined(OWL_PLATFORM_WEB)
+// Emscripten's GLFW draws in the canvas of the page: no platform to choose.
+auto initGlfw([[maybe_unused]] const Platform iRequested) -> bool {
+	OWL_PROFILE_FUNCTION()
+
+	glfwSetErrorCallback(glfwErrorCallback);
+	const bool success = glfwInit() == GLFW_TRUE;
+	g_GlfwPlatform = success ? Platform::Browser : Platform::None;
+	return success;
+}
+#else
 [[nodiscard]] auto toGlfwPlatform(const Platform iPlatform) -> int {
 	switch (iPlatform) {
 		case Platform::Wayland:
@@ -65,6 +84,7 @@ void glfwErrorCallback(int iError, const char* iDescription) {
 		case Platform::Win32:
 			return GLFW_PLATFORM_WIN32;
 		case Platform::Android:
+		case Platform::Browser:
 		case Platform::None:
 			return GLFW_PLATFORM_NULL;
 		case Platform::Auto:
@@ -121,6 +141,7 @@ auto initGlfw(const Platform iRequested) -> bool {
 #endif
 	return success;
 }
+#endif
 
 [[nodiscard]] auto refreshPeriod(GLFWwindow* iWindow) -> std::chrono::nanoseconds {
 	GLFWmonitor* monitor = glfwGetWindowMonitor(iWindow);
@@ -170,24 +191,30 @@ void Window::init(const Properties& iProps) {
 
 		OWL_PROFILE_SCOPE("glfwCreateWindow")
 		const auto api = renderer::gpu::RenderCommand::getApi();
+#if !defined(OWL_PLATFORM_WEB)
 		if (api == renderer::gpu::RenderAPI::Type::Vulkan) {
 			if (glfwVulkanSupported() == GLFW_FALSE) {
 				OWL_CORE_ERROR("GLFW: No Vulkan support.")
 				return;
 			}
 		}
+#endif
 #if defined(OWL_DEBUG_BUILD)
 		if (api == renderer::gpu::RenderAPI::Type::OpenGL)
 
 			glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
 #endif
-		// Hints persist across windows: a window recreated for the OpenGL fallback must not keep GLFW_NO_API.
-		glfwWindowHint(GLFW_CLIENT_API, api == renderer::gpu::RenderAPI::Type::Vulkan ? GLFW_NO_API : GLFW_OPENGL_API);
+		// No GL context for Vulkan and WebGPU; hints persist, so an OpenGL fallback window must not keep GLFW_NO_API.
+		const bool noContext =
+				api == renderer::gpu::RenderAPI::Type::Vulkan || api == renderer::gpu::RenderAPI::Type::WebGpu;
+		glfwWindowHint(GLFW_CLIENT_API, noContext ? GLFW_NO_API : GLFW_OPENGL_API);
+#if !defined(OWL_PLATFORM_WEB)
 		glfwWindowHintString(GLFW_WAYLAND_APP_ID, m_appId.c_str());
 		glfwWindowHintString(GLFW_X11_CLASS_NAME, m_appId.c_str());
 		glfwWindowHintString(GLFW_X11_INSTANCE_NAME, m_appId.c_str());
 		// The engine sizes its swapchain and viewports from the window size, so keep framebuffer == window size.
 		glfwWindowHint(GLFW_SCALE_FRAMEBUFFER, GLFW_FALSE);
+#endif
 		mp_glfwWindow = glfwCreateWindow(static_cast<int>(iProps.width), static_cast<int>(iProps.height),
 										 m_windowData.title.c_str(), nullptr, nullptr);
 		if (mp_glfwWindow == nullptr) {

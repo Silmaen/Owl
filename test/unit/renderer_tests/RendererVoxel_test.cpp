@@ -39,6 +39,7 @@ auto loadVoxelShader() -> std::string {
 }// namespace
 
 TEST(RendererVoxel, VoxelShaderCompiles) {
+	OWL_REQUIRE_SHADER_COMPILER;
 	core::Log::init(core::Log::Level::Off);
 	const auto source = loadVoxelShader();
 	ASSERT_FALSE(source.empty());

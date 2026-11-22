@@ -10,6 +10,8 @@
 
 #include "app/layer/LayerStack.h"
 
+#include <cstddef>
+
 namespace owl::app::layer {
 
 Layer::~Layer() = default;
@@ -35,7 +37,7 @@ void LayerStack::clear() {
 
 void LayerStack::pushLayer(shared<Layer>&& iLayer) {
 	iLayer->onAttach();
-	m_layers.emplace(m_layers.begin() + m_layerInsertIndex, std::move(iLayer));
+	m_layers.emplace(m_layers.begin() + static_cast<std::ptrdiff_t>(m_layerInsertIndex), std::move(iLayer));
 	m_layerInsertIndex++;
 }
 
@@ -45,8 +47,9 @@ void LayerStack::pushOverlay(shared<Layer>&& iOverlay) {
 }
 
 void LayerStack::popLayer(const shared<Layer>& iLayer) {
-	if (const auto it = std::find(m_layers.begin(), m_layers.begin() + m_layerInsertIndex, iLayer);
-		it != m_layers.begin() + m_layerInsertIndex) {
+	if (const auto it =
+				std::find(m_layers.begin(), m_layers.begin() + static_cast<std::ptrdiff_t>(m_layerInsertIndex), iLayer);
+		it != m_layers.begin() + static_cast<std::ptrdiff_t>(m_layerInsertIndex)) {
 		iLayer->onDetach();
 		m_layers.erase(it);
 		m_layerInsertIndex--;
@@ -54,7 +57,8 @@ void LayerStack::popLayer(const shared<Layer>& iLayer) {
 }
 
 void LayerStack::popOverlay(const shared<Layer>& iOverlay) {
-	if (const auto it = std::find(m_layers.begin() + m_layerInsertIndex, m_layers.end(), iOverlay);
+	if (const auto it =
+				std::find(m_layers.begin() + static_cast<std::ptrdiff_t>(m_layerInsertIndex), m_layers.end(), iOverlay);
 		it != m_layers.end()) {
 		iOverlay->onDetach();
 		m_layers.erase(it);

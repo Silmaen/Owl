@@ -68,6 +68,51 @@ auto findRunner(const std::filesystem::path& iRunnerDir) -> std::optional<std::f
 	return std::nullopt;
 }
 
+// The files of the Web runner: its page, the script the page loads and the module the script loads.
+constexpr std::array<std::string_view, 3> g_webRunnerFiles = {"OwlGameRunner.html", "OwlGameRunner.js",
+															  "OwlGameRunner.wasm"};
+// Name of the page in an exported Web game, the one a server gives for the folder.
+constexpr std::string_view g_webPage = "index.html";
+// List of the game files the page fetches before main (`runner/web/shell.html`).
+constexpr std::string_view g_webFileList = "files.json";
+
+auto hasWebRunner(const std::filesystem::path& iRunnerDir) -> bool {
+	return std::ranges::all_of(g_webRunnerFiles, [&iRunnerDir](const std::string_view iName) -> bool {
+		return exists(iRunnerDir / iName);
+	});
+}
+
+// Whether the runner of a target is in the runner directory; Android brings its own.
+auto hasRunnerFor(const ExportSettings& iSettings) -> bool {
+	switch (iSettings.target) {
+		case ExportTarget::Host:
+			return findRunner(iSettings.runnerDirectory).has_value();
+		case ExportTarget::Android:
+			return true;
+		case ExportTarget::Web:
+			return hasWebRunner(iSettings.runnerDirectory);
+	}
+	return false;
+}
+
+auto platformNameOf(const ExportTarget iTarget) -> std::string_view {
+	switch (iTarget) {
+		case ExportTarget::Host:
+			return g_platformName;
+		case ExportTarget::Android:
+			return "android-arm64";
+		case ExportTarget::Web:
+			return "web-wasm32";
+	}
+	return g_platformName;
+}
+
+auto writeText(const std::filesystem::path& iFile, const std::string& iText) -> bool {
+	std::ofstream out(iFile, std::ios::binary);
+	out << iText;
+	return out.good();
+}
+
 auto readText(const std::filesystem::path& iFile) -> std::optional<std::string> {
 	std::ifstream in(iFile, std::ios::binary);
 	if (!in.is_open())
@@ -152,12 +197,16 @@ auto rendererSetOf(const ExportSettings& iSettings, const std::vector<AssetRefer
 auto selectEngineFiles(const ExportSettings& iSettings, const renderer::RendererSet& iRenderers,
 					   std::vector<AssetReference>& ioAssets) -> size_t {
 	const auto folders = iRenderers.getShaderFolders();
-	const auto skipped = std::erase_if(ioAssets, [&folders](const AssetReference& iRef) -> bool {
+	// The browser draws with WGSL only: the SPIR-V of the other targets stays out of a Web game.
+	const bool web = iSettings.target == ExportTarget::Web;
+	const auto skipped = std::erase_if(ioAssets, [&folders, web](const AssetReference& iRef) -> bool {
 		const std::filesystem::path path{iRef.packPath};
 		if (path.empty() || *path.begin() != "shaders")
 			return false;
 		const auto folder = std::next(path.begin());
-		return folder == path.end() || std::ranges::find(folders, folder->string()) == folders.end();
+		if (folder == path.end() || std::ranges::find(folders, folder->string()) == folders.end())
+			return true;
+		return web && std::next(folder) != path.end() && *std::next(folder) == "spirv";
 	});
 	if (!iSettings.imGui)
 		return skipped;
@@ -178,23 +227,40 @@ auto selectEngineFiles(const ExportSettings& iSettings, const renderer::Renderer
 #if OWL_WITH_RENDER
 constexpr std::array g_shaderStages{renderer::gpu::ShaderType::Vertex, renderer::gpu::ShaderType::Fragment,
 									renderer::gpu::ShaderType::Compute};
-// The shader targets of a game per platform; the Web target joins with its runner.
+// The shader targets of a game per platform.
 constexpr std::array g_desktopShaderTargets{renderer::utils::ShaderTarget::Vulkan,
 											renderer::utils::ShaderTarget::OpenGl};
 constexpr std::array g_androidShaderTargets{renderer::utils::ShaderTarget::VulkanAndroid};
+constexpr std::array g_webShaderTargets{renderer::utils::ShaderTarget::WebGpu};
 
 auto shaderTargetsOf(const ExportTarget iTarget) -> std::span<const renderer::utils::ShaderTarget> {
-	if (iTarget == ExportTarget::Android)
-		return g_androidShaderTargets;
+	switch (iTarget) {
+		case ExportTarget::Host:
+			return g_desktopShaderTargets;
+		case ExportTarget::Android:
+			return g_androidShaderTargets;
+		case ExportTarget::Web:
+			return g_webShaderTargets;
+	}
 	return g_desktopShaderTargets;
 }
 
-// True when the stored SPIR-V of every stage of a shader matches its source, for one API.
-auto hasCurrentSpirv(const std::vector<AssetReference>& iAssets, const std::string& iName, const std::string& iRenderer,
-					 const std::string& iApi, const std::string& iCacheKey) -> bool {
+// Where a baked stage goes: the WGSL of the WebGPU target, the SPIR-V of the others.
+auto bakedShaderPath(const std::string& iName, const std::string& iRenderer,
+					 const renderer::utils::ShaderTarget iTarget, const renderer::gpu::ShaderType iStage)
+		-> std::filesystem::path {
+	if (iTarget == renderer::utils::ShaderTarget::WebGpu)
+		return renderer::utils::getPrecompiledWgslPath(iName, iRenderer, iStage);
+	return renderer::utils::getPrecompiledShaderPath(
+			iName, iRenderer, std::string{renderer::utils::getShaderTargetFolder(iTarget)}, iStage);
+}
+
+// True when the stored baked stages of a shader match its source, for one target.
+auto hasCurrentBake(const std::vector<AssetReference>& iAssets, const std::string& iName, const std::string& iRenderer,
+					const renderer::utils::ShaderTarget iTarget, const std::string& iCacheKey) -> bool {
 	size_t found = 0;
 	for (const auto stage: g_shaderStages) {
-		const auto packPath = renderer::utils::getPrecompiledShaderPath(iName, iRenderer, iApi, stage).generic_string();
+		const auto packPath = bakedShaderPath(iName, iRenderer, iTarget, stage).generic_string();
 		const auto ref = std::ranges::find(iAssets, packPath, &AssetReference::packPath);
 		if (ref == iAssets.end())
 			continue;
@@ -207,10 +273,11 @@ auto hasCurrentSpirv(const std::vector<AssetReference>& iAssets, const std::stri
 
 // The stages of a shader baked by an earlier export, when all of them match the source.
 auto findBakedStages(const std::filesystem::path& iCacheDir, const std::string& iName, const std::string& iRenderer,
-					 const std::string& iApi, const std::string& iCacheKey) -> std::vector<std::filesystem::path> {
+					 const renderer::utils::ShaderTarget iTarget, const std::string& iCacheKey)
+		-> std::vector<std::filesystem::path> {
 	std::vector<std::filesystem::path> entries;
 	for (const auto stage: g_shaderStages) {
-		const auto entry = renderer::utils::getPrecompiledShaderPath(iName, iRenderer, iApi, stage);
+		const auto entry = bakedShaderPath(iName, iRenderer, iTarget, stage);
 		if (std::error_code ec; !std::filesystem::is_regular_file(iCacheDir / entry, ec))
 			continue;
 		if (!renderer::utils::isShaderCacheValid(iCacheDir / entry, iCacheKey))
@@ -229,7 +296,7 @@ void useBakedFile(std::vector<AssetReference>& ioAssets, const std::string& iPac
 		ioAssets.push_back({.packPath = iPackPath, .diskPath = iDiskPath, .assetType = AssetType::Other});
 }
 
-// Compiles a shader source for every target when its SPIR-V is missing or outdated, into the cook cache.
+// Compiles a shader source for every target when its baked stages are missing or outdated, into the cook cache.
 auto bakeShaderSource(std::vector<AssetReference>& ioAssets, const std::filesystem::path& iCacheDir,
 					  const std::string& iSource, const std::string& iName, const std::string& iRenderer,
 					  const std::span<const renderer::utils::ShaderTarget> iTargets) -> expected<bool, ExportError> {
@@ -238,10 +305,10 @@ auto bakeShaderSource(std::vector<AssetReference>& ioAssets, const std::filesyst
 	for (const auto target: iTargets) {
 		const std::string api = renderer::utils::getShaderTargetFolder(target);
 		const auto cacheKey = renderer::utils::getShaderCacheKey(iSource, moduleName, target);
-		if (hasCurrentSpirv(ioAssets, iName, iRenderer, api, cacheKey))
+		if (hasCurrentBake(ioAssets, iName, iRenderer, target, cacheKey))
 			continue;
 		compiled = true;
-		if (const auto stored = findBakedStages(iCacheDir, iName, iRenderer, api, cacheKey); !stored.empty()) {
+		if (const auto stored = findBakedStages(iCacheDir, iName, iRenderer, target, cacheKey); !stored.empty()) {
 			for (const auto& entry: stored) {
 				useBakedFile(ioAssets, entry.generic_string(), iCacheDir / entry);
 				useBakedFile(ioAssets, entry.generic_string() + ".hash", (iCacheDir / entry).string() + ".hash");
@@ -260,6 +327,19 @@ auto bakeShaderSource(std::vector<AssetReference>& ioAssets, const std::filesyst
 			std::filesystem::create_directories(file.parent_path(), ec);
 			if (!renderer::utils::writeCachedShader(file, spirv)) {
 				OWL_CORE_ERROR("GameExporter: Cannot write the SPIR-V '{}'.", file.string())
+				return unexpected{ExportError::CookFailed};
+			}
+			renderer::utils::writeShaderHash(file, cacheKey);
+			useBakedFile(ioAssets, entry.generic_string(), file);
+			useBakedFile(ioAssets, entry.generic_string() + ".hash", file.string() + ".hash");
+		}
+		for (const auto& [stage, wgsl]: result.wgslData) {
+			const auto entry = renderer::utils::getPrecompiledWgslPath(iName, iRenderer, stage);
+			const auto file = iCacheDir / entry;
+			std::error_code ec;
+			std::filesystem::create_directories(file.parent_path(), ec);
+			if (!writeText(file, wgsl)) {
+				OWL_CORE_ERROR("GameExporter: Cannot write the WGSL '{}'.", file.string())
 				return unexpected{ExportError::CookFailed};
 			}
 			renderer::utils::writeShaderHash(file, cacheKey);
@@ -312,7 +392,7 @@ auto bakeMaterialGraphs(std::vector<AssetReference>& ioAssets, const std::filesy
 	return baked;
 }
 
-// Compiles the packed shaders and the material graph variants whose SPIR-V is outdated; the game compiles none.
+// Compiles the packed shaders and the material graph variants whose baked stages are outdated; the game compiles none.
 auto bakeShaders(std::vector<AssetReference>& ioAssets, const std::filesystem::path& iCacheDir,
 				 const ExportTarget iTarget) -> expected<size_t, ExportError> {
 	const auto targets = shaderTargetsOf(iTarget);
@@ -407,6 +487,46 @@ void copySharedLibs(const std::filesystem::path& iSrcDir, const std::filesystem:
 	}
 }
 
+// Copies the page of the Web runner as the index of the game, with its script and module.
+auto copyWebRunner(const std::filesystem::path& iRunnerDir, const std::filesystem::path& iGameDir) -> bool {
+	for (const auto name: g_webRunnerFiles) {
+		const auto dest = iGameDir / (name.ends_with(".html") ? g_webPage : name);
+		if (std::error_code ec; !std::filesystem::copy_file(iRunnerDir / name, dest,
+															std::filesystem::copy_options::overwrite_existing, ec) ||
+								ec) {
+			OWL_CORE_ERROR("GameExporter: Cannot copy '{}' to '{}': {}.", name, dest.string(), ec.message())
+			return false;
+		}
+	}
+	return true;
+}
+
+// Lists the game files the page fetches before main: everything in the folder but the page and the runner.
+void writeWebFileList(const std::filesystem::path& iGameDir) {
+	std::vector<std::string> files;
+	std::error_code ec;
+	for (const auto& entry: std::filesystem::recursive_directory_iterator(iGameDir, ec)) {
+		if (!entry.is_regular_file())
+			continue;
+		const auto relative = entry.path().lexically_relative(iGameDir).generic_string();
+		if (relative == g_webPage || relative == g_webFileList ||
+			std::ranges::find(g_webRunnerFiles, relative) != g_webRunnerFiles.end())
+			continue;
+		files.push_back(relative);
+	}
+	std::ranges::sort(files);
+	std::string json{"["};
+	for (const auto& file: files) {
+		if (json.size() > 1)
+			json += ", ";
+		// Exported names are sanitized: no quote nor backslash to escape.
+		json += std::format("\"{}\"", file);
+	}
+	json += "]\n";
+	if (!writeText(iGameDir / g_webFileList, json))
+		OWL_CORE_WARN("GameExporter: Cannot write '{}'.", (iGameDir / g_webFileList).string())
+}
+
 void writeRunnerConfig(const ExportSettings& iSettings, const std::filesystem::path& iGameDir,
 					   const std::string& iFirstScene, const std::string& iPackFile, const std::string& iIcon,
 					   const std::string& iGamepadMappings, const std::vector<std::string>& iRenderers) {
@@ -463,8 +583,7 @@ void writeMetadata(const ExportSettings& iSettings, const std::filesystem::path&
 		out << YAML::Key << "Description" << YAML::Value << iSettings.description;
 	out << YAML::Key << "EngineVersion" << YAML::Value << owl::getVersionString();
 	out << YAML::Key << "PackDate" << YAML::Value << std::format("{:%Y-%m-%d}", ymd);
-	out << YAML::Key << "Platform" << YAML::Value
-		<< (iSettings.target == ExportTarget::Android ? "android-arm64" : g_platformName);
+	out << YAML::Key << "Platform" << YAML::Value << std::string{platformNameOf(iSettings.target)};
 	out << YAML::EndMap;
 	out << YAML::EndMap;
 	std::ofstream file(iGameDir / "game_info.yml");
@@ -624,10 +743,10 @@ auto GameExporter::validate(const ExportSettings& iSettings, std::vector<AssetRe
 										iSettings.defaultHud, iSettings.defaultHudTheme, modScreenOf(iSettings));
 	if (oAssets.empty())
 		warnings.emplace_back("No assets to pack — check firstScene and its references");
-	if (!findRunner(iSettings.runnerDirectory))
-		warnings.emplace_back(
-				std::format("OwlGameRunner executable not found in '{}' — packed game will not be playable",
-							iSettings.runnerDirectory.string()));
+	if (!hasRunnerFor(iSettings))
+		warnings.emplace_back(std::format("OwlGameRunner {} not found in '{}' — packed game will not be playable",
+										  iSettings.target == ExportTarget::Web ? "page" : "executable",
+										  iSettings.runnerDirectory.string()));
 	if (!iSettings.icon.empty() && !resolveIcon(iSettings))
 		warnings.emplace_back(std::format("Icon '{}' not found", iSettings.icon));
 	if (!iSettings.gamepadMappings.empty() && !exists(iSettings.projectDirectory / iSettings.gamepadMappings))
@@ -650,10 +769,8 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 		OWL_CORE_ERROR("GameExporter: No asset found to pack for first scene '{}'.", iSettings.firstScene)
 		return unexpected{ExportError::NoAssets};
 	}
-	const bool android = iSettings.target == ExportTarget::Android;
-	const auto runnerExe = android ? std::nullopt : findRunner(iSettings.runnerDirectory);
-	if (!android && !runnerExe) {
-		OWL_CORE_ERROR("GameExporter: OwlRunner executable not found in '{}'.", iSettings.runnerDirectory.string())
+	if (!hasRunnerFor(iSettings)) {
+		OWL_CORE_ERROR("GameExporter: OwlGameRunner not found in '{}'.", iSettings.runnerDirectory.string())
 		return unexpected{ExportError::RunnerNotFound};
 	}
 	const auto renderers = rendererSetOf(iSettings, assets);
@@ -801,7 +918,20 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 		return unexpected{ExportError::Cancelled};
 	}
 
-	if (android) {
+	if (iSettings.target == ExportTarget::Web) {
+		report(iProgress, 0.88f, "Copying the page...");
+		if (!copyWebRunner(iSettings.runnerDirectory, result.gameDirectory))
+			return unexpected{ExportError::RunnerCopy};
+		result.executable = result.gameDirectory / g_webPage;
+		writeWebFileList(result.gameDirectory);
+		std::error_code sizeEc;
+		result.packBytes = std::filesystem::file_size(result.packFile, sizeEc);
+		report(iProgress, 1.f, "Done.");
+		OWL_CORE_INFO("GameExporter: Exported '{}' for the Web ({} assets) to '{}'.", iSettings.gameName,
+					  result.assetCount, result.gameDirectory.string())
+		return result;
+	}
+	if (iSettings.target == ExportTarget::Android) {
 		// The APK packaging adds the runner libraries next to this folder, its assets.
 		std::error_code sizeEc;
 		result.packBytes = std::filesystem::file_size(result.packFile, sizeEc);
@@ -811,6 +941,7 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 		return result;
 	}
 	report(iProgress, 0.88f, "Copying runner...");
+	const auto runnerExe = findRunner(iSettings.runnerDirectory);
 #ifdef OWL_PLATFORM_WINDOWS
 	result.executable = result.gameDirectory / (baseName + ".exe");
 #else

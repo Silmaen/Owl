@@ -10,6 +10,7 @@
 #include "scene/ai/BehaviourTreeInstance.h"
 
 #include "core/Macros.h"
+#include "core/utils/LookupTable.h"
 #include "math/RandomStream.h"
 #include "scene/Scene.h"
 #include "scene/component/components.h"
@@ -83,8 +84,8 @@ auto opOf(const std::string_view iType) -> Op {
 																		{"action.find_player", Op::FindPlayer},
 																		{"action.lua", Op::LuaAction},
 																		{"action.log", Op::Log}}};
-	const auto* const found = std::ranges::find(s_ops, iType, &std::pair<std::string_view, Op>::first);
-	return found == s_ops.end() ? Op::Unknown : found->second;
+	const auto* const found = core::utils::findEntry(s_ops, iType, &std::pair<std::string_view, Op>::first);
+	return found == nullptr ? Op::Unknown : found->second;
 }
 
 auto toFloat(const std::string& iText, const float iDefault) -> float {

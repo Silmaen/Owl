@@ -12,6 +12,7 @@
 #include "CommandRegistry.h"
 #include "EntityCommands.h"
 
+#include <core/utils/LookupTable.h>
 #include <renderer/gpu/Texture.h>
 #include <scene/Entity.h>
 #include <scene/Scene.h>
@@ -464,7 +465,7 @@ auto firstCanvas(const scene::Scene& iScene) -> std::optional<scene::Entity> {
 
 auto addWidget(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
 	const auto kind = iArgs.getText("kind");
-	const auto* const defaults = std::ranges::find(kindDefaults, kind, &KindDefaults::name);
+	const auto* const defaults = core::utils::findEntry(kindDefaults, kind, &KindDefaults::name);
 	const auto name = iArgs.getText("name", kind);
 	const auto sizeUnit = parseUnits(iArgs, "size_unit");
 	if (!sizeUnit)
@@ -590,10 +591,10 @@ auto HudRectsCommand::mergeWith(const SceneUndoCommand& iOther) -> bool {
 }
 
 auto HudRectsCommand::typeId() const -> size_t {
-	size_t hash = 0x48754452ULL;// "HuDR"
+	uint64_t hash = 0x48754452ULL;// "HuDR"
 	for (const auto& change: m_changes)
 		hash = (hash * 1099511628211ULL) ^ std::hash<uint64_t>{}(static_cast<uint64_t>(change.entity));
-	return hash;
+	return static_cast<size_t>(hash);
 }
 
 HudReparentCommand::HudReparentCommand(const HudRectChange& iChange, const HierarchySlot& iOldSlot,

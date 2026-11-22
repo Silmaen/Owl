@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Every nightly job waits for its ▶ in the merge request pipeline, beside the builds.
+- The CI no longer has a `linux-clang-minimal` job; the preset stays for a local check.
+- The nightly pipeline builds the Web runner (`web-release`) and runs its tests under Node.
 - Network transport: `network::Transport` with an ENet reliable UDP backend and an in-process `LoopbackTransport`, four ordered channels, reliable and unreliable messages, link statistics ([Networking](networking.md)).
 - Network sessions: `NetServer` and `NetClient` with a game and version handshake, an authoritative server, kick, timeouts and reconnection within a grace time keeping the `ClientId` ([Networking](networking.md#networking-sessions)).
 - `ConditionedTransport` wraps any transport to simulate latency, jitter, loss and duplication from a seed ([Networking](networking.md#networking-conditions)).
@@ -50,6 +53,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `OwlNest --export --target android` (`ExportTarget::Android`): a game folder with SPIR-V 1.3 shaders and no executable, the assets of the APK.
 - Nightly `android-arm64` job: the Android runner built every night, not yet tested on a device.
 - `docker_run.sh --adb`: adb from the Android image against the adb server that owns the device ([Building](building.md#android-build)).
+- WebGPU backend of the Owl RHI (`RenderAPI::Type::WebGpu`): the canvas of the page as its surface, GLFW 3.4 through Emscripten's port, buffers, textures, baked WGSL, pipelines and framebuffers: an exported 2D game plays in the browser ([Building](building.md#web-build)).
+- Texture tables of the WebGPU target: the shaders' `Sampler2D gTextures[N]` become sixteen bindings indexed the same way, the SPIR-V of the other targets unchanged.
+- WebGPU compute shaders, indexed indirect draws and cube textures: the culling, raycast, particle and sort passes and the 3D renderer run in the browser ([Building](building.md#web-build)).
+- 3D and lit isometric drawing on WebGPU within sixteen textures per stage: shadow maps and probes in texture arrays, the environment as mips, half-size isometric batches ([Building](building.md#web-build)).
+- `Transport::Type::WebSocket`: a WebSocket server on desktop (cpp-httplib) and the WebSocket client of a page, the network module of the Web build ([Networking](networking.md#networking-transports)).
+- `OwlNest --export --target web` (`ExportTarget::Web`): WGSL shaders in the pack, the runner page as `index.html` and the `files.json` it fetches, a folder to serve as it is ([Building](building.md#web-build)).
+- Web build: `web-release` and `web-minimal` presets on the emsdk of the Web build image, the engine and its tests in WebAssembly under Node, `OwlGameRunner.html` run in a browser, `tools/web/browser_run.py` to play it in headless Chrome ([Building](building.md#web-build)).
 
 ### Changed
 
@@ -69,7 +79,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A first-person walker and a voxel player move at most a tenth of a second per frame: a long frame no longer drops them through the floor.
 - `DependencyReport` no longer takes a bare-number tag (Luau's `696`) for a newer version than a dotted one.
+- yaml-cpp writes the doubles beyond 32 bits of mantissa right on 32-bit targets (local recipe with a patch); sizes read from packs and replays checked before they narrow to `size_t` there.
+- The minimal build (`OWL_MODULE_SCRIPT` off) no longer compiles `LuaNetBindings` nor misses `ScriptEngine::extractComponentsFromBuffer`; a static engine keeps its self-registered types (whole archive).
 - `linux-clang-minimal` links again: the no-physics `PhysicCommand` has the 3D angular velocity and joint load stubs, and the one physics-only scene test is skipped there.
 
 ## [0.7.0] - 2026-11-15

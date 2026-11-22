@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Owl Game</title>
+    <style>
+        html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+        canvas { display: block; width: 100%; height: 100%; }
+    </style>
+</head>
+<body>
+<canvas id="canvas" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
+<script>
+    // The Owl game runner in a page. Before main, the files listed in files.json (the exported game: runner.yml, the
+    // pack, the engine assets) are fetched into the virtual file system, at the same relative paths. The query string
+    // gives the command line (`?arg=--headless&arg=--smoke-test`) and the environment (`?env=NAME=value`). Served with Cross-Origin-Opener-Policy: same-origin
+    // and Cross-Origin-Embedder-Policy: require-corp, without which the threads have no shared memory.
+    // When the page was opened by tools/web/browser_run.py, the output and the exit code go back to it (`/owl-log`,
+    // `/owl-exit`).
+    const owlQuery = new URLSearchParams(window.location.search);
+    const owlReport = owlQuery.has("report");
+    let owlCapture = null;
+    const owlSend = (path, text) => {
+        if (owlReport)
+            navigator.sendBeacon(path, text);
+    };
+    var Module = {
+        canvas: document.getElementById("canvas"),
+        arguments: owlQuery.getAll("arg"),
+        print: (text) => { console.log(text); owlSend("/owl-log", text + "\n"); },
+        printErr: (text) => { console.error(text); owlSend("/owl-log", text + "\n"); },
+        onExit: (code) => Promise.resolve(owlCapture).finally(() => owlSend("/owl-exit", String(code))),
+        // A frame read back by the WebGPU backend (`OWL_WEBGPU_CAPTURE`), as a PNG, goes to `/owl-shot`.
+        owlSendCapture: (png) => {
+            if (owlReport)
+                owlCapture = fetch("/owl-shot", {method: "POST", body: png});
+        },
+        onAbort: (what) => owlSend("/owl-exit", "abort: " + what),
+        preRun: [() => {
+            // `?env=NAME=value` sets a variable of the program's environment.
+            for (const pair of owlQuery.getAll("env")) {
+                const split = pair.indexOf("=");
+                if (split > 0)
+                    ENV[pair.substring(0, split)] = pair.substring(split + 1);
+            }
+            // A browser gives the WebGPU device asynchronously only: it is made before main, which takes it.
+            if (navigator.gpu) {
+                Module.addRunDependency("owl-gpu");
+                navigator.gpu.requestAdapter()
+                    .then((adapter) => {
+                        // Kept alive with the device: a collected adapter ends the asynchronous calls of the device.
+                        Module.owlAdapter = adapter;
+                        if (!adapter)
+                            return null;
+                        // A 3D stage samples sixteen textures and eight cubes (Context.h), the bitonic sort runs 1024
+                        // invocations per work group: more than the default limits. Shadow maps and float targets are
+                        // 32-bit float textures sampled with filtering.
+                        const limits = {};
+                        for (const name of ["maxSampledTexturesPerShaderStage", "maxSamplersPerShaderStage",
+                                            "maxStorageBuffersPerShaderStage", "maxComputeInvocationsPerWorkgroup",
+                                            "maxComputeWorkgroupSizeX", "maxComputeWorkgroupStorageSize"])
+                            limits[name] = adapter.limits[name];
+                        const features = adapter.features.has("float32-filterable") ? ["float32-filterable"] : [];
+                        return adapter.requestDevice({requiredFeatures: features, requiredLimits: limits});
+                    })
+                    .then((device) => {
+                        if (device) {
+                            device.lost.then((info) => Module.printErr(`WebGPU: device lost (${info.message}).`));
+                            device.addEventListener("uncapturederror",
+                                (event) => Module.printErr(`WebGPU: ${event.error.message}`));
+                            Module.preinitializedWebGPUDevice = device;
+                        }
+                        else
+                            Module.printErr("Owl: no WebGPU device, the game runs without its canvas.");
+                    })
+                    .catch((error) => Module.printErr(`Owl: no WebGPU device (${error}).`))
+                    .finally(() => Module.removeRunDependency("owl-gpu"));
+            }
+            // Fetched here, written by main once the file system (WasmFS) runs: `Application::installPageFiles`.
+            Module.owlFiles = [];
+            Module.addRunDependency("owl-files");
+            fetch("files.json")
+                .then((response) => response.ok ? response.json() : [])
+                .then((files) => Promise.all(files.map((path) => fetch(path)
+                    .then((response) => {
+                        if (!response.ok)
+                            throw new Error(`${path}: ${response.status}`);
+                        return response.arrayBuffer();
+                    })
+                    .then((data) => Module.owlFiles.push([path, new Uint8Array(data)])))))
+                .then(() => Module.removeRunDependency("owl-files"))
+                .catch((error) => {
+                    Module.printErr(`Owl: cannot fetch the game files (${error}).\n${error.stack || ""}`);
+                    owlSend("/owl-exit", "abort: files");
+                });
+        }],
+    };
+</script>
+{{{ SCRIPT }}}
+</body>
+</html>

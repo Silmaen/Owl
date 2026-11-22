@@ -14,12 +14,17 @@ struct EncodeParams {
 [[vk::binding(0)]]
 ConstantBuffer<EncodeParams> gParams;
 
+#if defined(BACKEND_WEBGPU)
+#include "webgpu_textures.slangh"
+OWL_WEBGPU_TEXTURE_TABLE(gTextures)// 0 scene colour, 1 bloom, 2 LUT strip, 3 adapted EV100 (one texel).
+#else
 #ifdef BACKEND_VULKAN
 [[vk::binding(1)]]
 #else
 [[vk::binding(0)]]
 #endif
 Sampler2D gTextures[4];// 0 scene colour, 1 bloom, 2 LUT strip, 3 adapted EV100 (one texel).
+#endif
 
 struct VertexInput {
 	[[vk::location(0)]] float2 position : POSITION;

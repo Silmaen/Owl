@@ -88,13 +88,84 @@ struct Lighting {
 [[vk::binding(0)]]
 ConstantBuffer<Scene3D> gScene;
 
+#if defined(BACKEND_WEBGPU)
+// WebGPU samples sixteen textures per stage: twelve table slots (the backend moves the environment levels into the
+// mips of slot 7 and the lookup tables to 8, 9 and 10), the cascades and the local shadows in two arrays (a point
+// shadow as six face layers after the spots), the probes in a third, each layer in the corner of the largest
+// (`webgpu/PbrTextures.h`).
+#include "webgpu_textures.slangh"
+OWL_WEBGPU_TEXTURE_TABLE_12(gTextures)
+[[vk::binding(32, 1)]]
+Texture2DArray gCascadeArray;
+[[vk::binding(33, 1)]]
+Texture2DArray gLocalShadowArray;
+[[vk::binding(34, 1)]]
+Texture2DArray gProbeArray;
+[[vk::binding(41, 1)]]
+SamplerState gProbeSampler;
+// Per point shadow and per probe: x, y the share of its array layer its faces cover, z its face size.
+struct WebGpuCubeLayers {
+	float4 points[MAX_POINT_SHADOWS];
+	float4 probes[MAX_POINT_SHADOWS];
+};
+[[vk::binding(42, 1)]]
+ConstantBuffer<WebGpuCubeLayers> gCubeLayers;
+#else
 #ifdef BACKEND_VULKAN
 [[vk::binding(1)]]
 #else
 [[vk::binding(0)]]
 #endif
 Sampler2D gTextures[TEXTURE_SLOT_COUNT];
+#endif
 
+#if defined(BACKEND_WEBGPU)
+// The face of a cube a direction leaves through (+X, -X, +Y, -Y, +Z, -Z) and where on it, as a cube texture does.
+int cubeFace(float3 iDirection, out float2 oUv) {
+	float3 a = abs(iDirection);
+	float major;
+	float2 st;
+	int face;
+	if (a.x >= a.y && a.x >= a.z) {
+		face = iDirection.x >= 0.0f ? 0 : 1;
+		major = a.x;
+		st = float2(iDirection.x >= 0.0f ? -iDirection.z : iDirection.z, -iDirection.y);
+	} else if (a.y >= a.z) {
+		face = iDirection.y >= 0.0f ? 2 : 3;
+		major = a.y;
+		st = float2(iDirection.x, iDirection.y >= 0.0f ? iDirection.z : -iDirection.z);
+	} else {
+		face = iDirection.z >= 0.0f ? 4 : 5;
+		major = a.z;
+		st = float2(iDirection.z >= 0.0f ? iDirection.x : -iDirection.x, -iDirection.y);
+	}
+	oUv = st / (2.0f * major) + 0.5f;
+	return face;
+}
+// `gCubes[i]` of the other targets: the point shadows, then the probes, read from their face layers.
+struct WebGpuCube {
+	int index;
+	float4 SampleLevel(float3 iDirection, float iLod) {
+		float2 uv;
+		int face = cubeFace(iDirection, uv);
+		if (index < MAX_POINT_SHADOWS) {
+			int size = int(gCubeLayers.points[index].z);
+			int2 texel = clamp(int2(uv * float(size)), int2(0), int2(max(size - 1, 0)));
+			return gLocalShadowArray.Load(int4(texel, MAX_SPOT_SHADOWS + index * 6 + face, 0));
+		}
+		int probe = index - MAX_POINT_SHADOWS;
+		float4 layer = gCubeLayers.probes[probe];
+		float border = 0.5f / max(layer.z, 1.0f);
+		uv = clamp(uv, border, 1.0f - border) * layer.xy;
+		return gProbeArray.SampleLevel(gProbeSampler, float3(uv, float(probe * 6 + face)), iLod);
+	}
+};
+struct WebGpuCubeTable {
+	__subscript(int iIndex)->WebGpuCube { get { WebGpuCube cube; cube.index = iIndex; return cube; } }
+	__subscript(uint iIndex)->WebGpuCube { get { WebGpuCube cube; cube.index = int(iIndex); return cube; } }
+};
+static const WebGpuCubeTable gCubes = {};
+#else
 // OpenGL binds the cubes to the units that follow the 2D textures.
 #ifdef BACKEND_VULKAN
 [[vk::binding(7)]]
@@ -102,6 +173,7 @@ Sampler2D gTextures[TEXTURE_SLOT_COUNT];
 [[vk::binding(24)]]
 #endif
 SamplerCube gCubes[CUBE_SLOT_COUNT];
+#endif
 
 [[vk::binding(2)]]
 StructuredBuffer<LightData> gLights;
@@ -140,9 +212,15 @@ static const int MAP_NORMAL = 3;
 static const int MAP_OCCLUSION = 4;
 static const int MAP_EMISSIVE = 5;
 static const int MAP_ROUGHNESS = 6;
+#if defined(BACKEND_WEBGPU)
+static const int DFG_SLOT = 8;
+static const int LTC_SLOT = 9;
+static const int CLIPPED_SPHERE_SLOT = 10;
+#else
 static const int DFG_SLOT = 13;
 static const int LTC_SLOT = 14;
 static const int CLIPPED_SPHERE_SLOT = 15;
+#endif
 static const float LTC_SIZE = 64.0f;
 static const int ENVIRONMENT_SLOT = 7;
 static const int MAX_ENVIRONMENT_LEVELS = 6;
@@ -182,7 +260,14 @@ float sampleChannel(int slot, float2 uv, int channel) {
 // Depth stored in a texel of a cascade's shadow map, sampled at its centre (nearest sampler): a texel fetch from
 // the texture array crashes lavapipe.
 float loadShadowDepth(int slot, int2 texel, float size) {
+#if defined(BACKEND_WEBGPU)
+	// Each map lies in the corner of its layer: its texels keep their coordinates.
+	if (slot < SPOT_SHADOW_SLOT)
+		return gCascadeArray.Load(int4(texel, slot - SHADOW_MAP_SLOT, 0)).r;
+	return gLocalShadowArray.Load(int4(texel, slot - SPOT_SHADOW_SLOT, 0)).r;
+#else
 	return gTextures[NonUniformResourceIndex(slot)].SampleLevel((float2(texel) + 0.5f) / size, 0.0f).r;
+#endif
 }
 
 // Poisson disc of the soft shadows, in a unit circle.
@@ -534,6 +619,10 @@ float2 equirectangularUv(float3 d) {
 }
 
 float3 sampleEnvironmentLevel(int level, float2 uv) {
+#if defined(BACKEND_WEBGPU)
+	// The levels are the mips of one texture.
+	return gTextures[ENVIRONMENT_SLOT].SampleLevel(uv, float(level)).rgb;
+#else
 	switch (level) {
 		case 0:
 			return gTextures[ENVIRONMENT_SLOT].SampleLevel(uv, 0.0f).rgb;
@@ -548,6 +637,7 @@ float3 sampleEnvironmentLevel(int level, float2 uv) {
 		default:
 			return gTextures[ENVIRONMENT_SLOT + 5].SampleLevel(uv, 0.0f).rgb;
 	}
+#endif
 }
 
 float3 irradianceSH(float3 n) {

@@ -112,6 +112,12 @@ auto ScriptEngine::extractFunctionsFromBuffer([[maybe_unused]] const std::vector
 	return {};
 }
 
+auto ScriptEngine::extractComponentsFromBuffer([[maybe_unused]] const std::vector<uint8_t>& iData,
+											   const std::string& iName) -> std::vector<ScriptComponentDeclaration> {
+	OWL_CORE_WARN("ScriptEngine: Lua not built in (OWL_MODULE_SCRIPT=OFF), no component read from '{}'.", iName)
+	return {};
+}
+
 auto ScriptEngine::getHookNames() -> const std::vector<std::string>& {
 	static const std::vector<std::string> names{
 			"on_create",         "on_update",        "on_tick",          "on_destroy",     "on_collision",

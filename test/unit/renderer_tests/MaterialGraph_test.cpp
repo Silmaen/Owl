@@ -239,6 +239,7 @@ TEST(MaterialGraph, PreviewShowsOneNodeOutput) {
 // Slang comes with the render module.
 #if OWL_WITH_RENDER
 TEST(MaterialGraph, InsertedProgramsCompileWithSlang) {
+	OWL_REQUIRE_SHADER_COMPILER;
 	core::Log::init(core::Log::Level::Off);
 	for (const auto& shader: {std::string{"mesh3d"}, std::string{"skinned3d"}}) {
 		const auto source = meshShader(shader);
@@ -261,6 +262,7 @@ TEST(MaterialGraph, InsertedProgramsCompileWithSlang) {
 }
 
 TEST(MaterialGraph, EngineDemoGraphsCompile) {
+	OWL_REQUIRE_SHADER_COMPILER;
 	core::Log::init(core::Log::Level::Off);
 	const auto source = meshShader("mesh3d");
 	size_t graphs = 0;
@@ -285,6 +287,7 @@ TEST(MaterialGraph, EngineDemoGraphsCompile) {
 }
 
 TEST(MaterialGraph, SampleGameGraphsCompile) {
+	OWL_REQUIRE_SHADER_COMPILER;
 	core::Log::init(core::Log::Level::Off);
 	const auto source = meshShader("mesh3d");
 	size_t graphs = 0;

@@ -14,11 +14,14 @@
 #include "renderer/Renderer.h"
 #include "renderer/gpu/Shader.h"
 #include "renderer/utils/shaderFileUtils.h"
-#if OWL_WITH_RENDER
+#if OWL_WITH_NATIVE_GPU
 #if OWL_WITH_DESKTOP
 #include "opengl/Shader.h"
 #endif
 #include "vulkan/Shader.h"
+#endif
+#if OWL_WITH_WEBGPU
+#include "webgpu/Shader.h"
 #endif
 
 #include <magic_enum/magic_enum.hpp>
@@ -84,10 +87,17 @@ auto Shader::create(const std::filesystem::path& iFile) -> shared<Shader> {
 				   magic_enum::enum_name(RenderCommand::getApi()))
 	shared<Shader> shader = nullptr;
 	switch (RenderCommand::getApi()) {
+#if OWL_WITH_WEBGPU
+		case RenderAPI::Type::WebGpu:
+			shader = mkShared<webgpu::Shader>(name, renderer);
+			break;
+#else
+		case RenderAPI::Type::WebGpu:
+#endif
 		case RenderAPI::Type::Null:
 			shader = mkShared<null::Shader>(name, renderer, sources);
 			break;
-#if OWL_WITH_RENDER
+#if OWL_WITH_NATIVE_GPU
 #if OWL_WITH_DESKTOP
 		case RenderAPI::Type::OpenGL:
 			shader = mkShared<opengl::Shader>(name, renderer, sources);
@@ -102,7 +112,7 @@ auto Shader::create(const std::filesystem::path& iFile) -> shared<Shader> {
 #else
 		case RenderAPI::Type::OpenGL:
 		case RenderAPI::Type::Vulkan:
-			break;// GPU backends not built (OWL_MODULE_RENDER=OFF)
+			break;// GPU backends not built (no Vulkan nor OpenGL in this build)
 #endif
 	}
 	if (shader) {
@@ -119,9 +129,16 @@ auto Shader::create(const std::filesystem::path& iFile) -> shared<Shader> {
 auto Shader::createFromSource(const std::string& iShaderName, const std::string& iRenderer,
 							  [[maybe_unused]] const std::string& iSlangSource) -> shared<Shader> {
 	switch (RenderCommand::getApi()) {
+#if OWL_WITH_WEBGPU
+		case RenderAPI::Type::WebGpu:
+			// No compiler on the Web: the baked stages of the shader of that name.
+			return mkShared<webgpu::Shader>(iShaderName, iRenderer);
+#else
+		case RenderAPI::Type::WebGpu:
+#endif
 		case RenderAPI::Type::Null:
 			return mkShared<null::Shader>(iShaderName, iRenderer, std::vector<std::filesystem::path>{});
-#if OWL_WITH_RENDER
+#if OWL_WITH_NATIVE_GPU
 #if OWL_WITH_DESKTOP
 		case RenderAPI::Type::OpenGL:
 			return mkShared<opengl::Shader>(iShaderName, iRenderer, iSlangSource);
@@ -150,7 +167,7 @@ auto Shader::reload() -> bool {
 		OWL_CORE_ERROR("Shader: Cannot reload '{}', source file '{}' not found.", getFullName(), m_sourcePath.string())
 		return false;
 	}
-#if OWL_WITH_RENDER
+#if OWL_WITH_NATIVE_GPU
 	const auto source = renderer::utils::readShaderSource(m_sourcePath);
 #else
 	const auto source = platform::fileToString(m_sourcePath);

@@ -77,6 +77,25 @@ protected:
 		scene.onEndRuntime();
 		return height;
 	}
+
+	// Height of a voxel player dropped 4 blocks above a stone slab, after frames of the given length.
+	static auto voxelHeight(const int iFrames, const int iMilliseconds) -> float {
+		Scene scene;
+		auto& voxel = scene.createEntity("World").addComponent<component::VoxelWorld>();
+		data::voxel::BlockType stone;
+		stone.name = "stone";
+		const auto stoneId = voxel.registry.registerBlock(stone);
+		for (int32_t x = -2; x <= 2; ++x)
+			for (int32_t z = -2; z <= 2; ++z) voxel.world.setBlock({x, 0, z}, stoneId);
+		auto player = scene.createEntity("Player");
+		player.getComponent<component::Transform>().transform.translation() = {0.5f, 5.f, 0.5f};
+		player.addComponent<component::VoxelPlayer>();
+		scene.onStartRuntime();
+		run(scene, iFrames, iMilliseconds);
+		const float height = player.getComponent<component::Transform>().transform.translation().y();
+		scene.onEndRuntime();
+		return height;
+	}
 };
 
 }// namespace
@@ -149,9 +168,19 @@ TEST_F(FairPlayTest, thePlayerIsPushedPerTickWhateverTheFrameRate) {
 	EXPECT_FLOAT_EQ(slow.x(), fast.x());
 }
 
+TEST_F(FairPlayTest, aLongFrameMovesAFirstPersonControllerAsTheLongestStep) {
+	EXPECT_NEAR(fallHeight(1, 30000), fallHeight(1, 100), 1e-4f);
+	EXPECT_GT(fallHeight(1, 30000), 99.f);
+}
+
 TEST_F(FairPlayTest, aFirstPersonFallDoesNotDependOnTheFrameRate) {
 	const float slow = fallHeight(20, 50);
 	const float fast = fallHeight(250, 4);
 	EXPECT_LT(slow, 100.f);
 	EXPECT_NEAR(slow, fast, 1e-3f);
+}
+
+TEST_F(FairPlayTest, aLongFrameMovesAVoxelPlayerAsTheLongestStep) {
+	EXPECT_NEAR(voxelHeight(1, 30000), voxelHeight(1, 100), 1e-4f);
+	EXPECT_GT(voxelHeight(400, 30000), 0.9f);
 }

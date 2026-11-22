@@ -14,12 +14,17 @@ struct BloomParams {
 [[vk::binding(0)]]
 ConstantBuffer<BloomParams> gParams;
 
+#if defined(BACKEND_WEBGPU)
+#include "webgpu_textures.slangh"
+OWL_WEBGPU_TEXTURE_TABLE(gTextures)
+#else
 #ifdef BACKEND_VULKAN
 [[vk::binding(1)]]
 #else
 [[vk::binding(0)]]
 #endif
 Sampler2D gTextures[2];
+#endif
 
 struct VertexInput {
 	[[vk::location(0)]] float2 position : POSITION;

@@ -102,6 +102,7 @@ TEST_F(HotReloadTest, TextureTakesTheNewPixelsAndKeepsThemOnError) {
 }
 
 TEST_F(HotReloadTest, ShaderRecompilesAndKeepsThePreviousVersionOnError) {
+	OWL_REQUIRE_SHADER_COMPILER;
 	OWL_REQUIRE_MODULE(RENDER);
 	const auto file = m_dir / "shaders" / "hot" / "flat.slang";
 	writeText(file, shaderSource("1.0"));
@@ -123,6 +124,7 @@ TEST_F(HotReloadTest, ShaderRecompilesAndKeepsThePreviousVersionOnError) {
 }
 
 TEST_F(HotReloadTest, WatchedFileIsDispatchedToTheLibrariesAndListeners) {
+	OWL_REQUIRE_SHADER_COMPILER;
 	OWL_REQUIRE_MODULE(RENDER);
 	const auto image = m_dir / "sprite.png";
 	writeImage(image, 2);

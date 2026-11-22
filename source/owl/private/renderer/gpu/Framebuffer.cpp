@@ -8,11 +8,14 @@
 #include "owlpch.h"
 
 #include "null/Framebuffer.h"
-#if OWL_WITH_RENDER
+#if OWL_WITH_NATIVE_GPU
 #if OWL_WITH_DESKTOP
 #include "opengl/Framebuffer.h"
 #endif
 #include "vulkan/Framebuffer.h"
+#endif
+#if OWL_WITH_WEBGPU
+#include "webgpu/Framebuffer.h"
 #endif
 #include "renderer/Renderer.h"
 #include "renderer/gpu/Framebuffer.h"
@@ -26,9 +29,15 @@ namespace owl::renderer::gpu {
 auto Framebuffer::create(const FramebufferSpecification& iSpec) -> shared<Framebuffer> {
 	const auto api = RenderCommand::getApi();
 	switch (api) {
+#if OWL_WITH_WEBGPU
+		case RenderAPI::Type::WebGpu:
+			return mkShared<webgpu::Framebuffer>(iSpec);
+#else
+		case RenderAPI::Type::WebGpu:
+#endif
 		case RenderAPI::Type::Null:
 			return mkShared<null::Framebuffer>(iSpec);
-#if OWL_WITH_RENDER
+#if OWL_WITH_NATIVE_GPU
 #if OWL_WITH_DESKTOP
 		case RenderAPI::Type::OpenGL:
 			return mkShared<opengl::Framebuffer>(iSpec);
@@ -41,7 +50,7 @@ auto Framebuffer::create(const FramebufferSpecification& iSpec) -> shared<Frameb
 #else
 		case RenderAPI::Type::OpenGL:
 		case RenderAPI::Type::Vulkan:
-			break;// GPU backends not built (OWL_MODULE_RENDER=OFF)
+			break;// GPU backends not built (no Vulkan nor OpenGL in this build)
 #endif
 	}
 	OWL_CORE_ERROR("Framebuffer: Unknown render API ({}).", static_cast<int>(api))

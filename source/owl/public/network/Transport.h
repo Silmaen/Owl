@@ -97,6 +97,7 @@ public:
 	enum struct Type : uint8_t {
 		Loopback,///< In-process links, for tests, local play and a host playing on its own server.
 		Enet,///< Reliable UDP through ENet.
+		WebSocket,///< WebSocket over TCP, the transport of a page; a desktop server accepts it too.
 	};
 
 	/**

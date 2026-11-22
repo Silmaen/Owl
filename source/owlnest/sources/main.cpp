@@ -31,7 +31,7 @@ namespace owl {
 
 namespace {
 
-// Command line of a headless export: `OwlNest --export <project> <output> [--cook-cache <dir>] [--target android]`.
+// Command line of a headless export: `OwlNest --export <project> <output> [options]`, options in the usage below.
 struct ExportCommand {
 	// Project folder or `owl_project.yml` file.
 	std::filesystem::path project;
@@ -41,6 +41,8 @@ struct ExportCommand {
 	std::filesystem::path cookCache;
 	// Platform of the exported game.
 	data::assets::pack::ExportTarget target = data::assets::pack::ExportTarget::Host;
+	// Folder of the runner to bundle, empty for the one next to Owl Nest (its `web/` folder for the Web).
+	std::filesystem::path runner;
 };
 
 auto parseExportCommand(const int iArgc, char** iArgv) -> std::optional<ExportCommand> {
@@ -50,18 +52,24 @@ auto parseExportCommand(const int iArgc, char** iArgv) -> std::optional<ExportCo
 			continue;
 		if (i + 2 >= args.size()) {
 			std::fputs("Usage: OwlNest --export <project dir or owl_project.yml> <output dir> [--cook-cache <dir>] "
-					   "[--target android]\n",
+					   "[--target android|web] [--runner <dir>]\n",
 					   stderr);
 			return ExportCommand{};
 		}
 		ExportCommand command{.project = std::filesystem::absolute(args[i + 1]),
 							  .output = std::filesystem::absolute(args[i + 2]),
-							  .cookCache = {}};
+							  .cookCache = {},
+							  .target = data::assets::pack::ExportTarget::Host,
+							  .runner = {}};
 		for (size_t j = 1; j + 1 < args.size(); ++j) {
 			if (std::string_view(args[j]) == "--cook-cache")
 				command.cookCache = std::filesystem::absolute(args[j + 1]);
 			if (std::string_view(args[j]) == "--target" && std::string_view(args[j + 1]) == "android")
 				command.target = data::assets::pack::ExportTarget::Android;
+			if (std::string_view(args[j]) == "--target" && std::string_view(args[j + 1]) == "web")
+				command.target = data::assets::pack::ExportTarget::Web;
+			if (std::string_view(args[j]) == "--runner")
+				command.runner = std::filesystem::absolute(args[j + 1]);
 		}
 		return command;
 	}
@@ -134,7 +142,10 @@ private:
 			return 1;
 		}
 		addAssetDirectory({"Project: " + project.name, project.projectDirectory});
-		auto settings = project.makeExportSettings(iCommand.output, iRunnerDir);
+		auto runnerDir = iCommand.runner;
+		if (runnerDir.empty())
+			runnerDir = iCommand.target == data::assets::pack::ExportTarget::Web ? iRunnerDir / "web" : iRunnerDir;
+		auto settings = project.makeExportSettings(iCommand.output, runnerDir);
 		settings.cookCacheDirectory = iCommand.cookCache;
 		settings.target = iCommand.target;
 		std::vector<data::assets::pack::AssetReference> assets;

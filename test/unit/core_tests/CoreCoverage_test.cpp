@@ -15,6 +15,7 @@
 #include <scene/SceneCamera.h>
 
 #include <cstddef>
+#include <cstdint>
 #include <filesystem>
 #include <string>
 #include <utility>
@@ -214,9 +215,12 @@ TEST(CoreCoverage, MemorySizeStr) {
 	const auto gbStr = ms.str();
 	EXPECT_TRUE(gbStr.find("GB") != std::string::npos);
 
-	ms.size = static_cast<size_t>(2) * 1024 * 1024 * 1024 * 1024;
-	const auto tbStr = ms.str();
-	EXPECT_TRUE(tbStr.find("TB") != std::string::npos);
+	// A memory size in terabytes exists on 64-bit targets only.
+	if constexpr (sizeof(size_t) >= sizeof(uint64_t)) {
+		ms.size = static_cast<size_t>(uint64_t{2} * 1024 * 1024 * 1024 * 1024);
+		const auto tbStr = ms.str();
+		EXPECT_TRUE(tbStr.find("TB") != std::string::npos);
+	}
 }
 
 TEST(CoreCoverage, ScopeUntrackDisablesTracking) {

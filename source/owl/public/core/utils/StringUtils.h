@@ -9,16 +9,16 @@
 #pragma once
 
 #include <core/Core.h>
-#include <cstddef>
+#include <cstdint>
 #include <string>
 
 namespace owl::core::utils {
 /**
  * @brief
- *  Convert a size_t to a human-readable string.
- * @param iSize The size in octets.
+ *  Convert a byte count to a human-readable string.
+ * @param[in] iSize The size in octets (64-bit: a GPU or a file can exceed the size_t of a 32-bit target).
  * @return The human-readable string.
  */
-auto OWL_API sizeToString(size_t iSize) -> std::string;
+auto OWL_API sizeToString(uint64_t iSize) -> std::string;
 
 }// namespace owl::core::utils

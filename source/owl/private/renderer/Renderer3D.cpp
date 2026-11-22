@@ -345,7 +345,8 @@ auto buildMaterialShader([[maybe_unused]] const std::string& iName, [[maybe_unus
 	if (!source.has_value())
 		return nullptr;
 	const auto api = gpu::RenderCommand::getApi();
-	if (api != gpu::RenderAPI::Type::Null &&
+	// WebGPU reads the WGSL of the variant that the export baked.
+	if (api != gpu::RenderAPI::Type::Null && api != gpu::RenderAPI::Type::WebGpu &&
 		!utils::loadOrCompileSpirv(*source, iName, k_ShaderFolder,
 								   api == gpu::RenderAPI::Type::Vulkan ? utils::g_VulkanTarget
 																	   : utils::ShaderTarget::OpenGl,

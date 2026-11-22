@@ -44,7 +44,12 @@ StructuredBuffer<Aabb> aabbs;
 StructuredBuffer<Frustum> frustum;
 
 [[vk::binding(2)]]
+#if defined(BACKEND_WEBGPU)
+// WGSL increments only an atomic type.
+RWStructuredBuffer<Atomic<uint>> counter;
+#else
 RWStructuredBuffer<uint> counter;
+#endif
 
 [[vk::binding(3)]]
 RWStructuredBuffer<DrawCommand> commands;
@@ -73,8 +78,12 @@ void computeMain(uint3 dispatchID : SV_DispatchThreadID) {
 		if (!insideFrustum(box.minPos.xyz, box.maxPos.xyz, f.planes[p]))
 			return;
 	}
+#if defined(BACKEND_WEBGPU)
+	const uint slot = counter[0].add(1u);
+#else
 	uint slot;
 	InterlockedAdd(counter[0], 1u, slot);
+#endif
 	DrawCommand cmd;
 	cmd.indexCount = f.indexCount;
 	cmd.instanceCount = 1u;

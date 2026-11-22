@@ -31,6 +31,9 @@ namespace owl::scene::systems {
 
 namespace {
 
+// Longest walker step per frame: a longer fall outruns the collision sub-steps and goes through the floor.
+constexpr float g_maxStep = 0.1f;
+
 void turnView(component::FirstPersonController& ioController, math::Transform& ioTransform,
 			  const input::ActionFrame& iActions, const float iDt, const std::optional<math::vec2>& iCapturedCursor) {
 	if (iCapturedCursor.has_value()) {
@@ -193,7 +196,7 @@ auto isWorldLoaded(const Scene& iScene) -> bool {
 void updateFirstPersonControllers(Scene& ioScene, const SystemContext& iContext) {
 	OWL_PROFILE_FUNCTION()
 
-	const float dt = iContext.timeStep.getSeconds();
+	const float dt = std::min(iContext.timeStep.getSeconds(), g_maxStep);
 	if (dt <= 0.f)
 		return;
 	const auto view = ioScene.registry.view<component::Transform, component::FirstPersonController>();

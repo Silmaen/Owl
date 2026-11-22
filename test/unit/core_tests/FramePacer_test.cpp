@@ -63,5 +63,10 @@ TEST(FramePacer, WaitSleepsOutThePeriod) {
 	const auto start = FramePacer::clock::now();
 	pacer.setPeriod(20ms, start);
 	pacer.wait();
+#if defined(OWL_PLATFORM_WEB)
+	// The browser paces the frames: the wait returns at once, a sleep would block the page.
+	EXPECT_LT(FramePacer::clock::now() - start, 20ms);
+#else
 	EXPECT_GE(FramePacer::clock::now() - start, 20ms);
+#endif
 }

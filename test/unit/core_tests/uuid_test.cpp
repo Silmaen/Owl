@@ -24,5 +24,5 @@ TEST(UUID, uint64_test) {
 	constexpr uint64_t id = 666;
 	const UUID uuid(id);
 	EXPECT_EQ(id, static_cast<uint64_t>(uuid));
-	EXPECT_EQ(std::hash<UUID>{}(uuid), 666);
+	EXPECT_EQ(std::hash<UUID>{}(uuid), std::hash<uint64_t>{}(id));
 }

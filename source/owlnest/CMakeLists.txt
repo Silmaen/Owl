@@ -57,29 +57,32 @@ if (${PROJECT_PREFIX}_PLATFORM_ANDROID)
     return()
 endif ()
 
-#
-#  MCP server: JSON-RPC 2.0 dispatcher over an editor session (tools from the command registry, resources) and its
-#  Streamable HTTP transport on 127.0.0.1 (cpp-httplib, no TLS), whose messages the main loop runs.
-#
-set(OWL_NEST_MCP ${OWL_PROJECT}Mcp)
-file(GLOB_RECURSE SRCS_MCP CONFIGURE_DEPENDS
-        sources/mcp/*.cpp
-)
-add_library(${OWL_NEST_MCP} STATIC ${SRCS_MCP})
-set_target_properties(${OWL_NEST_MCP} PROPERTIES FOLDER "App")
-target_link_libraries(${OWL_NEST_MCP} PUBLIC ${OWL_NEST_COMMANDS})
-owl_target_link_libraries(${OWL_NEST_MCP} PUBLIC nlohmann_json REQUIRED)
-# Public: the owlnest tests drive the server with its client.
-owl_target_link_libraries(${OWL_NEST_MCP} PUBLIC httplib REQUIRED)
-if (WIN32)
-    # Token drawn from BCryptGenRandom.
-    target_link_libraries(${OWL_NEST_MCP} PRIVATE bcrypt)
-    # cpp-httplib requires Windows 10, MinGW defaults to an older target.
-    target_compile_definitions(${OWL_NEST_MCP} PUBLIC _WIN32_WINNT=0x0A00)
+# No MCP server in a browser.
+if (NOT ${PROJECT_PREFIX}_PLATFORM_WEB)
+    #
+    #  MCP server: JSON-RPC 2.0 dispatcher over an editor session (tools from the command registry, resources) and its
+    #  Streamable HTTP transport on 127.0.0.1 (cpp-httplib, no TLS), whose messages the main loop runs.
+    #
+    set(OWL_NEST_MCP ${OWL_PROJECT}Mcp)
+    file(GLOB_RECURSE SRCS_MCP CONFIGURE_DEPENDS
+            sources/mcp/*.cpp
+    )
+    add_library(${OWL_NEST_MCP} STATIC ${SRCS_MCP})
+    set_target_properties(${OWL_NEST_MCP} PROPERTIES FOLDER "App")
+    target_link_libraries(${OWL_NEST_MCP} PUBLIC ${OWL_NEST_COMMANDS})
+    owl_target_link_libraries(${OWL_NEST_MCP} PUBLIC nlohmann_json REQUIRED)
+    # Public: the owlnest tests drive the server with its client.
+    owl_target_link_libraries(${OWL_NEST_MCP} PUBLIC httplib REQUIRED)
+    if (WIN32)
+        # Token drawn from BCryptGenRandom.
+        target_link_libraries(${OWL_NEST_MCP} PRIVATE bcrypt)
+        # cpp-httplib requires Windows 10, MinGW defaults to an older target.
+        target_compile_definitions(${OWL_NEST_MCP} PUBLIC _WIN32_WINNT=0x0A00)
+    endif ()
 endif ()
 
 # Benchmarks without the editor: the command and MCP libraries only.
-if (NOT ${PROJECT_PREFIX}_BUILD_NEST)
+if (NOT ${PROJECT_PREFIX}_BUILD_NEST AND NOT ${PROJECT_PREFIX}_PLATFORM_WEB)
     return()
 endif ()
 
@@ -87,7 +90,12 @@ endif ()
 # frame bench; OwlGameRunner, without it nor Slang, is the runner an export copies and reads baked shaders only.
 set(RUNNER_NAME ${CMAKE_PROJECT_NAME}Runner)
 set(GAME_RUNNER_NAME ${CMAKE_PROJECT_NAME}GameRunner)
-foreach (_owl_runner ${RUNNER_NAME} ${GAME_RUNNER_NAME})
+set(_owl_runners ${RUNNER_NAME} ${GAME_RUNNER_NAME})
+# A browser plays exported games: the game runner alone.
+if (${PROJECT_PREFIX}_PLATFORM_WEB)
+    set(_owl_runners ${GAME_RUNNER_NAME})
+endif ()
+foreach (_owl_runner ${_owl_runners})
     add_executable(${_owl_runner} ${SRCS_RUNNER} ${HDRS_RUNNER})
     set_target_properties(${_owl_runner} PROPERTIES RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
     target_include_directories(${_owl_runner} PRIVATE sources)
@@ -99,6 +107,20 @@ foreach (_owl_runner ${RUNNER_NAME} ${GAME_RUNNER_NAME})
     owl_target_link_libraries(${_owl_runner} PRIVATE yaml-cpp REQUIRED)
 endforeach ()
 unset(_owl_runner)
+unset(_owl_runners)
+if (${PROJECT_PREFIX}_PLATFORM_WEB)
+    # A page (OwlGameRunner.html, .js, .wasm) that fetches the game files into the virtual file system before main.
+    set_target_properties(${GAME_RUNNER_NAME} PROPERTIES SUFFIX ".html"
+            LINK_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/runner/web/shell.html)
+    target_link_options(${GAME_RUNNER_NAME} PRIVATE
+            "SHELL:--shell-file ${CMAKE_CURRENT_SOURCE_DIR}/runner/web/shell.html"
+            "SHELL:-s WASMFS=1" "SHELL:-s FORCE_FILESYSTEM=1" "SHELL:-s EXIT_RUNTIME=1"
+            "SHELL:-s EXPORTED_RUNTIME_METHODS=FS,ENV,addRunDependency,removeRunDependency"
+            # A Web Worker starts only once the page's thread is idle: the engine waits for the threads it starts
+            # (task system, physics, fonts), so they come from workers made when the page loads.
+            "SHELL:-s PTHREAD_POOL_SIZE=navigator.hardwareConcurrency*2+8")
+    return()
+endif ()
 if (TARGET ${CMAKE_PROJECT_NAME}ShaderCompiler)
     target_link_libraries(${RUNNER_NAME} PRIVATE ${CMAKE_PROJECT_NAME}ShaderCompiler)
 endif ()

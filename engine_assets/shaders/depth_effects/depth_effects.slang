@@ -15,12 +15,17 @@ struct EffectParams {
 [[vk::binding(0)]]
 ConstantBuffer<EffectParams> gParams;
 
+#if defined(BACKEND_WEBGPU)
+#include "webgpu_textures.slangh"
+OWL_WEBGPU_TEXTURE_TABLE(gTextures)// 0 scene colour, 1 scene depth.
+#else
 #ifdef BACKEND_VULKAN
 [[vk::binding(1)]]
 #else
 [[vk::binding(0)]]
 #endif
 Sampler2D gTextures[2];// 0 scene colour, 1 scene depth.
+#endif
 
 struct VertexInput {
 	[[vk::location(0)]] float2 position : POSITION;

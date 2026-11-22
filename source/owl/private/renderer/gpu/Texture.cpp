@@ -17,11 +17,14 @@
 #include "renderer/AtlasMips.h"
 #include "renderer/Renderer.h"
 #include "renderer/TextureDecoder.h"
-#if OWL_WITH_RENDER
+#if OWL_WITH_NATIVE_GPU
 #if OWL_WITH_DESKTOP
 #include "opengl/Texture.h"
 #endif
 #include "vulkan/Texture.h"
+#endif
+#if OWL_WITH_WEBGPU
+#include "webgpu/Texture.h"
 #endif
 
 #include <algorithm>
@@ -171,6 +174,17 @@ auto Texture2D::create(const std::filesystem::path& iFile) -> shared<Texture2D> 
 	}
 	const auto api = RenderCommand::getApi();
 	switch (api) {
+#if OWL_WITH_WEBGPU
+		case RenderAPI::Type::WebGpu:
+			{
+				if (auto texture = mkShared<webgpu::Texture2D>(iFile); texture->isLoaded())
+					return texture;
+				OWL_CORE_WARN("Texture: Cannot load '{}' (WebGPU backend).", iFile.string())
+				return nullptr;
+			}
+#else
+		case RenderAPI::Type::WebGpu:
+#endif
 		case RenderAPI::Type::Null:
 			{
 				if (auto texture = mkShared<null::Texture2D>(iFile); texture->isLoaded())
@@ -178,7 +192,7 @@ auto Texture2D::create(const std::filesystem::path& iFile) -> shared<Texture2D> 
 				OWL_CORE_WARN("Texture: Cannot load '{}' (Null backend).", iFile.string())
 				return nullptr;
 			}
-#if OWL_WITH_RENDER
+#if OWL_WITH_NATIVE_GPU
 #if OWL_WITH_DESKTOP
 		case RenderAPI::Type::OpenGL:
 			{
@@ -201,7 +215,7 @@ auto Texture2D::create(const std::filesystem::path& iFile) -> shared<Texture2D> 
 #else
 		case RenderAPI::Type::OpenGL:
 		case RenderAPI::Type::Vulkan:
-			break;// GPU backends not built (OWL_MODULE_RENDER=OFF)
+			break;// GPU backends not built (no Vulkan nor OpenGL in this build)
 #endif
 	}
 
@@ -213,9 +227,15 @@ auto Texture2D::create(const Specification& iSpecs) -> shared<Texture2D> {
 	const shared<Texture2D> tex;
 	const auto api = RenderCommand::getApi();
 	switch (api) {
+#if OWL_WITH_WEBGPU
+		case RenderAPI::Type::WebGpu:
+			return mkShared<webgpu::Texture2D>(iSpecs);
+#else
+		case RenderAPI::Type::WebGpu:
+#endif
 		case RenderAPI::Type::Null:
 			return mkShared<null::Texture2D>(iSpecs);
-#if OWL_WITH_RENDER
+#if OWL_WITH_NATIVE_GPU
 #if OWL_WITH_DESKTOP
 		case RenderAPI::Type::OpenGL:
 			return mkShared<opengl::Texture2D>(iSpecs);
@@ -228,7 +248,7 @@ auto Texture2D::create(const Specification& iSpecs) -> shared<Texture2D> {
 #else
 		case RenderAPI::Type::OpenGL:
 		case RenderAPI::Type::Vulkan:
-			break;// GPU backends not built (OWL_MODULE_RENDER=OFF)
+			break;// GPU backends not built (no Vulkan nor OpenGL in this build)
 #endif
 	}
 
@@ -611,9 +631,15 @@ auto TextureCube::create(const Specification& iSpecs) -> shared<TextureCube> {
 	}
 	const auto api = RenderCommand::getApi();
 	switch (api) {
+#if OWL_WITH_WEBGPU
+		case RenderAPI::Type::WebGpu:
+			return mkShared<webgpu::TextureCube>(iSpecs);
+#else
+		case RenderAPI::Type::WebGpu:
+#endif
 		case RenderAPI::Type::Null:
 			return mkShared<null::TextureCube>(iSpecs);
-#if OWL_WITH_RENDER
+#if OWL_WITH_NATIVE_GPU
 #if OWL_WITH_DESKTOP
 		case RenderAPI::Type::OpenGL:
 			return mkShared<opengl::TextureCube>(iSpecs);
@@ -626,7 +652,7 @@ auto TextureCube::create(const Specification& iSpecs) -> shared<TextureCube> {
 #else
 		case RenderAPI::Type::OpenGL:
 		case RenderAPI::Type::Vulkan:
-			break;// GPU backends not built (OWL_MODULE_RENDER=OFF)
+			break;// GPU backends not built (no Vulkan nor OpenGL in this build)
 #endif
 	}
 	OWL_CORE_ERROR("TextureCube: Unknown render API ({}).", static_cast<int>(api))

@@ -24,7 +24,7 @@ auto readFileAsBytes(const std::filesystem::path& iPath) -> std::vector<uint8_t>
 	const auto size = in.tellg();
 	in.seekg(0);
 	std::vector<uint8_t> bytes(static_cast<size_t>(size));
-	in.read(reinterpret_cast<char*>(bytes.data()), size);
+	in.read(reinterpret_cast<char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
 	return bytes;
 }
 

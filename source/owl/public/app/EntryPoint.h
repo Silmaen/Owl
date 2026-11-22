@@ -34,6 +34,13 @@ namespace owl::app::detail {
  */
 // NOLINTBEGIN(misc-definitions-in-headers)
 inline auto runMain(int iArgc, char* iArgv[]) -> int {
+#ifdef OWL_PLATFORM_WEB
+	owl::core::Log::init();
+	owl::app::Application::installPageFiles();
+	// The browser owns the loop: main returns at once, the application lives on and shuts down after its last frame.
+	owl::app::Application::runInBrowser(owl::app::createApplication(iArgc, iArgv));
+	return 0;
+#else
 	// A GUI program on Windows: its command-line output goes to the console it was started from, if any.
 	owl::platform::attachParentConsole();
 	owl::core::Log::init();
@@ -106,6 +113,7 @@ inline auto runMain(int iArgc, char* iArgv[]) -> int {
 	// Destroy the logger
 	owl::core::Log::invalidate();
 	return exitCode;
+#endif
 }
 }// namespace owl::app::detail
 

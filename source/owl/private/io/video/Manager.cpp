@@ -32,6 +32,8 @@ void Manager::updateDeviceList(const bool iReset) {
 	linux64::updateList(m_devices);
 #elif defined(OWL_PLATFORM_ANDROID)
 	// No camera through V4L2 for an Android application: the list stays empty.
+#elif defined(OWL_PLATFORM_WEB)
+	// A page reaches no camera without a user gesture: no video device on the Web.
 #else
 #error "Unsupported platform"
 #endif

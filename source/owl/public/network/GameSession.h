@@ -599,7 +599,11 @@ private:
 	/// Rules of the matches.
 	MatchRules m_rules;
 	/// Transport of the next server or client.
+#ifdef OWL_PLATFORM_WEB
+	Transport::Type m_transportType = Transport::Type::WebSocket;
+#else
 	Transport::Type m_transportType = Transport::Type::Enet;
+#endif
 	/// Simulated conditions of the outgoing messages.
 	LinkConditions m_conditions;
 	/// The conditioned transport of the server or client, owned by it.

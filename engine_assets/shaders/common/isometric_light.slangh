@@ -7,8 +7,14 @@
 #define LIGHT2D_SHADOW_BINDING 6
 #include "light2d.slangh"
 
+#if defined(BACKEND_WEBGPU)
+// Sixteen textures per stage: five albedo slots, their normals at +5 and depths at +10 (RendererIsometric.cpp).
+static const int ISOMETRIC_NORMAL_SLOTS = 5;
+static const int ISOMETRIC_DEPTH_SLOTS = 10;
+#else
 static const int ISOMETRIC_NORMAL_SLOTS = 10;
 static const int ISOMETRIC_DEPTH_SLOTS = 20;
+#endif
 
 // Light reaching an isometric pixel: its height from the depth atlas, its map position from its view position and
 // height, its world normal from the normal atlas. Without a depth atlas a ground pixel lies at the foot height and an

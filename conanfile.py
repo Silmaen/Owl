@@ -23,6 +23,9 @@ from conan.tools.files import load
 
 required_conan_version = ">=2.0"
 
+# Also read by cmake/Conan.cmake on the Web, where Slang is not a package: its version keys the baked shaders.
+SLANG_VERSION = "2026.22"
+
 
 class OwlEngineConan(ConanFile):
     """The Owl engine library, and the dependencies of the Owl Nest editor and the tests."""
@@ -116,13 +119,18 @@ class OwlEngineConan(ConanFile):
         self.version = re.search(r"project\(\s*Owl\s+VERSION\s+([0-9.]+)", cmake_lists).group(1)
 
     def validate(self):
-        if not self.options.shared:
+        # WebAssembly has no shared library: the Web build links the engine statically into the runner.
+        if not self.options.shared and self.settings.os != "Emscripten":
             # A static OwlEngine exports its private dependencies (OwlEnginePrivate): not packaged yet.
             raise ConanInvalidConfiguration(f"{self.ref}: only the shared library is packaged for now")
         if self.options.gui and not self.options.render:
             raise ConanInvalidConfiguration(f"{self.ref}: the gui module needs the render module")
 
     def configure(self):
+        if self.settings.os == "Emscripten":
+            # WebAssembly has no shared library: the packages shared elsewhere link statically into the program.
+            for package in ("imgui", "imguizmo", "plutovg", "glfw", "openal-soft", "libsndfile"):
+                self.options[package].shared = False
         if self.settings.os == "Linux":
             # File dialogues through xdg-desktop-portal over D-Bus: no GTK, whose start-up freezes the UI.
             self.options["nativefiledialog-extended"].portal = True
@@ -130,13 +138,16 @@ class OwlEngineConan(ConanFile):
     def requirements(self):
         # The only public dependency of Owl::OwlEngine (scene/Scene.h, scene/Entity.h include it).
         self.requires("entt/4.0.0", transitive_headers=True)
-        self.requires("cpptrace/1.0.4")
+        # No unwinder in WebAssembly: the memory tracker records no stack trace there.
+        if self.settings.os != "Emscripten":
+            self.requires("cpptrace/1.0.4")
         self.requires("ktx/4.4.2")
         self.requires("magic_enum/0.9.8")
         self.requires("msdf-atlas-gen/1.4")
         # Android: no file dialogue, no GLFW nor OpenGL 4.5, the system Vulkan loader, shaders baked by the host.
         android = self.settings.os == "Android"
-        if not android:
+        web = self.settings.os == "Emscripten"
+        if not android and not web:
             self.requires("nativefiledialog-extended/1.4.1")
         self.requires("spdlog/1.17.0")
         # Newer than the one tinygltf pins.
@@ -150,11 +161,15 @@ class OwlEngineConan(ConanFile):
         self.requires("xxhash/0.8.4")
         self.requires("yaml-cpp/0.9.0")
         self.requires("zstd/1.5.7")
-        if self.options.render:
+        if self.options.render and web:
+            # WebGPU (emdawnwebgpu) and GLFW (the browser's) come with emsdk; the runner reads baked WGSL only.
+            self.requires("lunasvg/3.5.0")
+            self.requires("spirv-cross/1.4.357.0")
+        elif self.options.render:
             if not android:
                 self.requires("glad/2.0.8")
                 self.requires("glfw/3.5.1")
-                self.requires("slang/2026.22")
+                self.requires(f"slang/{SLANG_VERSION}")
                 self.requires("vulkan-loader/1.4.357.0")
             self.requires("lunasvg/3.5.0")
             self.requires("spirv-cross/1.4.357.0")
@@ -164,9 +179,14 @@ class OwlEngineConan(ConanFile):
         if self.options.physics:
             self.requires("joltphysics/5.7.0")
         if self.options.audio:
-            self.requires("openal-soft/1.25.2")
+            if self.settings.os == "Emscripten":
+                # Its headers only (EFX included): the browser plays through Emscripten's OpenAL, over WebAudio.
+                self.requires("openal-soft/1.25.2", libs=False)
+            else:
+                self.requires("openal-soft/1.25.2")
             self.requires("libsndfile/1.2.2")
-        if self.options.network:
+        if self.options.network and not web:
+            # A page has no UDP socket: the Web build plays over WebSocket only.
             self.requires("enet/1.3.18")
         if self.options.script:
             self.requires("luau/0.747")
@@ -181,7 +201,9 @@ class OwlEngineConan(ConanFile):
             self.requires("md4c/0.6.0")
             # MCP dispatcher (JSON-RPC); tinygltf pulls the same version.
             self.requires("nlohmann_json/3.12.0")
-            # MCP HTTP transport on loopback, header-only, built without TLS (the recipe defaults).
+        # MCP HTTP transport on loopback and WebSocket server of the network module, header-only, built without TLS (the
+        # recipe defaults); a page uses the WebSocket of the browser.
+        if self.options.nest or (self.options.network and not web):
             self.requires("cpp-httplib/0.65.0")
         # Transitive versions newer than the ones their ConanCenter recipes pin.
         self.requires("flac/1.5.0", override=True)

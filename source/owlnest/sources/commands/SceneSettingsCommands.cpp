@@ -45,7 +45,7 @@ auto ModifyEnabledRenderersCommand::mergeWith(const SceneUndoCommand& iOther) ->
 }
 
 auto ModifyEnabledRenderersCommand::typeId() const -> size_t {
-	constexpr size_t kTypeHash = 0x4D6F644552656E64ULL;// "ModERend"
+	constexpr auto kTypeHash = static_cast<size_t>(0x4D6F644552656E64ULL);// "ModERend"
 	return kTypeHash;
 }
 
@@ -79,7 +79,7 @@ auto ModifyPhysicsSettingsCommand::mergeWith(const SceneUndoCommand& iOther) -> 
 }
 
 auto ModifyPhysicsSettingsCommand::typeId() const -> size_t {
-	constexpr size_t kTypeHash = 0x4D6F645068797353ULL;// "ModPhysS"
+	constexpr auto kTypeHash = static_cast<size_t>(0x4D6F645068797353ULL);// "ModPhysS"
 	return kTypeHash;
 }
 
@@ -99,8 +99,8 @@ auto SetSceneHudCommand::description() const -> std::string {
 }
 
 auto SetSceneHudCommand::typeId() const -> size_t {
-	constexpr size_t kTypeHash = 0x536574487564ULL;// "SetHud"
-	return kTypeHash;
+	constexpr uint64_t kTypeHash = 0x536574487564ULL;// "SetHud"
+	return static_cast<size_t>(kTypeHash);
 }
 
 SetSceneHudThemeCommand::SetSceneHudThemeCommand(std::optional<std::string> iBefore, std::optional<std::string> iAfter)
@@ -119,7 +119,7 @@ auto SetSceneHudThemeCommand::description() const -> std::string {
 }
 
 auto SetSceneHudThemeCommand::typeId() const -> size_t {
-	constexpr size_t kTypeHash = 0x5365745468656dULL;// "SetThem"
+	constexpr auto kTypeHash = static_cast<size_t>(0x5365745468656dULL);// "SetThem"
 	return kTypeHash;
 }
 
@@ -167,7 +167,7 @@ auto SetMixCommand::mergeWith(const SceneUndoCommand& iOther) -> bool {
 }
 
 auto SetMixCommand::typeId() const -> size_t {
-	constexpr size_t kTypeHash = 0x5365744d6978ULL;// "SetMix"
+	constexpr auto kTypeHash = static_cast<size_t>(0x5365744d6978ULL);// "SetMix"
 	return kTypeHash;
 }
 
@@ -193,7 +193,7 @@ auto SetWorldPartitionCommand::mergeWith(const SceneUndoCommand& iOther) -> bool
 }
 
 auto SetWorldPartitionCommand::typeId() const -> size_t {
-	constexpr size_t kTypeHash = 0x536574576f50ULL;// "SetWoP"
+	constexpr auto kTypeHash = static_cast<size_t>(0x536574576f50ULL);// "SetWoP"
 	return kTypeHash;
 }
 
@@ -219,7 +219,7 @@ auto SetFloatingOriginCommand::mergeWith(const SceneUndoCommand& iOther) -> bool
 }
 
 auto SetFloatingOriginCommand::typeId() const -> size_t {
-	constexpr size_t kTypeHash = 0x536574466c4fULL;// "SetFlO"
+	constexpr auto kTypeHash = static_cast<size_t>(0x536574466c4fULL);// "SetFlO"
 	return kTypeHash;
 }
 
@@ -288,7 +288,7 @@ auto SetSceneScriptCommand::mergeWith(const SceneUndoCommand& iOther) -> bool {
 }
 
 auto SetSceneScriptCommand::typeId() const -> size_t {
-	constexpr size_t kTypeHash = 0x536574536353ULL;// "SetScS"
+	constexpr auto kTypeHash = static_cast<size_t>(0x536574536353ULL);// "SetScS"
 	return kTypeHash;
 }
 

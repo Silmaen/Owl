@@ -122,6 +122,7 @@ enum struct Platform : uint8_t {
 	X11,///< X11 (native X server or XWayland).
 	Win32,///< Windows desktop.
 	Android,///< Android native activity.
+	Browser,///< The canvas of a Web page.
 	None///< No native platform (null window, headless, unsupported).
 };
 

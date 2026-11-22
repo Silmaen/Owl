@@ -92,7 +92,7 @@ auto Scene::setPlaybackReplay(const shared<const Replay>& iReplay) -> bool {
 
 auto Scene::routeUiPointer(const ReplayPointer& iLive) -> std::optional<ReplayPointer> {
 	if (isPlayingReplay())
-		return mp_playback->frames[m_replayProgress.frame].pointer;
+		return mp_playback->frames[static_cast<size_t>(m_replayProgress.frame)].pointer;
 	if (m_recording.has_value())
 		m_framePointer = iLive;
 	return iLive;
@@ -155,7 +155,7 @@ void Scene::checkReplayStart() {
 
 auto Scene::beginReplayFrame(const core::Timestep& iTimeStep, input::InputState& oInput) -> bool {
 	if (isPlayingReplay()) {
-		const auto& frame = mp_playback->frames[m_replayProgress.frame];
+		const auto& frame = mp_playback->frames[static_cast<size_t>(m_replayProgress.frame)];
 		m_replayTimeStep.forceUpdate(frame.duration);
 		oInput = frame.input;
 		m_cursorCaptured = frame.cursorCaptured;

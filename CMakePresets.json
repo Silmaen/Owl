@@ -8,6 +8,7 @@
   "include": [
     "cmake/CMakePresetsMinGW.json",
     "cmake/CMakePresetsLinux.json",
-    "cmake/CMakePresetsCI.json"
+    "cmake/CMakePresetsCI.json",
+    "cmake/CMakePresetsWeb.json"
   ]
 }

@@ -104,8 +104,8 @@ auto ModifyEntityCommand::mergeWith(const SceneUndoCommand& iOther) -> bool {
 
 auto ModifyEntityCommand::typeId() const -> size_t {
 	// Hash combining the command type and entity UUID for merge matching.
-	constexpr size_t typeHash = 0x4D6F644500000000ULL;// "ModE"
-	return typeHash ^ std::hash<uint64_t>{}(static_cast<uint64_t>(m_entityUuid));
+	constexpr uint64_t typeHash = 0x4D6F644500000000ULL;// "ModE"
+	return static_cast<size_t>(typeHash ^ std::hash<uint64_t>{}(static_cast<uint64_t>(m_entityUuid)));
 }
 
 }// namespace owl::nest::commands

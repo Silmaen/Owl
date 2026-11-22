@@ -289,6 +289,70 @@ adb server that owns the device (default `localhost:5037`, e.g. an SSH tunnel to
 container only runs the client, the server keeps the USB device and its authorization key. The nightly pipeline
 builds the preset without testing it, no device reaching the CI yet.
 
+### Web {#web-build}
+
+`web-release` builds for the browser (WebAssembly) with the emsdk of the Web build image
+(`registry.argawaen.net/builder/builder-web-ubuntu2604`), through `OWL_DOCKER_IMAGE`; `web-minimal` turns every
+optional module off. The GUI module is off on the Web until its ImGui backend exists ([roadmap](roadmap.md)); the
+network module plays over WebSocket ([Networking](networking.md#networking-transports)).
+
+- **Toolchain**: `Emscripten.cmake` of `$EMSDK`; the platform is `OWL_PLATFORM_WEB`, the architecture `wasm32`.
+- **Conan**: host profile `conan/profiles/emscripten-clang` (`os=Emscripten`, libc++, POSIX threads, native
+  WebAssembly exceptions, every package static), build profile `linux-clang`; `cmake/Conan.cmake` sets
+  `compiler.version` to the emsdk of the build. No native file dialogue, no stack trace (cpptrace), and the browser's
+  OpenAL (WebAudio) with the headers of `openal-soft`.
+- **Engine**: a static library that every program links whole (its types register from static initialisers). The
+  browser owns the main loop: `main` hands `Application::runFrame` to `emscripten_set_main_loop`, the frame pacer does
+  not sleep, and the threads come from Web Workers made when the page loads.
+- **Render module**: the WebGPU backend of the Owl RHI (`RenderAPI::Type::WebGpu`, emdawnwebgpu) draws in the canvas
+  of the page, and GLFW is the Emscripten port `contrib.glfw3` (canvas, keyboard, mouse, gamepads); a game asking for
+  Vulkan or OpenGL gets WebGPU. The page makes the WebGPU device before `main` (`Module.preinitializedWebGPUDevice`),
+  since a browser gives it asynchronously only. There is no Slang: the runner reads the WGSL baked on the desktop, and
+  the tests that compile shaders are skipped (`OWL_REQUIRE_SHADER_COMPILER`). Each draw records and submits a render
+  pass of its own, so it sees the buffer writes made before it. The buffers of a renderer block are bind group 0 at their
+  binding numbers; its textures are bind group 1, the texture tables the shaders declare under `BACKEND_WEBGPU`
+  (`common/webgpu_textures.slangh`: WebGPU has no array of textures, sixteen slots per stage). The backend reads the
+  vertex input locations from the WGSL, which numbers them by semantics. A uniform or storage buffer belongs to the block
+  of its renderer, as a Vulkan descriptor does. A framebuffer is a set of textures the draws go to while it is bound and
+  that the passes after it sample; the swapchain one (`swapChainTarget`) is the canvas. Every depth attachment is
+  `Depth32Float`. A page reads a texture back asynchronously only: `readPixel` gives -1. A compute shader reads its
+  bindings from its WGSL and submits a pass per dispatch; `drawIndexedIndirectAt` draws the commands a culling pass
+  wrote (WebGPU has no indirect count). A stage samples sixteen textures, the WebGPU limit every adapter has: the 3D renderer
+  keeps a table of twelve (the environment levels as the mips of one texture) and reads the cascades, the spot and
+  point shadows (six face layers each) and the probes from three texture arrays, each map in the corner of its layer
+  (`source/owl/private/renderer/gpu/webgpu/PbrTextures.h`, copied once per frame); a lit isometric batch has five albedo slots and their companions
+  instead of ten; a renderer of cubes alone gets the cube table (`OWL_WEBGPU_CUBE_TABLE`). Slang's WGSL keeps an
+  `@interpolate` WGSL refuses on its internal structures: `OwlShaderCompiler` removes it, and a revision of that edit
+  keys the WebGPU stages. The shaders keep their
+  native code under `BACKEND_WEBGPU` branches where WGSL differs: `Atomic<uint>` for the culling counters, a texel load
+  in `hiz_seed`. The page asks the adapter for its limits of textures, samplers, storage buffers and compute work
+  groups and for `float32-filterable`: a 3D draw samples twenty-four textures, the bitonic sort runs 1024 invocations.
+- **Page**: `?env=NAME=value` sets the environment of the program; `OWL_WEBGPU_CAPTURE=<frame>` reads that frame of
+  the canvas back as a PNG, which `browser_run.py --shot <file>` writes; `--browser-log` prints the console of the
+  browser. In the headless Chrome of the image, WebGPU runs on SwiftShader and the page is composited by ANGLE.
+- **Tests**: `ctest` runs each test program under Node (Emscripten's emulator), on the real file system
+  (`NODERAWFS`); `export_tests` stay on the desktop.
+- **Runner**: `OwlGameRunner.html` with its `.js` and `.wasm`. Before `main`, the page fetches the files that
+  `files.json` lists into its virtual file system; the query string is the command line (`?arg=--headless`). It needs a
+  cross-origin isolated page (`Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Embedder-Policy: require-corp`)
+  for the threads. `tools/web/browser_run.py` serves a folder that way, opens the page in the headless Chrome of the
+  image (`OWL_CHROME`) and returns its exit code.
+- **Export**: `OwlNest --export <project> <dir> --target web` (`ExportTarget::Web`) bakes the shaders as WGSL into the
+  pack, leaves the SPIR-V out, copies the page of the Web runner as `index.html` with its `.js` and `.wasm` (from
+  `--runner <dir>`, else the `web/` folder next to Owl Nest) and lists the game files in `files.json`: the folder is
+  served as it is.
+
+```bash
+./docker_run.sh output/build/linux-clang-release/bin/OwlNest --export samples/<game> output/web --target web \
+    --runner output/build/web-release/bin
+export OWL_DOCKER_IMAGE=registry.argawaen.net/builder/builder-web-ubuntu2604:latest
+./docker_run.sh cmake --preset web-release -S .
+./docker_run.sh cmake --build output/build/web-release
+./docker_run.sh ctest --test-dir output/build/web-release --output-on-failure -j8
+./docker_run.sh bash -c 'python=$(poetry env info -e); $python tools/web/browser_run.py output/web/<Game> \
+    --page index.html -- --smoke-test'
+```
+
 ## Running Tests
 
 Tests use Google Test and are enabled by default (`OWL_TESTING=ON`):

@@ -62,6 +62,8 @@ class JoltPhysicsConan(ConanFile):
         tc.cache_variables["DOUBLE_PRECISION"] = False
         # Owl derives from Jolt's listener interfaces: their typeinfo must exist in the library.
         tc.cache_variables["CPP_RTTI_ENABLED"] = True
+        # Emscripten refuses -fno-exceptions next to the -fwasm-exceptions of the profile; Jolt throws nothing anyway.
+        tc.cache_variables["CPP_EXCEPTIONS_ENABLED"] = self.settings.os == "Emscripten"
         tc.cache_variables["USE_ASSERTS"] = False
         # Debug and release consumers share one ABI: JPH_DEBUG (asserts, debug-only members) is never defined.
         tc.preprocessor_definitions["JPH_NO_DEBUG"] = 1

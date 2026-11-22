@@ -17,7 +17,7 @@
 #include <vector>
 
 // The Vulkan backend comes with the render module.
-#if OWL_WITH_RENDER
+#if OWL_WITH_NATIVE_GPU
 #include <renderer/gpu/vulkan/internal/DeviceRequirements.h>
 
 using namespace owl::renderer::gpu::vulkan::internal;

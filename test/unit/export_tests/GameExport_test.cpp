@@ -502,6 +502,81 @@ TEST_F(GameExporterFixture, ExportForAndroidBakesSpirv13) {
 	}
 }
 
+TEST_F(GameExporterFixture, ExportForWebWritesThePage) {
+	const auto web = m_root / "web";
+	writeFile(web / "OwlGameRunner.html", "PAGE");
+	writeFile(web / "OwlGameRunner.js", "SCRIPT");
+	writeFile(web / "OwlGameRunner.wasm", "MODULE");
+	auto settings = makeSettings();
+	settings.target = ExportTarget::Web;
+	settings.runnerDirectory = web;
+	std::vector<AssetReference> assets;
+	for (const auto& warning: GameExporter::validate(settings, assets))
+		EXPECT_EQ(warning.find("OwlGameRunner"), std::string::npos) << warning;
+	const auto result = GameExporter::exportGame(settings, assets);
+	ASSERT_TRUE(result.has_value());
+	const auto& gameDir = result->gameDirectory;
+	EXPECT_EQ(result->executable, gameDir / "index.html");
+	EXPECT_EQ(readFile(gameDir / "index.html"), "PAGE");
+	EXPECT_EQ(readFile(gameDir / "OwlGameRunner.js"), "SCRIPT");
+	EXPECT_EQ(readFile(gameDir / "OwlGameRunner.wasm"), "MODULE");
+	EXPECT_FALSE(exists(gameDir / "OwlGameRunner.html"));
+	EXPECT_FALSE(exists(gameDir / "libfake.so"));
+	EXPECT_FALSE(exists(gameDir / "launch.sh"));
+	// files.json: the game files the page fetches, not the page nor the runner.
+	const auto files = YAML::LoadFile((gameDir / "files.json").string()).as<std::vector<std::string>>();
+	EXPECT_NE(std::ranges::find(files, "runner.yml"), files.end());
+	EXPECT_NE(std::ranges::find(files, result->packFile.filename().string()), files.end());
+	EXPECT_NE(std::ranges::find(files, "logo/icon.png"), files.end());
+	for (const auto* runnerFile: {"index.html", "files.json", "OwlGameRunner.js", "OwlGameRunner.wasm"})
+		EXPECT_EQ(std::ranges::find(files, runnerFile), files.end()) << runnerFile;
+	const auto info = YAML::LoadFile((gameDir / "game_info.yml").string())["GameInfo"];
+	ASSERT_TRUE(info);
+	EXPECT_EQ(info["Platform"].as<std::string>(), "web-wasm32");
+}
+
+TEST_F(GameExporterFixture, ExportForWebNeedsThePage) {
+	auto settings = makeSettings();
+	settings.target = ExportTarget::Web;
+	// The desktop runner folder has no page.
+	std::vector<AssetReference> assets;
+	const auto warnings = GameExporter::validate(settings, assets);
+	EXPECT_TRUE(std::ranges::any_of(warnings, [](const std::string& iWarning) -> bool {
+		return iWarning.find("OwlGameRunner page") != std::string::npos;
+	}));
+	const auto result = GameExporter::exportGame(settings, assets);
+	ASSERT_FALSE(result.has_value());
+	EXPECT_EQ(result.error(), ExportError::RunnerNotFound);
+}
+
+TEST_F(GameExporterFixture, ExportForWebBakesWgsl) {
+	OWL_REQUIRE_SHADER_COMPILER;
+	const auto engineQuad = data::assets::readAssetText("shaders/renderer2D/quad.slang");
+	if (!engineQuad || m_bakedAssets.empty())
+		GTEST_SKIP() << "No engine shaders baked by the build in the asset directories of the test.";
+	const auto web = m_root / "web";
+	for (const auto* name: {"OwlGameRunner.html", "OwlGameRunner.js", "OwlGameRunner.wasm"}) writeFile(web / name, "");
+	auto settings = makeSettings();
+	settings.target = ExportTarget::Web;
+	settings.runnerDirectory = web;
+	settings.cookCacheDirectory = m_root / "cook";
+	const auto exported = GameExporter::exportGame(settings, {});
+	ASSERT_TRUE(exported.has_value());
+	EXPECT_GT(exported->shadersBaked, 1u);
+
+	const auto source = renderer::utils::readShaderSource("shaders/renderer2D/quad.slang");
+	const auto key =
+			renderer::utils::getShaderCacheKey(source, "renderer2D/quad", renderer::utils::ShaderTarget::WebGpu);
+	for (const auto* stage: {"vert", "frag"}) {
+		const auto entry = std::format("shaders/renderer2D/wgsl/quad.{}.wgsl", stage);
+		EXPECT_NE(readPackEntry(exported->packFile, entry).find('@'), std::string::npos) << entry;
+		EXPECT_EQ(readPackEntry(exported->packFile, entry + ".hash"), renderer::utils::computeShaderHash(key)) << entry;
+		// No SPIR-V in a Web game.
+		EXPECT_TRUE(readPackEntry(exported->packFile, std::format("shaders/renderer2D/spirv/vulkan/quad.{}.spv", stage))
+							.empty());
+	}
+}
+
 TEST_F(GameExporterFixture, ExportBakesTheShadersOfTheMaterialGraphs) {
 	if (!data::assets::readAssetText("shaders/renderer3D/mesh3d.slang") || m_bakedAssets.empty())
 		GTEST_SKIP() << "No engine shaders baked by the build in the asset directories of the test.";

@@ -24,6 +24,38 @@ RWStructuredBuffer<SortItem> items;
 
 groupshared SortItem g_shared[kSortSize];
 
+#if defined(BACKEND_WEBGPU)
+// WebGPU guarantees 256 invocations per work group: each thread sorts four of the 1024 slots, the same network.
+static const uint kThreads = 256;
+
+[shader("compute")]
+[numthreads(kThreads, 1, 1)]
+void computeMain(uint3 gid : SV_GroupThreadID) {
+	for (uint e = 0; e < kSortSize; e += kThreads)
+		g_shared[gid.x + e] = items[gid.x + e];
+	GroupMemoryBarrierWithGroupSync();
+	for (uint k = 2; k <= kSortSize; k <<= 1) {
+		for (uint j = k >> 1; j > 0; j >>= 1) {
+			for (uint e = 0; e < kSortSize; e += kThreads) {
+				const uint tid = gid.x + e;
+				const uint ixj = tid ^ j;
+				if (ixj > tid) {
+					const bool ascending = ((tid & k) == 0);
+					if ((ascending && g_shared[tid].key > g_shared[ixj].key) ||
+					    (!ascending && g_shared[tid].key < g_shared[ixj].key)) {
+						const SortItem tmp = g_shared[tid];
+						g_shared[tid] = g_shared[ixj];
+						g_shared[ixj] = tmp;
+					}
+				}
+			}
+			GroupMemoryBarrierWithGroupSync();
+		}
+	}
+	for (uint e = 0; e < kSortSize; e += kThreads)
+		items[gid.x + e] = g_shared[gid.x + e];
+}
+#else
 [shader("compute")]
 [numthreads(kSortSize, 1, 1)]
 void computeMain(uint3 gid : SV_GroupThreadID) {
@@ -52,3 +84,4 @@ void computeMain(uint3 gid : SV_GroupThreadID) {
 
 	items[tid] = g_shared[tid];
 }
+#endif

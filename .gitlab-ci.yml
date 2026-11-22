@@ -1,5 +1,6 @@
 # Pipeline of Owl: merge requests and the default branch. The shared building blocks are in
-# `ci/gitlab/templates.yml`, the nightly jobs in `ci/gitlab/nightly.yml`.
+# `ci/gitlab/templates.yml`, what the nightly jobs do in `ci/gitlab/nightly-jobs.yml`, the nightly child pipeline in
+# `ci/gitlab/nightly.yml`.
 #
 # Two levels: Code Style first, then every build and analysis in parallel, none starting if it failed.
 #
@@ -9,8 +10,7 @@
 # - the scheduled pipeline: only the nightly gate, which runs the nightly child pipeline when `main` moved;
 # - a pipeline run by hand with `NIGHTLY` = `true` (Build > Pipelines > Run pipeline, any branch): the nightly jobs
 #   on that branch, whether it moved or not, publishing nothing unless it is `main`;
-# - anywhere else, every job left out still shows and runs on its ▶, and `nightly-jobs` ▶ opens the nightly jobs
-#   one by one;
+# - anywhere else, every job left out still shows and runs on its ▶, the nightly jobs too;
 # - a job of a push or merge request pipeline stands on an earlier success on the same tree (`BuildAndTest` for the
 #   builds, `Reuse` for the others, `OWL_CI_REUSE`): a pipeline started again on the same commit only runs what is new;
 #
@@ -18,6 +18,7 @@
 
 include:
   - local: ci/gitlab/templates.yml
+  - local: ci/gitlab/nightly-jobs.yml
 
 workflow:
   rules:
@@ -220,14 +221,6 @@ linux-gcc-release:
   variables:
     PRESET: linux-gcc-release
 
-# Every optional engine module off (`OWL_MODULE_*`).
-linux-clang-minimal:
-  extends: [.build-linux, .on-demand]
-  stage: build
-  needs: []
-  variables:
-    PRESET: linux-clang-minimal
-
 # --- Analyses ---------------------------------------------------------------------------------------------------
 
 clang-tidy:
@@ -278,25 +271,53 @@ nightly:
       yaml_variables: false
       pipeline_variables: true
 
-# Every nightly job on this branch, one ▶ each, as a child pipeline: ▶ here opens it, then ▶ the job to run. The
-# usual pipeline never waits for it, and nothing in it publishes but `main`.
-nightly-jobs:
-  stage: nightly
-  inherit:
-    default: false
-    variables: false
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "schedule" || $NIGHTLY == "true"
-      when: never
-    - !reference [.by-hand, rules]
+
+
+# --- Nightly jobs on their ▶ ------------------------------------------------------------------------------------
+
+# Every nightly job but `clang-tidy` and `bench`, which merge requests run already (scoped to their diff), under its
+# own name beside the builds: waiting for its ▶, never blocking. Nothing publishes off `main`.
+.nightly-on-demand:
+  stage: build
   needs: []
-  variables:
-    NIGHTLY_PICK: "true"
-  trigger:
-    include:
-      - local: ci/gitlab/templates.yml
-      - local: ci/gitlab/nightly.yml
-    # Only its own `NIGHTLY_PICK` goes down with the YAML variables (`inherit` keeps the global ones here).
-    forward:
-      yaml_variables: true
-      pipeline_variables: true
+  rules:
+    - !reference [.on-demand, rules]
+
+linux-clang-debug:
+  extends: [.night-linux-clang-debug, .nightly-on-demand]
+
+slow-suite:
+  extends: [.night-slow-suite, .nightly-on-demand]
+
+sanitizer-thread:
+  extends: [.night-sanitizer-thread, .nightly-on-demand]
+
+sanitizer-undefined-behavior:
+  extends: [.night-sanitizer-undefined-behavior, .nightly-on-demand]
+
+static-analyzer:
+  extends: [.night-static-analyzer, .nightly-on-demand]
+
+fuzz:
+  extends: [.night-fuzz, .nightly-on-demand]
+
+include-check:
+  extends: [.night-include-check, .nightly-on-demand]
+
+android-arm64:
+  extends: [.night-android-arm64, .nightly-on-demand]
+
+web-release:
+  extends: [.night-web-release, .nightly-on-demand]
+
+dependency-report:
+  extends: [.night-dependency-report, .nightly-on-demand]
+
+package-linux-x64:
+  extends: [.night-package-linux-x64, .nightly-on-demand]
+
+package-linux-arm64:
+  extends: [.night-package-linux-arm64, .nightly-on-demand]
+
+package-windows-x64:
+  extends: [.night-package-windows-x64, .nightly-on-demand]

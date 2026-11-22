@@ -167,10 +167,11 @@ engine before `main` through `renderer::utils::setShaderCompiler`, and `renderer
 ShaderTarget)` produces the four formats: `Vulkan` (SPIR-V 1.6), `OpenGl` (SPIR-V, `glsl_450` profile),
 `VulkanAndroid` (SPIR-V 1.3) and `WebGpu` (WGSL). `OwlShaderBake <shaders> <assets> [--targets=...]` bakes the engine
 shaders (Vulkan and OpenGL by default), `GameExporter` the project shaders
-([Project shaders](#game-export-project-shaders)) for the desktop targets; the Android and Web targets come with their runners. The game runner `OwlGameRunner` links
+([Project shaders](#game-export-project-shaders)) for the target of the export: SPIR-V for the desktop, SPIR-V 1.3
+for Android, WGSL alone for the Web. The game runner `OwlGameRunner` links
 neither the compiler nor Slang: it loads baked stages only and logs an error naming the shader when none matches. Of
-the 35 engine shaders, all compile for `vulkan_android` and 33 for WGSL: `frustum_culling` and `mesh_culling` use
-`InterlockedAdd` on a plain `RWStructuredBuffer<uint>`, which WGSL refuses (it needs `Atomic<uint>`). The only macro is
+the 35 engine shaders, all compile for `vulkan_android` and for WGSL, where the culling counters are `Atomic<uint>`
+(under `BACKEND_WEBGPU`, the SPIR-V unchanged). The only macro is
 `BACKEND_<api>`, so the variant set is finite.
 
 ### Signing {#game-export-signing}

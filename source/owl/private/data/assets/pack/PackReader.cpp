@@ -131,7 +131,8 @@ auto PackReader::openImpl(const std::filesystem::path& iPackFile) -> owl::expect
 	}
 
 	m_fileStream.seekg(static_cast<std::streamoff>(m_header.tocOffset));
-	std::vector<uint8_t> tocData(m_header.tocSize);
+	// Below g_maxTocSize (checked above), so it fits a size_t on 32-bit targets too.
+	std::vector<uint8_t> tocData(static_cast<size_t>(m_header.tocSize));
 	m_fileStream.read(reinterpret_cast<char*>(tocData.data()), static_cast<std::streamsize>(tocData.size()));
 	if (static_cast<uint64_t>(m_fileStream.gcount()) != m_header.tocSize) {
 		OWL_CORE_ERROR("Pack: TOC read failed on '{}'.", iPackFile.string())
@@ -230,7 +231,7 @@ auto PackReader::readEntry(const std::string& iPath) const -> std::optional<std:
 
 	try {
 		// Offsets and sizes were bounded by the file size in `tryOpen`.
-		std::vector<uint8_t> block(entry->dataSize);
+		std::vector<uint8_t> block(static_cast<size_t>(entry->dataSize));
 		uint64_t readSize = 0;
 		{
 			const std::scoped_lock<std::mutex> lock{*mp_readMutex};

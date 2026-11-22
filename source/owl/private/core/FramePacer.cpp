@@ -39,6 +39,10 @@ auto FramePacer::next(const clock::time_point iNow) -> clock::time_point {
 }
 
 void FramePacer::wait() {
+#if defined(OWL_PLATFORM_WEB)
+	// The browser paces the frames to the display: sleeping would block the page.
+	return;
+#else
 	if (!isActive())
 		return;
 	OWL_PROFILE_FUNCTION()
@@ -46,6 +50,7 @@ void FramePacer::wait() {
 	const auto deadline = next(clock::now());
 	// sleep_until may wake a little early (Windows rounds the wait to its timer): sleep again until the deadline.
 	while (clock::now() < deadline) std::this_thread::sleep_until(deadline);
+#endif
 }
 
 }// namespace owl::core

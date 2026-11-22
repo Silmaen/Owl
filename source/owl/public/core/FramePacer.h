@@ -67,6 +67,7 @@ public:
 	/**
 	 * @brief
 	 *  Schedule the next iteration and sleep until it may start.
+	 * @details On the Web it returns at once: the browser paces the frames to the display.
 	 */
 	void wait();
 

@@ -28,6 +28,9 @@ namespace owl::scene::systems {
 
 namespace {
 
+// Longest player step per frame: a longer fall outruns the voxel collision and goes through the ground.
+constexpr float g_maxStep = 0.1f;
+
 void applyPlayerLook(component::VoxelPlayer& ioPlayer, math::Transform& ioTransform, const input::ActionFrame& iActions,
 					 const float iDt, const std::optional<math::vec2>& iCapturedCursor) {
 	if (iCapturedCursor.has_value()) {
@@ -179,7 +182,7 @@ void updatePlayerInteraction(Scene& ioScene, component::VoxelPlayer& ioPlayer, c
 void updateVoxelPlayers(Scene& ioScene, const SystemContext& iContext) {
 	OWL_PROFILE_FUNCTION()
 
-	const float dt = iContext.timeStep.getSeconds();
+	const float dt = std::min(iContext.timeStep.getSeconds(), g_maxStep);
 	if (dt <= 0.f)
 		return;
 	ioScene.setEditorVoxelHighlight(false);

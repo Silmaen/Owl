@@ -25,12 +25,17 @@ struct TilemapDraw {
 [[vk::binding(0)]]
 ConstantBuffer<TilemapDraw> gDraw;
 
+#if defined(BACKEND_WEBGPU)
+#include "webgpu_textures.slangh"
+OWL_WEBGPU_TEXTURE_TABLE(gTextures)
+#else
 #ifdef BACKEND_VULKAN
 [[vk::binding(1)]]
 #else
 [[vk::binding(0)]]
 #endif
 Sampler2D gTextures[32];
+#endif
 
 // The bindings of Renderer2D, which owns the buffers: on OpenGL the storage binding points are global.
 #define LIGHT2D_LIGHT_BINDING 5

@@ -32,6 +32,7 @@
 #include "WalkAreaCommands.h"
 
 #include <app/EngineContext.h>
+#include <core/utils/LookupTable.h>
 #include <data/geometry/MeshLoader.h>
 #include <renderer/Material.h>
 #include <renderer/MeshCache.h>
@@ -491,9 +492,8 @@ auto createParticleEmitter(const shared<scene::Scene>& ioScene, const CommandArg
 																		  {"Sparks", Preset::Sparks},
 																		  {"Magic", Preset::Magic},
 																		  {"Snow", Preset::Snow}}};
-	const auto* const match =
-			std::ranges::find_if(presets, [&kind](const auto& iEntry) -> bool { return iEntry.first == kind; });
-	const auto preset = match == presets.end() ? std::nullopt : std::optional{match->second};
+	const auto* const match = core::utils::findEntry(presets, kind, &decltype(presets)::value_type::first);
+	const auto preset = match == nullptr ? std::nullopt : std::optional{match->second};
 	if (!preset)
 		return unexpected<CommandFailure>{
 				CommandFailure{.error = CommandError::InvalidArgument,
@@ -1160,7 +1160,8 @@ auto addRenderLayer(const CommandContext& iContext, const CommandArgs& iArgs)
 		return fail(CommandError::InvalidArgument, std::format("the project stack already has a layer `{}`", name));
 	const auto position = std::clamp<int64_t>(iArgs.get<int64_t>("position").value_or(1), 0,
 											  static_cast<int64_t>(stack.entries.size()));
-	stack.entries.insert(stack.entries.begin() + position, {.typeKey = type, .name = name, .defaultConfig = {}});
+	stack.entries.insert(stack.entries.begin() + static_cast<std::ptrdiff_t>(position),
+						 {.typeKey = type, .name = name, .defaultConfig = {}});
 	if (iContext.onProjectStackChanged)
 		iContext.onProjectStackChanged();
 	return CommandResult{.entity = core::UUID{0},
@@ -1291,13 +1292,13 @@ auto setNavEdge(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -
 	const auto cell = cellOf(iArgs);
 	const auto side = scene::nav::parseDirection(iArgs.getText("side"));
 	const auto stateName = iArgs.getText("state");
-	const auto* const state = std::ranges::find(scene::nav::sideStateNames, stateName);
-	if (!cell || !side || state == scene::nav::sideStateNames.end())
+	const auto* const state = core::utils::findEntry(scene::nav::sideStateNames, stateName, std::identity{});
+	if (!cell || !side || state == nullptr)
 		return fail(CommandError::InvalidArgument, "give a cell (`x`, `y`), a `side` and a `state`");
 	const auto profile = navigationOf(*entity);
 	if (!profile)
 		return unexpected<CommandFailure>{profile.error()};
-	const auto value = static_cast<scene::nav::SideState>(std::distance(scene::nav::sideStateNames.begin(), state));
+	const auto value = static_cast<scene::nav::SideState>(std::distance(scene::nav::sideStateNames.data(), state));
 	return modifyEntity(ioScene, *entity, std::format("Set side of cell ({}, {})", cell->first, cell->second),
 						[&](scene::Entity& ioEntity) -> void {
 							ioEntity.getComponent<scene::component::Tilemap>().navigation.setEdgeState(

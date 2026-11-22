@@ -2,7 +2,13 @@
 // kept half a texel of the coarsest level the footprint reads inside the cell, so trilinear filtering never reaches a
 // neighbour tile. A texture without mipmaps gets its UV back unchanged.
 
-float2 clampToAtlasCell(Sampler2D iAtlas, float2 iUv, float2 iCellMin, float2 iCellMax, float2 iDdx, float2 iDdy) {
+#if defined(BACKEND_WEBGPU)
+float2 clampToAtlasCell<T : IOwlWebGpuTexture>(T iAtlas, float2 iUv, float2 iCellMin, float2 iCellMax, float2 iDdx,
+												 float2 iDdy)
+#else
+float2 clampToAtlasCell(Sampler2D iAtlas, float2 iUv, float2 iCellMin, float2 iCellMax, float2 iDdx, float2 iDdy)
+#endif
+{
 	uint width;
 	uint height;
 	uint levels;

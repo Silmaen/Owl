@@ -38,6 +38,13 @@ flowchart LR
 |---------------------|-------------------|-------------------------------------------------------------------------------------|-----------------------------|
 | `EnetTransport`     | `Enet`            | Reliable UDP on ENet: retransmission, ordering, fragmentation, timeouts             | `OWL_MODULE_NETWORK` (ENet) |
 | `LoopbackTransport` | `Loopback`        | Links between transports of one process, no socket; every message arrives, in order | always built                |
+| `WebSocketTransport`| `WebSocket`       | Binary WebSocket messages on `ws://<host>:<port>/owl`, a channel byte first, over TCP | `OWL_MODULE_NETWORK` (cpp-httplib on desktop, the browser's WebSocket on the Web) |
+
+`WebSocketTransport` is the transport of a page, which has no UDP: a desktop server listens with cpp-httplib (a thread
+per peer, the events queued until `poll`) and a page connects through Emscripten's WebSocket API; a page cannot listen.
+TCP delivers every message once and in order, the unreliable ones too, and hides the round trip and the losses
+(`getStats` gives the bytes only). A `GameSession` uses ENet on the desktop and WebSocket in a page
+(`setTransportType`): a Web client joins a server that listens on WebSocket.
 
 `Transport::create(type)` returns the backend, or `NetworkError::BackendUnavailable` when ENet is not built in. A
 loopback listener is named by its port within the process: tests, local play and a host playing on its own server use
@@ -324,7 +331,7 @@ flies over the loft. The scenario `test/unit/scenarios/hub_pigeon_loft.owltest` 
 ## Not yet
 
 - Android: the ENet backend built and run on the device.
-- Web: the same messages over a WebSocket, to a native server.
+- A server that accepts ENet and WebSocket clients at once, so that desktop and Web players share a match.
 
 ## Message bytes {#networking-bytes}
 
@@ -337,4 +344,5 @@ sends arbitrary messages to a server and to a client.
 ## Build {#networking-build}
 
 ENet comes with `OWL_MODULE_NETWORK` (on by default, [Building](building.md#engine-modules)). Without it, the module's
-public API stays: `Transport::create(Type::Enet)` fails and the loopback transport works.
+public API stays: `Transport::create(Type::Enet)` fails and the loopback transport works. The Web build has no ENet:
+the network module there is the WebSocket client.

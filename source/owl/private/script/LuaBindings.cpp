@@ -18,6 +18,7 @@
 #include "core/Core.h"
 #include "core/Macros.h"
 #include "core/external/lua.h"
+#include "core/utils/LookupTable.h"
 #include "data/assets/AssetReference.h"
 #include "data/assets/AssetSearchPaths.h"
 #include "data/assets/pack/ExtensionRegistry.h"
@@ -733,8 +734,8 @@ auto parseJointType(const std::string_view iKind) -> std::optional<scene::SceneJ
 	using Type = scene::SceneJoint::Type;
 	static constexpr std::array<std::pair<std::string_view, Type>, 4> kinds{
 			{{"fixed", Type::Fixed}, {"distance", Type::Distance}, {"hinge", Type::Hinge}, {"slider", Type::Slider}}};
-	const auto* found = std::ranges::find(kinds, iKind, &std::pair<std::string_view, Type>::first);
-	if (found == kinds.end())
+	const auto* found = core::utils::findEntry(kinds, iKind, &std::pair<std::string_view, Type>::first);
+	if (found == nullptr)
 		return std::nullopt;
 	return found->second;
 }
@@ -3461,7 +3462,8 @@ auto luaPathIsValid(lua_State* iState) -> int {
 	const auto* path = navigation != nullptr ? navigation->queue.getResult(request) : nullptr;
 	bool valid = false;
 	if (path != nullptr && static_cast<size_t>(first) <= path->cells.size()) {
-		const std::span<const math::vec2ui> remaining{path->cells.begin() + (first - 1), path->cells.end()};
+		const std::span<const math::vec2ui> remaining{path->cells.begin() + static_cast<std::ptrdiff_t>(first - 1),
+													  path->cells.end()};
 		valid = scene::nav::isPathValid(navigation->map, remaining);
 	}
 	lua_pushboolean(iState, valid ? 1 : 0);

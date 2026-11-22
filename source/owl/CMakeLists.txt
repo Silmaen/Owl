@@ -19,6 +19,12 @@ file(GLOB_RECURSE HDRS_PUBLIC CONFIGURE_DEPENDS
 # no-op implementation of `<module>/disabled/`), except Gui whose headers leave the package. OWL_WITH_<MODULE> (0 or
 # 1) tells the code, the engine's as the consumers'.
 set(_owl_excluded "")
+if (NOT ${PROJECT_PREFIX}_MODULE_RENDER OR NOT ${PROJECT_PREFIX}_PLATFORM_WEB)
+    list(APPEND _owl_excluded "/private/renderer/gpu/webgpu/")
+endif ()
+if (${PROJECT_PREFIX}_MODULE_RENDER AND ${PROJECT_PREFIX}_PLATFORM_WEB)
+    list(APPEND _owl_excluded "/private/renderer/gpu/(opengl|vulkan)/" "/private/core/external/(opengl46|vma)\\.h$")
+endif ()
 if (NOT ${PROJECT_PREFIX}_MODULE_RENDER)
     list(APPEND _owl_excluded "/private/renderer/gpu/(opengl|vulkan)/" "/private/(window|input)/glfw/"
             "/private/renderer/utils/shaderFileUtils\\.(cpp|h)$" "/private/core/external/(glfw3|opengl46|lunasvg)\\.h$")
@@ -39,13 +45,15 @@ if (NOT ${PROJECT_PREFIX}_MODULE_AUDIO)
     list(APPEND _owl_excluded "/private/sound/openal/" "/private/core/external/openal\\.h$")
 endif ()
 if (NOT ${PROJECT_PREFIX}_MODULE_NETWORK)
+    list(APPEND _owl_excluded "/private/network/enet/" "/private/network/websocket/" "/private/core/external/enet\\.h$")
+elseif (${PROJECT_PREFIX}_PLATFORM_WEB)
     list(APPEND _owl_excluded "/private/network/enet/" "/private/core/external/enet\\.h$")
 endif ()
 if (${PROJECT_PREFIX}_MODULE_SCRIPT)
     list(APPEND _owl_excluded "/private/script/disabled/")
 else ()
-    list(APPEND _owl_excluded "/private/script/(LuaBindings|LuaEngine|ScriptConsole|ScriptEngine|ScriptInstance|ScriptTypeChecker|visual/BindingNodes)\\.cpp$"
-            "/private/script/(LuaBindings|LuaEngine)\\.h$"
+    list(APPEND _owl_excluded "/private/script/(LuaBindings|LuaEngine|LuaNetBindings|ScriptConsole|ScriptEngine|ScriptInstance|ScriptTypeChecker|visual/BindingNodes)\\.cpp$"
+            "/private/script/(LuaBindings|LuaEngine|LuaNetBindings)\\.h$"
             "/private/core/external/(lua|luau_analysis)\\.h$")
 endif ()
 if (NOT ${PROJECT_PREFIX}_MODULE_GUI)
@@ -80,6 +88,10 @@ if (${PROJECT_PREFIX}_BUILD_SHARED)
 else ()
     add_library(${ENGINE_NAME} STATIC)
     set_target_properties(${ENGINE_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+    # The engine types register from static initialisers that nothing references (extra data, components...): a
+    # program takes the whole archive, or the linker drops them and the registries stay empty.
+    target_link_options(${ENGINE_NAME} INTERFACE
+            "LINKER:--whole-archive" "$<TARGET_FILE:${ENGINE_NAME}>" "LINKER:--no-whole-archive")
 endif ()
 target_sources(${ENGINE_NAME}
         PRIVATE
@@ -105,13 +117,22 @@ foreach (_owl_module RENDER PHYSICS AUDIO NETWORK SCRIPT GUI)
         target_compile_definitions(${ENGINE_NAME} PUBLIC ${PROJECT_PREFIX}_WITH_${_owl_module}=0)
     endif ()
 endforeach ()
-# Engine internals: the desktop backends of the render module (GLFW window and input, OpenGL, file dialogue).
+# Engine internals: the GLFW window and input of the render module (the browser's too), with OpenGL where the
+# native GPU backends are built.
 if (${PROJECT_PREFIX}_MODULE_RENDER AND NOT ${PROJECT_PREFIX}_PLATFORM_ANDROID)
     target_compile_definitions(${ENGINE_NAME}Private INTERFACE ${PROJECT_PREFIX}_WITH_DESKTOP=1)
 else ()
     target_compile_definitions(${ENGINE_NAME}Private INTERFACE ${PROJECT_PREFIX}_WITH_DESKTOP=0)
 endif ()
 unset(_owl_module)
+# The GPU backends of the render module: Vulkan (with OpenGL on the desktop) natively, WebGPU in the browser.
+if (${PROJECT_PREFIX}_MODULE_RENDER AND NOT ${PROJECT_PREFIX}_PLATFORM_WEB)
+    target_compile_definitions(${ENGINE_NAME} PUBLIC ${PROJECT_PREFIX}_WITH_NATIVE_GPU=1 ${PROJECT_PREFIX}_WITH_WEBGPU=0)
+elseif (${PROJECT_PREFIX}_MODULE_RENDER)
+    target_compile_definitions(${ENGINE_NAME} PUBLIC ${PROJECT_PREFIX}_WITH_NATIVE_GPU=0 ${PROJECT_PREFIX}_WITH_WEBGPU=1)
+else ()
+    target_compile_definitions(${ENGINE_NAME} PUBLIC ${PROJECT_PREFIX}_WITH_NATIVE_GPU=0 ${PROJECT_PREFIX}_WITH_WEBGPU=0)
+endif ()
 if (${PROJECT_PREFIX}_PLATFORM_WINDOWS)
     target_compile_definitions(${ENGINE_NAME} INTERFACE $<INSTALL_INTERFACE:${PROJECT_PREFIX}_PLATFORM_WINDOWS>)
 elseif (${PROJECT_PREFIX}_PLATFORM_ANDROID)
@@ -128,10 +149,14 @@ endif ()
 
 # ---------========= PRIVATE third party =========---------
 # core
-owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE cpptrace REQUIRED)
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE magic_enum REQUIRED)
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE msdf-atlas-gen REQUIRED)
-if (NOT ${PROJECT_PREFIX}_PLATFORM_ANDROID)
+# No unwinder in a browser.
+if (NOT ${PROJECT_PREFIX}_PLATFORM_WEB)
+    owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE cpptrace REQUIRED)
+endif ()
+# No native dialogue on Android nor in a browser.
+if (NOT ${PROJECT_PREFIX}_PLATFORM_ANDROID AND NOT ${PROJECT_PREFIX}_PLATFORM_WEB)
     owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE nfd REQUIRED)
 endif ()
 owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE stb_image REQUIRED)
@@ -156,14 +181,27 @@ if (${PROJECT_PREFIX}_PROFILER_BACKEND STREQUAL "tracy")
 endif ()
 
 # render: GPU backends, GLFW, the window icon (lunasvg), Vulkan and SPIRV-Cross; Slang is OwlShaderCompiler's
-if (${PROJECT_PREFIX}_MODULE_RENDER)
+if (${PROJECT_PREFIX}_MODULE_RENDER AND ${PROJECT_PREFIX}_PLATFORM_WEB)
+    # WebGPU through emdawnwebgpu and GLFW 3.4 through its Emscripten port (canvas, gamepads), both emsdk ports.
+    # Slang is no package here: its version, which keys the baked shaders, comes from the conanfile.
+    file(STRINGS ${CMAKE_SOURCE_DIR}/conanfile.py _owl_slang_line REGEX "^SLANG_VERSION = ")
+    string(REGEX REPLACE "^SLANG_VERSION = \"([^\"]+)\".*" "\\1" _owl_slang_version "${_owl_slang_line}")
+    target_compile_definitions(${ENGINE_NAME} PRIVATE ${PROJECT_PREFIX}_SLANG_VERSION="${_owl_slang_version}")
+    unset(_owl_slang_line)
+    unset(_owl_slang_version)
+    target_compile_options(${ENGINE_NAME}Private INTERFACE "--use-port=emdawnwebgpu" "--use-port=contrib.glfw3")
+    target_link_options(${ENGINE_NAME}Private INTERFACE "--use-port=emdawnwebgpu" "--use-port=contrib.glfw3")
+    owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE lunasvg REQUIRED)
+    # The SPIR-V reflection of the shader utilities (shaderFileUtils).
+    find_package(spirv-cross REQUIRED)
+    target_link_libraries(${ENGINE_NAME}Private INTERFACE spirv-cross-cpp)
+elseif (${PROJECT_PREFIX}_MODULE_RENDER)
     # Only its version, part of the cache key of the baked shaders: the engine does not link Slang. Android has no
     # Slang package (the host bakes its shaders): the version comes from the recipe.
     if (${PROJECT_PREFIX}_PLATFORM_ANDROID)
-        file(STRINGS "${CMAKE_SOURCE_DIR}/conanfile.py" _owl_slang_require REGEX "\"slang/[0-9.]+\"")
-        string(REGEX MATCH "slang/([0-9.]+)" _owl_slang_require "${_owl_slang_require}")
-        set(slang_VERSION "${CMAKE_MATCH_1}")
-        unset(_owl_slang_require)
+        file(STRINGS ${CMAKE_SOURCE_DIR}/conanfile.py _owl_slang_line REGEX "^SLANG_VERSION = ")
+        string(REGEX REPLACE "^SLANG_VERSION = \"([^\"]+)\".*" "\\1" slang_VERSION "${_owl_slang_line}")
+        unset(_owl_slang_line)
     else ()
         find_package(slang REQUIRED)
     endif ()
@@ -189,12 +227,24 @@ endif ()
 # audio
 if (${PROJECT_PREFIX}_MODULE_AUDIO)
     owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE OpenAL CONFIG REQUIRED)
+    if (${PROJECT_PREFIX}_PLATFORM_WEB)
+        # Emscripten's OpenAL, over WebAudio; the package brings the headers only.
+        target_link_libraries(${ENGINE_NAME}Private INTERFACE openal)
+    endif ()
     owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE SndFile REQUIRED MODULE_TARGET "SndFile::sndfile")
 endif ()
 
 # network
-if (${PROJECT_PREFIX}_MODULE_NETWORK)
+if (${PROJECT_PREFIX}_MODULE_NETWORK AND ${PROJECT_PREFIX}_PLATFORM_WEB)
+    # The WebSocket API of the browser.
+    target_link_options(${ENGINE_NAME}Private INTERFACE "-lwebsocket.js")
+elseif (${PROJECT_PREFIX}_MODULE_NETWORK)
     owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE enet REQUIRED MODULE_TARGET "enet::enet")
+    owl_target_link_libraries(${ENGINE_NAME}Private INTERFACE httplib REQUIRED)
+    if (WIN32)
+        # cpp-httplib requires Windows 10, MinGW defaults to an older target.
+        target_compile_definitions(${ENGINE_NAME}Private INTERFACE _WIN32_WINNT=0x0A00)
+    endif ()
 endif ()
 
 # script
@@ -283,31 +333,34 @@ endif ()
 # ------------------------------------------------------------------------------
 # Two CPack components from one tree: the Engine SDK (lib/, include/, assets/, CMake config) and, with the editor,
 # the Nest application (everything in bin/<platform>_<arch>/, third-party shared libraries included).
-install(TARGETS ${ENGINE_NAME}
-        EXPORT OwlEngineTargets
-        COMPONENT Engine
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-        RUNTIME DESTINATION bin
-        FRAMEWORK DESTINATION lib
-        FILE_SET HEADERS DESTINATION include
-)
-if (${PROJECT_PREFIX}_MODULE_GUI)
-    install(TARGETS ${ENGINE_NAME}Gui
-            EXPORT OwlEngineGuiTargets
+# No SDK for the Web: the engine links statically into the runner.
+if (NOT ${PROJECT_PREFIX}_PLATFORM_WEB)
+    install(TARGETS ${ENGINE_NAME}
+            EXPORT OwlEngineTargets
+            COMPONENT Engine
+            LIBRARY DESTINATION lib
+            ARCHIVE DESTINATION lib
+            RUNTIME DESTINATION bin
+            FRAMEWORK DESTINATION lib
+            FILE_SET HEADERS DESTINATION include
+    )
+    if (${PROJECT_PREFIX}_MODULE_GUI)
+        install(TARGETS ${ENGINE_NAME}Gui
+                EXPORT OwlEngineGuiTargets
+                COMPONENT Engine
+        )
+    endif ()
+    install(DIRECTORY ${CMAKE_SOURCE_DIR}/engine_assets/
+            DESTINATION assets
+            COMPONENT Engine
+            # A bundle generated there by an older configure.
+            PATTERN "help" EXCLUDE
+    )
+    install(DIRECTORY ${${PROJECT_PREFIX}_HELP_DIR}/
+            DESTINATION assets/help
             COMPONENT Engine
     )
 endif ()
-install(DIRECTORY ${CMAKE_SOURCE_DIR}/engine_assets/
-        DESTINATION assets
-        COMPONENT Engine
-        # A bundle generated there by an older configure.
-        PATTERN "help" EXCLUDE
-)
-install(DIRECTORY ${${PROJECT_PREFIX}_HELP_DIR}/
-        DESTINATION assets/help
-        COMPONENT Engine
-)
 if (${PROJECT_PREFIX}_BUILD_NEST)
     install(TARGETS ${ENGINE_NAME}
             COMPONENT Nest

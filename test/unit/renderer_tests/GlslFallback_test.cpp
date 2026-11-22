@@ -7,7 +7,7 @@
  */
 
 // Slang and SPIRV-Cross come with the render module.
-#if OWL_WITH_RENDER
+#if OWL_WITH_NATIVE_GPU
 #include "testHelper.h"
 
 #include <core/Log.h>

@@ -14,6 +14,8 @@
 
 #include <magic_enum/magic_enum.hpp>
 
+#include <algorithm>
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <string_view>
@@ -44,6 +46,28 @@ auto extractSpirv(slang::IBlob* iBlob) -> std::vector<uint32_t> {
 
 auto extractText(slang::IBlob* iBlob) -> std::string {
 	return {static_cast<const char*>(iBlob->getBufferPointer()), iBlob->getBufferSize()};
+}
+
+// Slang copies the `@interpolate` of a stage input onto the plain structures it makes from it, which have no
+// `@location`: WGSL refuses the attribute there, so it leaves the fields without one.
+auto stripStrayInterpolation(const std::string& iWgsl) -> std::string {
+	std::string result;
+	result.reserve(iWgsl.size());
+	size_t start = 0;
+	while (start < iWgsl.size()) {
+		const auto end = std::min(iWgsl.find('\n', start), iWgsl.size());
+		std::string line = iWgsl.substr(start, end - start);
+		if (const auto attribute = line.find("@interpolate(");
+			attribute != std::string::npos && line.find("@location(") == std::string::npos) {
+			if (const auto close = line.find(')', attribute); close != std::string::npos)
+				line.erase(attribute, close - attribute + 1);
+		}
+		result += line;
+		if (end < iWgsl.size())
+			result += '\n';
+		start = end + 1;
+	}
+	return result;
 }
 
 auto compileWithSlang(const std::string& iSource, const std::string& iModuleName, const ShaderTarget iTarget)
@@ -134,7 +158,7 @@ auto compileWithSlang(const std::string& iSource, const std::string& iModuleName
 		}
 
 		if (wgsl) {
-			result.wgslData[type] = extractText(codeBlob);
+			result.wgslData[type] = stripStrayInterpolation(extractText(codeBlob));
 			OWL_CORE_TRACE("Slang: Compiled entry point '{}' ({}) -> {} WGSL characters.", name,
 						   magic_enum::enum_name(type), result.wgslData[type].size())
 		} else {

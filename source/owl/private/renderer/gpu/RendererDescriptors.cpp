@@ -9,10 +9,13 @@
 
 #include "renderer/gpu/RendererDescriptors.h"
 
-#include "opengl/BindingTable.h"
 #include "renderer/gpu/RenderCommand.h"
-#if OWL_WITH_RENDER
+#if OWL_WITH_NATIVE_GPU
+#include "opengl/BindingTable.h"
 #include "vulkan/internal/RendererDescriptors.h"
+#endif
+#if OWL_WITH_WEBGPU
+#include "webgpu/Context.h"
 #endif
 
 #include <cstddef>
@@ -29,7 +32,7 @@ namespace {
 struct BlockSlot {
 	// Renderer namespace key.
 	std::string name;
-#if OWL_WITH_RENDER
+#if OWL_WITH_NATIVE_GPU
 	// OpenGL binding table of the block, or nullptr until first used.
 	opengl::BindingTable* openGl = nullptr;
 	// Vulkan block, or nullptr when not declared.
@@ -53,7 +56,7 @@ auto RendererDescriptors::getId(const std::string& iRenderer) -> RendererId {
 	return static_cast<RendererId>(slots.size() - 1);
 }
 
-#if OWL_WITH_RENDER
+#if OWL_WITH_NATIVE_GPU
 namespace {
 
 auto toVkDescriptorType(const BindingType iType) -> VkDescriptorType {
@@ -169,8 +172,43 @@ RendererDescriptors::ScopedActive::~ScopedActive() {
 #endif
 	vulkan::internal::RendererDescriptors::setActive(static_cast<vulkan::internal::RendererDescriptors*>(mp_state));
 }
+#elif OWL_WITH_WEBGPU
+// The WebGPU backend keeps the blocks: their bind group layouts and the active one of the draws.
+void RendererDescriptors::declare(const std::string& iRenderer, std::span<const BindingDecl> iBindings) {
+	static_cast<void>(getId(iRenderer));
+	if (RenderCommand::getApi() == RenderAPI::Type::WebGpu)
+		webgpu::Context::get().declare(iRenderer, iBindings);
+}
+
+void RendererDescriptors::release(const std::string& iRenderer) {
+	auto& context = webgpu::Context::get();
+	if (context.activeBlock != nullptr && context.activeBlock->name == iRenderer)
+		context.activeBlock = nullptr;
+}
+
+void RendererDescriptors::releaseAll() { webgpu::Context::get().activeBlock = nullptr; }
+
+RendererDescriptors::ScopedActive::ScopedActive(const RendererId iRenderer) {
+	auto& slots = getSlots();
+	if (iRenderer >= slots.size() || RenderCommand::getApi() != RenderAPI::Type::WebGpu)
+		return;
+	auto& context = webgpu::Context::get();
+	const auto found = context.blocks.find(slots[iRenderer].name);
+	if (found == context.blocks.end())
+		return;
+	mp_state = const_cast<webgpu::Block*>(context.activeBlock);
+	context.activeBlock = &found->second;
+	m_engaged = true;
+}
+
+RendererDescriptors::ScopedActive::~ScopedActive() {
+	// A WebGPU block, never an OpenGL binding table.
+	if (!m_engaged || m_openGl)
+		return;
+	webgpu::Context::get().activeBlock = static_cast<const webgpu::Block*>(mp_state);
+}
 #else
-// GPU backends not built (OWL_MODULE_RENDER=OFF): the Null backend has no descriptor set.
+// GPU backends not built (no Vulkan nor OpenGL in this build): the Null backend has no descriptor set.
 void RendererDescriptors::declare([[maybe_unused]] const std::string& iRenderer,
 								  [[maybe_unused]] std::span<const BindingDecl> iBindings) {}
 

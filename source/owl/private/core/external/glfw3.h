@@ -10,7 +10,10 @@
 
 #include "core/Macros.h"
 
+#if !defined(OWL_PLATFORM_WEB)
+// Before GLFW, which declares its Vulkan surface functions when it sees the Vulkan header.
 #include <vulkan/vulkan.h>
+#endif
 
 OWL_DIAG_PUSH
 OWL_DIAG_DISABLE_CLANG("-Wdocumentation-unknown-command")

@@ -40,6 +40,9 @@ EXCEPTIONS: dict[str, str] = {
     "ImLightRig": "widget of ImGuizmo, a dependency",
     "TracyLua": "Tracy API, a dependency",
     "LockableBase": "Tracy API, a dependency",
+    "registry.argawaen.net/builder/builder-web-ubuntu2604": "Web build image, made outside the repository",
+    "OWL_CHROME": "variable of the Web build image, its headless Chrome",
+    "files.json": "list of the game files next to the Web runner page, written with the game",
 }
 """Cited names that live outside the repository, with the reason why."""
 

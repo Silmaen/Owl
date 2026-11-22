@@ -1,0 +1,103 @@
+// Texture tables of the WebGPU target, which has no array of textures: OWL_WEBGPU_TEXTURE_TABLE(gTextures) declares, in
+// bind group 1, sixteen textures (bindings 0 to 15) and their samplers (16 to 31), and a `gTextures` that indexes them as
+// the `Sampler2D gTextures[N]` of the other targets does: `gTextures[i].Sample(uv)`, `SampleLevel`, `SampleGrad` and
+// both `GetDimensions` pick the slot with a switch. WebGPU allows sixteen textures and sixteen samplers per stage.
+#ifndef OWL_WEBGPU_TEXTURES_SLANGH
+#define OWL_WEBGPU_TEXTURES_SLANGH
+
+#define OWL_WEBGPU_TEXTURE_SLOTS 16
+
+// What a slot of a table samples: the helpers taking a `Sampler2D` on the other targets take one of these here.
+interface IOwlWebGpuTexture {
+	float4 Sample(float2 iUv);
+	float4 SampleLevel(float2 iUv, float iLod);
+	float4 SampleGrad(float2 iUv, float2 iDx, float2 iDy);
+	void GetDimensions(out uint oWidth, out uint oHeight);
+	void GetDimensions(uint iMip, out uint oWidth, out uint oHeight, out uint oLevels);
+};
+#define OWL_WEBGPU_TEXTURE_TABLE(NAME) \
+	[[vk::binding(0, 1)]] Texture2D NAME##_t0; [[vk::binding(16, 1)]] SamplerState NAME##_s0; \
+	[[vk::binding(1, 1)]] Texture2D NAME##_t1; [[vk::binding(17, 1)]] SamplerState NAME##_s1; \
+	[[vk::binding(2, 1)]] Texture2D NAME##_t2; [[vk::binding(18, 1)]] SamplerState NAME##_s2; \
+	[[vk::binding(3, 1)]] Texture2D NAME##_t3; [[vk::binding(19, 1)]] SamplerState NAME##_s3; \
+	[[vk::binding(4, 1)]] Texture2D NAME##_t4; [[vk::binding(20, 1)]] SamplerState NAME##_s4; \
+	[[vk::binding(5, 1)]] Texture2D NAME##_t5; [[vk::binding(21, 1)]] SamplerState NAME##_s5; \
+	[[vk::binding(6, 1)]] Texture2D NAME##_t6; [[vk::binding(22, 1)]] SamplerState NAME##_s6; \
+	[[vk::binding(7, 1)]] Texture2D NAME##_t7; [[vk::binding(23, 1)]] SamplerState NAME##_s7; \
+	[[vk::binding(8, 1)]] Texture2D NAME##_t8; [[vk::binding(24, 1)]] SamplerState NAME##_s8; \
+	[[vk::binding(9, 1)]] Texture2D NAME##_t9; [[vk::binding(25, 1)]] SamplerState NAME##_s9; \
+	[[vk::binding(10, 1)]] Texture2D NAME##_t10; [[vk::binding(26, 1)]] SamplerState NAME##_s10; \
+	[[vk::binding(11, 1)]] Texture2D NAME##_t11; [[vk::binding(27, 1)]] SamplerState NAME##_s11; \
+	[[vk::binding(12, 1)]] Texture2D NAME##_t12; [[vk::binding(28, 1)]] SamplerState NAME##_s12; \
+	[[vk::binding(13, 1)]] Texture2D NAME##_t13; [[vk::binding(29, 1)]] SamplerState NAME##_s13; \
+	[[vk::binding(14, 1)]] Texture2D NAME##_t14; [[vk::binding(30, 1)]] SamplerState NAME##_s14; \
+	[[vk::binding(15, 1)]] Texture2D NAME##_t15; [[vk::binding(31, 1)]] SamplerState NAME##_s15; \
+	struct NAME##_Slot : IOwlWebGpuTexture { \
+		int index; \
+		float4 Sample(float2 iUv) { switch (index) { case 0: return NAME##_t0.Sample(NAME##_s0, iUv); case 1: return NAME##_t1.Sample(NAME##_s1, iUv); case 2: return NAME##_t2.Sample(NAME##_s2, iUv); case 3: return NAME##_t3.Sample(NAME##_s3, iUv); case 4: return NAME##_t4.Sample(NAME##_s4, iUv); case 5: return NAME##_t5.Sample(NAME##_s5, iUv); case 6: return NAME##_t6.Sample(NAME##_s6, iUv); case 7: return NAME##_t7.Sample(NAME##_s7, iUv); case 8: return NAME##_t8.Sample(NAME##_s8, iUv); case 9: return NAME##_t9.Sample(NAME##_s9, iUv); case 10: return NAME##_t10.Sample(NAME##_s10, iUv); case 11: return NAME##_t11.Sample(NAME##_s11, iUv); case 12: return NAME##_t12.Sample(NAME##_s12, iUv); case 13: return NAME##_t13.Sample(NAME##_s13, iUv); case 14: return NAME##_t14.Sample(NAME##_s14, iUv); case 15: return NAME##_t15.Sample(NAME##_s15, iUv); default: return float4(0.0); } } \
+		float4 SampleLevel(float2 iUv, float iLod) { switch (index) { case 0: return NAME##_t0.SampleLevel(NAME##_s0, iUv, iLod); case 1: return NAME##_t1.SampleLevel(NAME##_s1, iUv, iLod); case 2: return NAME##_t2.SampleLevel(NAME##_s2, iUv, iLod); case 3: return NAME##_t3.SampleLevel(NAME##_s3, iUv, iLod); case 4: return NAME##_t4.SampleLevel(NAME##_s4, iUv, iLod); case 5: return NAME##_t5.SampleLevel(NAME##_s5, iUv, iLod); case 6: return NAME##_t6.SampleLevel(NAME##_s6, iUv, iLod); case 7: return NAME##_t7.SampleLevel(NAME##_s7, iUv, iLod); case 8: return NAME##_t8.SampleLevel(NAME##_s8, iUv, iLod); case 9: return NAME##_t9.SampleLevel(NAME##_s9, iUv, iLod); case 10: return NAME##_t10.SampleLevel(NAME##_s10, iUv, iLod); case 11: return NAME##_t11.SampleLevel(NAME##_s11, iUv, iLod); case 12: return NAME##_t12.SampleLevel(NAME##_s12, iUv, iLod); case 13: return NAME##_t13.SampleLevel(NAME##_s13, iUv, iLod); case 14: return NAME##_t14.SampleLevel(NAME##_s14, iUv, iLod); case 15: return NAME##_t15.SampleLevel(NAME##_s15, iUv, iLod); default: return float4(0.0); } } \
+		float4 SampleGrad(float2 iUv, float2 iDx, float2 iDy) { switch (index) { case 0: return NAME##_t0.SampleGrad(NAME##_s0, iUv, iDx, iDy); case 1: return NAME##_t1.SampleGrad(NAME##_s1, iUv, iDx, iDy); case 2: return NAME##_t2.SampleGrad(NAME##_s2, iUv, iDx, iDy); case 3: return NAME##_t3.SampleGrad(NAME##_s3, iUv, iDx, iDy); case 4: return NAME##_t4.SampleGrad(NAME##_s4, iUv, iDx, iDy); case 5: return NAME##_t5.SampleGrad(NAME##_s5, iUv, iDx, iDy); case 6: return NAME##_t6.SampleGrad(NAME##_s6, iUv, iDx, iDy); case 7: return NAME##_t7.SampleGrad(NAME##_s7, iUv, iDx, iDy); case 8: return NAME##_t8.SampleGrad(NAME##_s8, iUv, iDx, iDy); case 9: return NAME##_t9.SampleGrad(NAME##_s9, iUv, iDx, iDy); case 10: return NAME##_t10.SampleGrad(NAME##_s10, iUv, iDx, iDy); case 11: return NAME##_t11.SampleGrad(NAME##_s11, iUv, iDx, iDy); case 12: return NAME##_t12.SampleGrad(NAME##_s12, iUv, iDx, iDy); case 13: return NAME##_t13.SampleGrad(NAME##_s13, iUv, iDx, iDy); case 14: return NAME##_t14.SampleGrad(NAME##_s14, iUv, iDx, iDy); case 15: return NAME##_t15.SampleGrad(NAME##_s15, iUv, iDx, iDy); default: return float4(0.0); } } \
+		void GetDimensions(out uint oWidth, out uint oHeight) { oWidth = 0; oHeight = 0; switch (index) { case 0: NAME##_t0.GetDimensions(oWidth, oHeight); break; case 1: NAME##_t1.GetDimensions(oWidth, oHeight); break; case 2: NAME##_t2.GetDimensions(oWidth, oHeight); break; case 3: NAME##_t3.GetDimensions(oWidth, oHeight); break; case 4: NAME##_t4.GetDimensions(oWidth, oHeight); break; case 5: NAME##_t5.GetDimensions(oWidth, oHeight); break; case 6: NAME##_t6.GetDimensions(oWidth, oHeight); break; case 7: NAME##_t7.GetDimensions(oWidth, oHeight); break; case 8: NAME##_t8.GetDimensions(oWidth, oHeight); break; case 9: NAME##_t9.GetDimensions(oWidth, oHeight); break; case 10: NAME##_t10.GetDimensions(oWidth, oHeight); break; case 11: NAME##_t11.GetDimensions(oWidth, oHeight); break; case 12: NAME##_t12.GetDimensions(oWidth, oHeight); break; case 13: NAME##_t13.GetDimensions(oWidth, oHeight); break; case 14: NAME##_t14.GetDimensions(oWidth, oHeight); break; case 15: NAME##_t15.GetDimensions(oWidth, oHeight); break; default: break; } } \
+		void GetDimensions(uint iMip, out uint oWidth, out uint oHeight, out uint oLevels) { oWidth = 0; oHeight = 0; oLevels = 0; switch (index) { case 0: NAME##_t0.GetDimensions(iMip, oWidth, oHeight, oLevels); break; case 1: NAME##_t1.GetDimensions(iMip, oWidth, oHeight, oLevels); break; case 2: NAME##_t2.GetDimensions(iMip, oWidth, oHeight, oLevels); break; case 3: NAME##_t3.GetDimensions(iMip, oWidth, oHeight, oLevels); break; case 4: NAME##_t4.GetDimensions(iMip, oWidth, oHeight, oLevels); break; case 5: NAME##_t5.GetDimensions(iMip, oWidth, oHeight, oLevels); break; case 6: NAME##_t6.GetDimensions(iMip, oWidth, oHeight, oLevels); break; case 7: NAME##_t7.GetDimensions(iMip, oWidth, oHeight, oLevels); break; case 8: NAME##_t8.GetDimensions(iMip, oWidth, oHeight, oLevels); break; case 9: NAME##_t9.GetDimensions(iMip, oWidth, oHeight, oLevels); break; case 10: NAME##_t10.GetDimensions(iMip, oWidth, oHeight, oLevels); break; case 11: NAME##_t11.GetDimensions(iMip, oWidth, oHeight, oLevels); break; case 12: NAME##_t12.GetDimensions(iMip, oWidth, oHeight, oLevels); break; case 13: NAME##_t13.GetDimensions(iMip, oWidth, oHeight, oLevels); break; case 14: NAME##_t14.GetDimensions(iMip, oWidth, oHeight, oLevels); break; case 15: NAME##_t15.GetDimensions(iMip, oWidth, oHeight, oLevels); break; default: break; } } \
+	}; \
+	struct NAME##_Table { \
+		__subscript(int iIndex)->NAME##_Slot { get { NAME##_Slot slot; slot.index = iIndex; return slot; } } \
+		__subscript(uint iIndex)->NAME##_Slot { get { NAME##_Slot slot; slot.index = int(iIndex); return slot; } } \
+	}; \
+	static const NAME##_Table NAME = {};
+
+// The table of the 3D renderer, whose stage also samples the shadow and probe arrays: twelve textures (bindings 0 to
+// 11) and their samplers (16 to 27).
+#define OWL_WEBGPU_TEXTURE_TABLE_12(NAME) \
+	[[vk::binding(0, 1)]] Texture2D NAME##_t0; [[vk::binding(16, 1)]] SamplerState NAME##_s0; \
+	[[vk::binding(1, 1)]] Texture2D NAME##_t1; [[vk::binding(17, 1)]] SamplerState NAME##_s1; \
+	[[vk::binding(2, 1)]] Texture2D NAME##_t2; [[vk::binding(18, 1)]] SamplerState NAME##_s2; \
+	[[vk::binding(3, 1)]] Texture2D NAME##_t3; [[vk::binding(19, 1)]] SamplerState NAME##_s3; \
+	[[vk::binding(4, 1)]] Texture2D NAME##_t4; [[vk::binding(20, 1)]] SamplerState NAME##_s4; \
+	[[vk::binding(5, 1)]] Texture2D NAME##_t5; [[vk::binding(21, 1)]] SamplerState NAME##_s5; \
+	[[vk::binding(6, 1)]] Texture2D NAME##_t6; [[vk::binding(22, 1)]] SamplerState NAME##_s6; \
+	[[vk::binding(7, 1)]] Texture2D NAME##_t7; [[vk::binding(23, 1)]] SamplerState NAME##_s7; \
+	[[vk::binding(8, 1)]] Texture2D NAME##_t8; [[vk::binding(24, 1)]] SamplerState NAME##_s8; \
+	[[vk::binding(9, 1)]] Texture2D NAME##_t9; [[vk::binding(25, 1)]] SamplerState NAME##_s9; \
+	[[vk::binding(10, 1)]] Texture2D NAME##_t10; [[vk::binding(26, 1)]] SamplerState NAME##_s10; \
+	[[vk::binding(11, 1)]] Texture2D NAME##_t11; [[vk::binding(27, 1)]] SamplerState NAME##_s11; \
+	struct NAME##_Slot : IOwlWebGpuTexture { \
+		int index; \
+		float4 Sample(float2 iUv) { switch (index) { case 0: return NAME##_t0.Sample(NAME##_s0, iUv); case 1: return NAME##_t1.Sample(NAME##_s1, iUv); case 2: return NAME##_t2.Sample(NAME##_s2, iUv); case 3: return NAME##_t3.Sample(NAME##_s3, iUv); case 4: return NAME##_t4.Sample(NAME##_s4, iUv); case 5: return NAME##_t5.Sample(NAME##_s5, iUv); case 6: return NAME##_t6.Sample(NAME##_s6, iUv); case 7: return NAME##_t7.Sample(NAME##_s7, iUv); case 8: return NAME##_t8.Sample(NAME##_s8, iUv); case 9: return NAME##_t9.Sample(NAME##_s9, iUv); case 10: return NAME##_t10.Sample(NAME##_s10, iUv); case 11: return NAME##_t11.Sample(NAME##_s11, iUv); default: return float4(0.0); } } \
+		float4 SampleLevel(float2 iUv, float iLod) { switch (index) { case 0: return NAME##_t0.SampleLevel(NAME##_s0, iUv, iLod); case 1: return NAME##_t1.SampleLevel(NAME##_s1, iUv, iLod); case 2: return NAME##_t2.SampleLevel(NAME##_s2, iUv, iLod); case 3: return NAME##_t3.SampleLevel(NAME##_s3, iUv, iLod); case 4: return NAME##_t4.SampleLevel(NAME##_s4, iUv, iLod); case 5: return NAME##_t5.SampleLevel(NAME##_s5, iUv, iLod); case 6: return NAME##_t6.SampleLevel(NAME##_s6, iUv, iLod); case 7: return NAME##_t7.SampleLevel(NAME##_s7, iUv, iLod); case 8: return NAME##_t8.SampleLevel(NAME##_s8, iUv, iLod); case 9: return NAME##_t9.SampleLevel(NAME##_s9, iUv, iLod); case 10: return NAME##_t10.SampleLevel(NAME##_s10, iUv, iLod); case 11: return NAME##_t11.SampleLevel(NAME##_s11, iUv, iLod); default: return float4(0.0); } } \
+		float4 SampleGrad(float2 iUv, float2 iDx, float2 iDy) { switch (index) { case 0: return NAME##_t0.SampleGrad(NAME##_s0, iUv, iDx, iDy); case 1: return NAME##_t1.SampleGrad(NAME##_s1, iUv, iDx, iDy); case 2: return NAME##_t2.SampleGrad(NAME##_s2, iUv, iDx, iDy); case 3: return NAME##_t3.SampleGrad(NAME##_s3, iUv, iDx, iDy); case 4: return NAME##_t4.SampleGrad(NAME##_s4, iUv, iDx, iDy); case 5: return NAME##_t5.SampleGrad(NAME##_s5, iUv, iDx, iDy); case 6: return NAME##_t6.SampleGrad(NAME##_s6, iUv, iDx, iDy); case 7: return NAME##_t7.SampleGrad(NAME##_s7, iUv, iDx, iDy); case 8: return NAME##_t8.SampleGrad(NAME##_s8, iUv, iDx, iDy); case 9: return NAME##_t9.SampleGrad(NAME##_s9, iUv, iDx, iDy); case 10: return NAME##_t10.SampleGrad(NAME##_s10, iUv, iDx, iDy); case 11: return NAME##_t11.SampleGrad(NAME##_s11, iUv, iDx, iDy); default: return float4(0.0); } } \
+		void GetDimensions(out uint oWidth, out uint oHeight) { oWidth = 0; oHeight = 0; switch (index) { case 0: NAME##_t0.GetDimensions(oWidth, oHeight); break; case 1: NAME##_t1.GetDimensions(oWidth, oHeight); break; case 2: NAME##_t2.GetDimensions(oWidth, oHeight); break; case 3: NAME##_t3.GetDimensions(oWidth, oHeight); break; case 4: NAME##_t4.GetDimensions(oWidth, oHeight); break; case 5: NAME##_t5.GetDimensions(oWidth, oHeight); break; case 6: NAME##_t6.GetDimensions(oWidth, oHeight); break; case 7: NAME##_t7.GetDimensions(oWidth, oHeight); break; case 8: NAME##_t8.GetDimensions(oWidth, oHeight); break; case 9: NAME##_t9.GetDimensions(oWidth, oHeight); break; case 10: NAME##_t10.GetDimensions(oWidth, oHeight); break; case 11: NAME##_t11.GetDimensions(oWidth, oHeight); break; default: break; } } \
+		void GetDimensions(uint iMip, out uint oWidth, out uint oHeight, out uint oLevels) { oWidth = 0; oHeight = 0; oLevels = 0; switch (index) { case 0: NAME##_t0.GetDimensions(iMip, oWidth, oHeight, oLevels); break; case 1: NAME##_t1.GetDimensions(iMip, oWidth, oHeight, oLevels); break; case 2: NAME##_t2.GetDimensions(iMip, oWidth, oHeight, oLevels); break; case 3: NAME##_t3.GetDimensions(iMip, oWidth, oHeight, oLevels); break; case 4: NAME##_t4.GetDimensions(iMip, oWidth, oHeight, oLevels); break; case 5: NAME##_t5.GetDimensions(iMip, oWidth, oHeight, oLevels); break; case 6: NAME##_t6.GetDimensions(iMip, oWidth, oHeight, oLevels); break; case 7: NAME##_t7.GetDimensions(iMip, oWidth, oHeight, oLevels); break; case 8: NAME##_t8.GetDimensions(iMip, oWidth, oHeight, oLevels); break; case 9: NAME##_t9.GetDimensions(iMip, oWidth, oHeight, oLevels); break; case 10: NAME##_t10.GetDimensions(iMip, oWidth, oHeight, oLevels); break; case 11: NAME##_t11.GetDimensions(iMip, oWidth, oHeight, oLevels); break; default: break; } } \
+	}; \
+	struct NAME##_Table { \
+		__subscript(int iIndex)->NAME##_Slot { get { NAME##_Slot slot; slot.index = iIndex; return slot; } } \
+		__subscript(uint iIndex)->NAME##_Slot { get { NAME##_Slot slot; slot.index = int(iIndex); return slot; } } \
+	}; \
+	static const NAME##_Table NAME = {};
+
+// Cube tables: OWL_WEBGPU_CUBE_TABLE(gCubes) declares eight cubes (bindings 32 to 39 of group 1) sharing one sampler
+// (binding 40), and a `gCubes` that indexes them as the `SamplerCube gCubes[N]` of the other targets: `SampleLevel`.
+// With the sixteen textures of a texture table, a stage samples more than WebGPU's default limits: the page asks for
+// the limits of the adapter.
+#define OWL_WEBGPU_CUBE_SLOTS 8
+#define OWL_WEBGPU_CUBE_TABLE(NAME) \
+	[[vk::binding(32, 1)]] TextureCube NAME##_c0; \
+	[[vk::binding(33, 1)]] TextureCube NAME##_c1; \
+	[[vk::binding(34, 1)]] TextureCube NAME##_c2; \
+	[[vk::binding(35, 1)]] TextureCube NAME##_c3; \
+	[[vk::binding(36, 1)]] TextureCube NAME##_c4; \
+	[[vk::binding(37, 1)]] TextureCube NAME##_c5; \
+	[[vk::binding(38, 1)]] TextureCube NAME##_c6; \
+	[[vk::binding(39, 1)]] TextureCube NAME##_c7; \
+	[[vk::binding(40, 1)]] SamplerState NAME##_sampler; \
+	struct NAME##_Slot { \
+		int index; \
+		float4 SampleLevel(float3 iDirection, float iLod) { switch (index) { case 0: return NAME##_c0.SampleLevel(NAME##_sampler, iDirection, iLod); case 1: return NAME##_c1.SampleLevel(NAME##_sampler, iDirection, iLod); case 2: return NAME##_c2.SampleLevel(NAME##_sampler, iDirection, iLod); case 3: return NAME##_c3.SampleLevel(NAME##_sampler, iDirection, iLod); case 4: return NAME##_c4.SampleLevel(NAME##_sampler, iDirection, iLod); case 5: return NAME##_c5.SampleLevel(NAME##_sampler, iDirection, iLod); case 6: return NAME##_c6.SampleLevel(NAME##_sampler, iDirection, iLod); case 7: return NAME##_c7.SampleLevel(NAME##_sampler, iDirection, iLod); default: return float4(0.0); } } \
+	}; \
+	struct NAME##_Table { \
+		__subscript(int iIndex)->NAME##_Slot { get { NAME##_Slot slot; slot.index = iIndex; return slot; } } \
+		__subscript(uint iIndex)->NAME##_Slot { get { NAME##_Slot slot; slot.index = int(iIndex); return slot; } } \
+	}; \
+	static const NAME##_Table NAME = {};
+
+#endif

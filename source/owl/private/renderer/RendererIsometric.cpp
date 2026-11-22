@@ -232,6 +232,16 @@ constexpr uint16_t g_whiteTexture = 0xFFFF;
 constexpr uint32_t g_litAlbedoSlots = 10;
 // Slot of the opacity map of a tileset, after the lit albedo, normal and depth slots.
 constexpr size_t g_opacitySlot = 30;
+// WebGPU samples sixteen textures per stage: a batch has half the slots, the same layout (isometric_light.slangh).
+constexpr uint32_t g_webGpuSlotDivisor = 2;
+
+// The slot counts of the active backend: the halves of the constants above on WebGPU.
+auto slotDivisor() -> uint32_t {
+	return gpu::RenderCommand::getApi() == gpu::RenderAPI::Type::WebGpu ? g_webGpuSlotDivisor : 1;
+}
+auto maxTextureSlots() -> uint32_t { return g_maxTextureSlots / slotDivisor(); }
+auto litAlbedoSlots() -> uint32_t { return g_litAlbedoSlots / slotDivisor(); }
+auto opacitySlot() -> size_t { return g_opacitySlot / slotDivisor(); }
 // World height of a full texel of a depth atlas (`Z_RANGE` of `tools/iso_atlas`).
 constexpr float g_depthAtlasRange = 8.f;
 
@@ -463,7 +473,7 @@ void queue(const IsometricBillboard& iBillboard) {
 		state.opaque.push_back(item);
 }
 
-auto slotCapacity() -> size_t { return g_state->lit ? g_litAlbedoSlots : g_maxTextureSlots; }
+auto slotCapacity() -> size_t { return g_state->lit ? litAlbedoSlots() : maxTextureSlots(); }
 
 auto findCompanion(const std::filesystem::path& iAlbedo, const std::string_view iSuffix) -> shared<gpu::Texture2D> {
 	const auto candidate =
@@ -511,21 +521,22 @@ void bindSlots(const std::span<const shared<gpu::Texture2D>> iAlbedos,
 	auto& slots = state.litSlots;
 	if (!state.lit) {
 		slots.assign(iAlbedos.begin(), iAlbedos.end());
-		slots.resize(g_opacitySlot + 1, state.whiteTexture);
-		slots[g_opacitySlot] = iOpacity;
+		slots.resize(opacitySlot() + 1, state.whiteTexture);
+		slots[opacitySlot()] = iOpacity;
 		gpu::RenderCommand::bindTextures(slots);
 		return;
 	}
-	slots.assign(iOpacity ? g_opacitySlot + 1 : size_t{3} * g_litAlbedoSlots, nullptr);
-	for (size_t index = 0; index < g_litAlbedoSlots; ++index) {
+	const size_t albedoSlots = litAlbedoSlots();
+	slots.assign(iOpacity ? opacitySlot() + 1 : 3 * albedoSlots, nullptr);
+	for (size_t index = 0; index < albedoSlots; ++index) {
 		const auto& albedo = index < iAlbedos.size() ? iAlbedos[index] : state.whiteTexture;
 		const auto& companions = companionsOf(albedo);
 		slots[index] = albedo;
-		slots[g_litAlbedoSlots + index] = companions.normal ? companions.normal : state.noNormal;
-		slots[size_t{2} * g_litAlbedoSlots + index] = companions.depth ? companions.depth : state.noDepth;
+		slots[albedoSlots + index] = companions.normal ? companions.normal : state.noNormal;
+		slots[2 * albedoSlots + index] = companions.depth ? companions.depth : state.noDepth;
 	}
 	if (iOpacity)
-		slots[g_opacitySlot] = iOpacity;
+		slots[opacitySlot()] = iOpacity;
 	gpu::RenderCommand::bindTextures(slots);
 }
 

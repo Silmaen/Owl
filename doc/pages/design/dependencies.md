@@ -186,7 +186,7 @@ The `DependencyReport` CI action lists what lags behind ConanCenter or upstream.
 | vulkan                | 1.4.357.0       | ConanCenter           | shared  | vulkan-headers, vulkan-loader, vulkan-utility-libraries                        |
 | vulkan-memory-alloc.  | 3.3.0           | ConanCenter           | header  | VMA: every Vulkan buffer and image is a sub-allocation                         |
 | xxhash                | 0.8.4           | ConanCenter           | static  | XXH3-128 keys of the asset cook cache                                          |
-| yaml-cpp              | 0.9.0           | ConanCenter           | static  |                                                                                |
+| yaml-cpp              | 0.9.0           | local recipe          | static  | ConanCenter's recipe, doubles written right on 32-bit targets (patch)          |
 | zlib                  | 1.4             | ConanCenter           | static  | Transitive                                                                     |
 | zstd                  | 1.5.7           | ConanCenter           | static  |                                                                                |
 
@@ -211,9 +211,10 @@ ConanCenter as is.
 | `luau` 0.747                      | ConanCenter stops at 0.700: a build of the upstream CMake, Lua errors raised as C++ exceptions (no `LUA_USE_LONGJMP`): an error unwinding a binding runs its destructors                                                                                |
 | `openal-soft` 1.25.2              | ConanCenter stops at 1.24.3: its recipe on libalsa 1.2.16.1, `-Werror=function-effects` off (libstdc++)                                                                                                                                                 |
 | `msdfgen` 1.13.1                  | ConanCenter stops at 1.12 (needed by msdf-atlas-gen 1.4): its recipe, on freetype 2.15.0 and tinyxml2 11.0.0                                                                                                                                            |
-| `joltphysics` 5.7.0               | ConanCenter's recipe turns cross-platform determinism off and pushes `-mavx2 -mfma` to its consumers: deterministic, SSE4.2 on x86_64, no FMA, RTTI on, no consumer flag                                                                                |
+| `joltphysics` 5.7.0               | ConanCenter's recipe turns cross-platform determinism off and pushes `-mavx2 -mfma` to its consumers: deterministic, SSE4.2 on x86_64, no FMA, RTTI on, exceptions on the Web                                                                           |
 | `glfw` 3.5.1                      | ConanCenter stops at 3.4 and builds Wayland on its own libwayland: both backends, system libraries dlopened                                                                                                                                             |
 | `ktx` 4.4.2                       | ConanCenter's recipe plus a patch: the ETC1S encoder allocates the BasisLZ global data with `new[]` that `ktxTexture2_Destroy` frees with `free` (ASan)                                                                                                 |
+| `yaml-cpp` 0.9.0                  | ConanCenter's recipe plus a patch: the 64-bit significand of a double went through a `size_t`, wrong on wasm32                                                                                                                                          |
 
 ## Planned
 

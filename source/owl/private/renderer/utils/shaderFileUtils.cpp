@@ -33,6 +33,7 @@ OWL_DIAG_POP
 #include <functional>
 #include <mutex>
 #include <sstream>
+#include <string_view>
 #include <system_error>
 #include <vector>
 
@@ -108,7 +109,7 @@ auto readCachedShader(const std::filesystem::path& iFile) -> std::vector<uint32_
 	const auto size = in.tellg();
 	in.seekg(0, std::ios::beg);
 	result.resize(static_cast<size_t>(size) / sizeof(uint32_t));
-	in.read(reinterpret_cast<char*>(result.data()), size);
+	in.read(reinterpret_cast<char*>(result.data()), static_cast<std::streamsize>(result.size() * sizeof(uint32_t)));
 	in.close();
 	{
 		const std::lock_guard<std::mutex> lock{g_inMemoryShaderCacheMutex};
@@ -123,7 +124,8 @@ auto writeCachedShader(const std::filesystem::path& iFile, const std::vector<uin
 	std::ofstream out(iFile, std::ios::out | std::ios::binary);
 
 	if (out.is_open()) {
-		out.write(reinterpret_cast<const char*>(iData.data()), static_cast<int64_t>(iData.size() * sizeof(uint32_t)));
+		out.write(reinterpret_cast<const char*>(iData.data()),
+				  static_cast<std::streamsize>(iData.size() * sizeof(uint32_t)));
 		out.flush();
 		out.close();
 		const std::lock_guard<std::mutex> lock{g_inMemoryShaderCacheMutex};
@@ -222,9 +224,12 @@ auto getShaderTargetMacro(const ShaderTarget iTarget) -> std::string_view {
 
 auto getShaderCacheKey(const std::string& iSource, const std::string& iModuleName, const ShaderTarget iTarget)
 		-> std::string {
-	return std::format("backend={};module={};slang={};macros={}=1;profile={};source={}", getShaderTargetFolder(iTarget),
-					   iModuleName, OWL_SLANG_VERSION, getShaderTargetMacro(iTarget), getShaderTargetProfile(iTarget),
-					   iSource);
+	// The WGSL is edited after Slang (`OwlShaderCompiler`): its revision keys the WebGPU stages, the others keep theirs.
+	constexpr std::string_view wgslRevision = ";wgsl=1";
+	return std::format("backend={};module={};slang={};macros={}=1;profile={}{};source={}",
+					   getShaderTargetFolder(iTarget), iModuleName, OWL_SLANG_VERSION, getShaderTargetMacro(iTarget),
+					   getShaderTargetProfile(iTarget),
+					   iTarget == ShaderTarget::WebGpu ? wgslRevision : std::string_view{}, iSource);
 }
 
 auto remapBuiltinsForOpenGl(std::vector<uint32_t>& ioSpirv) -> uint32_t {

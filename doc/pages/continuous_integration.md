@@ -18,6 +18,7 @@ when:
 |-----------------------------------|-------------------------------------------------------------------------------|
 | `.gitlab-ci.yml`                  | Merge request and `main` pipeline: rules, stages, the jobs.                   |
 | `ci/gitlab/templates.yml`         | Shared blocks (runners, artifacts, analysis, bench) and the secrets they use. |
+| `ci/gitlab/nightly-jobs.yml`      | What each nightly job does, as hidden jobs the two pipelines extend.          |
 | `ci/gitlab/nightly.yml`           | The nightly child pipeline.                                                   |
 | `ci/gitlab/nightly-unchanged.yml` | The child pipeline written when `main` did not move.                          |
 
@@ -45,7 +46,7 @@ flowchart TD
         GATE -->|"unchanged"| SKIP["single job, nothing built"]
         CHILD --> N1["clang debug coverage, slow suite"]
         CHILD --> N2["TSan, UBSan, tidy, analyzer"]
-        CHILD --> N3["bench, fuzz, include check, dependency report"]
+        CHILD --> N3["bench, fuzz, include check, dependency report, Android, Web"]
         CHILD --> N4["packages x3 (publish)"]
     end
 ```
@@ -61,14 +62,14 @@ flowchart TD
 | `clang-tidy` (diff scope)                           | ▶                         | ✅ (C++)  | ▶                 | ▶           | full    |
 | `bench` (runner tag `bench`)                        | ▶                         | ✅ (C++)  | ▶                 | ▶           | ✅       |
 | `sanitizer-address`                                 | ▶                         | ▶        | ▶                 | ✅           | —       |
-| `windows-gcc-{release,debug}`, `linux-gcc-release`, `linux-clang-minimal` | ▶   | ▶        | ▶                 | ▶           | —       |
-| `nightly-jobs` (every nightly job, one ▶ each)      | ▶                         | ▶        | ▶                 | ▶           | —       |
-| `linux-clang-debug` (Clang coverage)                | —                         | —        | —                 | —           | ✅       |
-| `slow-suite` (Release, every test)                  | —                         | —        | —                 | —           | ✅       |
-| `sanitizer-thread`, `sanitizer-undefined-behavior`  | —                         | —        | —                 | —           | ✅       |
-| `static-analyzer`, `include-check`                  | —                         | —        | —                 | —           | ✅       |
-| `fuzz`, `dependency-report`                         | —                         | —        | —                 | —           | ✅       |
-| `package-linux-x64`, `-linux-arm64`, `-windows-x64` | —                         | —        | —                 | —           | ✅       |
+| `windows-gcc-{release,debug}`, `linux-gcc-release`  | ▶                         | ▶        | ▶                 | ▶           | —       |
+| `linux-clang-debug` (Clang coverage)                | ▶                         | ▶        | ▶                 | ▶           | ✅       |
+| `slow-suite` (Release, every test)                  | ▶                         | ▶        | ▶                 | ▶           | ✅       |
+| `sanitizer-thread`, `sanitizer-undefined-behavior`  | ▶                         | ▶        | ▶                 | ▶           | ✅       |
+| `static-analyzer`, `include-check`                  | ▶                         | ▶        | ▶                 | ▶           | ✅       |
+| `fuzz`, `dependency-report`                         | ▶                         | ▶        | ▶                 | ▶           | ✅       |
+| `android-arm64`, `web-release` (Node tests)         | ▶                         | ▶        | ▶                 | ▶           | ✅       |
+| `package-linux-x64`, `-linux-arm64`, `-windows-x64` | ▶                         | ▶        | ▶                 | ▶           | ✅       |
 
 - ▶: the job shows, waiting for its ▶ (`when: manual`, `allow_failure: true`); left alone, it blocks neither the
   pipeline nor the merge. —: the job is not in that pipeline.
@@ -80,7 +81,7 @@ flowchart TD
   changes`: everything outside `doc/`, `.claude/`, the root Markdown files and `LICENSE`). clang-tidy and the
   benchmarks (C++) also wait for it when nothing but the sample games, the Engine Demo or `tools/` moved: neither
   reads them.
-- **Presets no job builds** (MinGW GCC, `linux-gcc-release`, `linux-clang-minimal`) have a job of their own in every
+- **Presets no job builds** (MinGW GCC, `linux-gcc-release`) have a job of their own in every
   pipeline but the nightly ones, waiting for its ▶ and never blocking (`.on-demand`).
 - **A draft marked ready**: GitLab starts no pipeline when the draft status changes; *Run pipeline* on the merge
   request starts the ready set, which reuses what the draft already passed (see **Reuse**): only the jobs the draft
@@ -92,8 +93,9 @@ flowchart TD
   pipeline only when `main` moved since the last successful scheduled pipeline, a single no-op job otherwise. The
   child pipeline builds nothing in the three package jobs beyond their own tree: each builds and tests its release
   tree, then publishes the archives to the site (Linux x64 also publishes the documentation).
-- **One nightly job by hand**: ▶ on `nightly-jobs` opens the nightly child pipeline of the branch with every job
-  waiting for its own ▶ (`NIGHTLY_PICK`): ▶ the one to check. The merge request does not wait for it.
+- **Nightly jobs in a merge request**: every nightly job but `clang-tidy` and `bench` (already in the merge request,
+  scoped to its diff) waits for its ▶ in the `build` column under its own name, never blocking; off `main` the
+  package jobs stop at the archives.
 - **Nightly by hand**: *Build > Pipelines > Run pipeline* on any branch with `NIGHTLY` = `true` runs the gate and the
   whole child pipeline on that branch, whether it moved or not, and none of the usual jobs; only `main` publishes.
 - **Reuse**: in a pipeline a push or a merge request started, a job that a successful job of the same name already

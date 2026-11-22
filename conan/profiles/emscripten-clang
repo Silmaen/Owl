@@ -1,0 +1,37 @@
+{# Web, emsdk's emcc + libc++ with POSIX threads (host profile of the web-* presets, run in the Web build image; the
+   build profile is linux-clang). Emscripten.cmake comes from the emsdk of the image ($EMSDK). #}
+{% set emsdk = os.getenv("EMSDK", "/opt/emsdk") %}
+[settings]
+os=Emscripten
+arch=wasm
+compiler=emcc
+compiler.version=4.0.23
+compiler.libcxx=libc++
+compiler.threads=posix
+compiler.cppstd=23
+build_type=Release
+
+[conf]
+tools.build:compiler_executables={"c": "emcc", "cpp": "em++"}
+tools.cmake.cmaketoolchain:generator=Ninja
+tools.cmake.cmaketoolchain:user_toolchain=["{{ emsdk }}/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake"]
+# Native WebAssembly exceptions everywhere: the engine catches what yaml-cpp and rapidyaml throw, and a library built
+# in another exception mode breaks the unwinding.
+tools.build:cflags=["-pthread", "-fwasm-exceptions"]
+tools.build:cxxflags=["-pthread", "-fwasm-exceptions"]
+tools.build:exelinkflags=["-pthread", "-fwasm-exceptions"]
+# Those flags change the binaries: they are part of the package id.
+tools.info.package_id:confs=["tools.build:cflags", "tools.build:cxxflags", "tools.build:exelinkflags"]
+# Nothing comes from the system in a browser.
+tools.system.package_manager:mode=report
+
+[buildenv]
+CMAKE_POLICY_VERSION_MINIMUM=3.5
+CC=emcc
+CXX=em++
+AR=emar
+RANLIB=emranlib
+
+[replace_tool_requires]
+cmake/*: cmake/4.4.4
+pkgconf/*: pkgconf/2.5.1

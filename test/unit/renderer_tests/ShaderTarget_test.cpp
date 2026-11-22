@@ -81,6 +81,7 @@ TEST(ShaderTarget, EveryTargetHasItsOwnCacheKey) {
 }
 
 TEST(ShaderTarget, AndroidTargetWritesSpirv13) {
+	OWL_REQUIRE_SHADER_COMPILER;
 	core::Log::init(core::Log::Level::Off);
 	const auto result = renderer::utils::compileShader(g_drawSource, "android_check", ShaderTarget::VulkanAndroid);
 	ASSERT_TRUE(result.success);
@@ -96,6 +97,7 @@ TEST(ShaderTarget, AndroidTargetWritesSpirv13) {
 }
 
 TEST(ShaderTarget, WebGpuTargetWritesWgsl) {
+	OWL_REQUIRE_SHADER_COMPILER;
 	core::Log::init(core::Log::Level::Off);
 	const auto draw = renderer::utils::compileShader(g_drawSource, "wgsl_draw", ShaderTarget::WebGpu);
 	ASSERT_TRUE(draw.success);
@@ -112,9 +114,13 @@ TEST(ShaderTarget, WebGpuTargetWritesWgsl) {
 	core::Log::invalidate();
 }
 
-TEST(ShaderTarget, TestsHaveTheShaderCompiler) { EXPECT_TRUE(renderer::utils::hasShaderCompiler()); }
+// The test programs link the compiler where Slang exists: not on the Web, whose runner reads baked shaders.
+TEST(ShaderTarget, TestsHaveTheShaderCompilerWhereTheyLinkIt) {
+	EXPECT_EQ(renderer::utils::hasShaderCompiler(), OWL_WITH_SHADER_COMPILER == 1);
+}
 
 TEST(ShaderTarget, WithoutCompilerNothingCompiles) {
+	OWL_REQUIRE_SHADER_COMPILER;
 	core::Log::init(core::Log::Level::Off);
 	{
 		const NoShaderCompiler guard;
@@ -136,6 +142,7 @@ TEST(ShaderTarget, WithoutCompilerNothingCompiles) {
 }
 
 TEST(ShaderTarget, WithoutCompilerBakedStagesStillLoad) {
+	OWL_REQUIRE_SHADER_COMPILER;
 	core::Log::init(core::Log::Level::Off);
 	auto app = mkShared<app::Application>(app::AppParams{.args = nullptr,
 														 .frameLogFrequency = 0,

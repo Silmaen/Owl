@@ -248,6 +248,11 @@ if (${PROJECT_PREFIX}_CONAN_INSTALL)
 
     # Host settings and options go through a generated profile rather than the command line: on
     # Windows `poetry` is a `.cmd` shim, and cmd.exe splits an argument like `&:shared=True` at `&`.
+    # The emsdk running this build, not the one the profile was written with (no ABI compatibility between versions).
+    set(_owl_conan_settings "")
+    if (EMSCRIPTEN_VERSION)
+        set(_owl_conan_settings "compiler.version=${EMSCRIPTEN_VERSION}\n")
+    endif ()
     file(MAKE_DIRECTORY "${_owl_conan_output}")
     set(_owl_conan_host_profile "${_owl_conan_output}/owl-host.profile")
     file(TO_CMAKE_PATH "${${PROJECT_PREFIX}_CONAN_PROFILE}" _owl_conan_base_profile)
@@ -262,7 +267,7 @@ if (${PROJECT_PREFIX}_CONAN_INSTALL)
     endif ()
     file(WRITE "${_owl_conan_host_profile}"
             "include(${_owl_conan_base_profile})\n\n"
-            "[settings]\nbuild_type=${${PROJECT_PREFIX}_CONAN_BUILD_TYPE}\n\n"
+            "[settings]\nbuild_type=${${PROJECT_PREFIX}_CONAN_BUILD_TYPE}\n${_owl_conan_settings}\n"
             "[options]\n"
             "&:shared=${_owl_conan_shared}\n"
             "&:testing=${_owl_conan_testing}\n"
@@ -390,6 +395,7 @@ unset(_owl_conan_compiler)
 unset(_owl_conan_os)
 unset(_owl_conan_target)
 unset(_owl_conan_host_os)
+unset(_owl_conan_settings)
 unset(_owl_conan_profile)
 unset(_owl_conan_pc)
 unset(_owl_conan_extra_vars)

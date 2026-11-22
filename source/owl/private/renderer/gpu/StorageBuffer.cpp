@@ -10,11 +10,14 @@
 #include "renderer/Renderer.h"
 #include "renderer/gpu/StorageBuffer.h"
 #include "renderer/gpu/null/StorageBuffer.h"
-#if OWL_WITH_RENDER
+#if OWL_WITH_NATIVE_GPU
 #if OWL_WITH_DESKTOP
 #include "renderer/gpu/opengl/StorageBuffer.h"
 #endif
 #include "renderer/gpu/vulkan/StorageBuffer.h"
+#endif
+#if OWL_WITH_WEBGPU
+#include "webgpu/Buffer.h"
 #endif
 
 #include <cstdint>
@@ -25,9 +28,15 @@ auto StorageBuffer::create(const uint32_t iSize, const uint32_t iBinding, [[mayb
 		-> shared<StorageBuffer> {
 	const auto api = RenderCommand::getApi();
 	switch (api) {
+#if OWL_WITH_WEBGPU
+		case RenderAPI::Type::WebGpu:
+			return mkShared<webgpu::StorageBuffer>(iSize, iBinding, iRenderer);
+#else
+		case RenderAPI::Type::WebGpu:
+#endif
 		case RenderAPI::Type::Null:
 			return mkShared<null::StorageBuffer>(iSize, iBinding);
-#if OWL_WITH_RENDER
+#if OWL_WITH_NATIVE_GPU
 #if OWL_WITH_DESKTOP
 		case RenderAPI::Type::OpenGL:
 			return mkShared<opengl::StorageBuffer>(iSize, iBinding);
@@ -40,7 +49,7 @@ auto StorageBuffer::create(const uint32_t iSize, const uint32_t iBinding, [[mayb
 #else
 		case RenderAPI::Type::OpenGL:
 		case RenderAPI::Type::Vulkan:
-			break;// GPU backends not built (OWL_MODULE_RENDER=OFF)
+			break;// GPU backends not built (no Vulkan nor OpenGL in this build)
 #endif
 	}
 	OWL_CORE_ERROR("StorageBuffer: Unknown render API ({}).", static_cast<int>(api))

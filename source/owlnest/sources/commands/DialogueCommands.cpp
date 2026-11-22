@@ -11,7 +11,9 @@
 #include "CommandRegistry.h"
 #include "DocumentCommands.h"
 
+#if OWL_WITH_GUI
 #include <gui/widgets/NodeStyle.h>
+#endif
 
 #include <algorithm>
 #include <charconv>
@@ -408,8 +410,11 @@ auto setLinkColor(Dialogue& ioDialogue, const CommandArgs& iArgs) -> expected<Ed
 	if (Dialogue::getOutput(**found, output) == core::UUID{0})
 		return fail(CommandError::NotApplicable, std::format("output {} of the node has no link", output));
 	auto color = iArgs.getText("color");
+#if OWL_WITH_GUI
+	// The colours are those of the node canvas: without the GUI module nothing draws them.
 	if (!color.empty() && !gui::widgets::findLinkColor(color).has_value())
 		return fail(CommandError::InvalidArgument, std::format("`{}` is not a link colour", color));
+#endif
 	const auto* existing = ioDialogue.findRoute((*found)->id, output);
 	DialogueRoute route{.node = (*found)->id,
 						.output = output,

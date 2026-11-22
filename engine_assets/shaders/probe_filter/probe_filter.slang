@@ -12,12 +12,18 @@ struct FilterParams {
 [[vk::binding(0)]]
 ConstantBuffer<FilterParams> gParams;
 
+#if defined(BACKEND_WEBGPU)
+#include "webgpu_textures.slangh"
+OWL_WEBGPU_CUBE_TABLE(gSources)
+#define gSource gSources[0]
+#else
 #ifdef BACKEND_VULKAN
 [[vk::binding(1)]]
 #else
 [[vk::binding(0)]]
 #endif
 SamplerCube gSource;
+#endif
 
 struct VertexInput {
 	[[vk::location(0)]] float2 position : POSITION;

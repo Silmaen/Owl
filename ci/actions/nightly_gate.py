@@ -10,6 +10,9 @@ from ci.actions.base.action import BaseAction, PresetConfig
 TEMPLATES = root / "ci" / "gitlab" / "templates.yml"
 """The building blocks the nightly jobs extend: an artifact-generated pipeline cannot include the repository's files."""
 
+JOBS = root / "ci" / "gitlab" / "nightly-jobs.yml"
+"""What each nightly job does, as hidden jobs the nightly pipeline and the merge requests extend."""
+
 NIGHTLY = root / "ci" / "gitlab" / "nightly.yml"
 """The nightly jobs, run as a child pipeline of the scheduled one."""
 
@@ -25,11 +28,11 @@ def nightly_pipeline(unchanged: bool) -> str:
     The child pipeline of tonight.
 
     :param unchanged: True when the commit already passed the last nightly.
-    :return: The YAML of the child pipeline: the templates followed by the nightly jobs, or the single no-change job.
+    :return: The YAML of the child pipeline: the templates, what the jobs do and the jobs, or the single no-change job.
     """
     if unchanged:
         return UNCHANGED.read_text(encoding="utf-8")
-    return TEMPLATES.read_text(encoding="utf-8") + "\n" + NIGHTLY.read_text(encoding="utf-8")
+    return "\n".join(part.read_text(encoding="utf-8") for part in (TEMPLATES, JOBS, NIGHTLY))
 
 
 class NightlyGate(BaseAction):

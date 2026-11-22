@@ -10,11 +10,12 @@
 
 #include "core/utils/StringUtils.h"
 
+#include <cstdint>
 #include <format>
 
 namespace owl::core::utils {
 
-auto sizeToString(const size_t iSize) -> std::string {
+auto sizeToString(const uint64_t iSize) -> std::string {
 	auto size = static_cast<double>(iSize);
 	std::string_view unit{"B"};
 	if (size > 1024) {

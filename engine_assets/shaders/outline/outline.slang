@@ -12,12 +12,17 @@ struct OutlineParams {
 [[vk::binding(0)]]
 ConstantBuffer<OutlineParams> gParams;
 
+#if defined(BACKEND_WEBGPU)
+#include "webgpu_textures.slangh"
+OWL_WEBGPU_TEXTURE_TABLE(gTextures)// 0 depth of the outlined meshes, 1 depth of the scene.
+#else
 #ifdef BACKEND_VULKAN
 [[vk::binding(1)]]
 #else
 [[vk::binding(0)]]
 #endif
 Sampler2D gTextures[2];// 0 depth of the outlined meshes, 1 depth of the scene.
+#endif
 
 struct VertexInput {
 	[[vk::location(0)]] float2 position : POSITION;

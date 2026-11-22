@@ -84,6 +84,7 @@ public:
 		Null = 0,///< Null Renderer.
 		OpenGL = 1,///< OpenGL Renderer.
 		Vulkan = 2,///< Vulkan renderer API.
+		WebGpu = 3,///< WebGPU renderer API, the one of the Web build.
 	};
 
 	/**

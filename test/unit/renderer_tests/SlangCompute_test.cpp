@@ -65,6 +65,7 @@ void computeMain(uint3 dispatchID : SV_DispatchThreadID) {
 }// namespace
 
 TEST(SlangCompute, compilesSingleSsboVulkan) {
+	OWL_REQUIRE_SHADER_COMPILER;
 	owl::core::Log::init(owl::core::Log::Level::Off);
 	const auto result = owl::renderer::utils::compileShader(kDoubleShader, "double_ssbo",
 															owl::renderer::utils::ShaderTarget::Vulkan);
@@ -76,6 +77,7 @@ TEST(SlangCompute, compilesSingleSsboVulkan) {
 }
 
 TEST(SlangCompute, compilesSingleSsboOpenGl) {
+	OWL_REQUIRE_SHADER_COMPILER;
 	owl::core::Log::init(owl::core::Log::Level::Off);
 	const auto result = owl::renderer::utils::compileShader(kDoubleShader, "double_ssbo_gl",
 															owl::renderer::utils::ShaderTarget::OpenGl);
@@ -87,6 +89,7 @@ TEST(SlangCompute, compilesSingleSsboOpenGl) {
 }
 
 TEST(SlangCompute, reflectsSsboBindings) {
+	OWL_REQUIRE_SHADER_COMPILER;
 	owl::core::Log::init(owl::core::Log::Level::Off);
 	const auto result =
 			owl::renderer::utils::compileShader(kTwoSsboShader, "two_ssbo", owl::renderer::utils::ShaderTarget::Vulkan);
@@ -145,6 +148,7 @@ auto loadShipped(const std::string& iRenderer, const std::string& iShaderName) -
 }// namespace
 
 TEST(SlangCompute, shippedBitonicSortShaderCompiles) {
+	OWL_REQUIRE_SHADER_COMPILER;
 	owl::core::Log::init(owl::core::Log::Level::Off);
 	const auto source = loadShipped("bitonic_sort", "bitonic_sort");
 	ASSERT_FALSE(source.empty());
@@ -155,6 +159,7 @@ TEST(SlangCompute, shippedBitonicSortShaderCompiles) {
 }
 
 TEST(SlangCompute, shippedFrustumCullingShaderCompiles) {
+	OWL_REQUIRE_SHADER_COMPILER;
 	owl::core::Log::init(owl::core::Log::Level::Off);
 	const auto source = loadShipped("frustum_culling", "frustum_culling");
 	ASSERT_FALSE(source.empty());
@@ -165,6 +170,7 @@ TEST(SlangCompute, shippedFrustumCullingShaderCompiles) {
 }
 
 TEST(SlangCompute, shippedRaycastDDAShaderCompiles) {
+	OWL_REQUIRE_SHADER_COMPILER;
 	owl::core::Log::init(owl::core::Log::Level::Off);
 	const auto source = loadShipped("raycast_dda", "raycast_dda");
 	ASSERT_FALSE(source.empty());
@@ -175,6 +181,7 @@ TEST(SlangCompute, shippedRaycastDDAShaderCompiles) {
 }
 
 TEST(SlangCompute, shippedRaycastStripeShaderCompiles) {
+	OWL_REQUIRE_SHADER_COMPILER;
 	owl::core::Log::init(owl::core::Log::Level::Off);
 	const auto source = loadShipped("raycast_stripe", "raycast_stripe");
 	ASSERT_FALSE(source.empty());
@@ -188,6 +195,7 @@ TEST(SlangCompute, shippedRaycastStripeShaderCompiles) {
 }
 
 TEST(SlangCompute, shippedShadersGiveEachStorageBufferItsOwnBlockType) {
+	OWL_REQUIRE_SHADER_COMPILER;
 	// The OpenGL SPIR-V path (NVIDIA) binds every storage buffer sharing a block type to the same buffer.
 	owl::core::Log::init(owl::core::Log::Level::Off);
 	uint32_t checked = 0;

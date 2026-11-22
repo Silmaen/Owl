@@ -31,12 +31,17 @@ struct StripeParams {
 [[vk::binding(0)]]
 ConstantBuffer<StripeParams> gParams;
 
+#if defined(BACKEND_WEBGPU)
+#include "webgpu_textures.slangh"
+OWL_WEBGPU_TEXTURE_TABLE(gTileset)
+#else
 #ifdef BACKEND_VULKAN
 [[vk::binding(1)]]
 #else
 [[vk::binding(0)]]
 #endif
 Sampler2D gTileset[2];
+#endif
 
 #include "atlas.slangh"
 

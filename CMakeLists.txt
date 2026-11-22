@@ -142,6 +142,9 @@ set_target_properties(clean_bin PROPERTIES FOLDER "Utils")
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Include CPack package
-include(CPackConfig.cmake)
-include(CPack)
+# No SDK for the Web: the engine links statically into the runner, which the game export bundles.
+if (NOT ${PROJECT_PREFIX}_PLATFORM_WEB)
+    include(CPackConfig.cmake)
+    include(CPack)
+endif ()
 # ----------------------------------------------------------------------------------------------------------------------

@@ -11,6 +11,9 @@
 #include "platform/FileDialog.h"
 #include "window/Window.h"
 
+#if defined(OWL_PLATFORM_WEB)
+#include "core/Log.h"
+#else
 #include <nfd.hpp>
 #if OWL_WITH_RENDER && defined(OWL_PLATFORM_LINUX)
 // The portal needs the parent window as an X11 id or an exported Wayland surface: nfd_glfw3.h gets both from GLFW.
@@ -21,6 +24,7 @@
 #else
 #define OWL_FILE_DIALOG_GLFW_PARENT 0
 #endif
+#endif
 
 #include <string>
 #include <string_view>
@@ -28,6 +32,27 @@
 #include <vector>
 
 namespace owl::platform {
+
+#if defined(OWL_PLATFORM_WEB)
+
+// A page has no native dialogue: a game never opens one, Owl Nest does not run in a browser.
+auto FileDialog::openFile(const std::string& /*iFilter*/) -> std::filesystem::path {
+	OWL_CORE_WARN("FileDialog: No file dialogue in a browser.")
+	return {};
+}
+
+auto FileDialog::saveFile(const std::string& /*iFilter*/, const std::string& /*iDefaultName*/)
+		-> std::filesystem::path {
+	OWL_CORE_WARN("FileDialog: No file dialogue in a browser.")
+	return {};
+}
+
+auto FileDialog::pickFolder() -> std::filesystem::path {
+	OWL_CORE_WARN("FileDialog: No file dialogue in a browser.")
+	return {};
+}
+
+#else
 
 namespace {
 
@@ -155,5 +180,7 @@ auto FileDialog::pickFolder() -> std::filesystem::path {
 	const auto result = NFD_PickFolderU8_With(&outPath, &args);
 	return finishDialog(result, outPath, "picking a folder");
 }
+
+#endif
 
 }// namespace owl::platform

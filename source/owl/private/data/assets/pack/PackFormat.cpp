@@ -84,6 +84,8 @@ auto decompressBuffer(const std::vector<uint8_t>& iCompressed, const uint64_t iO
 		OWL_CORE_WARN("Pack: Refusing to decompress {} bytes (limit {}).", iOriginalSize, g_maxEntrySize)
 		return {};
 	}
+	// Below g_maxEntrySize, so it fits a size_t on 32-bit targets too.
+	const auto originalSize = static_cast<size_t>(iOriginalSize);
 	const auto frameSize = ZSTD_getFrameContentSize(iCompressed.data(), iCompressed.size());
 	if (frameSize == ZSTD_CONTENTSIZE_ERROR) {
 		OWL_CORE_WARN("Pack: The block is not a zstd frame.")
@@ -95,7 +97,7 @@ auto decompressBuffer(const std::vector<uint8_t>& iCompressed, const uint64_t iO
 				OWL_CORE_WARN("Pack: The zstd frame holds {} bytes, {} declared.", frameSize, iOriginalSize)
 				return {};
 			}
-			std::vector<uint8_t> decompressed(iOriginalSize);
+			std::vector<uint8_t> decompressed(originalSize);
 			const auto result =
 					ZSTD_decompress(decompressed.data(), decompressed.size(), iCompressed.data(), iCompressed.size());
 			if ((ZSTD_isError(result) != 0u) || result != iOriginalSize) {
@@ -110,7 +112,7 @@ auto decompressBuffer(const std::vector<uint8_t>& iCompressed, const uint64_t iO
 			OWL_CORE_WARN("Pack: Cannot create a zstd stream.")
 			return {};
 		}
-		std::vector<uint8_t> decompressed(std::min<uint64_t>(iOriginalSize, ZSTD_DStreamOutSize()));
+		std::vector<uint8_t> decompressed(std::min(originalSize, ZSTD_DStreamOutSize()));
 		ZSTD_inBuffer input{.src = iCompressed.data(), .size = iCompressed.size(), .pos = 0};
 		ZSTD_outBuffer output{.dst = decompressed.data(), .size = decompressed.size(), .pos = 0};
 		size_t pending = 1;
@@ -120,7 +122,7 @@ auto decompressBuffer(const std::vector<uint8_t>& iCompressed, const uint64_t iO
 					OWL_CORE_WARN("Pack: The zstd frame exceeds its declared {} bytes.", iOriginalSize)
 					return {};
 				}
-				decompressed.resize(std::min<uint64_t>(iOriginalSize, decompressed.size() * 2));
+				decompressed.resize(std::min(originalSize, decompressed.size() * 2));
 				output.dst = decompressed.data();
 				output.size = decompressed.size();
 			}

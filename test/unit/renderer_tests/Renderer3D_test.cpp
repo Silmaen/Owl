@@ -60,6 +60,7 @@ auto loadMesh3d() -> std::string {
 }// namespace
 
 TEST(Renderer3D, Mesh3dShaderCompilesVulkan) {
+	OWL_REQUIRE_SHADER_COMPILER;
 	core::Log::init(core::Log::Level::Off);
 	const auto source = loadMesh3d();
 	ASSERT_FALSE(source.empty());
@@ -72,6 +73,7 @@ TEST(Renderer3D, Mesh3dShaderCompilesVulkan) {
 }
 
 TEST(Renderer3D, Mesh3dShaderCompilesOpenGl) {
+	OWL_REQUIRE_SHADER_COMPILER;
 	core::Log::init(core::Log::Level::Off);
 	const auto source = loadMesh3d();
 	ASSERT_FALSE(source.empty());
@@ -82,6 +84,7 @@ TEST(Renderer3D, Mesh3dShaderCompilesOpenGl) {
 }
 
 TEST(Renderer3D, Mesh3dShaderBindings) {
+	OWL_REQUIRE_SHADER_COMPILER;
 	core::Log::init(core::Log::Level::Off);
 	const auto source = loadMesh3d();
 	ASSERT_FALSE(source.empty());
@@ -113,6 +116,7 @@ TEST(Renderer3D, Mesh3dShaderBindings) {
 }
 
 TEST(Renderer3D, Mesh3dOpenGlSamplesAtMost32Textures) {
+	OWL_REQUIRE_SHADER_COMPILER;
 	core::Log::init(core::Log::Level::Off);
 	const auto source = loadMesh3d();
 	ASSERT_FALSE(source.empty());
@@ -140,6 +144,7 @@ TEST(Renderer3D, Mesh3dOpenGlSamplesAtMost32Textures) {
 	core::Log::invalidate();
 }
 TEST(Renderer3D, SkinnedShaderCompilesAndReadsThePaletteAtTheInstanceBinding) {
+	OWL_REQUIRE_SHADER_COMPILER;
 	core::Log::init(core::Log::Level::Off);
 	const auto path = findRoot() / "engine_assets" / "shaders" / "renderer3D" / "skinned3d.slang";
 	const auto source = renderer::utils::readShaderSource(path);

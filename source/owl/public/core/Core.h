@@ -25,6 +25,9 @@
 #elif defined(OWL_PLATFORM_LINUX) || defined(OWL_PLATFORM_ANDROID)
 // libOwlEngine.so is built with hidden visibility: only what OWL_API marks is exported.
 #define OWL_API __attribute__((visibility("default")))
+#elif defined(OWL_PLATFORM_WEB)
+// WebAssembly links the engine statically into the runner: nothing to export.
+#define OWL_API
 #else
 #define OWL_API
 #if defined(__APPLE__) || defined(__MACH__)

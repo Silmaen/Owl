@@ -14,12 +14,17 @@ struct Camera {
 [[vk::binding(0)]]
 ConstantBuffer<Camera> gCamera;
 
+#if defined(BACKEND_WEBGPU)
+#include "webgpu_textures.slangh"
+OWL_WEBGPU_TEXTURE_TABLE(gTextures)
+#else
 #ifdef BACKEND_VULKAN
 [[vk::binding(1)]]
 #else
 [[vk::binding(0)]]
 #endif
 Sampler2D gTextures[32];
+#endif
 
 struct TextInstance {
 	int worldIndex;
@@ -105,7 +110,13 @@ float median(float r, float g, float b) {
 
 // Signed distance to the glyph edge in screen pixels (positive inside); far outside where the atlas holds another
 // glyph, i.e. outside the glyph cell (which holds half a distance range of field around the shape).
-float signedDistance(Sampler2D iAtlas, float2 iUv, float2 iDx, float2 iDy, float iScreenPxRange, float4 iCell) {
+#if defined(BACKEND_WEBGPU)
+float signedDistance<T : IOwlWebGpuTexture>(T iAtlas, float2 iUv, float2 iDx, float2 iDy, float iScreenPxRange,
+											  float4 iCell)
+#else
+float signedDistance(Sampler2D iAtlas, float2 iUv, float2 iDx, float2 iDy, float iScreenPxRange, float4 iCell)
+#endif
+{
 	if (any(iUv < iCell.xy) || any(iUv > iCell.zw))
 		return -iScreenPxRange - 1.0;
 	float3 msd = iAtlas.SampleGrad(iUv, iDx, iDy).rgb;
@@ -114,8 +125,14 @@ float signedDistance(Sampler2D iAtlas, float2 iUv, float2 iDx, float2 iDy, float
 
 // Coverage of the glyph grown by an outline reach (screen pixels): the signed distance gives a smooth antialiased band
 // as long as the reach stays inside the field; the rest of a longer reach is a ring dilation of that band.
+#if defined(BACKEND_WEBGPU)
+float outlineCoverage<T : IOwlWebGpuTexture>(T iAtlas, float2 iUv, float2 iDx, float2 iDy, float iScreenPxRange,
+											   float4 iCell, float iReachPx)
+#else
 float outlineCoverage(Sampler2D iAtlas, float2 iUv, float2 iDx, float2 iDy, float iScreenPxRange, float4 iCell,
-					  float iReachPx) {
+					  float iReachPx)
+#endif
+{
 	const float fieldReach = max(0.5 * iScreenPxRange - kFieldMargin, 0.0);
 	const float inner = min(iReachPx, fieldReach);
 	const float rest = iReachPx - inner;

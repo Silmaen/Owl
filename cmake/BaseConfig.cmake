@@ -45,6 +45,10 @@ elseif (${PROJECT_PREFIX}_PLATFORM_STR MATCHES "android")
 elseif (${PROJECT_PREFIX}_PLATFORM_STR MATCHES "linux")
     set(${PROJECT_PREFIX}_PLATFORM_LINUX ON)
     target_compile_definitions(${CMAKE_PROJECT_NAME}_Base INTERFACE ${PROJECT_PREFIX}_PLATFORM_LINUX)
+elseif (${PROJECT_PREFIX}_PLATFORM_STR MATCHES "emscripten")
+    set(${PROJECT_PREFIX}_PLATFORM_STR "web")
+    set(${PROJECT_PREFIX}_PLATFORM_WEB ON)
+    target_compile_definitions(${CMAKE_PROJECT_NAME}_Base INTERFACE ${PROJECT_PREFIX}_PLATFORM_WEB)
 else ()
     message(FATAL_ERROR "Unsupported Target Operating System '${${PROJECT_PREFIX}_PLATFORM_STR}'")
 endif ()
@@ -56,7 +60,12 @@ set(${PROJECT_PREFIX}_PLATFORM_VER_STR "${CMAKE_SYSTEM_VERSION}")
 pretty_architecture_str(${CMAKE_HOST_SYSTEM_PROCESSOR} ${PROJECT_PREFIX}_HOST_ARCH_STR)
 # -- target (CMAKE_SYSTEM_PROCESSOR: the toolchain's when cross compiling, else the build machine's)
 if (NOT ${PROJECT_PREFIX}_ARCH_STR)
-    pretty_architecture_str(${CMAKE_SYSTEM_PROCESSOR} ${PROJECT_PREFIX}_ARCH_STR)
+    if (EMSCRIPTEN)
+        # Emscripten.cmake names the processor x86 for the projects testing it.
+        set(${PROJECT_PREFIX}_ARCH_STR "wasm32")
+    else ()
+        pretty_architecture_str(${CMAKE_SYSTEM_PROCESSOR} ${PROJECT_PREFIX}_ARCH_STR)
+    endif ()
 endif ()
 if (${PROJECT_PREFIX}_ARCH_STR STREQUAL "x64")
     set(${PROJECT_PREFIX}_PLATFORM_X64 ON)
@@ -64,6 +73,9 @@ if (${PROJECT_PREFIX}_ARCH_STR STREQUAL "x64")
 elseif (${PROJECT_PREFIX}_ARCH_STR STREQUAL "arm64")
     set(${PROJECT_PREFIX}_PLATFORM_ARM64 ON)
     target_compile_definitions(${CMAKE_PROJECT_NAME}_Base INTERFACE OWL_PLATFORM_ARM64)
+elseif (${PROJECT_PREFIX}_ARCH_STR STREQUAL "wasm32")
+    set(${PROJECT_PREFIX}_PLATFORM_WASM32 ON)
+    target_compile_definitions(${CMAKE_PROJECT_NAME}_Base INTERFACE OWL_PLATFORM_WASM32)
 else ()
     message(FATAL_ERROR "Unsupported Target architecture '${${PROJECT_PREFIX}_ARCH_STR}'")
 endif ()
@@ -219,6 +231,15 @@ elseif (${PROJECT_PREFIX}_PLATFORM_LINUX)
     # recording all of them as NEEDED does not start on a desktop missing an unused one (libxcb-ewmh2).
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--as-needed -Wl,-rpath='$ORIGIN' -Wl,--disable-new-dtags")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--as-needed -Wl,-rpath='$ORIGIN' -Wl,--disable-new-dtags")
+elseif (${PROJECT_PREFIX}_PLATFORM_WEB)
+    # The task system needs threads: Web Workers on a shared memory, so the page must be cross-origin isolated.
+    # Native WebAssembly exceptions, as the Conan packages (conan/profiles/emscripten-clang). musl defines `stderr` as
+    # itself: every use expands a recursive macro. No shared library, so no object duplicated across them.
+    target_compile_options(${CMAKE_PROJECT_NAME}_Base INTERFACE -pthread -fwasm-exceptions -Wno-disabled-macro-expansion
+            -Wno-unique-object-duplication)
+    # Stacks of a desktop thread rather than Emscripten's 64 KB: the script compilers and Jolt recurse deeply.
+    target_link_options(${CMAKE_PROJECT_NAME}_Base INTERFACE -pthread -fwasm-exceptions "SHELL:-s ALLOW_MEMORY_GROWTH=1"
+            "SHELL:-s STACK_SIZE=8MB" "SHELL:-s DEFAULT_PTHREAD_STACK_SIZE=2MB")
 endif ()
 add_dependencies(${CMAKE_PROJECT_NAME}_Base ${CMAKE_PROJECT_NAME}_SuperBase)
 
@@ -270,6 +291,10 @@ endif ()
 #
 # Debugging options
 #
+if (${PROJECT_PREFIX}_PLATFORM_WEB AND ${PROJECT_PREFIX}_ENABLE_STACKTRACE)
+    message(WARNING "No stack trace in WebAssembly: OWL_ENABLE_STACKTRACE turned OFF.")
+    set(${PROJECT_PREFIX}_ENABLE_STACKTRACE OFF CACHE BOOL "" FORCE)
+endif ()
 if (${PROJECT_PREFIX}_ENABLE_MEMORY_TRACKER OR ${PROJECT_PREFIX}_ENABLE_STACKTRACE)
     # Stacktrace lives on top of the tracker — turning it on implies the tracker.
     target_compile_definitions(${CMAKE_PROJECT_NAME}_Base INTERFACE ${PROJECT_PREFIX}_MEMORY_TRACKER)

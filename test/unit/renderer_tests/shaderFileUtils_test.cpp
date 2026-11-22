@@ -260,6 +260,7 @@ TEST(ShaderFileUtils, LoadOrCompileUsesThePrecompiledStagesWithoutSlang) {
 }
 
 TEST(ShaderFileUtils, LoadOrCompileFillsThenReadsTheCache) {
+	OWL_REQUIRE_SHADER_COMPILER;
 	core::Log::init(core::Log::Level::Off);
 	auto app = makeDummyApp("shaderLoadOrCompile");
 	const std::string& source = g_computeSource;
@@ -310,6 +311,7 @@ TEST(ShaderFileUtils, CheckSpirvRejectsMalformedModules) {
 }
 
 TEST(ShaderFileUtils, CorruptCachedSpirvIsRecompiled) {
+	OWL_REQUIRE_SHADER_COMPILER;
 	core::Log::init(core::Log::Level::Off);
 	auto app = makeDummyApp("shaderCorruptCache");
 	expectRecompiledAfter([](const std::filesystem::path& iFile, const std::string&) -> void {
@@ -321,6 +323,7 @@ TEST(ShaderFileUtils, CorruptCachedSpirvIsRecompiled) {
 }
 
 TEST(ShaderFileUtils, TruncatedCachedSpirvIsRecompiled) {
+	OWL_REQUIRE_SHADER_COMPILER;
 	core::Log::init(core::Log::Level::Off);
 	auto app = makeDummyApp("shaderTruncatedCache");
 	expectRecompiledAfter([](const std::filesystem::path& iFile, const std::string&) -> void {
@@ -334,6 +337,7 @@ TEST(ShaderFileUtils, TruncatedCachedSpirvIsRecompiled) {
 }
 
 TEST(ShaderFileUtils, AbsentCachedSpirvIsRecompiled) {
+	OWL_REQUIRE_SHADER_COMPILER;
 	core::Log::init(core::Log::Level::Off);
 	auto app = makeDummyApp("shaderAbsentCache");
 	expectRecompiledAfter(
@@ -344,6 +348,7 @@ TEST(ShaderFileUtils, AbsentCachedSpirvIsRecompiled) {
 }
 
 TEST(ShaderFileUtils, CachedSpirvOfAnotherKeyIsRecompiled) {
+	OWL_REQUIRE_SHADER_COMPILER;
 	core::Log::init(core::Log::Level::Off);
 	auto app = makeDummyApp("shaderWrongKeyCache");
 	expectRecompiledAfter([](const std::filesystem::path& iFile, const std::string& iKey) -> void {
@@ -357,6 +362,7 @@ TEST(ShaderFileUtils, CachedSpirvOfAnotherKeyIsRecompiled) {
 }
 
 TEST(ShaderFileUtils, CachedSpirvOfAnotherStageIsRecompiled) {
+	OWL_REQUIRE_SHADER_COMPILER;
 	core::Log::init(core::Log::Level::Off);
 	auto app = makeDummyApp("shaderWrongStageCache");
 	expectRecompiledAfter([](const std::filesystem::path& iFile, const std::string& iKey) -> void {
@@ -370,6 +376,7 @@ TEST(ShaderFileUtils, CachedSpirvOfAnotherStageIsRecompiled) {
 }
 
 TEST(ShaderFileUtils, CorruptPrecompiledSpirvIsRecompiled) {
+	OWL_REQUIRE_SHADER_COMPILER;
 	core::Log::init(core::Log::Level::Off);
 	// Without an application, the asset search path is the working directory and nothing is cached.
 	const auto root = std::filesystem::current_path();
@@ -393,6 +400,7 @@ TEST(ShaderFileUtils, CorruptPrecompiledSpirvIsRecompiled) {
 }
 
 TEST(ShaderFileUtils, RecompileSpirvReplacesRefusedStoredOutput) {
+	OWL_REQUIRE_SHADER_COMPILER;
 	core::Log::init(core::Log::Level::Off);
 	auto app = makeDummyApp("shaderRecompile");
 	std::filesystem::remove_all(renderer::utils::getCacheDirectory("owl_test_refused", ""));

@@ -12,6 +12,7 @@
 
 #include "core/FormatVersionYaml.h"
 #include "core/external/yaml.h"
+#include "core/utils/LookupTable.h"
 #include "input/InputNames.h"
 #include "input/KeyCodes.h"
 #include "input/MouseCode.h"
@@ -104,8 +105,8 @@ void emitBinding(YAML::Emitter& ioOut, const ActionBinding& iBinding) {
 		if (differs(iBinding.response.deadZone, defaults.deadZone))
 			ioOut << YAML::Key << "dead_zone" << YAML::Value << iBinding.response.deadZone;
 		if (iBinding.response.curve != defaults.curve) {
-			const auto* const found = std::ranges::find(g_curveNames, iBinding.response.curve,
-														&std::pair<ResponseCurve, std::string_view>::first);
+			const auto* const found = core::utils::findEntry(g_curveNames, iBinding.response.curve,
+															 &std::pair<ResponseCurve, std::string_view>::first);
 			ioOut << YAML::Key << "curve" << YAML::Value << std::string{found->second};
 		}
 		if (iBinding.response.curve == ResponseCurve::Custom)
@@ -191,8 +192,8 @@ auto parseBinding(const YAML::Node& iNode, ActionBinding& oBinding) -> std::stri
 	if (const auto curve = iNode["curve"]; curve) {
 		const auto text = curve.as<std::string>();
 		const auto* const found =
-				std::ranges::find(g_curveNames, text, &std::pair<ResponseCurve, std::string_view>::second);
-		if (found == g_curveNames.end())
+				core::utils::findEntry(g_curveNames, text, &std::pair<ResponseCurve, std::string_view>::second);
+		if (found == nullptr)
 			return std::format("unknown curve '{}'", text);
 		oBinding.response.curve = found->first;
 	}

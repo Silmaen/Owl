@@ -43,6 +43,8 @@ auto parsePlatform(const std::string_view iName) -> std::optional<Platform> {
 		return Platform::Win32;
 	if (name == "android")
 		return Platform::Android;
+	if (name == "browser")
+		return Platform::Browser;
 	if (name == "none" || name == "null")
 		return Platform::None;
 	return std::nullopt;
@@ -60,6 +62,8 @@ auto platformName(const Platform iPlatform) -> std::string_view {
 			return "win32";
 		case Platform::Android:
 			return "android";
+		case Platform::Browser:
+			return "browser";
 		case Platform::None:
 			return "none";
 	}

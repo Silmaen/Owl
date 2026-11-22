@@ -35,6 +35,9 @@ OWL_DIAG_DISABLE_CLANG("-Wreserved-identifier")
 OWL_DIAG_POP
 
 #endif
+#if defined(OWL_PLATFORM_WEB)
+#include <emscripten/emscripten.h>
+#endif
 
 #include <algorithm>
 #include <atomic>
@@ -45,6 +48,37 @@ OWL_DIAG_POP
 #include <filesystem>
 #include <string>
 #include <tuple>
+#include <utility>
+
+#if defined(OWL_PLATFORM_WEB)
+// Module.owlFiles ([path, bytes] pairs the page fetched) written one folder at a time; EM_JS declares extern variables.
+
+// clang-format off
+OWL_DIAG_PUSH
+OWL_DIAG_DISABLE_CLANG("-Wmissing-variable-declarations")
+EM_JS(void, owlWritePageFiles, (), {
+	const files = Module["owlFiles"] || [];
+	const made = new Set();
+	for (const [path, bytes] of files) {
+		let folder = "";
+		for (const part of path.split("/").slice(0, -1)) {
+			folder += "/" + part;
+			if (!made.has(folder)) {
+				try {
+					FS.mkdir(folder);
+				} catch (error) {
+				}
+				made.add(folder);
+			}
+		}
+		FS.writeFile("/" + path, bytes);
+	}
+	Module["owlFiles"] = [];
+});
+OWL_DIAG_POP
+// clang-format on
+
+#endif
 
 namespace owl::app {
 
@@ -474,110 +508,138 @@ void Application::run() {
 	OWL_PROFILE_FUNCTION()
 
 	OWL_PROFILE_THREAD_NAME("Main")
+	while (runFrame()) {}
+}
 
-#if OWL_TRACKER_VERBOSITY >= 3
-	uint64_t frameCount = 0;
+#if defined(OWL_PLATFORM_WEB)
+namespace {
+// The application the browser runs, released after its last frame.
+shared<Application> g_browserApp;
+
+}// namespace
+
+void Application::installPageFiles() { owlWritePageFiles(); }
+
+void Application::runInBrowser(shared<Application> iApp) {
+	g_browserApp = std::move(iApp);
+	OWL_CORE_DEBUG("Application: Running.")
+	emscripten_set_main_loop(
+			[]() -> void {
+				if (g_browserApp->runFrame())
+					return;
+				emscripten_cancel_main_loop();
+				OWL_CORE_DEBUG("Application: Terminating.")
+				const int exitCode = g_browserApp->getExitCode();
+				g_browserApp.reset();
+				core::Log::invalidate();
+				emscripten_force_exit(exitCode);
+			},
+			0, false);
+}
 #endif
+
+auto Application::runFrame() -> bool {
+	OWL_PROFILE_SCOPE("RunLoop")
+	if (m_state != State::Running)
+		return false;
+	if (g_StopRequested.load()) {
+		OWL_CORE_INFO("Application: Stop signal received, closing.")
+		close();
+		return false;
+	}
 	using clock = std::chrono::steady_clock;
 	const auto elapsedMs = [](const clock::time_point& iFrom, const clock::time_point& iTo) -> double {
 		return std::chrono::duration<double, std::milli>(iTo - iFrom).count();
 	};
-	while (m_state == State::Running) {
-		OWL_PROFILE_SCOPE("RunLoop")
-		if (g_StopRequested.load()) {
-			OWL_CORE_INFO("Application: Stop signal received, closing.")
-			close();
-			break;
+	if (m_idleWait.count() > 0 && m_quietFrames >= idleSettleFrames)
+		mp_appWindow->waitEvents(m_idleWait);
+	m_idleWait = std::chrono::milliseconds{0};
+	m_quietFrames = std::min(m_quietFrames + 1, idleSettleFrames);
+	OWL_CORE_FRAME_ADVANCE
+	const bool timed = m_frameTimingsEnabled;
+	const auto now = [timed]() -> clock::time_point { return timed ? clock::now() : clock::time_point{}; };
+	const auto tStart = now();
+	auto tBegin = tStart;
+	auto tLayers = tStart;
+	auto tGui = tStart;
+	auto tEnd = tStart;
+	const double paceWaitStart = timed ? renderer::gpu::RenderCommand::getRenderCounters().paceWaitMs : 0.0;
+	m_stepper.update();
+	input::Input::beginFrame();
+
+	// Graphics part.
+	if (!m_minimized) {
+		renderer::gpu::RenderCommand::beginFrame();
+		tBegin = now();
+		if (renderer::gpu::RenderCommand::getState() != renderer::gpu::RenderAPI::State::Ready) {
+			m_state = State::Error;
+			return false;
 		}
-		if (m_idleWait.count() > 0 && m_quietFrames >= idleSettleFrames)
-			mp_appWindow->waitEvents(m_idleWait);
-		m_idleWait = std::chrono::milliseconds{0};
-		m_quietFrames = std::min(m_quietFrames + 1, idleSettleFrames);
-		OWL_CORE_FRAME_ADVANCE
-		const bool timed = m_frameTimingsEnabled;
-		const auto now = [timed]() -> clock::time_point { return timed ? clock::now() : clock::time_point{}; };
-		const auto tStart = now();
-		auto tBegin = tStart;
-		auto tLayers = tStart;
-		auto tGui = tStart;
-		auto tEnd = tStart;
-		const double paceWaitStart = timed ? renderer::gpu::RenderCommand::getRenderCounters().paceWaitMs : 0.0;
-		m_stepper.update();
-		input::Input::beginFrame();
+		m_hotReload.onFrame();
+		{
 
-		// Graphics part.
-		if (!m_minimized) {
-			renderer::gpu::RenderCommand::beginFrame();
-			tBegin = now();
-			if (renderer::gpu::RenderCommand::getState() != renderer::gpu::RenderAPI::State::Ready) {
-				m_state = State::Error;
-				continue;
-			}
-			m_hotReload.onFrame();
-			{
-
-				OWL_PROFILE_SCOPE("LayerStack onUpdate")
-				for (const auto& layer: m_layerStack) layer->onUpdate(m_stepper);
-			}
-			tLayers = now();
+			OWL_PROFILE_SCOPE("LayerStack onUpdate")
+			for (const auto& layer: m_layerStack) layer->onUpdate(m_stepper);
+		}
+		tLayers = now();
 #if OWL_WITH_GUI
-			if (mp_imGuiLayer) {
-				OWL_PROFILE_SCOPE("LayerStack onImUpdate")
-				mp_imGuiLayer->begin();
-				for (const auto& layer: m_layerStack) layer->onImGuiRender(m_stepper);
-				mp_imGuiLayer->end();
-			}
+		if (mp_imGuiLayer) {
+			OWL_PROFILE_SCOPE("LayerStack onImUpdate")
+			mp_imGuiLayer->begin();
+			for (const auto& layer: m_layerStack) layer->onImGuiRender(m_stepper);
+			mp_imGuiLayer->end();
+		}
 #endif
-			tGui = now();
+		tGui = now();
 
-			renderer::gpu::RenderCommand::endFrame();
-			tEnd = now();
-		}
-
-		// sound part
-		{
-
-			sound::SoundCommand::frame(m_stepper);
-			if (sound::SoundCommand::getState() != sound::SoundAPI::State::Ready) {
-				m_state = State::Error;
-				continue;
-			}
-		}
-		const auto tSound = now();
-
-		mp_appWindow->onUpdate();
-		const auto tPresent = now();
-		m_scheduler.frame(m_stepper);
-		if (timed) {
-			const auto tDone = clock::now();
-			const double paceWait = renderer::gpu::RenderCommand::getRenderCounters().paceWaitMs - paceWaitStart;
-			m_lastFrameTimings = {.beginFrameMs = elapsedMs(tStart, tBegin),
-								  .layersMs = elapsedMs(tBegin, tLayers),
-								  .guiMs = elapsedMs(tLayers, tGui),
-								  .endFrameMs = elapsedMs(tGui, tEnd),
-								  .soundMs = elapsedMs(tEnd, tSound),
-								  .presentMs = elapsedMs(tSound, tPresent),
-								  .schedulerMs = elapsedMs(tPresent, tDone),
-								  .totalMs = elapsedMs(tStart, tDone),
-								  .paceWaitMs = paceWait,
-								  .workMs = 0.0};
-			m_lastFrameTimings.workMs = std::max(0.0, m_lastFrameTimings.totalMs - m_lastFrameTimings.presentMs -
-															  m_lastFrameTimings.paceWaitMs);
-		}
-		m_framePacer.wait();
-		OWL_PROFILE_FRAME_MARK()
-#if OWL_TRACKER_VERBOSITY >= 3
-		{
-			if (const auto& memState = debug::TrackerAPI::checkState();
-				memState.allocationCalls > memState.deallocationCalls && frameCount > 0) {
-				OWL_CORE_WARN("Memory: Frame leak, {} in {} unreleased chunk(s).",
-							  owl::core::utils::sizeToString(memState.allocatedMemory), memState.allocs.size())
-				for (const auto& chunk: memState.allocs) { OWL_CORE_DEBUG("Memory: Leaked chunk {}.", chunk.toStr()) }
-			}
-		}
-		++frameCount;
-#endif
+		renderer::gpu::RenderCommand::endFrame();
+		tEnd = now();
 	}
+
+	// sound part
+	{
+
+		sound::SoundCommand::frame(m_stepper);
+		if (sound::SoundCommand::getState() != sound::SoundAPI::State::Ready) {
+			m_state = State::Error;
+			return false;
+		}
+	}
+	const auto tSound = now();
+
+	mp_appWindow->onUpdate();
+	const auto tPresent = now();
+	m_scheduler.frame(m_stepper);
+	if (timed) {
+		const auto tDone = clock::now();
+		const double paceWait = renderer::gpu::RenderCommand::getRenderCounters().paceWaitMs - paceWaitStart;
+		m_lastFrameTimings = {.beginFrameMs = elapsedMs(tStart, tBegin),
+							  .layersMs = elapsedMs(tBegin, tLayers),
+							  .guiMs = elapsedMs(tLayers, tGui),
+							  .endFrameMs = elapsedMs(tGui, tEnd),
+							  .soundMs = elapsedMs(tEnd, tSound),
+							  .presentMs = elapsedMs(tSound, tPresent),
+							  .schedulerMs = elapsedMs(tPresent, tDone),
+							  .totalMs = elapsedMs(tStart, tDone),
+							  .paceWaitMs = paceWait,
+							  .workMs = 0.0};
+		m_lastFrameTimings.workMs = std::max(0.0, m_lastFrameTimings.totalMs - m_lastFrameTimings.presentMs -
+														  m_lastFrameTimings.paceWaitMs);
+	}
+	m_framePacer.wait();
+	OWL_PROFILE_FRAME_MARK()
+#if OWL_TRACKER_VERBOSITY >= 3
+	if (m_frameCount > 0) {
+		if (const auto& memState = debug::TrackerAPI::checkState();
+			memState.allocationCalls > memState.deallocationCalls) {
+			OWL_CORE_WARN("Memory: Frame leak, {} in {} unreleased chunk(s).",
+						  owl::core::utils::sizeToString(memState.allocatedMemory), memState.allocs.size())
+			for (const auto& chunk: memState.allocs) { OWL_CORE_DEBUG("Memory: Leaked chunk {}.", chunk.toStr()) }
+		}
+	}
+#endif
+	++m_frameCount;
+	return m_state == State::Running;
 }
 
 void Application::onEvent(event::Event& ioEvent) {
