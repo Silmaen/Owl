@@ -14,14 +14,18 @@
 #include <gui/IconFont.h>
 #include <gui/UiLayer.h>
 #include <gui/utils.h>
+#include <gui/widgets/Combo.h>
 #include <gui/widgets/IconButton.h>
 #include <gui/widgets/Toggle.h>
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
+#include <platform/openExternalUrl.h>
 
+#include <array>
 #include <chrono>
 #include <cstdint>
+#include <filesystem>
 #include <format>
 #include <string>
 #include <system_error>
@@ -128,16 +132,7 @@ void GamePackager::renderWizardModal() {
 		ImGui::Spacing();
 		ImGui::Separator();
 
-		// Target platform (read-only — current build platform).
-		const char* platform =
-#ifdef OWL_PLATFORM_WINDOWS
-				"Windows (x64)";
-#else
-				"Linux (x64)";
-#endif
-		ImGui::Text("Target platform: %s", platform);
-		if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
-			ImGui::SetTooltip("The pack is built for the current platform; other targets are planned for v0.8.");
+		renderTargetChoice();
 
 		// Destination folder with Browse button.
 		ImGui::Spacing();
@@ -166,7 +161,7 @@ void GamePackager::renderWizardModal() {
 
 		ImGui::Spacing();
 		ImGui::Separator();
-		const bool canStart = !m_destDir.empty();
+		const bool canStart = !m_destDir.empty() && hasRunner();
 		ImGui::BeginDisabled(!canStart);
 		if (gui::widgets::button("Start Packaging", {.glyph = gui::icon::packageCheck,
 													 .label = "Start Packaging",
@@ -178,7 +173,8 @@ void GamePackager::renderWizardModal() {
 		}
 		ImGui::EndDisabled();
 		if (!canStart && ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
-			ImGui::SetTooltip("Choose an output folder to enable packaging.");
+			ImGui::SetTooltip(hasRunner() ? "Choose an output folder to enable packaging."
+										  : "No runner of this platform next to Owl Nest.");
 		ImGui::SameLine();
 		if (gui::widgets::button("Cancel##packWiz",
 								 {.glyph = gui::icon::x, .label = "Cancel", .width = ImGui::GetFontSize() * 7.f})) {
@@ -198,7 +194,7 @@ void GamePackager::launchValidation() {
 	state->progress.store(0.3f);
 	mp_progress->open("Validating...", state, false);
 
-	auto settings = mp_project->makeExportSettings(m_destDir, app::Application::get().getWorkingDirectory());
+	auto settings = makeSettings();
 	auto warningsOut = mkShared<std::vector<std::string>>();
 	auto assetsOut = mkShared<std::vector<data::assets::pack::AssetReference>>();
 
@@ -259,7 +255,7 @@ void GamePackager::renderValidationModal() {
 }
 
 void GamePackager::startPacking() {
-	auto settings = mp_project->makeExportSettings(m_destDir, app::Application::get().getWorkingDirectory());
+	auto settings = makeSettings();
 	settings.packFlags =
 			(m_compress ? data::assets::pack::PackFlags::Compressed : data::assets::pack::PackFlags::None) |
 			(m_obfuscate ? data::assets::pack::PackFlags::Obfuscated : data::assets::pack::PackFlags::None);
@@ -268,10 +264,12 @@ void GamePackager::startPacking() {
 	auto preScanned = m_scannedAssets ? m_scannedAssets : mkShared<std::vector<data::assets::pack::AssetReference>>();
 	m_scannedAssets.reset();
 
+	const bool playInBrowser = m_target == data::assets::pack::ExportTarget::Web && m_runInBrowser;
+	auto gameDirectory = mkShared<std::filesystem::path>();
 	auto state = mkShared<AsyncProgressState>();
 	mp_progress->open("Packing Game...", state, true);
 	app::Application::get().getTaskScheduler().pushTask(core::task::Task(
-			[state, exportSettings = std::move(settings), preScanned]() -> void {
+			[state, exportSettings = std::move(settings), preScanned, gameDirectory]() -> void {
 				const auto startTime = std::chrono::steady_clock::now();
 				const auto result = data::assets::pack::GameExporter::exportGame(
 						exportSettings, *preScanned,
@@ -285,6 +283,7 @@ void GamePackager::startPacking() {
 												data::assets::pack::GameExporter::getErrorMessage(result.error())));
 					return;
 				}
+				*gameDirectory = result->gameDirectory;
 				const auto seconds =
 						std::chrono::duration<double>(std::chrono::steady_clock::now() - startTime).count();
 				std::string renderers{"Renderer2D"};
@@ -295,7 +294,67 @@ void GamePackager::startPacking() {
 											  static_cast<double>(result->packBytes) / (1024.0 * 1024.0), renderers,
 											  result->engineFilesSkipped, result->gameDirectory.string(), seconds));
 			},
-			[state]() -> void { state->completed.store(true); }));
+			[this, state, gameDirectory, playInBrowser]() -> void {
+				if (playInBrowser && !gameDirectory->empty())
+					playWebExport(*state, *gameDirectory);
+				state->completed.store(true);
+			}));
+}
+
+auto GamePackager::getRunnerDirectory(const data::assets::pack::ExportTarget iTarget,
+									  const std::filesystem::path& iNestDirectory) -> std::filesystem::path {
+	return iTarget == data::assets::pack::ExportTarget::Web ? iNestDirectory / "web" : iNestDirectory;
+}
+
+void GamePackager::renderTargetChoice() {
+	using data::assets::pack::ExportTarget;
+	static constexpr std::array<const char*, 3> g_targetNames = {
+#ifdef OWL_PLATFORM_WINDOWS
+			"This computer (Windows x64)",
+#else
+			"This computer (Linux)",
+#endif
+			"Android (arm64)", "Web (browser)"};
+	ImGui::Text("Target platform:");
+	ImGui::SameLine();
+	int target = static_cast<int>(m_target);
+	ImGui::SetNextItemWidth(-1);
+	if (gui::widgets::combo("##packTarget", &target, g_targetNames))
+		m_target = static_cast<ExportTarget>(target);
+	if (m_target == ExportTarget::Android && ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
+		ImGui::SetTooltip("Writes the assets of the APK; the Android build of the runner makes the APK.");
+	if (m_target == ExportTarget::Web) {
+		gui::widgets::checkbox("Run in browser when done", &m_runInBrowser);
+		if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
+			ImGui::SetTooltip("Serve the game on 127.0.0.1 and open it in the default browser.");
+	}
+	if (!hasRunner())
+		ImGui::TextColored(
+				gui::vec(gui::UiLayer::getTheme().warning), "No Web runner in '%s'.",
+				getRunnerDirectory(m_target, app::Application::get().getWorkingDirectory()).string().c_str());
+}
+
+auto GamePackager::hasRunner() const -> bool {
+	if (m_target != data::assets::pack::ExportTarget::Web)
+		return true;
+	return is_regular_file(getRunnerDirectory(m_target, app::Application::get().getWorkingDirectory()) /
+						   "OwlGameRunner.html");
+}
+
+auto GamePackager::makeSettings() const -> data::assets::pack::ExportSettings {
+	auto settings = mp_project->makeExportSettings(
+			m_destDir, getRunnerDirectory(m_target, app::Application::get().getWorkingDirectory()));
+	settings.target = m_target;
+	return settings;
+}
+
+void GamePackager::playWebExport(AsyncProgressState& ioState, const std::filesystem::path& iGameDirectory) {
+	if (!m_webPreview.start(iGameDirectory)) {
+		ioState.setMessage(ioState.getMessage() + "\nThe browser preview could not start.");
+		return;
+	}
+	ioState.setMessage(ioState.getMessage() + "\nPlaying at " + m_webPreview.getUrl());
+	platform::openExternalUrl(m_webPreview.getUrl());
 }
 
 }// namespace owl::nest

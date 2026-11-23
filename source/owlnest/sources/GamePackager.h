@@ -9,9 +9,11 @@
 #pragma once
 
 #include "Project.h"
+#include "WebPreviewServer.h"
 #include "panel/AsyncProgressModal.h"
 
 #include <data/assets/pack/AssetScanner.h>
+#include <data/assets/pack/GameExporter.h>
 #include <owl.h>
 
 #include <filesystem>
@@ -73,12 +75,57 @@ public:
 	 */
 	[[nodiscard]] auto isOpen() const -> bool { return m_showWizard || m_showValidation; }
 
+	/**
+	 * @brief
+	 *  Get the folder of the runner an export bundles: the one of Owl Nest, its `web/` folder for the Web.
+	 * @param[in] iTarget The platform of the export.
+	 * @param[in] iNestDirectory The folder of the Owl Nest executable.
+	 * @return The runner folder.
+	 */
+	[[nodiscard]] static auto getRunnerDirectory(data::assets::pack::ExportTarget iTarget,
+												 const std::filesystem::path& iNestDirectory) -> std::filesystem::path;
+
+	/**
+	 * @brief
+	 *  Get the local server of the last Web export played in the browser.
+	 * @return The server, not running until such an export.
+	 */
+	[[nodiscard]] auto getWebPreview() const -> const WebPreviewServer& { return m_webPreview; }
+
 private:
 	/**
 	 * @brief
 	 *  Draw the packaging wizard (destination folder and pack options).
 	 */
 	void renderWizardModal();
+
+	/**
+	 * @brief
+	 *  Draw the choice of the target platform and its options.
+	 */
+	void renderTargetChoice();
+
+	/**
+	 * @brief
+	 *  Check whether the runner of the chosen platform is next to Owl Nest.
+	 * @return True when the export can bundle it (always for a target without runner file).
+	 */
+	[[nodiscard]] auto hasRunner() const -> bool;
+
+	/**
+	 * @brief
+	 *  Build the export settings of the project for the chosen platform and folder.
+	 * @return The settings.
+	 */
+	[[nodiscard]] auto makeSettings() const -> data::assets::pack::ExportSettings;
+
+	/**
+	 * @brief
+	 *  Serve a Web export and open it in the default browser.
+	 * @param[in,out] ioState The progress of the export, whose message gets the address.
+	 * @param[in] iGameDirectory The folder of the exported game.
+	 */
+	void playWebExport(AsyncProgressState& ioState, const std::filesystem::path& iGameDirectory);
 
 	/**
 	 * @brief
@@ -104,6 +151,12 @@ private:
 	panel::AsyncProgressModal* mp_progress;
 	/// Destination directory chosen in the wizard.
 	std::filesystem::path m_destDir;
+	/// Platform chosen in the wizard.
+	data::assets::pack::ExportTarget m_target = data::assets::pack::ExportTarget::Host;
+	/// Whether a Web export opens in the browser once written.
+	bool m_runInBrowser = true;
+	/// Serves the last Web export to the browser.
+	WebPreviewServer m_webPreview;
 	/// Warnings of the last validation, shown before packaging.
 	std::vector<std::string> m_warnings;
 	/// Assets found by the validation, reused by the export.

@@ -332,7 +332,7 @@ network module plays over WebSocket ([Networking](networking.md#networking-trans
   browser. In the headless Chrome of the image, WebGPU runs on SwiftShader and the page is composited by ANGLE.
 - **Tests**: `ctest` runs each test program under Node (Emscripten's emulator), on the real file system
   (`NODERAWFS`); `export_tests` stay on the desktop.
-- **Runner**: `OwlGameRunner.html` with its `.js` and `.wasm`. Before `main`, the page fetches the files that
+- **Runner**: `OwlGameRunner.html` with its `.js` and `.wasm`. Before `main`, behind a loading screen (files loaded, or why the game cannot start), the page fetches the files that
   `files.json` lists into its virtual file system; the query string is the command line (`?arg=--headless`). It needs a
   cross-origin isolated page (`Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Embedder-Policy: require-corp`)
   for the threads. `tools/web/browser_run.py` serves a folder that way, opens the page in the headless Chrome of the

@@ -7,10 +7,14 @@
     <style>
         html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
         canvas { display: block; width: 100%; height: 100%; }
+        #owl-loading { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center;
+                       justify-content: center; gap: 12px; color: #ccc; font: 16px sans-serif; background: #000; }
+        #owl-loading progress { width: min(320px, 80vw); }
     </style>
 </head>
 <body>
 <canvas id="canvas" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
+<div id="owl-loading"><span id="owl-loading-text">Loading…</span><progress id="owl-loading-bar"></progress></div>
 <script>
     // The Owl game runner in a page. Before main, the files listed in files.json (the exported game: runner.yml, the
     // pack, the engine assets) are fetched into the virtual file system, at the same relative paths. The query string
@@ -25,6 +29,15 @@
         if (owlReport)
             navigator.sendBeacon(path, text);
     };
+    // The loading screen covers the canvas until main starts, and keeps the reason when the game cannot start.
+    const owlLoading = (text, done, total) => {
+        document.getElementById("owl-loading-text").textContent = text;
+        const bar = document.getElementById("owl-loading-bar");
+        if (total > 0) {
+            bar.max = total;
+            bar.value = done;
+        }
+    };
     var Module = {
         canvas: document.getElementById("canvas"),
         arguments: owlQuery.getAll("arg"),
@@ -36,7 +49,11 @@
             if (owlReport)
                 owlCapture = fetch("/owl-shot", {method: "POST", body: png});
         },
-        onAbort: (what) => owlSend("/owl-exit", "abort: " + what),
+        onAbort: (what) => {
+            owlLoading(`The game stopped: ${what}`, 0, 0);
+            owlSend("/owl-exit", "abort: " + what);
+        },
+        onRuntimeInitialized: () => document.getElementById("owl-loading").remove(),
         preRun: [() => {
             // `?env=NAME=value` sets a variable of the program's environment.
             for (const pair of owlQuery.getAll("env")) {
@@ -82,15 +99,26 @@
             Module.addRunDependency("owl-files");
             fetch("files.json")
                 .then((response) => response.ok ? response.json() : [])
-                .then((files) => Promise.all(files.map((path) => fetch(path)
-                    .then((response) => {
-                        if (!response.ok)
-                            throw new Error(`${path}: ${response.status}`);
-                        return response.arrayBuffer();
-                    })
-                    .then((data) => Module.owlFiles.push([path, new Uint8Array(data)])))))
-                .then(() => Module.removeRunDependency("owl-files"))
+                .then((files) => {
+                    owlLoading(`Loading 0 / ${files.length}`, 0, files.length);
+                    return Promise.all(files.map((path) => fetch(path)
+                        .then((response) => {
+                            if (!response.ok)
+                                throw new Error(`${path}: ${response.status}`);
+                            return response.arrayBuffer();
+                        })
+                        .then((data) => {
+                            Module.owlFiles.push([path, new Uint8Array(data)]);
+                            const done = Module.owlFiles.length;
+                            owlLoading(`Loading ${done} / ${files.length}`, done, files.length);
+                        })));
+                })
+                .then(() => {
+                    owlLoading("Starting…", 1, 1);
+                    Module.removeRunDependency("owl-files");
+                })
                 .catch((error) => {
+                    owlLoading(`The game files cannot be loaded (${error}).`, 0, 0);
                     Module.printErr(`Owl: cannot fetch the game files (${error}).\n${error.stack || ""}`);
                     owlSend("/owl-exit", "abort: files");
                 });

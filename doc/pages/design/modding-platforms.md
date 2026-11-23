@@ -36,11 +36,10 @@ exported game. Still to come:
 
 ### Web {#platforms-web}
 
-- WebGPU backend for the [Owl RHI](owl-rhi.md), shaders in WGSL
-- Emscripten build target, HTML5 template with loading screen
-- Async asset loading adapted for the web
-- A local HTTP server for "run in browser"
-- Networking over WebSocket to a native server ([networking](simulation-networking.md#networking-multiplayer))
+Built by the `web-release` preset, see [Building](../building.md#web-build): the WebGPU backend of the
+[Owl RHI](owl-rhi.md) with WGSL baked by the host, a page that loads the game files behind a loading screen, the export
+and its local server in Owl Nest ([Projects](../editor_projects.md)), WebSocket to a desktop server
+([Networking](../networking.md#networking-transports)). Still to come: the ImGui backend of the GUI module.
 
 ### Other
 

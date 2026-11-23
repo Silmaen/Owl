@@ -108,8 +108,8 @@ per target, Android and the Web.
   ([Platforms](design/modding-platforms.md#platforms-android))
 - ![Planned][planned] Touch screen input: taps and drags as pointer events, pinch and two-finger pan, the HUD and Owl
   Nest usable by touch ([Input](design/windowing-input.md))
-- ![In Progress][progress] Web export through a WebGPU Owl RHI backend, run in the browser from Owl Nest: the build,
-  the tests, the runner, 2D rendering and `--export --target web` done ([Platforms](design/modding-platforms.md#platforms-web))
+- ![Done][done] Web export through a WebGPU Owl RHI backend, run in the browser from Owl Nest: the build, the tests,
+  the runner, 2D and 3D rendering, the export and its local server ([Platforms](design/modding-platforms.md#platforms-web))
 - ![Planned][planned] Gamepad improvements: remapping UI, haptics, joysticks and throttles with many axes
   ([Input](design/windowing-input.md))
 - ![Planned][planned] Crash reporter: a local report to attach to a GitHub issue, nothing sent

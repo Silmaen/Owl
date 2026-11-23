@@ -9,6 +9,7 @@
 
 #include "EditorLayer.h"
 #include "EditorSettings.h"
+#include "GamePackager.h"
 #include "Project.h"
 #include "SettingsImport.h"
 #include <app/EntryPoint.h>
@@ -144,7 +145,7 @@ private:
 		addAssetDirectory({"Project: " + project.name, project.projectDirectory});
 		auto runnerDir = iCommand.runner;
 		if (runnerDir.empty())
-			runnerDir = iCommand.target == data::assets::pack::ExportTarget::Web ? iRunnerDir / "web" : iRunnerDir;
+			runnerDir = nest::GamePackager::getRunnerDirectory(iCommand.target, iRunnerDir);
 		auto settings = project.makeExportSettings(iCommand.output, runnerDir);
 		settings.cookCacheDirectory = iCommand.cookCache;
 		settings.target = iCommand.target;

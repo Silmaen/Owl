@@ -112,6 +112,13 @@ isometric, and `Renderer3D` for a mesh or voxel layer or a scene with an `Enviro
 renderer. The end of the export lists those families, the number of engine shader files left out and the number of
 project shaders compiled. The game reads everything from its pack in memory and writes nothing next to itself.
 
+The **Target platform** of the dialog picks the platform of the game: this computer (the table above), **Android
+(arm64)** (the folder the Android build of the runner makes its APK from) or **Web (browser)**: the page of the Web
+runner as `index.html`, the shaders as WGSL and the `files.json` the page fetches. A Web export needs the Web runner in
+the `web/` folder next to Owl Nest; with **Run in browser when done**, Owl Nest serves the game on `127.0.0.1` (cross-origin
+isolated, as the threads of the page need) and opens it in the default browser, until the next Web export or the end
+of the session.
+
 **Scene > Scene > Pack Scene** packs the active scene alone into an `.owlpack`.
 
 The same export runs without a window, as the CI does; `--headless` plays on the Null backends and

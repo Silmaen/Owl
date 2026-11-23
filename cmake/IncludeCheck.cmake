@@ -61,13 +61,17 @@ function(owl_include_check_library iName iTarget)
 endfunction()
 
 #
-# Compile every header matching the globs alone, with the flags of iTarget.
+# Compile every header matching the GLOBS alone, with the flags of iTarget, except those matching an EXCLUDE regex.
 #
 function(owl_add_header_check iTarget)
     if (NOT TARGET ${iTarget})
         return()
     endif ()
-    file(GLOB_RECURSE l_headers CONFIGURE_DEPENDS ${ARGN})
+    cmake_parse_arguments(PARSE_ARGV 1 l_arg "" "" "GLOBS;EXCLUDE")
+    file(GLOB_RECURSE l_headers CONFIGURE_DEPENDS ${l_arg_GLOBS})
+    foreach (l_regex IN LISTS l_arg_EXCLUDE)
+        list(FILTER l_headers EXCLUDE REGEX "${l_regex}")
+    endforeach ()
     if ("${l_headers}" STREQUAL "")
         return()
     endif ()
@@ -120,11 +124,17 @@ endfunction()
 #
 function(owl_setup_include_check)
     set(l_src "${CMAKE_SOURCE_DIR}/source")
-    owl_add_header_check(${ENGINE_NAME} "${l_src}/owl/public/*.h" "${l_src}/owl/private/*.h")
-    owl_add_header_check(${CMAKE_PROJECT_NAME}Nest "${l_src}/owlnest/sources/*.h")
-    owl_add_header_check(${CMAKE_PROJECT_NAME}Runner "${l_src}/owlnest/runner/*.h")
-    owl_add_header_check(${PROJECT_PREFIX_LOWER}_core_tests_unit_test "${CMAKE_SOURCE_DIR}/test/unit/test_helper/*.h")
-    owl_add_header_check(${PROJECT_PREFIX_LOWER}_bench "${CMAKE_SOURCE_DIR}/test/bench/*.h")
+    # The WebGPU headers need the Dawn headers of the emsdk, only in a Web build.
+    set(l_engine_excluded)
+    if (NOT ${PROJECT_PREFIX}_PLATFORM_WEB)
+        list(APPEND l_engine_excluded "/private/renderer/gpu/webgpu/" "/private/core/external/webgpu\\.h$")
+    endif ()
+    owl_add_header_check(${ENGINE_NAME} GLOBS "${l_src}/owl/public/*.h" "${l_src}/owl/private/*.h"
+            EXCLUDE ${l_engine_excluded})
+    owl_add_header_check(${CMAKE_PROJECT_NAME}Nest GLOBS "${l_src}/owlnest/sources/*.h")
+    owl_add_header_check(${CMAKE_PROJECT_NAME}Runner GLOBS "${l_src}/owlnest/runner/*.h")
+    owl_add_header_check(${PROJECT_PREFIX_LOWER}_core_tests_unit_test GLOBS "${CMAKE_SOURCE_DIR}/test/unit/test_helper/*.h")
+    owl_add_header_check(${PROJECT_PREFIX_LOWER}_bench GLOBS "${CMAKE_SOURCE_DIR}/test/bench/*.h")
 
     set(l_targets ${ENGINE_NAME} ${CMAKE_PROJECT_NAME}Nest ${CMAKE_PROJECT_NAME}Runner ${PROJECT_PREFIX_LOWER}_bench)
     if (EXISTS "${CMAKE_SOURCE_DIR}/test/unit" AND TARGET All_Tests)
