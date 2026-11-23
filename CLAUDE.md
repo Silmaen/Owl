@@ -60,6 +60,8 @@ natively, never install a tool on the host; if a tool is missing from the image,
 | `BuildAndTest`                                     | One CI build job: configure, build, test, cover, document and package as the preset says.      |
 | `NightlyGate`                                      | Writes the nightly child pipeline only when `main` moved since the last nightly.               |
 | `Reuse`                                            | Exit 0 when the same job already succeeded on the same tree (`--same_commit`: commit).         |
+| `PackageRunner`                                    | Game runner archive of a preset with a runner target (vendor `runner`).                        |
+| `AssembleNest`                                     | Adds `runners.json` and the Web runner to the Owl Nest archives of a release.                  |
 | `Package`, `Clean`, `PublishDoc`, `PublishPackage` | As named; also `Help`.                                                                         |
 
 Run `CodeStyle` (and `ClangTidy linux-clang-tidy -- --diff_base=main` after a `linux-clang-tidy` build when C++

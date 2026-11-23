@@ -174,6 +174,7 @@ void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 		readKey(config, "mcpEnabled", mcpEnabled);
 		if (config["mcpPort"])
 			mcpPort = std::clamp(config["mcpPort"].as<int>(), 1024, 65535);
+		readKey(config, "runnerServer", runnerServer);
 		readKey(config, "layoutPreset", layoutPreset);
 		readKey(config, "layoutVersion", layoutVersion);
 		if (const auto bindings = config["keybindings"]; bindings && bindings.IsMap()) {
@@ -235,6 +236,7 @@ void EditorSettings::saveToFile(const std::filesystem::path& iFile) const {
 	out << YAML::Key << "idleWaitMs" << YAML::Value << idleWaitMs;
 	out << YAML::Key << "mcpEnabled" << YAML::Value << mcpEnabled;
 	out << YAML::Key << "mcpPort" << YAML::Value << mcpPort;
+	out << YAML::Key << "runnerServer" << YAML::Value << runnerServer;
 	out << YAML::Key << "layoutPreset" << YAML::Value << layoutPreset;
 	out << YAML::Key << "layoutVersion" << YAML::Value << layoutVersion;
 	if (!keybindingOverrides.empty()) {

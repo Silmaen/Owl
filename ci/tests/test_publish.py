@@ -148,7 +148,7 @@ def test_publish_actions_require_password_env(
     assert publish.DEPLOY_PASSWORD_ENV in masked_caplog.text
 
 
-def test_find_archives_keeps_one_archive_per_component(tmp_path: Path) -> None:
+def test_find_archives_keeps_the_archives_of_one_commit(tmp_path: Path) -> None:
     for name in [
         "OwlEngine-0.3.0-abcdef1-linux-glibc_2.43-x64.tar.gz",
         "OwlNest-0.3.0-abcdef1-linux-glibc_2.43-x64.tar.gz",
@@ -156,23 +156,24 @@ def test_find_archives_keeps_one_archive_per_component(tmp_path: Path) -> None:
         "OwlEngine-0.3.0-abcdef1-linux-glibc_2.43-x64.zip",
     ]:
         (tmp_path / name).write_bytes(b"x")
-    found = find_archives(tmp_path, "0.3.0", "abcdef1", "tar.gz")
+    found = find_archives(tmp_path, "0.3.0", "abcdef1")
     assert [(base, path.name) for base, path in found] == [
         ("OwlEngine", "OwlEngine-0.3.0-abcdef1-linux-glibc_2.43-x64.tar.gz"),
+        ("OwlEngine", "OwlEngine-0.3.0-abcdef1-linux-glibc_2.43-x64.zip"),
         ("OwlNest", "OwlNest-0.3.0-abcdef1-linux-glibc_2.43-x64.tar.gz"),
     ]
-    assert find_archives(tmp_path, "0.3.0", "fedcba9", "tar.gz") == []
+    assert find_archives(tmp_path, "0.3.0", "fedcba9") == []
 
 
 def test_the_flavor_comes_from_the_archive_name_not_the_publishing_machine() -> None:
     arm = Path("OwlNest-0.3.0-abcdef1-linux-glibc_2.43-arm64.tar.gz")
     windows = Path("OwlEngine-0.3.0-abcdef1-windows-x64.zip")
 
-    assert archive_flavor(arm, "OwlNest", "0.3.0", "abcdef1", "tar.gz") == "linux glibc_2.43 arm64"
-    assert archive_flavor(windows, "OwlEngine", "0.3.0", "abcdef1", "zip") == "windows x64"
+    assert archive_flavor(arm, "OwlNest", "0.3.0", "abcdef1") == "linux glibc_2.43 arm64"
+    assert archive_flavor(windows, "OwlEngine", "0.3.0", "abcdef1") == "windows x64"
 
 
 def test_publish_package_needs_a_packaged_tree(masked_caplog: pytest.LogCaptureFixture) -> None:
-    preset: Any = SimpleNamespace(cmake_preset="linux-clang-debug", run_package=False)
+    preset: Any = SimpleNamespace(cmake_preset="linux-clang-debug", run_package=False, runner_target=None)
     assert PublishPackage().run(preset, ["--url=https://h", "--login=bob", "--dry-run=true"]) == 1
     assert "not a packaged tree" in masked_caplog.text

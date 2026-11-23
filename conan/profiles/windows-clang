@@ -1,5 +1,11 @@
 {# Windows, MSYS2 MinGW64 Clang + libstdc++ (the toolchain of the windows-clang-* presets). #}
 {% set compiler, version, compiler_exe = detect_api.detect_clang_compiler("clang") %}
+{# The bash of the MSYS2 of the compiler (`<msys2>/usr/bin`, beside `<msys2>/mingw64/bin`), not another one of the
+   PATH (Git for Windows): the recipes configured through a bash (OpenSSL) run in it. #}
+{% set msys = namespace(bash="") %}
+{% for dir in (os.getenv("PATH") or "").split(os.pathsep) | reverse %}
+{% if dir and os.path.isfile(os.path.join(dir, "clang.exe")) and os.path.isfile(os.path.join(dir, "..", "..", "usr", "bin", "bash.exe")) %}{% set msys.bash = os.path.normpath(os.path.join(dir, "..", "..", "usr", "bin", "bash.exe")) | replace(os.sep, "/") %}{% endif %}
+{% endfor %}
 [settings]
 os=Windows
 arch={{ detect_api.detect_arch() }}
@@ -13,6 +19,11 @@ build_type=Release
 tools.build:compiler_executables={"c": "clang", "cpp": "clang++", "rc": "windres"}
 tools.cmake.cmaketoolchain:generator=Ninja
 tools.system.package_manager:mode=check
+# OpenSSL configures through the MSYS2 bash.
+tools.microsoft.bash:subsystem=msys2
+{% if msys.bash %}
+tools.microsoft.bash:path={{ msys.bash }}
+{% endif %}
 
 [buildenv]
 # CMake 4 refuses cmake_minimum_required below 3.5, still declared by some upstream projects.

@@ -8,7 +8,9 @@
 
 #pragma once
 
+#include "EditorSettings.h"
 #include "Project.h"
+#include "RunnerStore.h"
 #include "WebPreviewServer.h"
 #include "panel/AsyncProgressModal.h"
 
@@ -43,9 +45,10 @@ public:
 	 *  Constructor.
 	 * @param[in] iProject The editor project (kept by address: it outlives the packager).
 	 * @param[in,out] ioProgress The progress modal that shows the background work.
+	 * @param[in] iSettings The editor settings, for the runner server (kept by address: they outlive the packager).
 	 */
-	GamePackager(const Project& iProject, panel::AsyncProgressModal& ioProgress)
-		: mp_project{&iProject}, mp_progress{&ioProgress} {}
+	GamePackager(const Project& iProject, panel::AsyncProgressModal& ioProgress, const EditorSettings& iSettings)
+		: mp_project{&iProject}, mp_progress{&ioProgress}, mp_settings{&iSettings} {}
 
 	~GamePackager() = default;
 
@@ -77,13 +80,10 @@ public:
 
 	/**
 	 * @brief
-	 *  Get the folder of the runner an export bundles: the one of Owl Nest, its `web/` folder for the Web.
-	 * @param[in] iTarget The platform of the export.
-	 * @param[in] iNestDirectory The folder of the Owl Nest executable.
-	 * @return The runner folder.
+	 *  Get the runners of the exports: shipped with Owl Nest, or downloaded into the user folder.
+	 * @return The store, made at the first call.
 	 */
-	[[nodiscard]] static auto getRunnerDirectory(data::assets::pack::ExportTarget iTarget,
-												 const std::filesystem::path& iNestDirectory) -> std::filesystem::path;
+	[[nodiscard]] auto getRunners() -> RunnerStore&;
 
 	/**
 	 * @brief
@@ -107,17 +107,35 @@ private:
 
 	/**
 	 * @brief
-	 *  Check whether the runner of the chosen platform is next to Owl Nest.
+	 *  Draw the state of the runner of the chosen platform, with its download and import buttons when it is missing.
+	 */
+	void renderRunnerState();
+
+	/**
+	 * @brief
+	 *  Download the runner of the chosen platform in the background, from the server of the settings.
+	 */
+	void startRunnerDownload();
+
+	/**
+	 * @brief
+	 *  Ask for a runner archive downloaded by hand and install it.
+	 */
+	void importRunner();
+
+	/**
+	 * @brief
+	 *  Check whether the runner of the chosen platform is installed.
 	 * @return True when the export can bundle it (always for a target without runner file).
 	 */
-	[[nodiscard]] auto hasRunner() const -> bool;
+	[[nodiscard]] auto hasRunner() -> bool;
 
 	/**
 	 * @brief
 	 *  Build the export settings of the project for the chosen platform and folder.
 	 * @return The settings.
 	 */
-	[[nodiscard]] auto makeSettings() const -> data::assets::pack::ExportSettings;
+	[[nodiscard]] auto makeSettings() -> data::assets::pack::ExportSettings;
 
 	/**
 	 * @brief
@@ -149,6 +167,12 @@ private:
 	const Project* mp_project;
 	/// The progress modal of the editor.
 	panel::AsyncProgressModal* mp_progress;
+	/// The editor settings (runner server).
+	const EditorSettings* mp_settings;
+	/// The runners of the exports, made at the first use.
+	uniq<RunnerStore> mp_runners;
+	/// Result of the last runner download or import, shown under the target.
+	std::string m_runnerMessage;
 	/// Destination directory chosen in the wizard.
 	std::filesystem::path m_destDir;
 	/// Platform chosen in the wizard.

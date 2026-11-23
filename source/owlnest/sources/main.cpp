@@ -9,8 +9,8 @@
 
 #include "EditorLayer.h"
 #include "EditorSettings.h"
-#include "GamePackager.h"
 #include "Project.h"
+#include "RunnerStore.h"
 #include "SettingsImport.h"
 #include <app/EntryPoint.h>
 #include <core/Core.h>
@@ -42,9 +42,23 @@ struct ExportCommand {
 	std::filesystem::path cookCache;
 	// Platform of the exported game.
 	data::assets::pack::ExportTarget target = data::assets::pack::ExportTarget::Host;
-	// Folder of the runner to bundle, empty for the one next to Owl Nest (its `web/` folder for the Web).
+	// Folder of the runner to bundle, empty for the one of the runner store (downloaded when missing).
 	std::filesystem::path runner;
+	// Server the missing runner is downloaded from.
+	std::string runnerServer{nest::RunnerStore::defaultServer};
 };
+
+// The export target of a `--target` value.
+auto parseTarget(const std::string_view iName) -> std::optional<data::assets::pack::ExportTarget> {
+	using data::assets::pack::ExportTarget;
+	for (const auto target: {ExportTarget::LinuxX64, ExportTarget::LinuxArm64, ExportTarget::WindowsX64,
+							 ExportTarget::Android, ExportTarget::Web})
+		if (iName == nest::RunnerStore::getTargetName(target))
+			return target;
+	if (iName == "android")
+		return ExportTarget::Android;
+	return std::nullopt;
+}
 
 auto parseExportCommand(const int iArgc, char** iArgv) -> std::optional<ExportCommand> {
 	const std::span args(iArgv, static_cast<size_t>(iArgc));
@@ -53,7 +67,8 @@ auto parseExportCommand(const int iArgc, char** iArgv) -> std::optional<ExportCo
 			continue;
 		if (i + 2 >= args.size()) {
 			std::fputs("Usage: OwlNest --export <project dir or owl_project.yml> <output dir> [--cook-cache <dir>] "
-					   "[--target android|web] [--runner <dir>]\n",
+					   "[--target linux-x64|linux-arm64|windows-x64|android|web] [--runner <dir>] "
+					   "[--runner-server <url>]\n",
 					   stderr);
 			return ExportCommand{};
 		}
@@ -61,14 +76,19 @@ auto parseExportCommand(const int iArgc, char** iArgv) -> std::optional<ExportCo
 							  .output = std::filesystem::absolute(args[i + 2]),
 							  .cookCache = {},
 							  .target = data::assets::pack::ExportTarget::Host,
-							  .runner = {}};
+							  .runner = {},
+							  .runnerServer = std::string{nest::RunnerStore::defaultServer}};
 		for (size_t j = 1; j + 1 < args.size(); ++j) {
 			if (std::string_view(args[j]) == "--cook-cache")
 				command.cookCache = std::filesystem::absolute(args[j + 1]);
-			if (std::string_view(args[j]) == "--target" && std::string_view(args[j + 1]) == "android")
-				command.target = data::assets::pack::ExportTarget::Android;
-			if (std::string_view(args[j]) == "--target" && std::string_view(args[j + 1]) == "web")
-				command.target = data::assets::pack::ExportTarget::Web;
+			if (std::string_view(args[j]) == "--target") {
+				if (const auto target = parseTarget(args[j + 1]); target)
+					command.target = *target;
+				else
+					std::fputs("Unknown --target, exporting for this computer.\n", stderr);
+			}
+			if (std::string_view(args[j]) == "--runner-server")
+				command.runnerServer = args[j + 1];
 			if (std::string_view(args[j]) == "--runner")
 				command.runner = std::filesystem::absolute(args[j + 1]);
 		}
@@ -144,8 +164,17 @@ private:
 		}
 		addAssetDirectory({"Project: " + project.name, project.projectDirectory});
 		auto runnerDir = iCommand.runner;
-		if (runnerDir.empty())
-			runnerDir = nest::GamePackager::getRunnerDirectory(iCommand.target, iRunnerDir);
+		if (runnerDir.empty()) {
+			nest::RunnerStore runners{iRunnerDir, platform::getUserDirectory() / "runners"};
+			if (!runners.isInstalled(iCommand.target)) {
+				if (const auto downloaded = runners.download(iCommand.target, iCommand.runnerServer, {}); !downloaded) {
+					OWL_ERROR("Export: No {} runner, {}.", nest::RunnerStore::getTargetName(iCommand.target),
+							  nest::RunnerStore::getErrorMessage(downloaded.error()))
+					return 1;
+				}
+			}
+			runnerDir = runners.getRunnerDirectory(iCommand.target);
+		}
 		auto settings = project.makeExportSettings(iCommand.output, runnerDir);
 		settings.cookCacheDirectory = iCommand.cookCache;
 		settings.target = iCommand.target;

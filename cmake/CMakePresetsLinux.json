@@ -48,6 +48,7 @@
       },
       "vendor": {
         "silmaen": {
+          "runner": "linux-x64",
           "package": true,
           "publish_doc": true
         }

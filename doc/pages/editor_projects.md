@@ -112,12 +112,20 @@ isometric, and `Renderer3D` for a mesh or voxel layer or a scene with an `Enviro
 renderer. The end of the export lists those families, the number of engine shader files left out and the number of
 project shaders compiled. The game reads everything from its pack in memory and writes nothing next to itself.
 
-The **Target platform** of the dialog picks the platform of the game: this computer (the table above), **Android
-(arm64)** (the folder the Android build of the runner makes its APK from) or **Web (browser)**: the page of the Web
-runner as `index.html`, the shaders as WGSL and the `files.json` the page fetches. A Web export needs the Web runner in
-the `web/` folder next to Owl Nest; with **Run in browser when done**, Owl Nest serves the game on `127.0.0.1` (cross-origin
-isolated, as the threads of the page need) and opens it in the default browser, until the next Web export or the end
-of the session.
+The **Target platform** of the dialog picks the platform of the game: this computer (the table above), another
+desktop (**Linux (x64)**, **Linux (arm64)**, **Windows (x64)**), **Android (arm64)** (the folder the Android build of
+the runner makes its APK from) or **Web (browser)**: the page of the Web runner as `index.html`, the shaders as WGSL and
+the `files.json` the page fetches. With **Run in browser when done**, Owl Nest serves a Web export on `127.0.0.1`
+(cross-origin isolated, as the threads of the page need) and opens it in the default browser, until the next Web export
+or the end of the session.
+
+Owl Nest ships the runner of its own platform and the Web runner. The runner of another desktop is downloaded once,
+with **Download**, from the **Runner Server** of the settings (`https://owl.argawaen.net` by default, or a mirror
+answering the same paths), into the runners folder of the user directory, shared by every project. Without network,
+**Import Runner...** takes the archive downloaded by hand from the revision page of the site. Only the runners of the
+release of this Owl Nest are accepted: their size and SHA-256 come from the `runners.json` next to Owl Nest
+([Game export](design/game-export.md#game-export-templates)). The command line downloads a missing runner the same way:
+`OwlNest --export <project> <dir> --target windows-x64 [--runner-server <url>]`.
 
 **Scene > Scene > Pack Scene** packs the active scene alone into an `.owlpack`.
 

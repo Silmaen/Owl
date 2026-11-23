@@ -41,6 +41,8 @@ class PresetConfig:
         self.run_documentation: bool = False
         self.run_package: bool = False
         self.publish_doc: bool = False
+        # The export target whose game runner archive the preset writes (`ci/utils/runners.py`), if any.
+        self.runner_target: str | None = None
 
         # raw config storage from CMake preset file
         self.raw_config: dict[str, Any] | None = None
@@ -93,6 +95,8 @@ class PresetConfig:
                     self.publish_doc = is_true(vendor_conf["publish_doc"])
                 if "package" in vendor_conf:
                     self.run_package = is_true(vendor_conf["package"])
+                if "runner" in vendor_conf:
+                    self.runner_target = vendor_conf["runner"]
                 if "run_tests" in vendor_conf:
                     run_tests_override = is_true(vendor_conf["run_tests"])
 

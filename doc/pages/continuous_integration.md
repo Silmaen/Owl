@@ -47,7 +47,8 @@ flowchart TD
         CHILD --> N1["clang debug coverage, slow suite"]
         CHILD --> N2["TSan, UBSan, tidy, analyzer"]
         CHILD --> N3["bench, fuzz, include check, dependency report, Android, Web"]
-        CHILD --> N4["packages x3 (publish)"]
+        CHILD --> N4["packages x3, Android, Web (publish SDK and runners)"]
+        N4 --> N5["assemble-nest (publish Owl Nest)"]
     end
 ```
 
@@ -92,10 +93,14 @@ flowchart TD
 - **Nightly**: a pipeline schedule on `main` at 02:00 runs `nightly-gate` (`NightlyGate`), which writes the child
   pipeline only when `main` moved since the last successful scheduled pipeline, a single no-op job otherwise. The
   child pipeline builds nothing in the three package jobs beyond their own tree: each builds and tests its release
-  tree, then publishes the archives to the site (Linux x64 also publishes the documentation).
+  tree, then publishes the archives to the site (Linux x64 also publishes the documentation). The five trees with a
+  runner target (vendor `runner`: Linux x64 and arm64, Windows x64, Android, Web) also write their game runner archive
+  (`PackageRunner`), published as a revision of type `r`; `assemble-nest` waits for all five, adds `runners.json`
+  (size and SHA-256 of each runner archive) and the Web runner to every Owl Nest package (`AssembleNest`) and
+  publishes them ([Game export](design/game-export.md#game-export-templates)).
 - **Nightly jobs in a merge request**: every nightly job but `clang-tidy` and `bench` (already in the merge request,
-  scoped to its diff) waits for its ▶ in the `build` column under its own name, never blocking; off `main` the
-  package jobs stop at the archives.
+  scoped to its diff) and `assemble-nest` (it publishes the archives of `main`) waits for its ▶ in the `build` column
+  under its own name, never blocking; off `main` the package jobs stop at the archives.
 - **Nightly by hand**: *Build > Pipelines > Run pipeline* on any branch with `NIGHTLY` = `true` runs the gate and the
   whole child pipeline on that branch, whether it moved or not, and none of the usual jobs; only `main` publishes.
 - **Reuse**: in a pipeline a push or a merge request started, a job that a successful job of the same name already

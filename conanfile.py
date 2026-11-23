@@ -201,6 +201,11 @@ class OwlEngineConan(ConanFile):
             self.requires("md4c/0.6.0")
             # MCP dispatcher (JSON-RPC); tinygltf pulls the same version.
             self.requires("nlohmann_json/3.12.0")
+            # TLS of the runner downloads (`CPPHTTPLIB_OPENSSL_SUPPORT` on the Nest targets only, the engine and the
+            # game runners stay without it).
+            self.requires("openssl/4.1.0")
+            # The runner archives are tar.gz, unpacked by Owl Nest.
+            self.requires("zlib/1.4")
         # MCP HTTP transport on loopback and WebSocket server of the network module, header-only, built without TLS (the
         # recipe defaults); a page uses the WebSocket of the browser.
         if self.options.nest or (self.options.network and not web):

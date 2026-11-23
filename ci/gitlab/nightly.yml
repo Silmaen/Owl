@@ -50,3 +50,6 @@ package-linux-arm64:
 
 package-windows-x64:
   extends: .night-package-windows-x64
+
+assemble-nest:
+  extends: .night-assemble-nest

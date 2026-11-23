@@ -2,7 +2,7 @@
 
 import pytest
 
-from ci.actions import build, clean, coverage, documentation, package, test
+from ci.actions import build, clean, coverage, documentation, package, package_runner, test
 from ci.actions.build_and_test import BuildAndTest
 from ci.utils.preset import PresetConfig
 
@@ -17,7 +17,9 @@ def steps(monkeypatch: pytest.MonkeyPatch) -> list[tuple[str, list[str] | None]]
         (coverage, "Coverage"),
         (documentation, "Documentation"),
         (package, "Package"),
+        (package_runner, "PackageRunner"),
     ):
+
         def fake_run(self, preset, args=None, n=name) -> int:
             calls.append((n, args))
             return 0
@@ -49,7 +51,7 @@ def test_release_tree_is_documented_and_packaged_on_main_only(
     monkeypatch.setenv("CI_COMMIT_BRANCH", "main")
     monkeypatch.setenv("CI_DEFAULT_BRANCH", "main")
     assert BuildAndTest().run(PresetConfig("linux-clang-release")) == 0
-    assert names(steps) == ["Clean", "Build", "Test", "Documentation", "Package"]
+    assert names(steps) == ["Clean", "Build", "Test", "Documentation", "Package", "PackageRunner"]
 
 
 def test_arm64_tree_is_packaged_without_documentation(
@@ -58,7 +60,17 @@ def test_arm64_tree_is_packaged_without_documentation(
     monkeypatch.setenv("CI_COMMIT_BRANCH", "main")
     monkeypatch.setenv("CI_DEFAULT_BRANCH", "main")
     assert BuildAndTest().run(PresetConfig("linux-cross-arm64")) == 0
-    assert names(steps) == ["Clean", "Build", "Test", "Package"]
+    assert names(steps) == ["Clean", "Build", "Test", "Package", "PackageRunner"]
+
+
+def test_the_web_tree_writes_its_runner_archive_on_main(
+    steps: list[tuple[str, list[str] | None]], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("CI_COMMIT_BRANCH", "main")
+    monkeypatch.setenv("CI_DEFAULT_BRANCH", "main")
+    assert BuildAndTest().run(PresetConfig("web-release")) == 0
+    assert names(steps)[-1] == "PackageRunner"
+    assert "Package" not in names(steps)
 
 
 def test_the_first_failure_stops_the_chain(
@@ -102,7 +114,7 @@ def test_an_earlier_success_on_the_same_tree_stands(
     monkeypatch.setenv("CI_COMMIT_BRANCH", "main")
     monkeypatch.setenv("CI_DEFAULT_BRANCH", "main")
     assert BuildAndTest().run(PresetConfig("linux-clang-release")) == 0
-    assert names(steps)[-1] == "Package"
+    assert names(steps)[-2:] == ["Package", "PackageRunner"]
 
 
 @pytest.mark.parametrize(

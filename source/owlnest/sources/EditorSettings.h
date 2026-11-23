@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "RunnerStore.h"
 #include "panel/ViewNavigation.h"
 
 #include <owlgui.h>
@@ -145,6 +146,8 @@ struct EditorSettings {
 	bool mcpEnabled = false;
 	/// Port of the MCP server (1024 to 65535).
 	int mcpPort = 47800;
+	/// Server of the game runners Owl Nest downloads (`https://host[:port]`, the `/runners/` paths of the site).
+	std::string runnerServer{RunnerStore::defaultServer};
 	/// Panel arrangement (`DockLayout::getPresetName`).
 	std::string layoutPreset = "Default";
 	/// Generation of the saved dock layout; an older one is rebuilt once (`DockLayout::version`).

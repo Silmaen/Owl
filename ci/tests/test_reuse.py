@@ -38,9 +38,7 @@ def test_reuse_stands_on_the_same_tree(monkeypatch: pytest.MonkeyPatch, in_merge
     assert Reuse().run(PresetConfig("linux-clang-debug"), ["--same_commit"]) == 0
 
 
-def test_reuse_runs_the_job_without_an_earlier_success(
-    monkeypatch: pytest.MonkeyPatch, in_merge_request: None
-) -> None:
+def test_reuse_runs_the_job_without_an_earlier_success(monkeypatch: pytest.MonkeyPatch, in_merge_request: None) -> None:
     monkeypatch.setattr(gitlab, "_api_get", lambda path: [] if path.startswith("jobs") else None)
     assert Reuse().run(PresetConfig("linux-clang-debug")) == 1
     monkeypatch.setenv("CI_JOB_MANUAL", "true")

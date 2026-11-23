@@ -149,7 +149,7 @@ The `DependencyReport` CI action lists what lags behind ConanCenter or upstream.
 
 | Dependency            | Owl             | Source                | Linkage | Note                                                                           |
 |-----------------------|-----------------|-----------------------|---------|--------------------------------------------------------------------------------|
-| cpp-httplib           | 0.65.0          | ConanCenter           | header  | Owl Nest (`nest`): HTTP transport of the MCP server, no TLS                    |
+| cpp-httplib           | 0.65.0          | ConanCenter           | header  | MCP server, WebSocket server; TLS (OpenSSL) in the Owl Nest targets only       |
 | cpptrace              | 1.0.4           | ConanCenter           | static  | Pulls libdwarf 2.1.0                                                           |
 | enet                  | 1.3.18          | ConanCenter           | static  | `network` module: reliable UDP of `network::Transport`, behind its interface   |
 | entt                  | 4.0.0           | ConanCenter           | header  | Header-only, public (the only one)                                             |
@@ -174,6 +174,7 @@ The `DependencyReport` CI action lists what lags behind ConanCenter or upstream.
 | nfd (extended)        | 1.4.1           | local recipe          | static  | Absent from ConanCenter; `portal` on Linux: D-Bus + wayland-client (system)    |
 | nlohmann_json         | 3.12.0          | ConanCenter           | header  | Owl Nest (`nest`): MCP dispatcher; tinygltf pulls the same version             |
 | openal                | 1.25.2          | local recipe          | shared  | `openal-soft`, ConanCenter stops at 1.24.3; LGPL: shared                       |
+| openssl               | 4.1.0           | ConanCenter           | static  | Owl Nest (`nest`): HTTPS of the runner downloads, SHA-256 of the archives      |
 | rapidyaml             | 0.15.2          | ConanCenter           | static  | Read side of scenes, prefabs and snapshots; pulls c4core and fast_float        |
 | slang                 | 2026.22         | local recipe          | shared  | Upstream release binaries                                                      |
 | spdlog                | 1.17.0          | ConanCenter           | static  | `use_std_fmt`: no fmt dependency                                               |
@@ -187,7 +188,7 @@ The `DependencyReport` CI action lists what lags behind ConanCenter or upstream.
 | vulkan-memory-alloc.  | 3.3.0           | ConanCenter           | header  | VMA: every Vulkan buffer and image is a sub-allocation                         |
 | xxhash                | 0.8.4           | ConanCenter           | static  | XXH3-128 keys of the asset cook cache                                          |
 | yaml-cpp              | 0.9.0           | local recipe          | static  | ConanCenter's recipe, doubles written right on 32-bit targets (patch)          |
-| zlib                  | 1.4             | ConanCenter           | static  | Transitive                                                                     |
+| zlib                  | 1.4             | ConanCenter           | static  | Owl Nest (`nest`): unpacks the runner archives (tar.gz); also transitive       |
 | zstd                  | 1.5.7           | ConanCenter           | static  |                                                                                |
 
 ## Local recipes (`conan/recipes/`)

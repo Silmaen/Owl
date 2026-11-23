@@ -82,19 +82,25 @@
 # The engine and the game runner cross compiled with the NDK; no device reaches the CI yet, so the preset builds
 # without the tests.
 .night-android-arm64:
-  extends: .build-linux
+  extends: [.build-linux, .release-archives]
   stage: build
   image: registry.argawaen.net/builder/builder-android-ubuntu2604
   variables:
     PRESET: android-arm64
+  script:
+    - poetry run python3 ci_action.py BuildAndTest "$PRESET"
+    - '[ "$CI_COMMIT_BRANCH" != "$CI_DEFAULT_BRANCH" ] || poetry run python3 ci_action.py PublishPackage "$PRESET" -- "--url=$OWL_DEPLOY_URL" "--login=$OWL_DEPLOY_LOGIN" --components=OwlGameRunner'
 
 # The engine and the game runner compiled to WebAssembly with Emscripten; the tests run under Node.
 .night-web-release:
-  extends: .build-linux
+  extends: [.build-linux, .release-archives]
   stage: build
   image: registry.argawaen.net/builder/builder-web-ubuntu2604
   variables:
     PRESET: web-release
+  script:
+    - poetry run python3 ci_action.py BuildAndTest "$PRESET"
+    - '[ "$CI_COMMIT_BRANCH" != "$CI_DEFAULT_BRANCH" ] || poetry run python3 ci_action.py PublishPackage "$PRESET" -- "--url=$OWL_DEPLOY_URL" "--login=$OWL_DEPLOY_LOGIN" --components=OwlGameRunner'
 
 # Informative: never fails.
 .night-dependency-report:
@@ -110,8 +116,23 @@
 
 # Each one builds and tests its release tree, then publishes the archives it wrote (and, on Linux x64, the
 # documentation): an archive never comes from untested code. Only `main` publishes: a branch stops at the archives.
+# The engine SDK and the game runner leave from the job; the Owl Nest packages wait for every runner (`assemble-nest`).
+
+# The archives of a release tree (`main` only writes them), for `assemble-nest`; the reports of `.build-artifacts`.
+.release-archives:
+  artifacts:
+    when: always
+    expire_in: 1 week
+    paths:
+      - output/build/*/Coverage/
+      - output/build/*/Documentation/html/
+      - output/build/*/OwlGameRunner-*
+      - output/build/*/OwlNest-*
+    reports:
+      junit: output/build/*/test/test/*_Report.xml
+
 .night-package-linux-x64:
-  extends: .build-linux
+  extends: [.build-linux, .release-archives]
   stage: publish
   # Its own build is its gate: it does not wait for the rest of the night.
   needs: []
@@ -119,13 +140,13 @@
     PRESET: linux-clang-release
   script:
     - poetry run python3 ci_action.py BuildAndTest "$PRESET"
-    - '[ "$CI_COMMIT_BRANCH" != "$CI_DEFAULT_BRANCH" ] || poetry run python3 ci_action.py PublishPackage "$PRESET" -- "--url=$OWL_DEPLOY_URL" "--login=$OWL_DEPLOY_LOGIN"'
+    - '[ "$CI_COMMIT_BRANCH" != "$CI_DEFAULT_BRANCH" ] || poetry run python3 ci_action.py PublishPackage "$PRESET" -- "--url=$OWL_DEPLOY_URL" "--login=$OWL_DEPLOY_LOGIN" --components=OwlEngine,OwlGameRunner'
     - '[ "$CI_COMMIT_BRANCH" != "$CI_DEFAULT_BRANCH" ] || poetry run python3 ci_action.py PublishDoc "$PRESET" -- "--url=$OWL_DEPLOY_URL" "--login=$OWL_DEPLOY_LOGIN"'
 
 # Cross compiled on x64 (Clang --target=aarch64-linux-gnu, the arm64 sysroot of the image); the tests run under
 # qemu-user, in release because QEMU multiplies the cost of every instruction.
 .night-package-linux-arm64:
-  extends: .build-linux
+  extends: [.build-linux, .release-archives]
   stage: publish
   needs: []
   image: registry.argawaen.net/builder/builder-cross-arm64-ubuntu2604
@@ -133,14 +154,35 @@
     PRESET: linux-cross-arm64
   script:
     - poetry run python3 ci_action.py BuildAndTest "$PRESET"
-    - '[ "$CI_COMMIT_BRANCH" != "$CI_DEFAULT_BRANCH" ] || poetry run python3 ci_action.py PublishPackage "$PRESET" -- "--url=$OWL_DEPLOY_URL" "--login=$OWL_DEPLOY_LOGIN"'
+    - '[ "$CI_COMMIT_BRANCH" != "$CI_DEFAULT_BRANCH" ] || poetry run python3 ci_action.py PublishPackage "$PRESET" -- "--url=$OWL_DEPLOY_URL" "--login=$OWL_DEPLOY_LOGIN" --components=OwlEngine,OwlGameRunner'
 
 .night-package-windows-x64:
-  extends: .build-windows
+  extends: [.build-windows, .release-archives]
   stage: publish
   needs: []
   variables:
     PRESET: windows-clang-release
   script:
     - poetry run python3 ci_action.py BuildAndTest $env:PRESET
-    - if ($env:CI_COMMIT_BRANCH -eq $env:CI_DEFAULT_BRANCH) { poetry run python3 ci_action.py PublishPackage $env:PRESET -- "--url=$env:OWL_DEPLOY_URL" "--login=$env:OWL_DEPLOY_LOGIN" }
+    - if ($env:CI_COMMIT_BRANCH -eq $env:CI_DEFAULT_BRANCH) { poetry run python3 ci_action.py PublishPackage $env:PRESET -- "--url=$env:OWL_DEPLOY_URL" "--login=$env:OWL_DEPLOY_LOGIN" --components=OwlEngine,OwlGameRunner }
+
+# The Owl Nest packages of `main`, once every runner of the commit is built: `runners.json` (size and SHA-256 of each
+# runner archive) and the Web runner added to each, then published. Owl Nest downloads the other runners.
+.night-assemble-nest:
+  extends: .linux
+  stage: publish
+  needs:
+    - job: package-linux-x64
+    - job: package-linux-arm64
+    - job: package-windows-x64
+    - job: android-arm64
+    - job: web-release
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  script:
+    - poetry run python3 ci_action.py AssembleNest linux-clang-release -- --input=output/build --output=output/assembled
+    - poetry run python3 ci_action.py PublishPackage linux-clang-release -- "--url=$OWL_DEPLOY_URL" "--login=$OWL_DEPLOY_LOGIN" --folder=output/assembled --components=OwlNest
+  artifacts:
+    expire_in: 1 week
+    paths:
+      - output/assembled/

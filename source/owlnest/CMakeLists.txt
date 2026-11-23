@@ -54,6 +54,16 @@ if (${PROJECT_PREFIX}_PLATFORM_ANDROID)
             USES_TERMINAL
             VERBATIM)
     set_target_properties(${GAME_RUNNER_NAME}Apk PROPERTIES FOLDER "App")
+    # The libraries the APK packs, stripped, in `android-runner/lib/arm64-v8a/`: the Android runner archive.
+    add_custom_target(${GAME_RUNNER_NAME}Libraries ALL
+            COMMAND ${Python3_EXECUTABLE} -u ${PROJECT_SOURCE_DIR}/cmake/androidApk.py
+            "$<TARGET_FILE:${GAME_RUNNER_NAME}>" --libraries "${CMAKE_BINARY_DIR}/android-runner"
+            "${CMAKE_BINARY_DIR}/bin/${GAME_RUNNER_NAME}.apk"
+            --conan "${CMAKE_BINARY_DIR}/conan" --ndk "${ANDROID_NDK}" --sdk "$ENV{ANDROID_HOME}"
+            DEPENDS ${GAME_RUNNER_NAME}
+            COMMENT "Strip the Android runner libraries"
+            VERBATIM)
+    set_target_properties(${GAME_RUNNER_NAME}Libraries PROPERTIES FOLDER "App")
     return()
 endif ()
 
@@ -61,7 +71,7 @@ endif ()
 if (NOT ${PROJECT_PREFIX}_PLATFORM_WEB)
     #
     #  MCP server: JSON-RPC 2.0 dispatcher over an editor session (tools from the command registry, resources) and its
-    #  Streamable HTTP transport on 127.0.0.1 (cpp-httplib, no TLS), whose messages the main loop runs.
+    #  Streamable HTTP transport on 127.0.0.1 (cpp-httplib), whose messages the main loop runs.
     #
     set(OWL_NEST_MCP ${OWL_PROJECT}Mcp)
     file(GLOB_RECURSE SRCS_MCP CONFIGURE_DEPENDS
@@ -73,6 +83,13 @@ if (NOT ${PROJECT_PREFIX}_PLATFORM_WEB)
     owl_target_link_libraries(${OWL_NEST_MCP} PUBLIC nlohmann_json REQUIRED)
     # Public: the owlnest tests drive the server with its client.
     owl_target_link_libraries(${OWL_NEST_MCP} PUBLIC httplib REQUIRED)
+    if (${PROJECT_PREFIX}_BUILD_NEST)
+        # TLS of the runner downloads: every source of Owl Nest sees one cpp-httplib, built with OpenSSL; the engine
+        # and the game runners include it without.
+        owl_target_link_libraries(${OWL_NEST_MCP} PUBLIC OpenSSL REQUIRED MODULE_TARGET OpenSSL::SSL)
+        owl_target_link_libraries(${OWL_NEST_MCP} PUBLIC ZLIB REQUIRED MODULE_TARGET ZLIB::ZLIB)
+        target_compile_definitions(${OWL_NEST_MCP} PUBLIC CPPHTTPLIB_OPENSSL_SUPPORT)
+    endif ()
     if (WIN32)
         # Token drawn from BCryptGenRandom.
         target_link_libraries(${OWL_NEST_MCP} PRIVATE bcrypt)

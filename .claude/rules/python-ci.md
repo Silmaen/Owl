@@ -20,7 +20,7 @@ poetry run python ci_action.py <Action> <preset> [-v] [-q] [-- --extra=args]
 ```
 
 Available actions: Build, Test, Coverage, Clean, Documentation, CodeStyle, ClangTidy, IncludeCheck, Bench, Fuzz,
-DependencyReport, Package, Help, PublishDoc, PublishPackage, BuildAndTest, NightlyGate.
+DependencyReport, Package, PackageRunner, AssembleNest, Help, PublishDoc, PublishPackage, BuildAndTest, NightlyGate.
 
 `DependencyReport <preset>` lists the dependencies with a newer version: every package of the Conan graph
 (transitive ones included) on ConanCenter, the local recipes' sources upstream (their tags); false positives

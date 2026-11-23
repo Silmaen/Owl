@@ -52,19 +52,15 @@ namespace owl::data::assets::pack {
 
 namespace {
 
-#ifdef OWL_PLATFORM_WINDOWS
-constexpr std::array<const char*, 1> g_runnerNames = {"OwlGameRunner.exe"};
-constexpr auto g_platformName = "windows-x64";
-#else
-constexpr std::array<const char*, 1> g_runnerNames = {"OwlGameRunner"};
-constexpr auto g_platformName = "linux-x64";
-#endif
+// The runner executable of a desktop target.
+auto runnerNameOf(const ExportTarget iTarget) -> std::string_view {
+	return iTarget == ExportTarget::WindowsX64 ? "OwlGameRunner.exe" : "OwlGameRunner";
+}
 
-auto findRunner(const std::filesystem::path& iRunnerDir) -> std::optional<std::filesystem::path> {
-	for (const auto* name: g_runnerNames) {
-		if (auto candidate = iRunnerDir / name; exists(candidate))
-			return candidate;
-	}
+auto findRunner(const std::filesystem::path& iRunnerDir, const ExportTarget iTarget)
+		-> std::optional<std::filesystem::path> {
+	if (auto candidate = iRunnerDir / runnerNameOf(iTarget); exists(candidate))
+		return candidate;
 	return std::nullopt;
 }
 
@@ -84,27 +80,35 @@ auto hasWebRunner(const std::filesystem::path& iRunnerDir) -> bool {
 
 // Whether the runner of a target is in the runner directory; Android brings its own.
 auto hasRunnerFor(const ExportSettings& iSettings) -> bool {
-	switch (iSettings.target) {
-		case ExportTarget::Host:
-			return findRunner(iSettings.runnerDirectory).has_value();
+	switch (const auto target = resolveExportTarget(iSettings.target)) {
 		case ExportTarget::Android:
 			return true;
 		case ExportTarget::Web:
 			return hasWebRunner(iSettings.runnerDirectory);
+		case ExportTarget::Host:
+		case ExportTarget::LinuxX64:
+		case ExportTarget::LinuxArm64:
+		case ExportTarget::WindowsX64:
+			return findRunner(iSettings.runnerDirectory, target).has_value();
 	}
 	return false;
 }
 
 auto platformNameOf(const ExportTarget iTarget) -> std::string_view {
-	switch (iTarget) {
-		case ExportTarget::Host:
-			return g_platformName;
+	switch (resolveExportTarget(iTarget)) {
 		case ExportTarget::Android:
 			return "android-arm64";
 		case ExportTarget::Web:
 			return "web-wasm32";
+		case ExportTarget::LinuxArm64:
+			return "linux-arm64";
+		case ExportTarget::WindowsX64:
+			return "windows-x64";
+		case ExportTarget::Host:
+		case ExportTarget::LinuxX64:
+			return "linux-x64";
 	}
-	return g_platformName;
+	return "linux-x64";
 }
 
 auto writeText(const std::filesystem::path& iFile, const std::string& iText) -> bool {
@@ -235,12 +239,15 @@ constexpr std::array g_webShaderTargets{renderer::utils::ShaderTarget::WebGpu};
 
 auto shaderTargetsOf(const ExportTarget iTarget) -> std::span<const renderer::utils::ShaderTarget> {
 	switch (iTarget) {
-		case ExportTarget::Host:
-			return g_desktopShaderTargets;
 		case ExportTarget::Android:
 			return g_androidShaderTargets;
 		case ExportTarget::Web:
 			return g_webShaderTargets;
+		case ExportTarget::Host:
+		case ExportTarget::LinuxX64:
+		case ExportTarget::LinuxArm64:
+		case ExportTarget::WindowsX64:
+			return g_desktopShaderTargets;
 	}
 	return g_desktopShaderTargets;
 }
@@ -454,7 +461,6 @@ auto resolveFirstScene(const std::string& iFirstScene, const std::vector<AssetRe
 	return resolved;
 }
 
-#ifdef OWL_PLATFORM_LINUX
 void addExecPermission(const std::filesystem::path& iFile) {
 	std::error_code ec;
 	std::filesystem::permissions(iFile,
@@ -464,7 +470,6 @@ void addExecPermission(const std::filesystem::path& iFile) {
 	if (ec)
 		OWL_CORE_WARN("GameExporter: Cannot set the exec permissions of '{}': {}.", iFile.string(), ec.message())
 }
-#endif
 
 void copySharedLibs(const std::filesystem::path& iSrcDir, const std::filesystem::path& iDestDir) {
 	std::error_code ec;
@@ -590,7 +595,6 @@ void writeMetadata(const ExportSettings& iSettings, const std::filesystem::path&
 	file << out.c_str() << "\n";
 }
 
-#ifdef OWL_PLATFORM_LINUX
 void writeLinuxLauncher(const std::filesystem::path& iGameDir, const std::string& iExeName) {
 	{
 		std::ofstream script(iGameDir / "launch.sh");
@@ -602,7 +606,6 @@ void writeLinuxLauncher(const std::filesystem::path& iGameDir, const std::string
 	}
 	addExecPermission(iGameDir / "launch.sh");
 }
-#endif
 
 #ifdef OWL_PLATFORM_WINDOWS
 auto createZipArchive(const std::filesystem::path& iSourceDir, const std::filesystem::path& iOutputZip) -> bool {
@@ -660,6 +663,20 @@ auto writeMods(const ExportSettings& iSettings, const std::filesystem::path& iGa
 }
 
 }// namespace
+
+auto getHostExportTarget() -> ExportTarget {
+#if defined(OWL_PLATFORM_WINDOWS)
+	return ExportTarget::WindowsX64;
+#elif defined(OWL_PLATFORM_ARM64)
+	return ExportTarget::LinuxArm64;
+#else
+	return ExportTarget::LinuxX64;
+#endif
+}
+
+auto resolveExportTarget(const ExportTarget iTarget) -> ExportTarget {
+	return iTarget == ExportTarget::Host ? getHostExportTarget() : iTarget;
+}
 
 auto GameExporter::getErrorMessage(const ExportError iError) -> std::string_view {
 	switch (iError) {
@@ -941,12 +958,10 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 		return result;
 	}
 	report(iProgress, 0.88f, "Copying runner...");
-	const auto runnerExe = findRunner(iSettings.runnerDirectory);
-#ifdef OWL_PLATFORM_WINDOWS
-	result.executable = result.gameDirectory / (baseName + ".exe");
-#else
-	result.executable = result.gameDirectory / baseName;
-#endif
+	const auto target = resolveExportTarget(iSettings.target);
+	const bool windows = target == ExportTarget::WindowsX64;
+	const auto runnerExe = findRunner(iSettings.runnerDirectory, target);
+	result.executable = result.gameDirectory / (windows ? baseName + ".exe" : baseName);
 	if (std::error_code ec; !std::filesystem::copy_file(*runnerExe, result.executable,
 														std::filesystem::copy_options::overwrite_existing, ec) ||
 							ec) {
@@ -954,12 +969,12 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 		return unexpected{ExportError::RunnerCopy};
 	}
 	copySharedLibs(iSettings.runnerDirectory, result.gameDirectory);
-#ifdef OWL_PLATFORM_LINUX
-	addExecPermission(result.executable);
-	writeLinuxLauncher(result.gameDirectory, result.executable.filename().string());
-#endif
+	if (!windows) {
+		addExecPermission(result.executable);
+		writeLinuxLauncher(result.gameDirectory, result.executable.filename().string());
+	}
 #ifdef OWL_PLATFORM_WINDOWS
-	if (!createZipArchive(result.gameDirectory, result.gameDirectory.parent_path() / (baseName + ".zip")))
+	if (windows && !createZipArchive(result.gameDirectory, result.gameDirectory.parent_path() / (baseName + ".zip")))
 		OWL_CORE_WARN("GameExporter: Cannot create the zip archive of '{}'.", result.gameDirectory.string())
 #endif
 	std::error_code sizeEc;

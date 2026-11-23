@@ -36,12 +36,14 @@ class BuildAndTest(BaseAction):
         from ci.actions.coverage import Coverage
         from ci.actions.documentation import Documentation
         from ci.actions.package import Package
+        from ci.actions.package_runner import PackageRunner
         from ci.actions.test import Test
         from ci.utils.gitlab import on_default_branch, reuse_allowed, same_tree_success, section
 
         # The archives only come from a build of their own: a job that packages never stands on an earlier one.
         packages = preset.run_package and on_default_branch()
-        if not packages and reuse_allowed() and (earlier := same_tree_success()) is not None:
+        runner = preset.runner_target is not None and on_default_branch()
+        if not packages and not runner and reuse_allowed() and (earlier := same_tree_success()) is not None:
             commit = earlier["commit"]["id"][:8]
             log.info(f"BuildAndTest: job #{earlier['id']} passed on {commit}, same tree: its verdict stands.")
             if earlier.get("coverage") is not None:
@@ -58,6 +60,8 @@ class BuildAndTest(BaseAction):
             steps.append((Documentation(), None))
         if packages:
             steps.append((Package(), None))
+        if runner:
+            steps.append((PackageRunner(), None))
 
         for action, action_args in steps:
             name = type(action).__name__

@@ -86,9 +86,10 @@ per target, Android and the Web.
 
 - ![Done][done] Build images, made by the maintainer: an Android image with the NDK, a Web image with emsdk and a
   headless browser ([Game export](design/game-export.md#game-export-templates))
-- ![In Progress][progress] Release pipeline: each runner built once, the Android, Web and arm64 runners at night and at
-  release, the Android and Web nightly builds done ([Game export](design/game-export.md#game-export-templates))
-- ![Planned][planned] Every target exported from every host: the five release runners bundled in each Owl Nest
+- ![Done][done] Release pipeline: each runner built once and published as an archive, the Android, Web and arm64
+  runners at night and at release, `runners.json` and the Web runner in each Owl Nest package ([Game export](design/game-export.md#game-export-templates))
+- ![Done][done] Every target exported from every host: the host and Web runners in each Owl Nest, the others
+  downloaded from the runner server or imported, checked against the Nest's version
   ([Game export](design/game-export.md#game-export-targets))
 - ![Done][done] Shaders baked by the host for each target, a runner without shader compiler: desktop, Android and the
   Web ([Game export](design/game-export.md#game-export-shaders))

@@ -1444,7 +1444,7 @@ private:
 	/// Frame measurements of the active viewport.
 	session::SessionStatistics m_sessionStatistics;
 	/// Scene and game packaging (wizard, validation, background export).
-	GamePackager m_packager{m_project, m_asyncProgress};
+	GamePackager m_packager{m_project, m_asyncProgress, m_settings};
 	/// MCP server of the session (off unless the setting enables it); created on attach, destroyed on detach.
 	uniq<mcp::McpServer> mp_mcp;
 };

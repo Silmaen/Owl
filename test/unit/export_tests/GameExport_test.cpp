@@ -502,6 +502,35 @@ TEST_F(GameExporterFixture, ExportForAndroidBakesSpirv13) {
 	}
 }
 
+TEST_F(GameExporterFixture, ExportForAnotherDesktopTakesItsRunner) {
+	const auto host = getHostExportTarget();
+	const auto other = host == ExportTarget::WindowsX64 ? ExportTarget::LinuxX64 : ExportTarget::WindowsX64;
+	const auto otherRunner = m_root / "other_runner";
+	const bool windows = other == ExportTarget::WindowsX64;
+	writeFile(otherRunner / (windows ? "OwlGameRunner.exe" : "OwlGameRunner"), "OTHER-RUNNER");
+	writeFile(otherRunner / (windows ? "OwlEngine.dll" : "libOwlEngine.so"), "OTHER-LIB");
+	auto settings = makeSettings();
+	settings.target = other;
+	settings.runnerDirectory = otherRunner;
+	const auto result = GameExporter::exportGame(settings, {});
+	ASSERT_TRUE(result.has_value());
+	EXPECT_EQ(result->executable.extension() == ".exe", windows);
+	EXPECT_EQ(readFile(result->executable), "OTHER-RUNNER");
+	EXPECT_TRUE(exists(result->gameDirectory / (windows ? "OwlEngine.dll" : "libOwlEngine.so")));
+	EXPECT_EQ(exists(result->gameDirectory / "launch.sh"), !windows);
+	const auto info = YAML::LoadFile((result->gameDirectory / "game_info.yml").string())["GameInfo"];
+	ASSERT_TRUE(info);
+	EXPECT_EQ(info["Platform"].as<std::string>(), windows ? "windows-x64" : "linux-x64");
+}
+
+TEST(GameExporter, HostIsTheDesktopTargetOfThisPlatform) {
+	const auto host = getHostExportTarget();
+	EXPECT_NE(host, ExportTarget::Host);
+	EXPECT_EQ(resolveExportTarget(ExportTarget::Host), host);
+	EXPECT_EQ(resolveExportTarget(ExportTarget::Web), ExportTarget::Web);
+	EXPECT_EQ(resolveExportTarget(ExportTarget::LinuxArm64), ExportTarget::LinuxArm64);
+}
+
 TEST_F(GameExporterFixture, ExportForWebWritesThePage) {
 	const auto web = m_root / "web";
 	writeFile(web / "OwlGameRunner.html", "PAGE");

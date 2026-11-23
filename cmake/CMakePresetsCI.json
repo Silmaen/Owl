@@ -88,6 +88,7 @@
       },
       "vendor": {
         "silmaen": {
+          "runner": "linux-arm64",
           "package": true,
           "publish_doc": false
         }
@@ -107,6 +108,7 @@
       },
       "vendor": {
         "silmaen": {
+          "runner": "android-arm64",
           "package": true,
           "publish_doc": false
         }

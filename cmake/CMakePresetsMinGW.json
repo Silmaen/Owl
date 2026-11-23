@@ -34,6 +34,7 @@
       ],
       "vendor": {
         "silmaen": {
+          "runner": "windows-x64",
           "package": true,
           "archive_format": "zip"
         }

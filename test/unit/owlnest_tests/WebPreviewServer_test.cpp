@@ -8,7 +8,6 @@
 
 #include "testHelper.h"
 
-#include "GamePackager.h"
 #include "WebPreviewServer.h"
 
 #include <httplib.h>
@@ -89,11 +88,4 @@ TEST(WebPreviewServer, ANewGameReplacesTheServedOne) {
 	server.stop();
 	std::filesystem::remove_all(first);
 	std::filesystem::remove_all(second);
-}
-
-TEST(GamePackager, AWebExportBundlesTheRunnerOfTheWebFolder) {
-	const std::filesystem::path nest{"/opt/owl/bin"};
-	EXPECT_EQ(GamePackager::getRunnerDirectory(data::assets::pack::ExportTarget::Web, nest), nest / "web");
-	EXPECT_EQ(GamePackager::getRunnerDirectory(data::assets::pack::ExportTarget::Host, nest), nest);
-	EXPECT_EQ(GamePackager::getRunnerDirectory(data::assets::pack::ExportTarget::Android, nest), nest);
 }

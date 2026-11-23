@@ -56,7 +56,7 @@ auto editedFields(Settings& ioSettings) -> auto {
 					ioSettings.snapAutoFromTilemap, ioSettings.cameraRotatePercent, ioSettings.cameraPanPercent,
 					ioSettings.cameraZoomPercent, ioSettings.cameraInvertY, ioSettings.cameraDeadZone,
 					ioSettings.cameraFlySpeed, ioSettings.themePreset, ioSettings.logLevel, ioSettings.mcpEnabled,
-					ioSettings.mcpPort);
+					ioSettings.mcpPort, ioSettings.runnerServer);
 }
 
 auto currentFrameLogFrequency() -> uint64_t {
@@ -240,6 +240,10 @@ void SettingsPanel::renderGeneralSection(EditorSettings& ioSettings) {
 	std::ignore = settingInt("Idle Wait", ioSettings.idleWaitMs, 0, 1000, defaults.idleWaitMs, "%d ms",
 							 "While nothing moves in Edit mode (no input, no play, no loading), the editor waits up to "
 							 "this long for an input before drawing again. 0 draws every frame.");
+	std::ignore = gui::widgets::propertyText(
+			"Runner Server", ioSettings.runnerServer, defaults.runnerServer.c_str(),
+			"Where Pack Game downloads the runners of the other platforms (https://host[:port]); a mirror of the "
+			"site answers the same /runners/ paths.");
 	gui::widgets::endProperties();
 }
 

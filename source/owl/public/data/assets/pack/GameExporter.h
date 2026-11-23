@@ -31,7 +31,28 @@ enum struct ExportTarget : uint8_t {
 	Android,
 	/// The browser: WGSL shaders, the Web runner page as `index.html` and the `files.json` it fetches.
 	Web,
+	/// Linux x64: the runner executable, its libraries and `launch.sh`.
+	LinuxX64,
+	/// Linux arm64: the runner executable, its libraries and `launch.sh`.
+	LinuxArm64,
+	/// Windows x64: the runner executable and its DLLs, zipped when the exporting Owl Nest runs on Windows.
+	WindowsX64,
 };
+
+/**
+ * @brief
+ *  The desktop target of the platform this code runs on.
+ * @return `LinuxX64`, `LinuxArm64` or `WindowsX64`.
+ */
+OWL_API auto getHostExportTarget() -> ExportTarget;
+
+/**
+ * @brief
+ *  The target an export makes: `Host` resolved to the desktop target of this platform, the others as they are.
+ * @param[in] iTarget The target asked for.
+ * @return The target, never `Host`.
+ */
+OWL_API auto resolveExportTarget(ExportTarget iTarget) -> ExportTarget;
 
 /**
  * @brief

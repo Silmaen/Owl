@@ -71,8 +71,8 @@ def test_a_merge_request_offers_every_nightly_job_on_its_play_button() -> None:
     pipeline = _merge_request_pipeline()
     nightly = yaml.safe_load(nightly_pipeline(unchanged=False))
     offered = {job for job in nightly if not job.startswith(".") and job not in ("variables", "default", "stages")}
-    # The merge requests run these two already, scoped to their diff.
-    offered -= {"clang-tidy", "bench"}
+    # The merge requests run these two already, scoped to their diff; only `main` writes the archives assembled.
+    offered -= {"clang-tidy", "bench", "assemble-nest"}
 
     for job in offered:
         assert pipeline[job]["extends"] == [f".night-{job}", ".nightly-on-demand"]

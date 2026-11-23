@@ -164,7 +164,7 @@ def main() -> int:
     """
     parser = ArgumentParser(description=__doc__)
     parser.add_argument("runner", type=Path, help="The runner library (libOwlGameRunner.so)")
-    parser.add_argument("game", type=Path, help="The game folder exported for Android")
+    parser.add_argument("game", type=Path, nargs="?", help="The game folder exported for Android")
     parser.add_argument("output", type=Path, help="The APK to write")
     parser.add_argument("--conan", type=Path, required=True, help="Output folder of the Conan install of the build")
     parser.add_argument("--ndk", type=Path, required=True, help="The Android NDK")
@@ -179,6 +179,9 @@ def main() -> int:
     parser.add_argument("--keystore", type=Path, help="Release keystore (default: the debug key)")
     parser.add_argument("--key-alias", default="androiddebugkey", help="Alias of the key in the keystore")
     parser.add_argument("--store-pass", default="android", help="Keystore password (pass:, env: or file: forms work)")
+    parser.add_argument(
+        "--libraries", type=Path, help="Only write the stripped libraries of the APK in this folder (lib/<abi>/)"
+    )
     args = parser.parse_args()
 
     tools = args.sdk / "build-tools" / args.build_tools
@@ -186,7 +189,15 @@ def main() -> int:
     strip = readelf.with_name("llvm-strip")
     libcxx_dir = next((args.ndk / "toolchains" / "llvm" / "prebuilt").glob("*/sysroot/usr/lib/aarch64-linux-android"))
     search_dirs = [args.runner.parent, *conan_library_dirs(args.conan), libcxx_dir]
-    if not args.game.is_dir():
+    if args.libraries:
+        target = args.libraries / "lib" / ABI
+        target.mkdir(parents=True, exist_ok=True)
+        libraries = collect_libraries(readelf, args.runner, search_dirs)
+        for library in libraries:
+            subprocess.run([str(strip), "--strip-unneeded", "-o", str(target / library.name), str(library)], check=True)
+        print(f"Runner libraries {target}: {len(libraries)} libraries")
+        return 0
+    if args.game is None or not args.game.is_dir():
         print(f"Error: no exported game in {args.game}", file=stderr)
         return 1
 

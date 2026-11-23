@@ -109,7 +109,7 @@ Design of the export for the five targets; the platforms themselves are in
 | Item                   | Subject                                                | Anchor                    |
 |------------------------|--------------------------------------------------------|---------------------------|
 | Hosts and targets      | Any host exports any target                            | `game-export-targets`     |
-| Runner templates       | The five release runners shipped in every Nest package | `game-export-templates`   |
+| Runner templates       | Host and Web runners shipped, the others downloaded    | `game-export-templates`   |
 | Shaders per target     | Baked at export by the host, none at runtime           | `game-export-shaders`     |
 | Signing                | Owl never signs for the developer                      | `game-export-signing`     |
 | Game code              | Lua and node graphs everywhere, C++ through the SDK    | `game-export-game-code`   |
@@ -134,11 +134,24 @@ Design of the export for the five targets; the platforms themselves are in
 
 ### Runner templates {#game-export-templates}
 
-- Every Nest package bundles the five release runners: no download, no template manager, no signed manifest; the
-  versions are coupled by construction.
+- Every Nest package ships the runner of its own host (it shares the Nest's libraries) and the Web runner (about
+  5 MB compressed): a game exports and plays offline for these two targets.
+- The other targets download their runner at their first export, from `https://owl.argawaen.net` by default; the
+  runner server is an editor preference, any server answering the same API (below) replaces it.
+- The Nest accepts only the runners of its own version: each Nest package carries `runners.json`, the name, size and
+  SHA-256 of every runner archive of its release; a download or an import that does not match is refused. No signed
+  manifest: the Nest package is the trust anchor.
+- Runners are cached in the user data folder (`runners/<version>-<hash>/<target>/`), shared by every project; the Nest lists
+  them with their size and removes the versions no Nest uses any more.
+- Offline: the runner archives are published on their own next to the Nest packages; **Import runner…** takes a
+  downloaded archive, checked against `runners.json` like a download. No "full" Nest package with every runner.
+- Server API, plain HTTPS `GET` with the user agent `OwlNest/X.Y.Z`, a static file tree is enough:
+  `<server>/runners/<version>/<hash>/OwlGameRunner-<version>-<hash>-<target>.tar.gz`, `<hash>` the commit of
+  the Nest (a nightly and a release of one version differ).
 - Size: about 10 MB compressed per runner once Slang leaves the runner (Slang is most of the runner's libraries).
-- Release pipeline: each runner is built once, then each Nest package is assembled with all of them; the Android,
-  Web and arm64 runners are built at night and at release, on a pull request only when its diff touches their backend.
+- Release pipeline: each runner is built once, published as an archive per target and listed in the `runners.json` of
+  each Nest package; the Android, Web and arm64 runners are built at night and at release, on a pull request only when
+  its diff touches their backend.
 - Build images (made by the maintainer): the Android NDK and emsdk with a headless browser each get their own image,
   like the arm64 cross image; `docker_run.sh` reaches them through `OWL_DOCKER_IMAGE`. Windows runners are built
   natively on the Windows agent.
