@@ -130,9 +130,10 @@ Design of the export for the five targets; the platforms themselves are in
   any host (`data::assets::pack::setExecutableIcon`), the first icon group replaced by 16 to 256-pixel images of the
   project icon (bitmaps, PNG for 256), the version information and the manifest kept; a patch that fails leaves the
   Owl icon and a warning, not a failed export.
-- An Android game is an APK the Nest assembles on any host, without the Android SDK nor a JDK on the workstation:
-  the Android runner ships as a template APK (compiled manifest, stripped libraries); the Nest adds the game's assets,
-  writes the package name, label, version and icon into the binary manifest, aligns the archive and signs it
+- An Android game is an APK the Nest assembles on any host, without the Android SDK nor a JDK on the workstation
+  (`android::writeApk`): the stripped libraries of the Android runner, the binary `AndroidManifest.xml` the Nest writes
+  (package name, label, version, a `NativeActivity` requiring Vulkan 1.3), a `resources.arsc` holding the project icon,
+  the game's assets and `owl_assets.txt`; stored entries aligned on 4 bytes, signed with the schemes v2 and v3
   ([Signing](#game-export-signing)). Games are developed on the desktop, never on the device.
 
 ### Runner templates {#game-export-templates}

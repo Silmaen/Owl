@@ -21,6 +21,7 @@ OWL_DIAG_DISABLE_CLANG("-Wshadow")
 OWL_DIAG_POP
 
 #include <array>
+#include <cctype>
 #include <exception>
 #include <fstream>
 #include <sstream>
@@ -68,6 +69,8 @@ void readProjectConfig(const YAML::Node& iConfig, Project& oProject) {
 		oProject.version = iConfig["version"].as<std::string>();
 	if (iConfig["author"])
 		oProject.author = iConfig["author"].as<std::string>();
+	if (iConfig["androidPackage"])
+		oProject.androidPackage = iConfig["androidPackage"].as<std::string>();
 	if (iConfig["description"])
 		oProject.description = iConfig["description"].as<std::string>();
 	if (iConfig["icon"])
@@ -119,6 +122,22 @@ auto Project::loadFromFile(const std::filesystem::path& iFile) -> bool {
 }
 
 auto Project::getGameVersion() const -> std::string { return version.empty() ? getVersionString() : version; }
+
+auto Project::getAndroidPackage() const -> std::string {
+	if (!androidPackage.empty())
+		return androidPackage;
+	std::string segment;
+	for (const char c: name) {
+		if (std::isalnum(static_cast<unsigned char>(c)) != 0)
+			segment += static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+		else if (!segment.empty() && segment.back() != '_')
+			segment += '_';
+	}
+	while (segment.ends_with('_')) segment.pop_back();
+	if (segment.empty() || std::isdigit(static_cast<unsigned char>(segment.front())) != 0)
+		segment = "game" + segment;
+	return "org.owlengine." + segment;
+}
 
 auto Project::loadGamepadMappings() const -> bool {
 	if (gamepadMappings.empty())
@@ -178,6 +197,8 @@ auto Project::saveToFile(const std::filesystem::path& iFile) const -> bool {
 		out << YAML::Key << "version" << YAML::Value << version;
 	if (!author.empty())
 		out << YAML::Key << "author" << YAML::Value << author;
+	if (!androidPackage.empty())
+		out << YAML::Key << "androidPackage" << YAML::Value << androidPackage;
 	if (!description.empty())
 		out << YAML::Key << "description" << YAML::Value << description;
 	if (!icon.empty())

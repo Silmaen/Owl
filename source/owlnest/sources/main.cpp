@@ -9,6 +9,7 @@
 
 #include "EditorLayer.h"
 #include "EditorSettings.h"
+#include "GamePackager.h"
 #include "Project.h"
 #include "RunnerStore.h"
 #include "SettingsImport.h"
@@ -196,6 +197,14 @@ private:
 		std::fputs((result->getSummary() + "\n").c_str(), stdout);
 		OWL_INFO("Export: Game written to '{}', report in '{}'.", result->gameDirectory.string(),
 				 data::assets::pack::g_exportReportFile)
+		if (iCommand.target == data::assets::pack::ExportTarget::Android) {
+			const auto apk = nest::GamePackager::writeAndroidApk(project, result->gameDirectory, runnerDir);
+			if (!apk) {
+				OWL_ERROR("Export: No APK, {}.", nest::android::getErrorMessage(apk.error()))
+				return 1;
+			}
+			OWL_INFO("Export: APK written to '{}'.", apk->string())
+		}
 		return 0;
 	}
 };

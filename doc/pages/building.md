@@ -272,7 +272,10 @@ build tools, JDK). Android is not yet a supported platform: it joins the table a
   host bakes the shaders (SPIR-V 1.3, target `VulkanAndroid`).
 - **Output**: the `OwlGameRunner` shared library, loaded by `android.app.NativeActivity`; nothing else is built (no
   editor, no tests).
-- **APK**: `OwlGameRunnerApk` packs the runner, the shared libraries it needs (stripped) and a game exported for
+- **APK from Owl Nest**: `OwlNest --export <project> <dir> --target android` writes the folder of the game and its
+  signed APK next to it, from the Android runner of the runner store (or `--runner <dir>` holding `lib/arm64-v8a/`),
+  without the SDK; `OwlGameRunnerLibraries` writes those libraries in the android-runner folder of the build tree.
+- **APK from the build tree**: `OwlGameRunnerApk` packs the runner, the shared libraries it needs (stripped) and a game exported for
   Android by a host Owl Nest into an APK next to the runner, signed with the debug key (`~/.android/debug.keystore`,
   created when missing). The game is extracted to the internal storage at its first launch.
 

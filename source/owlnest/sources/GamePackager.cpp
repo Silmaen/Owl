@@ -335,11 +335,14 @@ void GamePackager::startPacking() {
 	m_scannedAssets.reset();
 
 	const bool playInBrowser = m_target == data::assets::pack::ExportTarget::Web && m_runInBrowser;
+	const bool makeApk = m_target == data::assets::pack::ExportTarget::Android;
+	const Project project = *mp_project;
 	auto exported = mkShared<std::optional<data::assets::pack::ExportReport>>();
+	auto apkNote = mkShared<std::string>();
 	auto state = mkShared<AsyncProgressState>();
 	mp_progress->open("Packing Game...", state, true);
 	app::Application::get().getTaskScheduler().pushTask(core::task::Task(
-			[state, exportSettings = std::move(settings), preScanned, exported,
+			[state, exportSettings = std::move(settings), preScanned, exported, apkNote, makeApk, project,
 			 warnings = std::move(validationWarnings)]() -> void {
 				auto result = data::assets::pack::GameExporter::exportGame(
 						exportSettings, *preScanned,
@@ -357,14 +360,23 @@ void GamePackager::startPacking() {
 					result->addWarnings(warnings);
 					std::ignore = result->write();
 				}
+				if (makeApk) {
+					state->setMessage("Writing the APK...");
+					const auto apk = writeAndroidApk(project, result->gameDirectory, exportSettings.runnerDirectory);
+					if (!apk) {
+						state->setError(std::format("Packaging failed: {}.", android::getErrorMessage(apk.error())));
+						return;
+					}
+					*apkNote = "APK: " + apk->string();
+				}
 				*exported = std::move(*result);
 			},
-			[this, state, exported, playInBrowser]() -> void {
+			[this, state, exported, apkNote, playInBrowser]() -> void {
 				state->completed.store(true);
 				if (!exported->has_value())
 					return;
 				mp_progress->close();
-				m_reportNote = playInBrowser ? playWebExport((*exported)->gameDirectory) : std::string{};
+				m_reportNote = playInBrowser ? playWebExport((*exported)->gameDirectory) : std::move(*apkNote);
 				m_report = std::move(*exported);
 				m_showReport = true;
 			}));
@@ -482,7 +494,7 @@ void GamePackager::renderTargetChoice() {
 		m_runnerMessage.clear();
 	}
 	if (m_target == ExportTarget::Android && ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
-		ImGui::SetTooltip("Writes the assets of the APK; the Android build of the runner makes the APK.");
+		ImGui::SetTooltip("Writes the APK of the game, signed with the debug key of Owl Nest.");
 	if (m_target == ExportTarget::Web) {
 		gui::widgets::checkbox("Run in browser when done", &m_runInBrowser);
 		if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
@@ -498,7 +510,7 @@ void GamePackager::renderRunnerState() {
 	if (m_target == ExportTarget::Web && !hasRunner())
 		ImGui::TextColored(gui::vec(theme.warning), "No Web runner in '%s'.",
 						   runners.getRunnerDirectory(m_target).string().c_str());
-	if (m_target == ExportTarget::Android || RunnerStore::isBundled(m_target)) {
+	if (RunnerStore::isBundled(m_target)) {
 		if (!m_runnerMessage.empty())
 			ImGui::TextWrapped("%s", m_runnerMessage.c_str());
 		return;
@@ -575,13 +587,39 @@ auto GamePackager::hasRunner() -> bool {
 	using data::assets::pack::ExportTarget;
 	if (m_target == ExportTarget::Web)
 		return is_regular_file(getRunners().getRunnerDirectory(m_target) / "OwlGameRunner.html");
-	return m_target == ExportTarget::Android || getRunners().isInstalled(m_target);
+	return getRunners().isInstalled(m_target);
 }
 
 auto GamePackager::makeSettings() -> data::assets::pack::ExportSettings {
 	auto settings = mp_project->makeExportSettings(m_destDir, getRunners().getRunnerDirectory(m_target));
 	settings.target = m_target;
 	return settings;
+}
+
+auto GamePackager::writeAndroidApk(const Project& iProject, const std::filesystem::path& iGameDirectory,
+								   const std::filesystem::path& iRunnerDirectory)
+		-> expected<std::filesystem::path, android::ApkError> {
+	const auto key = android::SigningKey::loadOrCreateDebug(platform::getUserDirectory() / "android" / "debug.p12");
+	if (!key)
+		return unexpected{android::ApkError::Signing};
+	const auto version = iProject.getGameVersion();
+	const android::ApkManifest manifest{.package = iProject.getAndroidPackage(),
+										.label = iProject.name,
+										.versionName = version,
+										.versionCode = android::getVersionCode(version),
+										.minSdk = 33,
+										.targetSdk = 36,
+										.debuggable = true,
+										.hasIcon = false};
+	// The export copies the icon into the game folder, at the path `runner.yml` names.
+	const auto icon = iProject.icon.empty() || std::filesystem::path{iProject.icon}.extension() != ".png"
+							  ? std::filesystem::path{}
+							  : iGameDirectory / iProject.icon;
+	auto output = iGameDirectory.parent_path() / (iGameDirectory.filename().string() + ".apk");
+	if (const auto written = android::writeApk(iGameDirectory, iRunnerDirectory, icon, manifest, *key, output);
+		!written)
+		return unexpected{written.error()};
+	return output;
 }
 
 auto GamePackager::playWebExport(const std::filesystem::path& iGameDirectory) -> std::string {

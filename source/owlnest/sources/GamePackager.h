@@ -12,6 +12,7 @@
 #include "Project.h"
 #include "RunnerStore.h"
 #include "WebPreviewServer.h"
+#include "android/AndroidApk.h"
 #include "panel/AsyncProgressModal.h"
 
 #include <data/assets/pack/AssetScanner.h>
@@ -108,6 +109,18 @@ public:
 	 * @return The store, made at the first call.
 	 */
 	[[nodiscard]] auto getRunners() -> RunnerStore&;
+
+	/**
+	 * @brief
+	 *  Write the signed APK of a game exported for Android, next to its folder, with the debug key of Owl Nest.
+	 * @param[in] iProject The project (package name, label, version, icon).
+	 * @param[in] iGameDirectory The folder written by the export for `ExportTarget::Android`.
+	 * @param[in] iRunnerDirectory The Android runner (`lib/arm64-v8a/`).
+	 * @return The APK, the error otherwise.
+	 */
+	[[nodiscard]] static auto writeAndroidApk(const Project& iProject, const std::filesystem::path& iGameDirectory,
+											  const std::filesystem::path& iRunnerDirectory)
+			-> expected<std::filesystem::path, android::ApkError>;
 
 	/**
 	 * @brief

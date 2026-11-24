@@ -96,6 +96,8 @@ private:
 	std::string m_versionBuffer;
 	/// Author buffer.
 	std::string m_authorBuffer;
+	/// Edited Android package name.
+	std::string m_androidPackageBuffer;
 	/// Description buffer.
 	std::string m_descriptionBuffer;
 	/// Icon path buffer.

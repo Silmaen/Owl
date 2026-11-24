@@ -196,6 +196,7 @@ void ProjectSettings::open(const Project& iProject) {
 	m_nameBuffer = iProject.name;
 	m_versionBuffer = iProject.version;
 	m_authorBuffer = iProject.author;
+	m_androidPackageBuffer = iProject.androidPackage;
 	m_descriptionBuffer = iProject.description;
 	m_iconBuffer = iProject.icon;
 	m_gamepadMappingsBuffer = iProject.gamepadMappings;
@@ -269,6 +270,9 @@ void ProjectSettings::renderGeneralTab() {
 		std::ignore = gui::widgets::propertyText("Description", m_descriptionBuffer);
 		std::ignore = gui::widgets::propertyText("Icon", m_iconBuffer, "icon.png",
 												 "Image of the game window, relative to the project.");
+		std::ignore = gui::widgets::propertyText(
+				"Android Package", m_androidPackageBuffer, m_localProject.getAndroidPackage().c_str(),
+				"Identity of the game on Android (com.studio.game); two games with the same one replace each other.");
 		gui::widgets::endProperties();
 	}
 }
@@ -364,6 +368,7 @@ void ProjectSettings::onImGuiRender() {
 					m_selectedSceneIndex >= 0 ? m_availableScenes[static_cast<size_t>(m_selectedSceneIndex)] : "";
 			m_localProject.version = m_versionBuffer;
 			m_localProject.author = m_authorBuffer;
+			m_localProject.androidPackage = m_androidPackageBuffer;
 			m_localProject.description = m_descriptionBuffer;
 			m_localProject.icon = m_iconBuffer;
 			m_localProject.gamepadMappings = m_gamepadMappingsBuffer;

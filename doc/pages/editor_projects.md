@@ -122,8 +122,8 @@ what the export could not write). The same report is written as `export_report.y
 `OwlNest --export` prints its summary ([Game export](design/game-export.md#game-export-report)).
 
 The **Target platform** of the dialog picks the platform of the game: this computer (the table above), another
-desktop (**Linux (x64)**, **Linux (arm64)**, **Windows (x64)**), **Android (arm64)** (the folder the Android build of
-the runner makes its APK from) or **Web (browser)**: the page of the Web runner as `index.html`, the shaders as WGSL and
+desktop (**Linux (x64)**, **Linux (arm64)**, **Windows (x64)**), **Android (arm64)** (the APK of the game, signed with the
+debug key of Owl Nest, a debug.p12 keystore in the user directory, made at the first Android export) or **Web (browser)**: the page of the Web runner as `index.html`, the shaders as WGSL and
 the `files.json` the page fetches. With **Run in browser when done**, Owl Nest serves a Web export on `127.0.0.1`
 (cross-origin isolated, as the threads of the page need) and opens it in the default browser, until the next Web export
 or the end of the session.
@@ -135,6 +135,10 @@ answering the same paths), into the runners folder of the user directory, shared
 release of this Owl Nest are accepted: their size and SHA-256 come from the `runners.json` next to Owl Nest
 ([Game export](design/game-export.md#game-export-templates)). The command line downloads a missing runner the same way:
 `OwlNest --export <project> <dir> --target windows-x64 [--runner-server <url>]`.
+
+The **Android Package** of the project settings is the identity of the game on Android (`com.studio.game`); empty, it
+is `org.owlengine.` followed by the project name. The version of the project gives the version code of the APK (`1.2.3`
+is 10203).
 
 **Scene > Scene > Pack Scene** packs the active scene alone into an `.owlpack`.
 

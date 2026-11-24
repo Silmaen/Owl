@@ -46,6 +46,8 @@ struct Project {
 	std::string icon;
 	/// Optional gamepad mapping file (SDL_GameControllerDB format), relative to the project directory.
 	std::string gamepadMappings;
+	/// Android package name of the game (`com.studio.game`); empty, one is made from the name.
+	std::string androidPackage;
 	/// Absolute path to the project root directory.
 	std::filesystem::path projectDirectory;
 
@@ -122,6 +124,13 @@ struct Project {
 	 * @return The version written in the exported game.
 	 */
 	[[nodiscard]] auto getGameVersion() const -> std::string;
+
+	/**
+	 * @brief
+	 *  Android package name of the game: its own `androidPackage`, or `org.owlengine.<name>` from the project name.
+	 * @return A valid package name (lower-case letters, digits and underscores, two segments at least).
+	 */
+	[[nodiscard]] auto getAndroidPackage() const -> std::string;
 
 	/**
 	 * @brief
