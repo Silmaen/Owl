@@ -112,6 +112,15 @@ isometric, and `Renderer3D` for a mesh or voxel layer or a scene with an `Enviro
 renderer. The end of the export lists those families, the number of engine shader files left out and the number of
 project shaders compiled. The game reads everything from its pack in memory and writes nothing next to itself.
 
+### Export report {#editor-projects-export-report}
+
+When the export ends, the **Export Report** window replaces the progress dialog: a **Summary** (folder, platform, total
+size and the size of the pack, the runner, the libraries and the other files, assets packed and cooked, renderer
+families, shaders baked and for which targets, engine files left out, mods), the **Unused Assets** (asset files of the
+project the scan did not pack: candidates to delete or to reference) and the **Warnings** (the validation ones and
+what the export could not write). The same report is written as `export_report.yml` in the game folder, and
+`OwlNest --export` prints its summary ([Game export](design/game-export.md#game-export-report)).
+
 The **Target platform** of the dialog picks the platform of the game: this computer (the table above), another
 desktop (**Linux (x64)**, **Linux (arm64)**, **Windows (x64)**), **Android (arm64)** (the folder the Android build of
 the runner makes its APK from) or **Web (browser)**: the page of the Web runner as `index.html`, the shaders as WGSL and

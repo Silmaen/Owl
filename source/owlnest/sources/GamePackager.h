@@ -19,6 +19,7 @@
 #include <owl.h>
 
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -26,7 +27,30 @@ namespace owl::nest {
 
 /**
  * @brief
- *  Packages a scene or the whole project: the packaging wizard, the validation report and the background export.
+ *  One line of the summary of an export report: a label and its value.
+ */
+struct ExportReportRow {
+	/// Name of the figure.
+	std::string label;
+	/// The figure, written for a person.
+	std::string value;
+	/// Help shown when the label is hovered, empty for none.
+	std::string tooltip;
+};
+
+/**
+ * @brief
+ *  The summary of an export report as the Export Report window shows it: folder, sizes by category, assets,
+ *  renderers, shaders and mods.
+ * @param[in] iReport The report.
+ * @return The rows, in display order.
+ */
+[[nodiscard]] auto getExportReportRows(const data::assets::pack::ExportReport& iReport) -> std::vector<ExportReportRow>;
+
+/**
+ * @brief
+ *  Packages a scene or the whole project: the packaging wizard, the validation report, the background export and the
+ *  export report.
  *
  * Progress and errors are shown in the editor's shared progress modal.
  */
@@ -67,16 +91,16 @@ public:
 
 	/**
 	 * @brief
-	 *  Draw the wizard and the validation report when they are open.
+	 *  Draw the wizard, the validation report and the export report when they are open.
 	 */
 	void onRender();
 
 	/**
 	 * @brief
-	 *  Check whether the wizard or the validation report is open.
-	 * @return True while the user is choosing the packaging options or reviewing the warnings.
+	 *  Check whether the wizard, the validation report or the export report is open.
+	 * @return True while the user is choosing the packaging options, reviewing the warnings or the report.
 	 */
-	[[nodiscard]] auto isOpen() const -> bool { return m_showWizard || m_showValidation; }
+	[[nodiscard]] auto isOpen() const -> bool { return m_showWizard || m_showValidation || m_showReport; }
 
 	/**
 	 * @brief
@@ -140,10 +164,16 @@ private:
 	/**
 	 * @brief
 	 *  Serve a Web export and open it in the default browser.
-	 * @param[in,out] ioState The progress of the export, whose message gets the address.
 	 * @param[in] iGameDirectory The folder of the exported game.
+	 * @return The address the game plays at, or why the preview could not start.
 	 */
-	void playWebExport(AsyncProgressState& ioState, const std::filesystem::path& iGameDirectory);
+	[[nodiscard]] auto playWebExport(const std::filesystem::path& iGameDirectory) -> std::string;
+
+	/**
+	 * @brief
+	 *  Draw the report of the last export: summary, unused assets and warnings.
+	 */
+	void renderReportModal();
 
 	/**
 	 * @brief
@@ -185,6 +215,12 @@ private:
 	std::vector<std::string> m_warnings;
 	/// Assets found by the validation, reused by the export.
 	shared<std::vector<data::assets::pack::AssetReference>> m_scannedAssets;
+	/// Report of the last export, shown once it is written.
+	std::optional<data::assets::pack::ExportReport> m_report;
+	/// Line under the report (the address of a Web export played in the browser).
+	std::string m_reportNote;
+	/// Whether the export report is shown.
+	bool m_showReport = false;
 	/// Whether the validation report is shown.
 	bool m_showValidation = false;
 	/// Whether the wizard is shown.

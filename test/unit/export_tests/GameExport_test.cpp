@@ -707,6 +707,52 @@ TEST_F(GameExporterFixture, ExportFailures) {
 			  ExportError::Cancelled);
 }
 
+TEST_F(GameExporterFixture, ExportWritesItsReport) {
+	writeFile(m_project / "textures" / "unused.png", "PNG-UNUSED");
+	writeFile(m_project / "notes.txt", "not an asset");
+	writeFile(m_project / ".hidden" / "skipped.png", "PNG");
+	auto settings = makeSettings();
+	settings.gamepadMappings = "input/missing.txt";
+	const auto result = GameExporter::exportGame(settings, {});
+	ASSERT_TRUE(result.has_value());
+	EXPECT_EQ(result->unusedAssets, std::vector<std::string>{"textures/unused.png"});
+	EXPECT_NE(std::ranges::find(result->warnings, "Gamepad mapping file 'input/missing.txt' not found"),
+			  result->warnings.end());
+	EXPECT_EQ(result->sizes.pack, result->packBytes);
+	EXPECT_GT(result->sizes.other, 0u);
+#ifdef OWL_PLATFORM_LINUX
+	EXPECT_EQ(result->platform, "linux-x64");
+	EXPECT_EQ(result->sizes.runner, std::string{"RUNNER"}.size());
+	EXPECT_EQ(result->sizes.libraries, std::string{"NEW-LIB"}.size());
+#endif
+#if OWL_WITH_RENDER
+	EXPECT_EQ(result->shaderTargets, (std::vector<std::string>{"vulkan", "opengl"}));
+#endif
+	const auto file = result->gameDirectory / g_exportReportFile;
+	ASSERT_TRUE(exists(file));
+	const auto root = YAML::LoadFile(file.string())["ExportReport"];
+	ASSERT_TRUE(root);
+	EXPECT_EQ(root["Sizes"]["Total"].as<uintmax_t>(), result->sizes.getTotal());
+	EXPECT_EQ(root["Assets"]["Packed"].as<size_t>(), result->assetCount);
+	EXPECT_EQ(root["UnusedAssets"].as<std::vector<std::string>>(), result->unusedAssets);
+	EXPECT_EQ(root["Warnings"].as<std::vector<std::string>>(), result->warnings);
+}
+
+TEST_F(GameExporterFixture, UnusedAssetsSkipTheExcludedPaths) {
+	writeFile(m_project / "textures" / "unused.png", "PNG");
+	writeFile(m_project / "out" / "game" / "copy.png", "PNG");
+	writeFile(m_project / "unused.png.owlmeta", "Guid: x\n");
+	const std::vector<AssetReference> used{{.packPath = "textures/a.png",
+											.diskPath = m_project / "textures" / "a.png",
+											.assetType = AssetType::Texture},
+										   {.packPath = "textures/b.png",
+											.diskPath = m_project / "textures" / ".." / "textures" / "b.png",
+											.assetType = AssetType::Texture}};
+	EXPECT_EQ(findUnusedAssets(m_project, used, {m_project / "out", m_project / "logo" / "icon.png"}),
+			  (std::vector<std::string>{"scenes/level.owl", "textures/unused.png", "tilesets/blocks.owltileset"}));
+	EXPECT_TRUE(findUnusedAssets(m_root / "nowhere", used, {}).empty());
+}
+
 #ifdef OWL_PLATFORM_LINUX
 namespace {
 

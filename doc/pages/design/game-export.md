@@ -212,7 +212,21 @@ Owl never signs a game for its developer.
 
 ### Export report {#game-export-report}
 
-After each export: size per target, shaders baked, unused assets, warnings.
+Every export returns an `ExportReport` (`data/assets/pack/ExportReport.h`) and writes it beside the game as
+`export_report.yml`:
+
+| Key            | Content                                                                                                     |
+|----------------|-------------------------------------------------------------------------------------------------------------|
+| `Sizes`        | Total size of the folder, then by category: pack (`.owlpack`, `.owlmod`), runner, libraries, other          |
+| `Assets`       | Assets packed, cooked by this export, served by the cook cache                                              |
+| `Renderers`    | The optional renderer families the game initialises                                                         |
+| `Shaders`      | Project shaders baked, the shader targets of the platform, engine shader files left out                     |
+| `Mods`         | The `.owlmod` files of the embedded extension packs                                                         |
+| `UnusedAssets` | Project files with an importer the scan did not pack (hidden folders, output, icon, mod sources aside)      |
+| `Warnings`     | The validation warnings and what the export could not do (icon, gamepad mappings, localisation, archive)    |
+
+Owl Nest shows it in the **Export Report** window at the end of *Pack Game*; `OwlNest --export` prints its summary
+(`ExportReport::getSummary`).
 
 ### Smoke tests per target {#game-export-smoke-tests}
 

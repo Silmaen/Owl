@@ -102,7 +102,7 @@ per target, Android and the Web.
   ([Game export](design/game-export.md#game-export-targets))
 - ![Planned][planned] Linux AppImage and Flatpak next to the portable archive, Android App Bundle (AAB) for Google Play
   ([Game export](design/game-export.md#game-export-targets))
-- ![Planned][planned] Export report: size per target, baked shaders, unused assets, warnings
+- ![Done][done] Export report: size per target, baked shaders, unused assets, warnings
   ([Game export](design/game-export.md#game-export-report))
 - ![Planned][planned] Smoke test of every exported target in CI, Android on a tablet at night
   ([Game export](design/game-export.md#game-export-smoke-tests))

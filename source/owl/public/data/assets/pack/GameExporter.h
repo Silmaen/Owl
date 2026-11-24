@@ -9,6 +9,7 @@
 #pragma once
 
 #include "AssetScanner.h"
+#include "ExportReport.h"
 #include "core/expected.h"
 #include "math/vectors.h"
 
@@ -137,37 +138,8 @@ enum struct ExportError : uint8_t {
 
 /**
  * @brief
- *  Summary of a successful export.
- */
-struct OWL_API ExportReport {
-	/// Folder of the exported game.
-	std::filesystem::path gameDirectory;
-	/// Path of the written `.owlpack`.
-	std::filesystem::path packFile;
-	/// Path of the copied runner executable, its page (`index.html`) for the Web, empty for Android.
-	std::filesystem::path executable;
-	/// Number of packed assets.
-	size_t assetCount{0};
-	/// Size of the pack in bytes.
-	uintmax_t packBytes{0};
-	/// Assets cooked during this export (the others came from the cook cache).
-	size_t cookedAssets{0};
-	/// Assets served by the cook cache.
-	size_t cacheHits{0};
-	/// Optional renderer families the game initialises (`RendererSet::getNames`), besides the 2D family.
-	std::vector<std::string> renderers;
-	/// Engine files of the scan left out of the pack: shaders of the renderers the game does not use.
-	size_t engineFilesSkipped{0};
-	/// Shaders compiled by the export because the pack held no up-to-date SPIR-V for them (project shaders).
-	size_t shadersBaked{0};
-	/// The `.owlmod` files written in the `mods` folder of the game, one per extension pack embedded.
-	std::vector<std::filesystem::path> mods;
-};
-
-/**
- * @brief
  *  Exports a project as a standalone game folder: `.owlpack`, `runner.yml`, `game_info.yml`, runner executable,
- *  shared libraries, icon and launcher.
+ *  shared libraries, icon, launcher and `export_report.yml` (`ExportReport`).
  *
  *  Shared by Owl Nest *Pack Game*, the `OwlNest --export` command line and the end-to-end export test. The asset
  *  scan relies on the application's asset directories, so the project directory must be registered first.
@@ -196,7 +168,7 @@ public:
 	 * @param[in] iAssets Pre-scanned assets (from validate()); scanned again when empty.
 	 * @param[in] iProgress Optional progress callback.
 	 * @param[in] iCancel Optional cancel check.
-	 * @return The export report, or the reason of the failure.
+	 * @return The export report (also written in the game folder), or the reason of the failure.
 	 */
 	[[nodiscard]] static auto exportGame(const ExportSettings& iSettings, const std::vector<AssetReference>& iAssets,
 										 const ProgressCallback& iProgress = {}, const CancelCheck& iCancel = {})

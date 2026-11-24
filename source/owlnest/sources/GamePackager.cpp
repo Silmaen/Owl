@@ -16,6 +16,8 @@
 #include <gui/utils.h>
 #include <gui/widgets/Combo.h>
 #include <gui/widgets/IconButton.h>
+#include <gui/widgets/PropertyGrid.h>
+#include <gui/widgets/SectionHeader.h>
 #include <gui/widgets/Toggle.h>
 
 #include <imgui.h>
@@ -24,22 +26,86 @@
 #include <platform/UserDirectory.h>
 #include <platform/openExternalUrl.h>
 
+#include <algorithm>
 #include <array>
-#include <chrono>
 #include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <format>
+#include <optional>
 #include <string>
+#include <string_view>
 #include <system_error>
+#include <tuple>
 #include <utility>
 #include <vector>
 
 namespace owl::nest {
 
+namespace {
+
+auto joinNames(const std::vector<std::string>& iNames, const std::string_view iSeparator) -> std::string {
+	std::string joined;
+	for (const auto& name: iNames) {
+		if (!joined.empty())
+			joined += iSeparator;
+		joined += name;
+	}
+	return joined;
+}
+
+}// namespace
+
+auto getExportReportRows(const data::assets::pack::ExportReport& iReport) -> std::vector<ExportReportRow> {
+	using data::assets::pack::formatByteSize;
+	std::vector<ExportReportRow> rows;
+	rows.push_back({.label = "Folder", .value = iReport.gameDirectory.string(), .tooltip = {}});
+	rows.push_back({.label = "Platform", .value = iReport.platform, .tooltip = {}});
+	rows.push_back({.label = "Total Size",
+					.value = formatByteSize(iReport.sizes.getTotal()),
+					.tooltip = "Every file of the game folder."});
+	rows.push_back({.label = "Pack",
+					.value = formatByteSize(iReport.sizes.pack),
+					.tooltip = "The .owlpack of the game and the .owlmod of its mods."});
+	rows.push_back({.label = "Runner",
+					.value = formatByteSize(iReport.sizes.runner),
+					.tooltip = "The runner executable, or the page, script and module of the Web runner."});
+	rows.push_back({.label = "Libraries",
+					.value = formatByteSize(iReport.sizes.libraries),
+					.tooltip = "The shared libraries of the runner."});
+	rows.push_back({.label = "Other Files",
+					.value = formatByteSize(iReport.sizes.other),
+					.tooltip = "Configuration, icon, launcher and report."});
+	rows.push_back({.label = "Assets",
+					.value = std::format("{} packed ({} cooked, {} from the cache)", iReport.assetCount,
+										 iReport.cookedAssets, iReport.cacheHits),
+					.tooltip = {}});
+	std::vector<std::string> renderers{"Renderer2D"};
+	renderers.insert(renderers.end(), iReport.renderers.begin(), iReport.renderers.end());
+	rows.push_back({.label = "Renderers",
+					.value = joinNames(renderers, ", "),
+					.tooltip = "The renderer families the game initialises."});
+	rows.push_back({.label = "Shaders Baked",
+					.value = iReport.shaderTargets.empty() ? std::to_string(iReport.shadersBaked)
+														   : std::format("{} for {}", iReport.shadersBaked,
+																		 joinNames(iReport.shaderTargets, ", ")),
+					.tooltip = "Project shaders compiled by this export; the engine shaders ship baked."});
+	rows.push_back({.label = "Engine Files Left Out",
+					.value = std::to_string(iReport.engineFilesSkipped),
+					.tooltip = "Shaders of the renderers the game does not use."});
+	if (!iReport.mods.empty()) {
+		std::vector<std::string> mods;
+		mods.reserve(iReport.mods.size());
+		for (const auto& mod: iReport.mods) mods.push_back(mod.filename().string());
+		rows.push_back({.label = "Mods", .value = joinNames(mods, ", "), .tooltip = {}});
+	}
+	return rows;
+}
+
 void GamePackager::onRender() {
 	renderWizardModal();
 	renderValidationModal();
+	renderReportModal();
 }
 
 void GamePackager::packScene(const std::filesystem::path& iScenePath) {
@@ -263,18 +329,19 @@ void GamePackager::startPacking() {
 			(m_compress ? data::assets::pack::PackFlags::Compressed : data::assets::pack::PackFlags::None) |
 			(m_obfuscate ? data::assets::pack::PackFlags::Obfuscated : data::assets::pack::PackFlags::None);
 	m_destDir.clear();
+	auto validationWarnings = std::move(m_warnings);
 	m_warnings.clear();
 	auto preScanned = m_scannedAssets ? m_scannedAssets : mkShared<std::vector<data::assets::pack::AssetReference>>();
 	m_scannedAssets.reset();
 
 	const bool playInBrowser = m_target == data::assets::pack::ExportTarget::Web && m_runInBrowser;
-	auto gameDirectory = mkShared<std::filesystem::path>();
+	auto exported = mkShared<std::optional<data::assets::pack::ExportReport>>();
 	auto state = mkShared<AsyncProgressState>();
 	mp_progress->open("Packing Game...", state, true);
 	app::Application::get().getTaskScheduler().pushTask(core::task::Task(
-			[state, exportSettings = std::move(settings), preScanned, gameDirectory]() -> void {
-				const auto startTime = std::chrono::steady_clock::now();
-				const auto result = data::assets::pack::GameExporter::exportGame(
+			[state, exportSettings = std::move(settings), preScanned, exported,
+			 warnings = std::move(validationWarnings)]() -> void {
+				auto result = data::assets::pack::GameExporter::exportGame(
 						exportSettings, *preScanned,
 						[&state](const float iFraction, const std::string& iMessage) -> void {
 							state->progress.store(iFraction);
@@ -286,22 +353,85 @@ void GamePackager::startPacking() {
 												data::assets::pack::GameExporter::getErrorMessage(result.error())));
 					return;
 				}
-				*gameDirectory = result->gameDirectory;
-				const auto seconds =
-						std::chrono::duration<double>(std::chrono::steady_clock::now() - startTime).count();
-				std::string renderers{"Renderer2D"};
-				for (const auto& name: result->renderers) renderers += ", " + name;
-				state->setMessage(std::format("Packed {} assets ({:.2f} MiB)\nRenderers: {} ({} unused engine shader "
-											  "files left out)\nOutput: {}\nDuration: {:.1f}s",
-											  result->assetCount,
-											  static_cast<double>(result->packBytes) / (1024.0 * 1024.0), renderers,
-											  result->engineFilesSkipped, result->gameDirectory.string(), seconds));
+				if (!warnings.empty()) {
+					result->addWarnings(warnings);
+					std::ignore = result->write();
+				}
+				*exported = std::move(*result);
 			},
-			[this, state, gameDirectory, playInBrowser]() -> void {
-				if (playInBrowser && !gameDirectory->empty())
-					playWebExport(*state, *gameDirectory);
+			[this, state, exported, playInBrowser]() -> void {
 				state->completed.store(true);
+				if (!exported->has_value())
+					return;
+				mp_progress->close();
+				m_reportNote = playInBrowser ? playWebExport((*exported)->gameDirectory) : std::string{};
+				m_report = std::move(*exported);
+				m_showReport = true;
 			}));
+}
+
+void GamePackager::renderReportModal() {
+	if (!m_showReport || !m_report.has_value())
+		return;
+	if (!ImGui::IsPopupOpen("Export Report"))
+		ImGui::OpenPopup("Export Report");
+	const auto* viewport = ImGui::GetMainViewport();
+	ImGui::SetNextWindowPos(viewport->GetCenter(), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+	ImGui::SetNextWindowSize(ImVec2(ImGui::GetFontSize() * 36.f, 0), ImGuiCond_Always);
+	if (!ImGui::BeginPopupModal("Export Report", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove))
+		return;
+	const auto& theme = gui::UiLayer::getTheme();
+	const auto& report = *m_report;
+	if (gui::widgets::sectionHeader("Summary", gui::icon::packageCheck, false).open) {
+		if (gui::widgets::beginProperties("##exportSummary")) {
+			for (const auto& row: getExportReportRows(report)) {
+				gui::widgets::propertyLabel(row.label.c_str(), row.tooltip.empty() ? nullptr : row.tooltip.c_str());
+				ImGui::TextUnformatted(row.value.c_str());
+				std::ignore = gui::widgets::propertyReset(false);
+			}
+			gui::widgets::endProperties();
+		}
+		gui::widgets::endSection();
+	}
+	const auto listSection = [](const std::string& iTitle, const char* iIcon, const char* iId,
+								const std::vector<std::string>& iLines, const char* iEmpty,
+								const std::optional<math::vec4>& iColor) -> void {
+		if (!gui::widgets::sectionHeader(iTitle.c_str(), iIcon, false, !iLines.empty()).open)
+			return;
+		if (iLines.empty()) {
+			ImGui::TextDisabled("%s", iEmpty);
+		} else {
+			const float height =
+					ImGui::GetTextLineHeightWithSpacing() * static_cast<float>(std::min<size_t>(iLines.size(), 8)) +
+					ImGui::GetStyle().WindowPadding.y * 2.f;
+			ImGui::BeginChild(iId, ImVec2(0, height), ImGuiChildFlags_Borders);
+			for (const auto& line: iLines) {
+				if (iColor.has_value())
+					ImGui::TextColored(gui::vec(*iColor), "%s", line.c_str());
+				else
+					ImGui::TextUnformatted(line.c_str());
+			}
+			ImGui::EndChild();
+		}
+		gui::widgets::endSection();
+	};
+	listSection(std::format("Unused Assets ({})", report.unusedAssets.size()), gui::icon::folderSearch,
+				"##exportUnused", report.unusedAssets, "Every asset of the project is packed.", std::nullopt);
+	listSection(std::format("Warnings ({})", report.warnings.size()), gui::icon::triangleAlert, "##exportWarnings",
+				report.warnings, "No warning.", theme.warning);
+	if (!m_reportNote.empty())
+		ImGui::TextWrapped("%s", m_reportNote.c_str());
+	const std::string reportFile{data::assets::pack::g_exportReportFile};
+	ImGui::TextDisabled("Written to %s.", reportFile.c_str());
+	ImGui::Spacing();
+	if (gui::widgets::button("Close##exportReport",
+							 {.glyph = gui::icon::x, .label = "Close", .width = ImGui::GetFontSize() * 7.f})) {
+		m_showReport = false;
+		m_report.reset();
+		m_reportNote.clear();
+		ImGui::CloseCurrentPopup();
+	}
+	ImGui::EndPopup();
 }
 
 auto GamePackager::getRunners() -> RunnerStore& {
@@ -454,13 +584,11 @@ auto GamePackager::makeSettings() -> data::assets::pack::ExportSettings {
 	return settings;
 }
 
-void GamePackager::playWebExport(AsyncProgressState& ioState, const std::filesystem::path& iGameDirectory) {
-	if (!m_webPreview.start(iGameDirectory)) {
-		ioState.setMessage(ioState.getMessage() + "\nThe browser preview could not start.");
-		return;
-	}
-	ioState.setMessage(ioState.getMessage() + "\nPlaying at " + m_webPreview.getUrl());
+auto GamePackager::playWebExport(const std::filesystem::path& iGameDirectory) -> std::string {
+	if (!m_webPreview.start(iGameDirectory))
+		return "The browser preview could not start.";
 	platform::openExternalUrl(m_webPreview.getUrl());
+	return "Playing at " + m_webPreview.getUrl();
 }
 
 }// namespace owl::nest

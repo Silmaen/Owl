@@ -15,6 +15,8 @@
 #include <app/EntryPoint.h>
 #include <core/Core.h>
 #include <data/assets/AssetRegistry.h>
+#include <data/assets/pack/ExportReport.h>
+#include <data/assets/pack/GameExporter.h>
 #include <gui/UiLayer.h>
 #include <platform/AtomicFile.h>
 #include <platform/FileUtils.h>
@@ -26,6 +28,7 @@
 #include <span>
 #include <string>
 #include <string_view>
+#include <tuple>
 #include <vector>
 
 namespace owl {
@@ -179,14 +182,20 @@ private:
 		settings.cookCacheDirectory = iCommand.cookCache;
 		settings.target = iCommand.target;
 		std::vector<data::assets::pack::AssetReference> assets;
-		for (const auto& warning: data::assets::pack::GameExporter::validate(settings, assets))
-			OWL_WARN("Export: {}.", warning)
-		const auto result = data::assets::pack::GameExporter::exportGame(settings, assets);
+		const auto warnings = data::assets::pack::GameExporter::validate(settings, assets);
+		for (const auto& warning: warnings) OWL_WARN("Export: {}.", warning)
+		auto result = data::assets::pack::GameExporter::exportGame(settings, assets);
 		if (!result) {
 			OWL_ERROR("Export: Failed, {}.", data::assets::pack::GameExporter::getErrorMessage(result.error()))
 			return 1;
 		}
-		OWL_INFO("Export: Game written to '{}'.", result->gameDirectory.string())
+		if (!warnings.empty()) {
+			result->addWarnings(warnings);
+			std::ignore = result->write();
+		}
+		std::fputs((result->getSummary() + "\n").c_str(), stdout);
+		OWL_INFO("Export: Game written to '{}', report in '{}'.", result->gameDirectory.string(),
+				 data::assets::pack::g_exportReportFile)
 		return 0;
 	}
 };

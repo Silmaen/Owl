@@ -436,6 +436,12 @@ auto bakeShaders(std::vector<AssetReference>& ioAssets, const std::filesystem::p
 		return unexpected{graphs.error()};
 	return baked + *graphs;
 }
+
+auto shaderTargetNamesOf(const ExportTarget iTarget) -> std::vector<std::string> {
+	std::vector<std::string> names;
+	for (const auto target: shaderTargetsOf(iTarget)) names.push_back(renderer::utils::getShaderTargetFolder(target));
+	return names;
+}
 #else
 // Without the render module no shader compiler is built: the shaders are packed as they are.
 auto bakeShaders([[maybe_unused]] std::vector<AssetReference>& ioAssets,
@@ -443,6 +449,8 @@ auto bakeShaders([[maybe_unused]] std::vector<AssetReference>& ioAssets,
 		-> expected<size_t, ExportError> {
 	return size_t{0};
 }
+
+auto shaderTargetNamesOf([[maybe_unused]] const ExportTarget iTarget) -> std::vector<std::string> { return {}; }
 #endif
 
 // Bakes the MSDF atlas of the scene and HUD fonts into the pack, so that the game does not build it at start.
@@ -673,6 +681,21 @@ auto writeMods(const ExportSettings& iSettings, const std::filesystem::path& iGa
 	return mods;
 }
 
+// Completes the report with what the written folder holds and the unused project assets, then writes it beside the game.
+void finishReport(ExportReport& ioReport, const ExportSettings& iSettings, const std::vector<AssetReference>& iAssets) {
+	std::error_code sizeEc;
+	ioReport.packBytes = std::filesystem::file_size(ioReport.packFile, sizeEc);
+	ioReport.platform = platformNameOf(iSettings.target);
+	ioReport.shaderTargets = shaderTargetNamesOf(iSettings.target);
+	std::vector<std::filesystem::path> excluded{iSettings.outputDirectory, iSettings.cookCacheDirectory};
+	if (const auto icon = resolveIcon(iSettings); icon)
+		excluded.push_back(*icon);
+	excluded.insert(excluded.end(), iSettings.extensionSources.begin(), iSettings.extensionSources.end());
+	ioReport.unusedAssets = findUnusedAssets(iSettings.projectDirectory, iAssets, excluded);
+	ioReport.sizes = measureExportSizes(ioReport.gameDirectory, ioReport.executable);
+	std::ignore = ioReport.write();
+}
+
 }// namespace
 
 auto getHostExportTarget() -> ExportTarget {
@@ -788,9 +811,10 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 		-> expected<ExportReport, ExportError> {
 	const auto startTime = std::chrono::steady_clock::now();
 	std::vector<AssetReference> assets = iAssets;
+	std::vector<std::string> warnings;
 	if (assets.empty()) {
 		report(iProgress, 0.f, "Scanning assets...");
-		assets = AssetScanner::scanProject(iSettings.projectDirectory, iSettings.firstScene, nullptr,
+		assets = AssetScanner::scanProject(iSettings.projectDirectory, iSettings.firstScene, &warnings,
 										   iSettings.defaultHud, iSettings.defaultHudTheme, modScreenOf(iSettings));
 	}
 	if (assets.empty()) {
@@ -819,6 +843,7 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 				   rendererList, engineFilesSkipped, *shadersBaked)
 	const auto baseName = sanitizeFilename(iSettings.gameName);
 	ExportReport result;
+	result.warnings = std::move(warnings);
 	result.renderers = renderers.getNames();
 	result.engineFilesSkipped = engineFilesSkipped;
 	result.shadersBaked = *shadersBaked;
@@ -890,6 +915,8 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 						   std::string{localisation::Localisation::fileName}, AssetType::Other);
 		} else {
 			OWL_CORE_WARN("GameExporter: '{}' cannot be read, not packed.", localisationPath.string())
+			result.warnings.push_back(std::format("Localisation file '{}' cannot be read, not packed",
+												  localisationPath.filename().string()));
 		}
 	}
 	std::string mappingsEntry;
@@ -899,6 +926,7 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 			writer.addFile(mappingsPath, mappingsEntry, AssetType::Other);
 		} else {
 			OWL_CORE_WARN("GameExporter: Gamepad mapping file '{}' not found, not packed.", iSettings.gamepadMappings)
+			result.warnings.push_back(std::format("Gamepad mapping file '{}' not found", iSettings.gamepadMappings));
 		}
 	}
 	const auto packFilename = baseName + ".owlpack";
@@ -931,12 +959,15 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 		std::error_code ec;
 		std::filesystem::create_directories(iconDst.parent_path(), ec);
 		std::filesystem::copy_file(*iconSrc, iconDst, std::filesystem::copy_options::overwrite_existing, ec);
-		if (ec)
+		if (ec) {
 			OWL_CORE_WARN("GameExporter: Cannot copy icon '{}': {}.", iconSrc->string(), ec.message())
-		else
+			result.warnings.push_back(std::format("Icon '{}' cannot be copied", iconSrc->string()));
+		} else {
 			iconEntry = iconOf(iSettings);
+		}
 	} else {
 		OWL_CORE_WARN("GameExporter: Icon '{}' not found, the game has no window icon.", iconOf(iSettings))
+		result.warnings.push_back(std::format("Icon '{}' not found", iconOf(iSettings)));
 	}
 	writeRunnerConfig(iSettings, result.gameDirectory, resolveFirstScene(iSettings.firstScene, assets), packFilename,
 					  iconEntry, mappingsEntry, result.renderers);
@@ -952,8 +983,7 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 			return unexpected{ExportError::RunnerCopy};
 		result.executable = result.gameDirectory / g_webPage;
 		writeWebFileList(result.gameDirectory);
-		std::error_code sizeEc;
-		result.packBytes = std::filesystem::file_size(result.packFile, sizeEc);
+		finishReport(result, iSettings, assets);
 		report(iProgress, 1.f, "Done.");
 		OWL_CORE_INFO("GameExporter: Exported '{}' for the Web ({} assets) to '{}'.", iSettings.gameName,
 					  result.assetCount, result.gameDirectory.string())
@@ -961,8 +991,7 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 	}
 	if (iSettings.target == ExportTarget::Android) {
 		// The APK packaging adds the runner libraries next to this folder, its assets.
-		std::error_code sizeEc;
-		result.packBytes = std::filesystem::file_size(result.packFile, sizeEc);
+		finishReport(result, iSettings, assets);
 		report(iProgress, 1.f, "Done.");
 		OWL_CORE_INFO("GameExporter: Exported '{}' for Android ({} assets) to '{}'.", iSettings.gameName,
 					  result.assetCount, result.gameDirectory.string())
@@ -987,11 +1016,12 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 		writeLinuxLauncher(result.gameDirectory, result.executable.filename().string());
 	}
 #ifdef OWL_PLATFORM_WINDOWS
-	if (windows && !createZipArchive(result.gameDirectory, result.gameDirectory.parent_path() / (baseName + ".zip")))
+	if (windows && !createZipArchive(result.gameDirectory, result.gameDirectory.parent_path() / (baseName + ".zip"))) {
 		OWL_CORE_WARN("GameExporter: Cannot create the zip archive of '{}'.", result.gameDirectory.string())
+		result.warnings.emplace_back("The zip archive of the game cannot be created");
+	}
 #endif
-	std::error_code sizeEc;
-	result.packBytes = std::filesystem::file_size(result.packFile, sizeEc);
+	finishReport(result, iSettings, assets);
 	report(iProgress, 1.f, "Done.");
 	const auto seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - startTime).count();
 	OWL_CORE_INFO("GameExporter: Exported '{}' ({} assets, {:.2f} MiB) to '{}' in {:.1f} s.", iSettings.gameName,

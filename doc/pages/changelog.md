@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Export report: `GameExporter` returns and writes `export_report.yml` (size by category, shaders baked and their targets, unused project assets, warnings), shown in Owl Nest after a Pack Game and summed up by `OwlNest --export` ([Projects](editor_projects.md#editor-projects-export-report)).
 - `ExportTarget::LinuxX64`, `LinuxArm64` and `WindowsX64`: Owl Nest exports a desktop game for any desktop, from the runner of that target ([Projects](editor_projects.md)).
 - An exported Windows game carries its project icon in its executable, patched in C++ from any host (`setExecutableIcon`) ([Projects](editor_projects.md)).
 - `RunnerStore`: the Pack Game dialog and `OwlNest --export` download the runner of another platform from the runner server (setting **Runner Server**) or import it by hand, checked against the `runners.json` of the Nest package ([Projects](editor_projects.md)).
