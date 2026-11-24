@@ -15,6 +15,7 @@
 #include "core/external/yaml.h"
 #include "data/assets/AssetRegistry.h"
 #include "data/assets/cook/CookCache.h"
+#include "data/assets/pack/ExecutableIcon.h"
 #include "data/assets/pack/ExtensionManifest.h"
 #include "data/assets/pack/ExtensionPack.h"
 #include "data/assets/pack/ExtensionRegistry.h"
@@ -168,6 +169,16 @@ auto resolveIcon(const ExportSettings& iSettings) -> std::optional<std::filesyst
 	if (auto local = iSettings.projectDirectory / icon; exists(local))
 		return local;
 	return findInAssetDirectories(icon);
+}
+
+// Explorer and the taskbar show the icon of the executable, the window shows the one of `runner.yml`.
+void setWindowsIcon(const ExportSettings& iSettings, const std::filesystem::path& iExecutable) {
+	const auto icon = resolveIcon(iSettings);
+	if (!icon)
+		return;
+	if (const auto patched = setExecutableIcon(iExecutable, *icon); !patched)
+		OWL_CORE_WARN("GameExporter: The executable keeps the Owl icon, '{}' cannot be set: {}.", icon->string(),
+					  getErrorMessage(patched.error()))
 }
 
 // A scene with an `Environment` draws its sky and lights through `Renderer3D`, whatever its stack.
@@ -969,7 +980,9 @@ auto GameExporter::exportGame(const ExportSettings& iSettings, const std::vector
 		return unexpected{ExportError::RunnerCopy};
 	}
 	copySharedLibs(iSettings.runnerDirectory, result.gameDirectory);
-	if (!windows) {
+	if (windows) {
+		setWindowsIcon(iSettings, result.executable);
+	} else {
 		addExecPermission(result.executable);
 		writeLinuxLauncher(result.gameDirectory, result.executable.filename().string());
 	}

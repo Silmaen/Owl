@@ -126,7 +126,10 @@ Design of the export for the five targets; the platforms themselves are in
   glibc (no older glibc); an AppImage and a Flatpak are exported next to it.
 - Release runners only, no debug runner: diagnostics come from the `runner.yml` log level and console, the crash
   reporter ([Crash reporter](crash-reporter.md)) and Play in the Nest.
-- A Windows game carries its project icon in its executable (PE resource patch at export).
+- A Windows game carries its project icon in its executable: the export rewrites the resources of the PE in C++ on
+  any host (`data::assets::pack::setExecutableIcon`), the first icon group replaced by 16 to 256-pixel images of the
+  project icon (bitmaps, PNG for 256), the version information and the manifest kept; a patch that fails leaves the
+  Owl icon and a warning, not a failed export.
 - An Android game is an APK the Nest assembles on any host, without the Android SDK nor a JDK on the workstation:
   the Android runner ships as a template APK (compiled manifest, stripped libraries); the Nest adds the game's assets,
   writes the package name, label, version and icon into the binary manifest, aligns the archive and signs it

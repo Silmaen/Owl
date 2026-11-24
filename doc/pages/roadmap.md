@@ -98,7 +98,8 @@ per target, Android and the Web.
   signed by the Nest ([Game export](design/game-export.md#game-export-targets))
 - ![Planned][planned] Signing at export: Authenticode from a `.pfx` or a custom command, APK v2 / v3, debug and release
   keystores ([Game export](design/game-export.md#game-export-signing))
-- ![Planned][planned] Exported Windows games carry their project icon in the executable, not only on the window
+- ![Done][done] Exported Windows games carry their project icon in the executable, not only on the window
+  ([Game export](design/game-export.md#game-export-targets))
 - ![Planned][planned] Linux AppImage and Flatpak next to the portable archive, Android App Bundle (AAB) for Google Play
   ([Game export](design/game-export.md#game-export-targets))
 - ![Planned][planned] Export report: size per target, baked shaders, unused assets, warnings
