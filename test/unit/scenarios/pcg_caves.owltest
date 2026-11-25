@@ -1,0 +1,14 @@
+# The generated caves: a graph (`pcg/caves.owlpcg`) fills the tilemap from a seed when the scene starts, and the
+# regenerate action draws the next seed, a different cave; going back to the seed of the first one gives its cave again.
+scene: ../../../engine_demo/scenes/pcg_caves.owl
+steps:
+  - frames: 10
+  - expect: {gamestate: pcg_seed, equals: 7}
+  - expect: {gamestate: pcg_cells, equals: 1536}
+  - expect: {gamestate: pcg_walls, greater: 100}
+  - expect: {gamestate: pcg_walls, less: 1400}
+  - input: {key: Space, frames: 2}
+  - frames: 3
+  - expect: {gamestate: pcg_seed, equals: 8}
+  - expect: {gamestate: pcg_walls, greater: 100}
+  - expect: {gamestate: pcg_walls, less: 1400}

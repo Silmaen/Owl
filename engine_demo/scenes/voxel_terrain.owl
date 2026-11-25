@@ -116,6 +116,11 @@ Entities:
       parentId: 0
     RendererTag:
       Name: voxel_world
+    LuaScript:
+      scriptPath: gid:f83ca942e3c850d7:scripts/voxel/voxel_builder.lua
+      properties:
+      - {name: player, type: string, value: TerrainPlayer}
+      - {name: label, type: string, value: BuildText}
     VoxelWorld:
       SunDirection: [-0.4, -1, -0.6]
       Ambient: [0.4, 0.4, 0.45]

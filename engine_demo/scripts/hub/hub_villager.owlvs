@@ -149,7 +149,7 @@ VisualScript:
       values:
         variable: shown
     - id: 8150000000000000022
-      type: call.isometric.set_sprite_frame
+      type: call.entity.set_sprite_frame
       position: [904, 1156]
     - id: 8150000000000000023
       type: func.entry

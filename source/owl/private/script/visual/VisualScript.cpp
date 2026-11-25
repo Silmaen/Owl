@@ -115,6 +115,13 @@ void addEvents(std::vector<NodeType>& ioTypes) {
 	ioTypes.push_back(event("on_triggered", "On Triggered", "Runs when the trigger fires.", {other}));
 	ioTypes.push_back(event("on_interact", "On Interact", "Runs when the player interacts with the trigger."));
 	ioTypes.push_back(event("on_timer", "On Timer", "Runs when the timer of the trigger elapses."));
+	const std::vector<PinSpec> blockPins{pin("x", PinType::Integer), pin("y", PinType::Integer),
+										 pin("z", PinType::Integer), pin("block", PinType::Integer)};
+	ioTypes.push_back(event("on_block_broken", "On Block Broken",
+							"Runs when a voxel player breaks a block, with its position and the id it held.",
+							blockPins));
+	ioTypes.push_back(event("on_block_placed", "On Block Placed",
+							"Runs when a voxel player places a block, with its position and its id.", blockPins));
 	const PinSpec player = pin("player", PinType::Integer);
 	ioTypes.push_back(
 			event("on_player_join", "On Player Join", "Runs when a player joins the network session.", {player}));

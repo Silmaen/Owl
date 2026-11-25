@@ -179,6 +179,10 @@ void RendererIsometricLayer::applyConfig(const std::string& iConfig) {
 				std::clamp(zoom.as<int32_t>(m_zoomLevel), IsometricCamera::minZoomLevel, IsometricCamera::maxZoomLevel);
 }
 
+void RendererIsometricLayer::setZoomLevel(const int32_t iLevel) {
+	m_zoomLevel = std::clamp(iLevel, IsometricCamera::minZoomLevel, IsometricCamera::maxZoomLevel);
+}
+
 void RendererIsometricLayer::setViewport(const math::vec2ui& iViewport) {
 	if (iViewport.x() == 0 || iViewport.y() == 0)
 		return;

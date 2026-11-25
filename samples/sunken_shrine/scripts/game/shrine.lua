@@ -239,7 +239,7 @@ function M.pose(hero, slash, blade, face, reach, left, length)
     local aim = math.atan(fy, fx)
     local striking = left > 0
     local frame = M.facing_frame(face)
-    isometric.set_sprite_frame(hero, frame)
+    entity.set_sprite_frame(hero, frame)
     gamestate.set("shrine_hero_frame", frame)
     gamestate.set("shrine_striking", striking)
     ui.set_visible(slash, striking)

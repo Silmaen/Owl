@@ -147,9 +147,10 @@ TEST(ScriptEngine, extractFunctionsGivesTheLineOfEachGlobalFunction) {
 
 TEST(ScriptEngine, hookNamesListTheEngineCallbacks) {
 	const auto& hooks = ScriptEngine::getHookNames();
-	EXPECT_EQ(hooks.size(), 24u);
+	EXPECT_EQ(hooks.size(), 26u);
 	EXPECT_EQ(hooks.front(), "on_create");
-	EXPECT_EQ(hooks.back(), "on_entity_destroy");
+	EXPECT_EQ(hooks.back(), "on_block_placed");
+	EXPECT_TRUE(std::ranges::contains(hooks, "on_block_broken"));
 	EXPECT_TRUE(std::ranges::contains(hooks, "on_scene_load"));
 }
 

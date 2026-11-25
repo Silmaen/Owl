@@ -12,7 +12,9 @@
 #include "math/YamlSerializers.h"
 #include "scene/component/RaycastPushWall.h"
 
+#include <algorithm>
 #include <cstdint>
+#include <string>
 
 namespace owl::scene::component {
 
@@ -29,6 +31,10 @@ void RaycastPushWall::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << "slideSpeed" << YAML::Value << slideSpeed;
 	iOut.getImpl()->emitter << YAML::Key << "interactionAction" << YAML::Value << interactionAction;
 	iOut.getImpl()->emitter << YAML::Key << "interactionRange" << YAML::Value << interactionRange;
+	if (state != State::Idle) {
+		iOut.getImpl()->emitter << YAML::Key << "state" << YAML::Value << (state == State::Final ? "Final" : "Moving");
+		iOut.getImpl()->emitter << YAML::Key << "currentOffset" << YAML::Value << currentOffset;
+	}
 	iOut.getImpl()->emitter << YAML::EndMap;
 }
 
@@ -51,7 +57,11 @@ void RaycastPushWall::deserialize(const core::Serializer& iNode) {
 	if (node["interactionRange"])
 		interactionRange = node["interactionRange"].as<float>();
 	state = State::Idle;
-	currentOffset = 0.0f;
+	if (const auto saved = node["state"]; saved)
+		state = saved.as<std::string>() == "Final" ? State::Final : State::Moving;
+	currentOffset = state != State::Idle && node["currentOffset"]
+							? std::clamp(node["currentOffset"].as<float>(), 0.f, slideDistance)
+							: 0.0f;
 	tileset.reset();
 }
 

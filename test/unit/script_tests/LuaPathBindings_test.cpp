@@ -187,7 +187,7 @@ TEST_F(LuaPath, aRoadAddedInARunningCopyOfTheSceneIsUsed) {
 	running->onStartRuntime();
 	const std::string text =
 			std::format("map = {}\nfunction on_create()\ncells = path.find_now(map, 40, 5, 40, 9)\nbefore = #cells\n"
-						"for y = 6, 8 do isometric.set_cell(map, 0, 40, y, -1, 1) end\n"
+						"for y = 6, 8 do tilemap.set_cell(map, 0, 40, y, -1, 1) end\n"
 						"cells = path.find_now(map, 40, 5, 40, 9)\nafter = #cells\nend\n",
 						static_cast<int64_t>(getEntityHandle(*running, running->findEntityByUUID(m_map.getUUID()))));
 	const std::vector<uint8_t> data(text.begin(), text.end());

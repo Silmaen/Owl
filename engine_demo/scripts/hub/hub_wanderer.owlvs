@@ -41,7 +41,7 @@ VisualScript:
       values:
         variable: shown
     - id: 7530000000000000006
-      type: call.isometric.set_sprite_frame
+      type: call.entity.set_sprite_frame
       position: [1168, 0]
     - id: 7530000000000000007
       type: event.on_create

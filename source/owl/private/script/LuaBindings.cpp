@@ -55,6 +55,7 @@
 #include "scene/nav/NavWorld.h"
 #include "scene/nav/Pathfinder.h"
 #include "scene/nav/WalkQueries.h"
+#include "scene/pcg/PcgTilemap.h"
 #include "scene/ui/HudLayout.h"
 #include "script/LuaEngine.h"
 #include "script/LuaValues.h"
@@ -2385,6 +2386,48 @@ auto luaEntitySetLightRange(lua_State* iState) -> int {
 	return 1;
 }
 
+// The camera of the entity at argument 1, if it carries one.
+auto findCamera(lua_State* iState) -> scene::SceneCamera* {
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::Camera>())
+		return nullptr;
+	return &entity->getComponent<scene::component::Camera>().camera;
+}
+
+auto luaEntitySetCameraSize(lua_State* iState) -> int {
+	const auto size = static_cast<float>(luaL_checknumber(iState, 2));
+	auto* camera = findCamera(iState);
+	if (camera != nullptr)
+		camera->setOrthographicSize(std::max(0.01f, size));
+	lua_pushboolean(iState, camera != nullptr ? 1 : 0);
+	return 1;
+}
+
+auto luaEntityGetCameraSize(lua_State* iState) -> int {
+	const auto* camera = findCamera(iState);
+	if (camera == nullptr)
+		return 0;
+	lua_pushnumber(iState, static_cast<lua_Number>(camera->getOrthographicSize()));
+	return 1;
+}
+
+auto luaEntitySetCameraFov(lua_State* iState) -> int {
+	const auto fov = static_cast<float>(luaL_checknumber(iState, 2));
+	auto* camera = findCamera(iState);
+	if (camera != nullptr)
+		camera->setPerspectiveVerticalFov(std::clamp(fov, 0.01f, 3.f));
+	lua_pushboolean(iState, camera != nullptr ? 1 : 0);
+	return 1;
+}
+
+auto luaEntityGetCameraFov(lua_State* iState) -> int {
+	const auto* camera = findCamera(iState);
+	if (camera == nullptr)
+		return 0;
+	lua_pushnumber(iState, static_cast<lua_Number>(camera->getPerspectiveVerticalFov()));
+	return 1;
+}
+
 auto luaUiSetText(lua_State* iState) -> int {
 	const char* text = luaL_checkstring(iState, 2);
 	if (const auto entity = findEntity(iState); entity) {
@@ -3313,6 +3356,166 @@ auto luaIsometricGetSpriteFrame(lua_State* iState) -> int {
 	if (!entity || !entity->hasComponent<scene::component::AnimatedSpriteRenderer>())
 		return 0;
 	pushInteger(iState, entity->getComponent<scene::component::AnimatedSpriteRenderer>().m_currentFrame);
+	return 1;
+}
+
+auto luaTilemapSetAsset(lua_State* iState) -> int {
+	const std::string path = data::assets::toAssetPath(luaL_checkstring(iState, 2));
+	const auto entity = findEntity(iState);
+	lua_pushboolean(iState, entity && getBoundScene(iState)->setTilemapAsset(*entity, path) ? 1 : 0);
+	return 1;
+}
+
+auto luaTilemapGetAsset(lua_State* iState) -> int {
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::Tilemap>())
+		return 0;
+	lua_pushstring(iState, entity->getComponent<scene::component::Tilemap>().tilemapPath.generic_string().c_str());
+	return 1;
+}
+
+auto luaTilemapGenerate(lua_State* iState) -> int {
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::Tilemap>() ||
+		entity->getComponent<scene::component::Tilemap>().asset == nullptr) {
+		lua_pushnil(iState);
+		lua_pushstring(iState, "the entity has no tilemap");
+		return 2;
+	}
+	const std::string path = data::assets::toAssetPath(luaL_checkstring(iState, 2));
+	const auto toCell = [iState](const int iIndex) -> uint32_t {
+		return static_cast<uint32_t>(std::max<int64_t>(luaL_optinteger(iState, iIndex, 0), 0));
+	};
+	const scene::TilemapGenerator generator{.graphPath = path,
+											.seed = static_cast<uint64_t>(checkInteger(iState, 3)),
+											.layer = toCell(4),
+											.origin = {toCell(5), toCell(6)},
+											.size = {toCell(7), toCell(8)}};
+	const auto graph = scene::pcg::loadGraphAsset(path);
+	if (!graph) {
+		lua_pushnil(iState);
+		lua_pushstring(iState, std::format("the graph '{}' cannot be read", path).c_str());
+		return 2;
+	}
+	auto& asset = *entity->getComponent<scene::component::Tilemap>().asset;
+	const auto changed = scene::pcg::generateTilemap(*graph, asset, generator);
+	if (!changed) {
+		lua_pushnil(iState);
+		lua_pushstring(iState, std::format("the graph '{}' generates nothing on this region", path).c_str());
+		return 2;
+	}
+	if (*changed > 0)
+		physics::PhysicCommand::rebuildTilemapBody(*entity);
+	pushInteger(iState, *changed);
+	return 1;
+}
+
+// The isometric layer of the render stack, if the game has one.
+auto findIsometricLayer() -> renderer::RendererIsometricLayer* {
+	for (const auto& layer: renderer::Renderer::getRenderStack().getLayers())
+		if (auto* isometric = dynamic_cast<renderer::RendererIsometricLayer*>(layer.get()); isometric != nullptr)
+			return isometric;
+	return nullptr;
+}
+
+auto luaIsometricSetZoom(lua_State* iState) -> int {
+	const auto level = checkInteger(iState, 1);
+	auto* layer = findIsometricLayer();
+	if (layer == nullptr)
+		return 0;
+	layer->setZoomLevel(static_cast<int32_t>(std::clamp<int64_t>(level, renderer::IsometricCamera::minZoomLevel,
+																 renderer::IsometricCamera::maxZoomLevel)));
+	pushInteger(iState, layer->getZoomLevel());
+	return 1;
+}
+
+auto luaIsometricGetZoom(lua_State* iState) -> int {
+	const auto* layer = findIsometricLayer();
+	if (layer == nullptr)
+		return 0;
+	pushInteger(iState, layer->getZoomLevel());
+	return 1;
+}
+
+// The voxel world of the entity at argument 1, if it carries one.
+auto findVoxelWorld(lua_State* iState) -> scene::component::VoxelWorld* {
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::VoxelWorld>())
+		return nullptr;
+	return &entity->getComponent<scene::component::VoxelWorld>();
+}
+
+// The voxel player of the entity at argument 1, if it carries one.
+auto findVoxelPlayer(lua_State* iState) -> scene::component::VoxelPlayer* {
+	const auto entity = findEntity(iState);
+	if (!entity || !entity->hasComponent<scene::component::VoxelPlayer>())
+		return nullptr;
+	return &entity->getComponent<scene::component::VoxelPlayer>();
+}
+
+// The block position at arguments `iIndex` to `iIndex + 2`.
+auto checkBlockPosition(lua_State* iState, const int iIndex) -> math::vec3i {
+	return {static_cast<int32_t>(checkInteger(iState, iIndex)), static_cast<int32_t>(checkInteger(iState, iIndex + 1)),
+			static_cast<int32_t>(checkInteger(iState, iIndex + 2))};
+}
+
+auto luaVoxelGetBlock(lua_State* iState) -> int {
+	const auto block = checkBlockPosition(iState, 2);
+	const auto* voxels = findVoxelWorld(iState);
+	pushInteger(iState, voxels != nullptr ? voxels->world.getBlock(block) : data::voxel::g_AirBlock);
+	return 1;
+}
+
+auto luaVoxelSetBlock(lua_State* iState) -> int {
+	const auto block = checkBlockPosition(iState, 2);
+	const auto id = checkInteger(iState, 5);
+	auto* voxels = findVoxelWorld(iState);
+	const bool known = voxels != nullptr && id >= 0 && static_cast<size_t>(id) < voxels->registry.count();
+	lua_pushboolean(iState, known && voxels->editBlock(block, static_cast<data::voxel::BlockId>(id)) ? 1 : 0);
+	return 1;
+}
+
+auto luaVoxelGetBlockName(lua_State* iState) -> int {
+	const auto id = checkInteger(iState, 2);
+	const auto* voxels = findVoxelWorld(iState);
+	if (voxels == nullptr || id <= 0 || static_cast<size_t>(id) >= voxels->registry.count())
+		return 0;
+	lua_pushstring(iState, voxels->registry.get(static_cast<data::voxel::BlockId>(id)).name.c_str());
+	return 1;
+}
+
+auto luaVoxelFindBlock(lua_State* iState) -> int {
+	const std::string_view name = luaL_checkstring(iState, 2);
+	const auto* voxels = findVoxelWorld(iState);
+	pushInteger(iState, voxels != nullptr ? voxels->registry.findByName(name).value_or(data::voxel::g_AirBlock)
+										  : data::voxel::g_AirBlock);
+	return 1;
+}
+
+auto luaVoxelGetTarget(lua_State* iState) -> int {
+	const auto* player = findVoxelPlayer(iState);
+	if (player == nullptr || !player->hasTarget)
+		return 0;
+	for (const auto& vector: {player->targetBlock, player->targetNormal})
+		for (const auto value: {vector.x(), vector.y(), vector.z()}) pushInteger(iState, value);
+	return 6;
+}
+
+auto luaVoxelGetPlaceBlock(lua_State* iState) -> int {
+	const auto* player = findVoxelPlayer(iState);
+	if (player == nullptr)
+		return 0;
+	pushInteger(iState, player->placeBlock);
+	return 1;
+}
+
+auto luaVoxelSetPlaceBlock(lua_State* iState) -> int {
+	const auto id = checkInteger(iState, 2);
+	auto* player = findVoxelPlayer(iState);
+	const bool valid = player != nullptr && id > 0 && id <= 0xFFFF;
+	if (valid)
+		player->placeBlock = static_cast<data::voxel::BlockId>(id);
+	lua_pushboolean(iState, valid ? 1 : 0);
 	return 1;
 }
 
@@ -4990,6 +5193,12 @@ auto declareBindings() -> std::vector<LuaBinding> {
 						"has none of them. `a` is 1 when omitted.",
 		 .params = {entityId, {"r", Number}, {"g", Number}, {"b", Number}, {"a", Number, true}},
 		 .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "set_sprite_frame", .function = guarded<luaIsometricSetSpriteFrame>,
+		 .description = "Show one frame (from 0, row by row) of the sheet of an `AnimatedSpriteRenderer` and stop its animation there, so one entity picks its picture from its heading; false when the entity has no such sprite.",
+		 .params = {entityId, {"frame", Integer}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "get_sprite_frame", .function = guarded<luaIsometricGetSpriteFrame>,
+		 .description = "Frame an `AnimatedSpriteRenderer` shows now; nothing when the entity has no such sprite.",
+		 .params = {entityId}, .returns = {{"frame", Integer}}},
 		{.table = "entity", .name = "get_tint", .function = guarded<luaEntityGetTint>,
 		 .description = "Colour multiplied into a `SpriteRenderer`, `AnimatedSpriteRenderer`, `MeshRenderer` or "
 						"`ParticleEmitter`; nothing when the entity has none of them.",
@@ -5030,6 +5239,20 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		{.table = "entity", .name = "is_light_enabled", .function = guarded<luaEntityIsLightEnabled>,
 		 .description = "Whether the entity's `Light` or `Light2D` shines; nothing when it has none.",
 		 .params = {entityId}, .returns = {{"enabled", Boolean}}},
+		{.table = "entity", .name = "set_camera_size", .function = guarded<luaEntitySetCameraSize>,
+		 .description = "Set the orthographic size (the height seen, in world units, at least 0.01) of the entity's "
+						"`Camera`, so one scene frames levels of any size; false when it has none.",
+		 .params = {entityId, {"size", Number}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "get_camera_size", .function = guarded<luaEntityGetCameraSize>,
+		 .description = "Orthographic size of the entity's `Camera`; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"size", Number}}},
+		{.table = "entity", .name = "set_camera_fov", .function = guarded<luaEntitySetCameraFov>,
+		 .description = "Set the vertical field of view (radians, from 0.01 to 3) of the entity's perspective "
+						"`Camera` (a zoom, a sprint); false when it has none.",
+		 .params = {entityId, {"fov", Number}}, .returns = {{"done", Boolean}}},
+		{.table = "entity", .name = "get_camera_fov", .function = guarded<luaEntityGetCameraFov>,
+		 .description = "Vertical field of view of the entity's `Camera`, in radians; nothing when it has none.",
+		 .params = {entityId}, .returns = {{"fov", Number}}},
 		{.table = "entity", .name = "set_light_range", .function = guarded<luaEntitySetLightRange>,
 		 .description = "Set the range (world units, at least 0.01) of the entity's point or spot `Light`, or the "
 						"radius of its `Light2D`; false when it has neither.",
@@ -5433,15 +5656,15 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .description = "Terrain cell under a viewport pixel (the mouse by default), slope-aware; nothing when it is off the map.",
 		 .params = {entityId, {"x", Number, true}, {"y", Number, true}}, .returns = {{"cell_x", Integer}, {"cell_y", Integer}}},
 		{.table = "isometric", .name = "get_cell", .function = guarded<luaIsometricGetCell>,
-		 .description = "Terrain and overlay tile of a cell of a layer of the tilemap (layers from 0, -1 for none or outside).",
+		 .description = "Deprecated, use `tilemap.get_cell`: terrain and overlay tile of a cell of a layer of the tilemap.",
 		 .params = {entityId, {"layer", Integer}, {"cell_x", Integer}, {"cell_y", Integer}},
 		 .returns = {{"terrain", Integer}, {"overlay", Integer}}},
 		{.table = "isometric", .name = "set_cell", .function = guarded<luaIsometricSetCell>,
-		 .description = "Set the terrain and overlay tile of a cell of a layer (-1 for none), without undo; false outside the grid or when the cell already held them.",
+		 .description = "Deprecated, use `tilemap.set_cell`: set the terrain and overlay tile of a cell of a layer.",
 		 .params = {entityId, {"layer", Integer}, {"cell_x", Integer}, {"cell_y", Integer}, {"terrain", Integer}, {"overlay", Integer}},
 		 .returns = {{"done", Boolean}}},
 		{.table = "isometric", .name = "get_size", .function = guarded<luaIsometricGetSize>,
-		 .description = "Grid size of the tilemap of an entity, in cells, and the world size of a cell; nothing when the entity has no tilemap.",
+		 .description = "Deprecated, use `tilemap.get_size`: grid size of the tilemap of an entity and world size of a cell.",
 		 .params = {entityId}, .returns = {{"width", Integer}, {"height", Integer}, {"cell_size", Number}}},
 		{.table = "isometric", .name = "get_slope", .function = guarded<luaIsometricGetSlope>,
 		 .description = "Slope of a cell, from its corner heights (0 is flat, 1 to 18 are the other slopes of the tileset).",
@@ -5450,11 +5673,62 @@ auto declareBindings() -> std::vector<LuaBinding> {
 		 .description = "World height of the terrain surface at a world position (the map's own height outside the map).",
 		 .params = {entityId, {"x", Number}, {"y", Number}}, .returns = {{"z", Number}}},
 		{.table = "isometric", .name = "set_sprite_frame", .function = guarded<luaIsometricSetSpriteFrame>,
-		 .description = "Show one frame (from 0, row by row) of the sheet of an `AnimatedSpriteRenderer` and stop its animation there, so one entity picks its picture from its heading; false when the entity has no such sprite.",
+		 .description = "Deprecated, use `entity.set_sprite_frame`: show one frame of the sheet of an `AnimatedSpriteRenderer`.",
 		 .params = {entityId, {"frame", Integer}}, .returns = {{"done", Boolean}}},
 		{.table = "isometric", .name = "get_sprite_frame", .function = guarded<luaIsometricGetSpriteFrame>,
-		 .description = "Frame an `AnimatedSpriteRenderer` shows now; nothing when the entity has no such sprite.",
+		 .description = "Deprecated, use `entity.get_sprite_frame`: frame an `AnimatedSpriteRenderer` shows now.",
 		 .params = {entityId}, .returns = {{"frame", Integer}}},
+		{.table = "isometric", .name = "set_zoom", .function = guarded<luaIsometricSetZoom>,
+		 .description = "Set the zoom level of the isometric layer (0 is one texel per pixel, each level doubles the scale, negative levels zoom out), clamped to the range of the layer, until the level changes; the level applied, nothing when the game has no isometric layer.",
+		 .params = {{"level", Integer}}, .returns = {{"level", Integer}}},
+		{.table = "isometric", .name = "get_zoom", .function = guarded<luaIsometricGetZoom>,
+		 .description = "Zoom level of the isometric layer (the `Zoom` of the scene until `isometric.set_zoom`); nothing when the game has no isometric layer.",
+		 .returns = {{"level", Integer}}},
+		{.table = "tilemap", .name = "get_cell", .function = guarded<luaIsometricGetCell>,
+		 .description = "Terrain and overlay tile of a cell of a layer of the tilemap (layers from 0, -1 for none or outside).",
+		 .params = {entityId, {"layer", Integer}, {"cell_x", Integer}, {"cell_y", Integer}},
+		 .returns = {{"terrain", Integer}, {"overlay", Integer}}},
+		{.table = "tilemap", .name = "set_cell", .function = guarded<luaIsometricSetCell>,
+		 .description = "Set the terrain and overlay tile of a cell of a layer (-1 for none), without undo; false outside the grid or when the cell already held them.",
+		 .params = {entityId, {"layer", Integer}, {"cell_x", Integer}, {"cell_y", Integer}, {"terrain", Integer}, {"overlay", Integer}},
+		 .returns = {{"done", Boolean}}},
+		{.table = "tilemap", .name = "get_size", .function = guarded<luaIsometricGetSize>,
+		 .description = "Grid size of the tilemap of an entity, in cells, and the world size of a cell; nothing when the entity has no tilemap.",
+		 .params = {entityId}, .returns = {{"width", Integer}, {"height", Integer}, {"cell_size", Number}}},
+		{.table = "tilemap", .name = "set_asset", .function = guarded<luaTilemapSetAsset>,
+		 .description = "Show another `.owltilemap` (a path relative to the project) in the `Tilemap` of an entity: its colliders and its navigation graph follow, so one scene plays every level; false, and the tilemap kept, when the entity has no tilemap or the file cannot be loaded.",
+		 .params = {entityId, {"path", String}}, .returns = {{"done", Boolean}}},
+		{.table = "tilemap", .name = "generate", .function = guarded<luaTilemapGenerate>,
+		 .description = "Fill a region of a layer of the tilemap of an entity from a procedural generation graph (`.owlpcg`, a path relative to the project): the same seed always gives the same tiles, and the colliders and the navigation graph follow. The region starts at (x, y) and spans width by height cells, the whole grid by default, and a save keeps the tiles. The number of cells changed; nil and why when the entity has no tilemap, the graph cannot be read or the region is empty.",
+		 .params = {entityId, {"graph", String}, {"seed", Integer}, {"layer", Integer, true}, {"x", Integer, true},
+					{"y", Integer, true}, {"width", Integer, true}, {"height", Integer, true}},
+		 .returns = {{"changed", Integer}}},
+		{.table = "tilemap", .name = "get_asset", .function = guarded<luaTilemapGetAsset>,
+		 .description = "Path of the `.owltilemap` the `Tilemap` of an entity shows (empty for a map stored in the scene); nothing when the entity has no tilemap.",
+		 .params = {entityId}, .returns = {{"path", String}}},
+		{.table = "voxel", .name = "get_block", .function = guarded<luaVoxelGetBlock>,
+		 .description = "Block id at a block position of the `VoxelWorld` of an entity (0 is air, also where no chunk is loaded).",
+		 .params = {entityId, {"x", Integer}, {"y", Integer}, {"z", Integer}}, .returns = {{"block", Integer}}},
+		{.table = "voxel", .name = "set_block", .function = guarded<luaVoxelSetBlock>,
+		 .description = "Write a block id (0 breaks the block) at a block position and re-mesh around it; false when the entity has no voxel world, the id is not one of its blocks or, in a procedural world, the chunk is not streamed in. The edit is kept by a save.",
+		 .params = {entityId, {"x", Integer}, {"y", Integer}, {"z", Integer}, {"block", Integer}},
+		 .returns = {{"done", Boolean}}},
+		{.table = "voxel", .name = "get_block_name", .function = guarded<luaVoxelGetBlockName>,
+		 .description = "Name of a block id of the palette of a voxel world; nothing for air or an unknown id.",
+		 .params = {entityId, {"block", Integer}}, .returns = {{"name", String}}},
+		{.table = "voxel", .name = "find_block", .function = guarded<luaVoxelFindBlock>,
+		 .description = "Block id of a name of the palette of a voxel world (0 when it has none).",
+		 .params = {entityId, {"name", String}}, .returns = {{"block", Integer}}},
+		{.table = "voxel", .name = "get_target", .function = guarded<luaVoxelGetTarget>,
+		 .description = "Block a `VoxelPlayer` aims at, within its reach, and the normal of the face it looks at (a block is placed at the position plus the normal); nothing when it aims at no block.",
+		 .params = {entityId},
+		 .returns = {{"x", Integer}, {"y", Integer}, {"z", Integer}, {"normal_x", Integer}, {"normal_y", Integer}, {"normal_z", Integer}}},
+		{.table = "voxel", .name = "get_place_block", .function = guarded<luaVoxelGetPlaceBlock>,
+		 .description = "Block id a `VoxelPlayer` places; nothing when the entity has no voxel player.",
+		 .params = {entityId}, .returns = {{"block", Integer}}},
+		{.table = "voxel", .name = "set_place_block", .function = guarded<luaVoxelSetPlaceBlock>,
+		 .description = "Choose the block id a `VoxelPlayer` places (a hotbar slot); false when the entity has no voxel player or the id is not a block.",
+		 .params = {entityId, {"block", Integer}}, .returns = {{"done", Boolean}}},
 		{.table = "path", .name = "find", .function = guarded<luaPathFind>,
 		 .description = "Queue a shortest-path query between two cells of the tilemap's graph (its `navigation` rules); 0 when the entity has no graph. The path is searched over the next frames, `mode` is `auto`, `flat` or `hierarchical`. `options` (a table, which may replace `mode`) is `{no_reverse = true, heading_x = dx, heading_y = dy}`: the route never goes back to the cell it just left, except from a dead end (a cell with a single exit), and its first move goes on in the heading (an axis direction) when there is one; the search is then always flat.",
 		 .params = {entityId, {"from_x", Integer}, {"from_y", Integer}, {"to_x", Integer}, {"to_y", Integer}, {"mode", Any, true}, {"options", Table, true}},
@@ -5832,7 +6106,12 @@ auto getLuaTables() -> const std::vector<LuaTable>& {
 			{.name = "trigger", .description = "Timer triggers."},
 			{.name = "door", .description = "Raycast doors."},
 			{.name = "pushwall", .description = "Raycast push-walls."},
-			{.name = "isometric", .description = "Terrain picking and tile editing of an isometric tilemap."},
+			{.name = "tilemap",
+			 .description = "Cells and asset of the `Tilemap` of an entity, whatever layer draws it."},
+			{.name = "isometric", .description = "Terrain picking, heights and zoom of the isometric layer."},
+			{.name = "voxel",
+			 .description = "Blocks of a `VoxelWorld` and the aim of a `VoxelPlayer`; its edits call "
+							"`on_block_broken` and `on_block_placed`."},
 			{.name = "animator",
 			 .description = "State machine of the `Animator` of a skinned mesh: parameters and states."},
 			{.name = "socket", .description = "Entities snapped on the sockets of a mesh or of an entity."},
@@ -5885,8 +6164,9 @@ auto getLuaReferencePages() -> const std::vector<LuaReferencePage>& {
 			{.file = "lua-api-locale.md", .title = "Localisation", .tables = {"locale"}},
 			{.file = "lua-api-raycast.md", .title = "Raycast doors and push-walls", .tables = {"door", "pushwall"}},
 			{.file = "lua-api-isometric.md",
-			 .title = "Isometric terrain, paths and walkable areas",
-			 .tables = {"isometric", "path", "walk"}},
+			 .title = "Tilemaps, isometric terrain, paths and walkable areas",
+			 .tables = {"tilemap", "isometric", "path", "walk"}},
+			{.file = "lua-api-voxel.md", .title = "Voxel worlds", .tables = {"voxel"}},
 			{.file = "lua-api-navigation.md", .title = "Navigation meshes", .tables = {"nav"}},
 			{.file = "lua-api-ai.md", .title = "Steering and behaviour trees", .tables = {"steer", "bt"}},
 			{.file = "lua-api-animation.md", .title = "Animation and sockets", .tables = {"animator", "socket"}},

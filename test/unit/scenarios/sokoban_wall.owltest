@@ -1,7 +1,13 @@
-# Sokoban: a wall stops the player (no step counted), and so does a crate with a wall behind it.
-scene: ../../../samples/sokoban/scenes/level_02.owl
+# Sokoban: the level select starts level 2, whose tilemap the level scene shows in place of the first one
+# (`tilemap.set_asset`); there a wall stops the player (no step counted), and so does a crate with a wall behind it.
+scene: ../../../samples/sokoban/scenes/level_select.owl
 steps:
-  - frames: 30
+  - frames: 10
+  - actions: {ui_down: true, frames: 1}
+  - frames: 4
+  - actions: {ui_accept: true, frames: 1}
+  - frames: 90
+  - expect: {gamestate: sokoban_level, equals: 2}
   - expect: {gamestate: sokoban_player_x, equals: 1}
   - expect: {gamestate: sokoban_player_y, equals: 3}
   - input: {key: Left, frames: 2}

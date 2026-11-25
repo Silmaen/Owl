@@ -1,7 +1,7 @@
 # Sokoban: on level 1 the player stands left of a crate, three cells from its goal; each Right pushes it one cell,
 # the moves and pushes count (dust behind the crate), and the second push brings the crate onto its goal, which
 # sparkles once.
-scene: ../../../samples/sokoban/scenes/level_01.owl
+scene: ../../../samples/sokoban/scenes/level.owl
 steps:
   - frames: 30
   - expect: {gamestate: sokoban_boxes, equals: 1}

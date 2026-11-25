@@ -313,6 +313,19 @@ public:
 
 	/**
 	 * @brief
+	 *  Give the `Tilemap` of an entity another `.owltilemap`: a game changes level without changing scene.
+	 *
+	 * The asset is loaded at once, from the open pack then the asset directories, with its tileset; in Play the
+	 * static colliders of the tilemap are rebuilt from the new cells and its navigation graph follows. The component
+	 * keeps its previous asset when the file cannot be loaded.
+	 * @param[in] iEntity The entity carrying the `Tilemap`.
+	 * @param[in] iPath The `.owltilemap`, relative to the project.
+	 * @return True when the tilemap now shows the asset.
+	 */
+	auto setTilemapAsset(const Entity& iEntity, const std::filesystem::path& iPath) -> bool;
+
+	/**
+	 * @brief
 	 *  Update actions for the runtime.
 	 *
 	 * Advances the simulation clock by the frame duration, then runs the systems of `getSystems()` phase by phase

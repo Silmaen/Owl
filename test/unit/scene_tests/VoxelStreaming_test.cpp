@@ -189,3 +189,17 @@ TEST_F(VoxelStreamingTest, PlayStartForgetsTheEditorPendingGeneration) {
 	EXPECT_TRUE(world().pendingChunks.empty());
 	m_scene->onEndRuntime();
 }
+
+TEST_F(VoxelStreamingTest, AnEditedChunkStaysLoadedWhenTheCameraLeaves) {
+	makeScene();
+	runUntilIdle();
+	ASSERT_TRUE(world().world.hasChunk({0, 0, 0}));
+	ASSERT_TRUE(world().editBlock({8, 1, 8}, world().terrain.sand));
+	m_camera.getComponent<scene::component::Transform>().transform.translation() =
+			math::vec3{8.f + 16.f * 20.f, 8.f, 8.f};
+	runUntilIdle();
+	EXPECT_TRUE(world().world.hasChunk({0, 0, 0}));
+	EXPECT_FALSE(world().world.hasChunk({1, 0, 0}));
+	EXPECT_EQ(world().world.getBlock({8, 1, 8}), world().terrain.sand);
+	m_scene->onEndRuntime();
+}

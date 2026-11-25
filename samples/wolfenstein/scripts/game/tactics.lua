@@ -47,7 +47,7 @@ local function setup()
     local map_id = scene.find_entity("Minimap")
     for r = 0, SIZE - 1 do
         for c = 0, SIZE - 1 do
-            grid[key_of(c, r)] = map_id ~= 0 and isometric.get_cell(map_id, WALL_LAYER, c, r) == TILE_WALL
+            grid[key_of(c, r)] = map_id ~= 0 and tilemap.get_cell(map_id, WALL_LAYER, c, r) == TILE_WALL
         end
     end
     for _, tag in ipairs({ "Door", "GoldDoor", "BlueDoor", "ElevatorDoor" }) do

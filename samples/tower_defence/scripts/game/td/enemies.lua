@@ -138,7 +138,7 @@ function Foes.update_corpses(dt)
         local corpse = S.corpses[index]
         corpse.t = corpse.t + dt
         local row = C.DEATH_ROW + math.min(2, math.floor(corpse.t / 0.12))
-        isometric.set_sprite_frame(corpse.id, row * C.DIRECTIONS + corpse.direction)
+        entity.set_sprite_frame(corpse.id, row * C.DIRECTIONS + corpse.direction)
         if corpse.t > 0.45 then
             entity.set_tint(corpse.id, 1.0, 1.0, 1.0, math.max(0.0, 1.0 - (corpse.t - 0.45) / 0.5))
         end
@@ -217,7 +217,7 @@ function Foes.update_enemies(dt)
                 foe.distance = length
                 foe.attack = (foe.attack or 0.0) + dt
                 local row = C.ATTACK_ROW + (math.floor(foe.attack / 0.18) % 2)
-                isometric.set_sprite_frame(foe.id, row * C.DIRECTIONS + Foes.direction_of(foe.dx, foe.dz))
+                entity.set_sprite_frame(foe.id, row * C.DIRECTIONS + Foes.direction_of(foe.dx, foe.dz))
                 if foe.attack >= 0.72 then
                     S.lives_left = S.lives_left - foe.lives
                     S.leaks = S.leaks + 1
@@ -245,7 +245,7 @@ function Foes.update_enemies(dt)
                 if speed == 0.0 then frame = Foes.direction_of(dx, dz) end
                 if frame ~= foe.frame then
                     foe.frame = frame
-                    isometric.set_sprite_frame(foe.id, frame)
+                    entity.set_sprite_frame(foe.id, frame)
                 end
                 if foe.bar ~= 0 then
                     transform.set_position(foe.bar, Cam.billboard_at(x, y, z, C.BAR_HEIGHT[foe.kind]))

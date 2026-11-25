@@ -589,7 +589,7 @@ VisualScript:
         Key: row
         Value: 0
     - id: 8130000000000000121
-      type: call.isometric.set_sprite_frame
+      type: call.entity.set_sprite_frame
       position: [4304, 2496]
     - id: 8130000000000000122
       type: table.get
@@ -634,7 +634,7 @@ VisualScript:
       type: math.floor
       position: [3744, 2768]
     - id: 8130000000000000132
-      type: call.isometric.set_sprite_frame
+      type: call.entity.set_sprite_frame
       position: [2832, 3232]
     - id: 8130000000000000133
       type: table.get

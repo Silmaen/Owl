@@ -20,7 +20,7 @@
 -- Fog of war: the tilemap has two layers, `walls` (hidden, the whole level, read once into a Lua table) and `seen` (empty
 -- at first). Every frame fog_rays rays are cast over the wall grid across the field of view up to fog_range cells (a
 -- DDA over the cells, no allocation); the floor cells a ray crosses and the wall it stops at are copied into `seen` with
--- `isometric.set_cell`. A closed door and a secret wall that has not moved stop a ray and show as walls. The seen cells
+-- `tilemap.set_cell`. A closed door and a secret wall that has not moved stop a ray and show as walls. The seen cells
 -- are kept as a string of 0 and 1 in `raycast_seen` of the gamestate (written at most twice a second), so a save, a
 -- continue or a visit of the hub brings them back; `minimap_seen` counts them for the scenario test.
 --
@@ -82,7 +82,7 @@ local function show(c, r)
     local key = key_of(c, r)
     local blocker = blockers[key]
     local wall = solid[key] or (blocker ~= nil and blocker.closed)
-    isometric.set_cell(map_id, SEEN_LAYER, c, r, wall and TILE_WALL or TILE_FLOOR, -1)
+    tilemap.set_cell(map_id, SEEN_LAYER, c, r, wall and TILE_WALL or TILE_FLOOR, -1)
 end
 
 local function reveal(c, r)
@@ -172,10 +172,10 @@ local function setup_fog_rows()
     for r = fog_row, last do
         for c = 0, MAP_SIZE - 1 do
             local key = key_of(c, r)
-            solid[key] = isometric.get_cell(map_id, WALL_LAYER, c, r) == TILE_WALL
+            solid[key] = tilemap.get_cell(map_id, WALL_LAYER, c, r) == TILE_WALL
             bits[key + 1] = "0"
-            if isometric.get_cell(map_id, SEEN_LAYER, c, r) >= 0 then
-                isometric.set_cell(map_id, SEEN_LAYER, c, r, -1, -1)
+            if tilemap.get_cell(map_id, SEEN_LAYER, c, r) >= 0 then
+                tilemap.set_cell(map_id, SEEN_LAYER, c, r, -1, -1)
             end
         end
     end
@@ -226,7 +226,7 @@ function on_create()
     end
     for i, name in ipairs(SECRETS) do
         walls[i] = scene.find_entity(name)
-        found[i] = gamestate.get("secret_found_" .. name, 0) > 0
+        found[i] = walls[i] ~= 0 and pushwall.get_state(walls[i]) ~= "idle"
         if walls[i] ~= 0 then
             local x, y = transform.get_position(walls[i])
             local c, r = cell_of(x, y)
@@ -323,7 +323,6 @@ function on_update(dt)
         end
         if not found[i] and walls[i] ~= 0 and pushwall.get_state(walls[i]) ~= "idle" then
             found[i] = true
-            gamestate.set("secret_found_" .. name, 1)
             gamestate.set("inv_toast", "Secret found!")
         end
         secrets = secrets + (found[i] and 1 or 0)

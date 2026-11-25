@@ -1083,7 +1083,7 @@ VisualScript:
       values:
         Key: frame
     - id: 5807900222
-      type: call.isometric.set_sprite_frame
+      type: call.entity.set_sprite_frame
       position: [5440, 3780]
     - id: 5807900223
       type: table.get

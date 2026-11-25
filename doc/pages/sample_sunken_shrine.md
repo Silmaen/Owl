@@ -25,7 +25,7 @@ A top-down 2D adventure whose rules are visual scripts.
 - **2D lights:** torches, braziers lit one by one, a light on the hero and a dark crypt, see
   [Renderer](renderer.md#renderer-lighting2d).
 - **Strokes you can read:** the blade sweeps an arc across the facing direction, a chevron marks it between
-  strokes, and the hero shows its back, front or side (`isometric.set_sprite_frame` on its sheet); `shrine.lua`
+  strokes, and the hero shows its back, front or side (`entity.set_sprite_frame` on its sheet); `shrine.lua`
   poses them each frame.
 - **Hits you feel:** a creature's touch pushes the hero back, flashes it red, shakes the camera (not with the reduced
   motion) and leaves it blinking through its grace; the hearts sit large on a dark plate of the HUD.

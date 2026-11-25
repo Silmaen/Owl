@@ -1237,7 +1237,12 @@ void PhysicCommand::init(scene::Scene& ioScene) {
 		const bool slideAlongY = (door.openingDirection == OD::North || door.openingDirection == OD::South);
 		constexpr float kPlateHalfThickness = 0.05f;// matches the renderer's lateral bias
 		const math::vec2f half{slideAlongY ? kPlateHalfThickness : 0.5f, slideAlongY ? 0.5f : kPlateHalfThickness};
-		door.bodyId = world->create(PhysicsWorld::movedBlock(ioScene.getWorldTransform(entity), half), entity);
+		// A door loaded open (a save) gets its plate where it slid to.
+		math::Transform plate = ioScene.getWorldTransform(entity);
+		const math::vec2 axis = door.getSlideAxis();
+		plate.translation().x() += axis.x() * door.currentOffset;
+		plate.translation().y() += axis.y() * door.currentOffset;
+		door.bodyId = world->create(PhysicsWorld::movedBlock(plate, half), entity);
 	}
 	for (const auto view = ioScene.registry.view<scene::component::RaycastPushWall, scene::component::Transform>();
 		 const auto e: view) {
@@ -1465,6 +1470,15 @@ void PhysicCommand::destroyBody(const scene::Entity& iEntity) {
 	if (iEntity.hasComponent<scene::component::RaycastPushWall>())
 		world->onPushWallRemoved(registry, handle);
 	world->forgetContacts(iEntity.getUUID(), world->sensorOwners.contains(static_cast<uint64_t>(iEntity.getUUID())));
+}
+
+void PhysicCommand::rebuildTilemapBody(const scene::Entity& iEntity) {
+	auto* const world = worldOf(iEntity);
+	if (world == nullptr || !iEntity.hasComponent<scene::component::Tilemap>())
+		return;
+	const auto handle = static_cast<entt::entity>(iEntity);
+	world->onTilemapRemoved(iEntity.getScene()->registry, handle);
+	world->createTilemapBody(*iEntity.getScene(), handle);
 }
 
 void PhysicCommand::impulse(const scene::Entity& iEntity, const math::vec2f& iImpulse) {

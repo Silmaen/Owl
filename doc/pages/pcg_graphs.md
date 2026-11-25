@@ -95,6 +95,16 @@ side reaches the end of the grid). In the tilemap editor, the **Procedural** sec
 Each button is one undo step. The Engine Demo ships `pcg/caves.owlpcg` (a cave automaton) and the tilemap
 `tilemaps/pcg_caves.owltilemap` that uses it.
 
+## Running a graph from Lua
+
+A script runs a graph at play time with `tilemap.generate(map, "pcg/caves.owlpcg", seed)`: the graph fills the layer 0
+of the `Tilemap` of the entity, the same seed always gives the same tiles, and the colliders follow. The optional
+arguments `layer`, `x`, `y`, `width` and `height` restrict it to a region. The call returns the number of cells changed,
+or nil and the reason when the graph cannot be read; the editor and the script run the same
+`scene::pcg::generateTilemap`. A packaged game keeps the graphs its scripts name. The Engine Demo's *Generated Caves*
+(a door at the east end of the high street of the hub) draws a new cave from the next seed on each press of Space, see
+[Lua scripting](scripting.md).
+
 ## File format
 
 A `.owlpcg` is YAML, versioned like the other assets. A node's `values` hold its parameters as text; a missing one takes its default:

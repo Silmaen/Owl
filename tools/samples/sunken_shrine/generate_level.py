@@ -636,7 +636,7 @@ def room_graph() -> str:
     chest = g.branch(state("shrine_chest", False))
     g.chain(entry_node, chest)
     opened = g.chain(
-        chest["True"], g.call("isometric.set_sprite_frame", entity_id=find("Chest"), frame=TILE["chest_open"])
+        chest["True"], g.call("entity.set_sprite_frame", entity_id=find("Chest"), frame=TILE["chest_open"])
     )
     sword = g.join(
         [chest["False"], opened],
@@ -746,7 +746,7 @@ def room_graph() -> str:
     g.chain(talk["False"], chest_branch)
     opened = g.chain(
         chest_branch["True"],
-        g.call("isometric.set_sprite_frame", entity_id=find("Chest"), frame=TILE["chest_open"]),
+        g.call("entity.set_sprite_frame", entity_id=find("Chest"), frame=TILE["chest_open"]),
         g.call("gamestate.set", key="shrine_chest", value=True),
         g.call("gamestate.set", key="shrine_key", value=True),
         g.call("sound.play", asset_path="sounds/game/chest.wav"),

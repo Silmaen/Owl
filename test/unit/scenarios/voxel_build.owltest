@@ -1,0 +1,27 @@
+# The voxel terrain is built on: the explorer lands, looks down and breaks the block under its aim with the right
+# trigger of a gamepad (no cursor is captured in a headless run), places the next block of the hotbar with the left
+# one, and a quick save then a quick load bring the edited chunk back as it was left, not as the seed generates it.
+scene: ../../../engine_demo/scenes/voxel_terrain.owl
+steps:
+  - frames: 90
+  - input: {key: Down, frames: 40}
+  - expect: {gamestate: voxel_hotbar, equals: stone}
+  - input: {gamepad: {right_trigger: 1.0}, frames: 2}
+  - frames: 3
+  - expect: {gamestate: voxel_broken, equals: 1}
+  - expect: {gamestate: voxel_last_block, equals: 0}
+  - actions: {quick_save: true, frames: 1}
+  - frames: 5
+  - actions: {voxel_next_block: true, frames: 1}
+  - frames: 2
+  - expect: {gamestate: voxel_hotbar, equals: grass}
+  - input: {gamepad: {left_trigger: 1.0}, frames: 2}
+  - frames: 3
+  - expect: {gamestate: voxel_placed, equals: 1}
+  - expect: {gamestate: voxel_last_block, equals: 2}
+  # The save was taken with the block broken and nothing placed yet: the last edit it knows is the broken block.
+  - actions: {quick_load: true, frames: 1}
+  - frames: 60
+  - expect: {gamestate: voxel_broken, equals: 1}
+  - expect: {gamestate: voxel_hotbar, equals: stone}
+  - expect: {gamestate: voxel_last_block, equals: 0}

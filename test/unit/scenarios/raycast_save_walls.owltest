@@ -1,0 +1,23 @@
+# The raycast level keeps a slid secret wall in a save: a wall brought next to the player slides away on E and
+# counts as a secret; after a quick save and a quick load it is still at the end of its slide, so brought back and
+# pressed again it does not move and the secret is not counted twice.
+scene: ../../../engine_demo/scenes/raycast_demo.owl
+steps:
+  - frames: 40
+  - {command: entity.set_transform, args: {entity: Secret2, translation: [-3.094, -24.3, 0]}}
+  - frames: 5
+  - input: {key: E, frames: 3}
+  - frames: 200
+  - expect: {gamestate: raycast_secrets, equals: 1}
+  - expect: {entity: Secret2, translation.y: {equals: -22.3, tolerance: 0.05}}
+  - actions: {quick_save: true, frames: 1}
+  - frames: 5
+  - actions: {quick_load: true, frames: 1}
+  - frames: 40
+  - expect: {gamestate: raycast_secrets, equals: 1}
+  - {command: entity.set_transform, args: {entity: Secret2, translation: [-3.094, -24.3, 0]}}
+  - frames: 5
+  - input: {key: E, frames: 3}
+  - frames: 200
+  - expect: {entity: Secret2, translation.y: {equals: -24.3, tolerance: 0.05}}
+  - expect: {gamestate: raycast_secrets, equals: 1}

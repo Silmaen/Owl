@@ -221,7 +221,9 @@ VisualScript:
       inputs: []
       outputs: [{name: module, type: any}]
       code: |
-        return require("scripts.game.levels")
+        local module = require("scripts.game.levels")
+        level = module.open(level)
+        return module
     - name: take_back
       title: Take back
       inputs: []
@@ -320,7 +322,7 @@ VisualScript:
       values:
         function: terrain
     - id: 3395900014
-      type: call.isometric.get_cell
+      type: call.tilemap.get_cell
       position: [850, 160]
       values:
         split.cell: "true"
@@ -512,7 +514,7 @@ VisualScript:
       values:
         variable: put_box_tile
     - id: 3395900056
-      type: call.isometric.set_cell
+      type: call.tilemap.set_cell
       position: [2040, 4320]
       values:
         split.cell: "true"
@@ -1165,7 +1167,7 @@ VisualScript:
       values:
         variable: facing
     - id: 3395900196
-      type: call.isometric.set_sprite_frame
+      type: call.entity.set_sprite_frame
       position: [2380, 13080]
     - id: 3395900197
       type: var.get
@@ -1927,7 +1929,7 @@ VisualScript:
       values:
         variable: box
     - id: 3395900359
-      type: call.isometric.set_sprite_frame
+      type: call.entity.set_sprite_frame
       position: [11220, 16260]
     - id: 3395900360
       type: var.get
@@ -2490,7 +2492,7 @@ VisualScript:
       values:
         variable: facing
     - id: 3395900478
-      type: call.isometric.set_sprite_frame
+      type: call.entity.set_sprite_frame
       position: [4760, 17520]
     - id: 3395900479
       type: var.get
@@ -3331,7 +3333,7 @@ VisualScript:
       values:
         variable: origin_y
     - id: 3395900658
-      type: call.isometric.get_size
+      type: call.tilemap.get_size
       position: [8670, 24280]
     - id: 3395900659
       type: var.get
@@ -3504,7 +3506,7 @@ VisualScript:
       type: flow.branch
       position: [14280, 24120]
     - id: 3395900694
-      type: call.isometric.set_cell
+      type: call.tilemap.set_cell
       position: [14620, 24120]
       values:
         split.cell: "true"

@@ -169,7 +169,7 @@ function Wheel.open_ring(pad)
         local id = S.choice_ids[index]
         if id ~= nil then
             local kind, locked = entry[1], entry[2] == true
-            isometric.set_sprite_frame(id, locked and C.ICON.locked or C.ICON[kind])
+            entity.set_sprite_frame(id, locked and C.ICON.locked or C.ICON[kind])
             UI.show(id, true)
             UI.show(S.wheel_ids.costs[index], true)
             S.ring.choices[#S.ring.choices + 1] = { kind = kind, id = id, locked = locked }

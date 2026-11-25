@@ -200,16 +200,7 @@ void TilemapDocument::setGenerator(const std::optional<scene::TilemapGenerator>&
 auto TilemapDocument::loadGeneratorGraph() const -> std::optional<scene::pcg::Graph> {
 	if (!m_asset.generator || m_asset.generator->graphPath.empty())
 		return std::nullopt;
-	auto path = m_asset.generator->graphPath;
-	if (app::Application::instanced()) {
-		for (const auto& [title, assetsPath]: app::Application::get().getAssetDirectories()) {
-			if (const auto candidate = assetsPath / path; exists(candidate)) {
-				path = candidate;
-				break;
-			}
-		}
-	}
-	auto graph = scene::pcg::loadFromFile(path);
+	auto graph = scene::pcg::loadGraphAsset(m_asset.generator->graphPath);
 	if (!graph)
 		return std::nullopt;
 	return std::move(*graph);

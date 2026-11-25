@@ -1,0 +1,57 @@
+Scene: PcgCaves
+FormatVersion: 7
+Hud: huds/pcg_caves.owlhud
+Entities:
+  - Entity: 9300000000000000001
+    Tag:
+      tag: MainCamera
+    Transform:
+      translation: [0, 0, 5]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Camera:
+      camera:
+        projectionType: Orthographic
+        perspectiveFOV: 0.7853982
+        perspectiveNear: 0.01
+        perspectiveFar: 1000
+        orthographicSize: 36
+        orthographicNear: -1
+        orthographicFar: 10
+      primary: true
+      fixedAspectRatio: false
+  - Entity: 9300000000000000002
+    Tag:
+      tag: CaveBackground
+    Transform:
+      translation: [0, 0, -1]
+      rotation: [0, 0, 0]
+      scale: [90, 90, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    BackgroundTexture:
+      mode: 0
+      type: 0
+      color: [0.05, 0.05, 0.08, 1]
+      topColor: [0.05, 0.05, 0.08, 1]
+  - Entity: 9300000000000000003
+    Tag:
+      tag: Caves
+    Transform:
+      translation: [0, 0, 0]
+      rotation: [0, 0, 0]
+      scale: [1, 1, 1]
+    Visibility:
+      gameVisible: true
+    Hierarchy: {}
+    Tilemap:
+      tilemapPath: tilemaps/pcg_caves.owltilemap
+    LuaScript:
+      scriptPath: scripts/pcg/pcg_caves.lua
+      properties:
+        - {name: graph, type: string, value: pcg/caves.owlpcg}
+        - {name: label, type: string, value: CaveText}

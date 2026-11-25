@@ -109,7 +109,7 @@ def sprite(texture: str, colour: Colour = (1, 1, 1, 1), tiling: tuple[float, flo
 
 
 def frames(texture: str, columns: int, rows: int, frame: int, colour: Colour = (1, 1, 1, 1)) -> str:
-    """An ``AnimatedSpriteRenderer`` of a sheet, stopped on one frame (``isometric.set_sprite_frame`` picks others)."""
+    """An ``AnimatedSpriteRenderer`` of a sheet, stopped on one frame (``entity.set_sprite_frame`` picks others)."""
     return (
         f"AnimatedSpriteRenderer:\n  color: {vec(*colour)}\n  texture: nam:{texture}\n  columns: {columns}\n"
         f"  rows: {rows}\n  firstFrame: {frame}\n  lastFrame: {frame}\n  frameDuration: 0.1\n  loop: false\n"

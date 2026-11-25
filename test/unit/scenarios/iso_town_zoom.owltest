@@ -1,0 +1,26 @@
+# The isometric town zooms from a script (`isometric.set_zoom`): one level in doubles the scale, so the cell (1, 12)
+# that sits 352 pixels left of the view centre is picked 704 pixels left of it; the zoom stops at the range the town
+# allows and comes back out. The headless view is 1600x960 centred on the camera at (12, 12).
+scene: ../test_helper/assets/scenarios/iso_town_small.owl
+project: ../../../engine_demo
+assets: ../test_helper/assets/scenarios
+steps:
+  - frames: 30
+  - expect: {gamestate: town_zoom, equals: 0}
+  - input: {mouse_pos: [448, 320], frames: 3}
+  - expect: {gamestate: town_cursor_x, equals: 1}
+  - expect: {gamestate: town_cursor_y, equals: 12}
+  - actions: {town_zoom_in: true, frames: 1}
+  - frames: 2
+  - expect: {gamestate: town_zoom, equals: 1}
+  - input: {mouse_pos: [96, 160], frames: 3}
+  - expect: {gamestate: town_cursor_x, equals: 1}
+  - expect: {gamestate: town_cursor_y, equals: 12}
+  - actions: {town_zoom_in: true, frames: 1}
+  - frames: 2
+  - expect: {gamestate: town_zoom, equals: 1}
+  - actions: {town_zoom_out: true, frames: 1}
+  - frames: 2
+  - actions: {town_zoom_out: true, frames: 1}
+  - frames: 2
+  - expect: {gamestate: town_zoom, equals: -1}

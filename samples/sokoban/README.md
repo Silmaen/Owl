@@ -27,25 +27,26 @@ of the progress.
 
 ## Inside
 
-| Path                           | Content                                                                                        |
-|--------------------------------|------------------------------------------------------------------------------------------------|
-| `scenes/`                      | `title`, `level_select`, `level_01` to `level_10`, `settings`, `victory`                       |
-| `tilemaps/level_NN.owltilemap` | A level: layer `floor` (floor, walls), `goals`, `boxes` (crates, the hero where he starts)     |
-| `tilesets/sokoban.owltileset`  | The tiles of `textures/sokoban_tiles.png`                                                      |
-| `tables/levels.owltable`       | The levels in play order: the scene and the name of each one                                   |
-| `scripts/game/sokoban.owlvs`   | The rules: steps and pushes on the tilemap cells, the undo stack, the win, the pause           |
-| `scripts/game/levels.lua`      | Reads the level table and the progress settings for every screen                               |
-| `scripts/ui/`                  | The wooden menus; `level_select.owlvs` fills the list, `warehouse.owlvs` animates the corridor |
-| `huds/level.owlhud`            | Level, moves, best, Undo / Restart / Menu buttons, the pause window (with the controls)        |
+| Path                           | Content                                                                                                |
+|--------------------------------|--------------------------------------------------------------------------------------------------------|
+| `scenes/`                      | `title`, `level_select`, `level` (every level), `settings`, `victory`                                  |
+| `tilemaps/level_NN.owltilemap` | A level: layer `floor` (floor, walls), `goals`, `boxes` (crates, the hero where he starts)             |
+| `tilesets/sokoban.owltileset`  | The tiles of `textures/sokoban_tiles.png`                                                              |
+| `tables/levels.owltable`       | The levels in play order: the tilemap and the name of each one                                         |
+| `scripts/game/sokoban.owlvs`   | The rules: steps and pushes on the tilemap cells, the undo stack, the win, the pause                   |
+| `scripts/game/levels.lua`      | Reads the level table and the progress settings for every screen, shows the level to play in the scene |
+| `scripts/ui/`                  | The wooden menus; `level_select.owlvs` fills the list, `warehouse.owlvs` animates the corridor         |
+| `huds/level.owlhud`            | Level, moves, best, Undo / Restart / Menu buttons, the pause window (with the controls)                |
 
 ## Editing a level
 
-Open a level scene in Owl Nest, select the `Level` entity and paint its tilemap in the tilemap editor: walls and floor
-in layer `floor`, goal marks in `goals`, crates and the hero tile (where the player starts) in `boxes`. Keep as many
-crates as goals; the game warns in the log otherwise. To add a level, duplicate a level scene, point its `Level` at a
-new tilemap, set the `level` property of its `Game` entity to its place in the list, then add a row for it (its scene
-and its name) to `tables/levels.owltable` in the data table editor: the title, the level select and the level before it
-follow the table.
+Open a `tilemaps/level_NN.owltilemap` in the tilemap editor of Owl Nest and paint it: walls and floor in layer
+`floor`, goal marks in `goals`, crates and the hero tile (where the player starts) in `boxes`. Keep as many crates as
+goals; the game warns in the log otherwise. To add a level, save a new tilemap and add a row for it (its tilemap and
+its name) to `tables/levels.owltable` in the data table editor: the title, the level select and the level before it
+follow the table. `scenes/level.owl` plays them all: the game gives its `Level` entity the tilemap of the level to
+play (`tilemap.set_asset`) and sizes the camera to it (`entity.set_camera_size`); played on its own, the scene starts
+the level of the `level` property of its `Game` entity.
 
 The art, the sounds, the first version of the levels and the menus come from `tools/samples/sokoban/`
 (`generate_assets.py`, `generate_levels.py`, `generate_menus.py`): running a generator again overwrites the edits made

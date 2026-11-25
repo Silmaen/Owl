@@ -295,6 +295,10 @@ block `RendererRaycastSprites`, up to 16 textures and 1024 sprites):
 
 ## Dynamic walls (doors + pushwalls)
 
+A save keeps them as they stand: a pushwall that left its rest position writes its `state` and `currentOffset`, a
+door that is not closed its `state`, `currentOffset` and `holdTimer`, and the plate body of a door loaded open is
+created where it slid to.
+
 Doors and pushwalls share an activation pattern (proximity-and-key with a Lua override) and a state-machine spine, but
 their geometry is different enough that they ship as separate renderer payloads:
 

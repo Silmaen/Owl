@@ -227,7 +227,7 @@ VisualScript:
       values:
         variable: id
     - id: 8080000000000000048
-      type: call.isometric.get_cell
+      type: call.tilemap.get_cell
       position: [4744, 1244]
       values:
         layer: 0
@@ -435,7 +435,7 @@ VisualScript:
       type: flow.for_each
       position: [1838, 2240]
     - id: 8080000000000000097
-      type: call.isometric.set_cell
+      type: call.tilemap.set_cell
       position: [2132, 2802]
       values:
         layer: 0
@@ -538,7 +538,7 @@ VisualScript:
         First: 0
         Last: 3
     - id: 8080000000000000119
-      type: call.isometric.set_cell
+      type: call.tilemap.set_cell
       position: [2760, 3370]
       values:
         layer: 1

@@ -9,9 +9,12 @@
 
 #include "scene/pcg/PcgTilemap.h"
 
+#include "app/Application.h"
+
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+#include <string>
 
 namespace owl::scene::pcg {
 
@@ -45,6 +48,20 @@ auto applyToTilemap(const Result& iResult, TilemapAsset& ioAsset, const TilemapG
 		}
 	}
 	return changed;
+}
+
+auto loadGraphAsset(const std::filesystem::path& iPath) -> expected<Graph, PcgError> {
+	if (app::Application::instanced()) {
+		const auto& app = app::Application::get();
+		if (const auto relative = iPath.generic_string(); app.hasPackedAssets() && app.packContains(relative)) {
+			if (const auto data = app.loadFromPack(relative))
+				return deserialize(std::string(data->begin(), data->end()), relative);
+		}
+		for (const auto& [title, assetsPath]: app.getAssetDirectories())
+			if (const auto candidate = assetsPath / iPath; exists(candidate))
+				return loadFromFile(candidate);
+	}
+	return loadFromFile(iPath);
 }
 
 auto generateTilemap(const Graph& iGraph, TilemapAsset& ioAsset, const TilemapGenerator& iGenerator)

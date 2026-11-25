@@ -850,7 +850,7 @@ VisualScript:
       values:
         variable: frame
     - id: 2450100139
-      type: call.isometric.set_sprite_frame
+      type: call.entity.set_sprite_frame
       position: [1020, 6900]
     - id: 2450100140
       type: table.get
@@ -913,7 +913,7 @@ VisualScript:
       values:
         Key: done
     - id: 2450100154
-      type: call.isometric.set_sprite_frame
+      type: call.entity.set_sprite_frame
       position: [2720, 6900]
     - id: 2450100155
       type: table.get
@@ -1823,7 +1823,7 @@ VisualScript:
       values:
         variable: row
     - id: 2450100354
-      type: call.isometric.set_sprite_frame
+      type: call.entity.set_sprite_frame
       position: [1700, 17460]
     - id: 2450100355
       type: table.get

@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """
-Write the tileset, the ten level tilemaps, the ten level scenes, the level table and the level HUD of the Sokoban
+Write the tileset, the ten level tilemaps, the level scene, the level table and the level HUD of the Sokoban
 sample game into ``samples/sokoban/``, from the level texts of ``levels.py``.
 
 A level is one ``.owltilemap`` of three layers, in the binary layout Owl Nest saves: ``floor`` (floor and walls),
-``goals`` (the goal marks) and ``boxes`` (the crates and the hero tile where the player starts). Each level scene points
-its ``Level`` entity at its tilemap (one scene per level, gap G14) and holds the player, the sliding crate, the camera,
-the music and the ``Game`` entity running ``scripts/game/sokoban.owlvs``; ``tables/levels.owltable`` lists the scene and
-the name of each level, in play order. The levels are edited in the tilemap editor of
-Owl Nest afterwards; running this script again overwrites those edits.
+``goals`` (the goal marks) and ``boxes`` (the crates and the hero tile where the player starts). One scene plays every
+level: ``scenes/level.owl`` holds the ``Level`` entity, showing the first level until ``scripts/game/levels.lua`` gives
+it the tilemap of the level to play (``tilemap.set_asset``) and sizes the camera to it (``entity.set_camera_size``),
+the player, the sliding crate, the camera, the music and the ``Game`` entity running ``scripts/game/sokoban.owlvs``;
+``tables/levels.owltable`` lists the tilemap and the name of each level, in play order. The levels are edited in the
+tilemap editor of Owl Nest afterwards; running this script again overwrites those edits.
 
 Run from the repository root: ``./docker_run.sh poetry run python -m tools.samples.sokoban.generate_levels``.
 """
@@ -33,6 +34,58 @@ CHUNK = 32
 """Side of a tilemap chunk (``TilemapLayer::chunkSize``)."""
 LAYERS = ("floor", "goals", "boxes")
 """The layers of a level tilemap, in drawing order."""
+
+
+PUSH_DUST = """ParticleEmitter:
+  playOnStart: false
+  maxParticles: 64
+  rate: 0
+  burst: 0
+  duration: 0
+  loop: false
+  lifetimeMin: 0.35
+  lifetimeMax: 0.7
+  shape: Box
+  shapeSize: [0.7, 0.25, 0]
+  speedMin: 0.3
+  speedMax: 1.1
+  gravity: [0, 0.5, 0]
+  drag: 4
+  sizeMin: 0.22
+  sizeMax: 0.42
+  sizeOverLife: {interpolation: Linear, keys: [[0, 0.6], [1, 1.5]]}
+  color: [0.96, 0.92, 0.84, 1]
+  colorOverLife: [[0, 1, 1, 1, 0.85], [0.5, 1, 1, 1, 0.55], [1, 1, 1, 1, 0]]
+  emissive: 0
+  blend: Alpha
+  space: World
+"""
+"""The dust a pushed crate raises, emitted by the game."""
+GOAL_SPARKLE = """ParticleEmitter:
+  playOnStart: false
+  maxParticles: 64
+  rate: 0
+  burst: 0
+  duration: 0
+  loop: false
+  lifetimeMin: 0.4
+  lifetimeMax: 0.9
+  shape: Circle
+  shapeSize: [0.35, 0.35, 0]
+  speedMin: 1
+  speedMax: 2.6
+  gravity: [0, -2.5, 0]
+  drag: 1.5
+  sizeMin: 0.1
+  sizeMax: 0.22
+  sizeOverLife: {interpolation: Linear, keys: [[0, 1], [1, 0.2]]}
+  color: [1, 0.85, 0.35, 1]
+  colorOverLife: [[0, 1, 1, 1, 1], [0.5, 1, 0.95, 0.6, 0.9], [1, 1, 0.8, 0.3, 0]]
+  emissive: 0
+  blend: Additive
+  space: World
+"""
+"""The sparks of a crate reaching a goal, emitted by the game."""
 
 
 def fnv1a(data: bytes) -> int:
@@ -114,10 +167,10 @@ def camera_size(lvl: lv.Level) -> float:
     return max(lvl.height + 3.0, (lvl.width + 2.0) * 0.75)
 
 
-def level_scene(index: int) -> str:
-    """The scene of a level, from 0."""
-    lvl = lv.level(index)
-    number = index + 1
+def level_scene() -> str:
+    """The scene playing every level, set up for the first one: the game shows the tilemap of the level to play."""
+    lvl = lv.level(0)
+    number = 1
     entities = y.Entities(7200000000000000000 + number * 1000000)
     entities.add("MainCamera", [y.camera(camera_size(lvl))], position=(0, 0, 5))
     size = camera_size(lvl) * 2.4
@@ -130,7 +183,9 @@ def level_scene(index: int) -> str:
     entities.add("MovingBox", [y.frames(sheet, COLUMNS, ROWS, TILES["box"])], position=(0, 0, 0.05), visible=False)
     entities.add("Music", [y.music("sounds/music/loop.wav", 0.3)])
     entities.add("Game", [y.script("scripts/game/sokoban.owlvs", [("level", "int", number)])])
-    return y.scene(f"level_{number:02d}", entities, hud="huds/level.owlhud")
+    entities.add("PushDust", [PUSH_DUST], position=(0, 0, 0.08))
+    entities.add("GoalSparkle", [GOAL_SPARKLE], position=(0, 0, 0.12))
+    return y.scene("level", entities, hud="huds/level.owlhud")
 
 
 def level_hud() -> str:
@@ -177,18 +232,18 @@ def level_hud() -> str:
 
 
 def level_table() -> str:
-    """The data table of the levels: one row per level, its scene and its name."""
+    """The data table of the levels: one row per level, its tilemap and its name."""
     lines = [
         "DataTable: ''",
         "FormatVersion: 1",
         "columns:",
-        "  - {name: scene, type: Asset}",
+        "  - {name: tilemap, type: Asset}",
         "  - {name: name, type: Text}",
         "rows:",
     ]
     for index in range(len(lv.LEVELS)):
         name = f"level_{index + 1:02d}"
-        lines += [f"  - key: {name}", f"    scene: scenes/{name}.owl", f"    name: {lv.level(index).name}"]
+        lines += [f"  - key: {name}", f"    tilemap: tilemaps/{name}.owltilemap", f"    name: {lv.level(index).name}"]
     return "\n".join(lines) + "\n"
 
 
@@ -202,7 +257,7 @@ def main() -> None:
     for index in range(len(lv.LEVELS)):
         name = f"level_{index + 1:02d}"
         (ROOT / "tilemaps" / f"{name}.owltilemap").write_bytes(tilemap(name, lv.level(index)))
-        (ROOT / "scenes" / f"{name}.owl").write_text(level_scene(index))
+    (ROOT / "scenes" / "level.owl").write_text(level_scene())
 
 
 if __name__ == "__main__":

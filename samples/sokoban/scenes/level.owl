@@ -1,8 +1,8 @@
-Scene: level_05
+Scene: level
 FormatVersion: 7
 Hud: gid:d6a4c1550ebbf5bd:huds/level.owlhud
 Entities:
-  - Entity: 7200000000005000001
+  - Entity: 7200000000001000001
     Tag:
       tag: MainCamera
     Transform:
@@ -18,18 +18,18 @@ Entities:
         perspectiveFOV: 0.7853982
         perspectiveNear: 0.01
         perspectiveFar: 1000
-        orthographicSize: 11
+        orthographicSize: 8
         orthographicNear: -1
         orthographicFar: 10
       primary: true
       fixedAspectRatio: false
-  - Entity: 7200000000005000002
+  - Entity: 7200000000001000002
     Tag:
       tag: Background
     Transform:
       translation: [0, 0, -1]
       rotation: [0, 0, 0]
-      scale: [26.4, 26.4, 1]
+      scale: [19.2, 19.2, 1]
     Visibility:
       gameVisible: true
     Hierarchy: {}
@@ -38,7 +38,7 @@ Entities:
       type: 0
       color: [0.07, 0.05, 0.06, 1]
       topColor: [0.8, 0.9, 1, 1]
-  - Entity: 7200000000005000003
+  - Entity: 7200000000001000003
     Tag:
       tag: Level
     Transform:
@@ -49,12 +49,12 @@ Entities:
       gameVisible: true
     Hierarchy: {}
     Tilemap:
-      tilemapPath: gid:e04594de996a4a72:tilemaps/level_05.owltilemap
-  - Entity: 7200000000005000004
+      tilemapPath: gid:5101a343889f9f5b:tilemaps/level_01.owltilemap
+  - Entity: 7200000000001000004
     Tag:
       tag: Player
     Transform:
-      translation: [3, -2.5, 0.1]
+      translation: [-1, 0, 0.1]
       rotation: [0, 0, 0]
       scale: [1, 1, 1]
     Visibility:
@@ -69,7 +69,7 @@ Entities:
       lastFrame: 8
       frameDuration: 0.1
       loop: false
-  - Entity: 7200000000005000005
+  - Entity: 7200000000001000005
     Tag:
       tag: MovingBox
     Transform:
@@ -88,7 +88,7 @@ Entities:
       lastFrame: 5
       frameDuration: 0.1
       loop: false
-  - Entity: 7200000000005000006
+  - Entity: 7200000000001000006
     Tag:
       tag: Music
     Transform:
@@ -108,7 +108,7 @@ Entities:
       playOnStart: true
       maxDistance: 50
       rolloff: 1
-  - Entity: 7200000000005000007
+  - Entity: 7200000000001000007
     Tag:
       tag: Game
     Transform:
@@ -123,8 +123,8 @@ Entities:
       properties:
         - name: level
           type: int
-          value: 5
-  - Entity: 7200000000005000008
+          value: 1
+  - Entity: 7200000000001000008
     Tag:
       tag: PushDust
     Transform:
@@ -157,7 +157,7 @@ Entities:
       emissive: 0
       blend: Alpha
       space: World
-  - Entity: 7200000000005000009
+  - Entity: 7200000000001000009
     Tag:
       tag: GoalSparkle
     Transform:

@@ -90,13 +90,13 @@ TEST_F(LuaIsometric, pickCellReturnsNothingOffTheMap) {
 }
 
 TEST_F(LuaIsometric, cellsAreReadAndWrittenPerLayer) {
-	const auto instance = run("before_t, before_o = isometric.get_cell(map, 1, 3, 3)\n"
-							  "done = isometric.set_cell(map, 1, 3, 3, -1, 3)\n"
-							  "after_t, after_o = isometric.get_cell(map, 1, 3, 3)\n"
-							  "ground_t, ground_o = isometric.get_cell(map, 0, 3, 3)\n"
-							  "outside = isometric.set_cell(map, 1, 8, 3, -1, 3)\n"
-							  "bad_layer = isometric.set_cell(map, 5, 3, 3, -1, 3)\n"
-							  "far_t, far_o = isometric.get_cell(map, 1, 99, 99)");
+	const auto instance = run("before_t, before_o = tilemap.get_cell(map, 1, 3, 3)\n"
+							  "done = tilemap.set_cell(map, 1, 3, 3, -1, 3)\n"
+							  "after_t, after_o = tilemap.get_cell(map, 1, 3, 3)\n"
+							  "ground_t, ground_o = tilemap.get_cell(map, 0, 3, 3)\n"
+							  "outside = tilemap.set_cell(map, 1, 8, 3, -1, 3)\n"
+							  "bad_layer = tilemap.set_cell(map, 5, 3, 3, -1, 3)\n"
+							  "far_t, far_o = tilemap.get_cell(map, 1, 99, 99)");
 	EXPECT_EQ(instance->getPropertyInt("before_t").value_or(0), -1);
 	EXPECT_EQ(instance->getPropertyInt("before_o").value_or(0), -1);
 	EXPECT_TRUE(instance->getPropertyBool("done").value_or(false));
@@ -110,8 +110,8 @@ TEST_F(LuaIsometric, cellsAreReadAndWrittenPerLayer) {
 }
 
 TEST_F(LuaIsometric, setCellIsFalseWhenTheCellAlreadyHoldsTheTiles) {
-	const auto instance = run("first = isometric.set_cell(map, 0, 2, 2, 4, -1)\n"
-							  "again = isometric.set_cell(map, 0, 2, 2, 4, -1)");
+	const auto instance = run("first = tilemap.set_cell(map, 0, 2, 2, 4, -1)\n"
+							  "again = tilemap.set_cell(map, 0, 2, 2, 4, -1)");
 	EXPECT_TRUE(instance->getPropertyBool("first").value_or(false));
 	EXPECT_FALSE(instance->getPropertyBool("again").value_or(true));
 }
@@ -119,7 +119,7 @@ TEST_F(LuaIsometric, setCellIsFalseWhenTheCellAlreadyHoldsTheTiles) {
 TEST_F(LuaIsometric, sizeGivesTheGridAndTheCellOfTheTilemap) {
 	m_asset->resize(12, 5);
 	m_asset->cellSize = 2.f;
-	const auto instance = run("w, h, cell = isometric.get_size(map)\nnone = isometric.get_size(0) == nil");
+	const auto instance = run("w, h, cell = tilemap.get_size(map)\nnone = tilemap.get_size(0) == nil");
 	EXPECT_EQ(instance->getPropertyInt("w").value_or(0), 12);
 	EXPECT_EQ(instance->getPropertyInt("h").value_or(0), 5);
 	EXPECT_NEAR(instance->getPropertyFloat("cell").value_or(0.f), 2.f, 1e-6f);
@@ -128,7 +128,7 @@ TEST_F(LuaIsometric, sizeGivesTheGridAndTheCellOfTheTilemap) {
 
 TEST_F(LuaIsometric, setCellStampsTheChunkGeneration) {
 	const auto before = m_asset->layers[1].getChunkGeneration({0, 0});
-	std::ignore = run("isometric.set_cell(map, 1, 3, 3, -1, 3)");
+	std::ignore = run("tilemap.set_cell(map, 1, 3, 3, -1, 3)");
 	EXPECT_NE(m_asset->layers[1].getChunkGeneration({0, 0}), before);
 }
 
@@ -138,9 +138,8 @@ TEST_F(LuaIsometric, aRuntimeEditLeavesTheAssetOfTheEditSceneUntouched) {
 	running->onStartRuntime();
 	const auto copy = running->findEntityByUUID(m_map.getUUID());
 	ASSERT_TRUE(copy);
-	const std::string text =
-			std::format("map = {}\nfunction on_create()\nisometric.set_cell(map, 1, 3, 3, -1, 3)\nend\n",
-						static_cast<int64_t>(getEntityHandle(*running, copy)));
+	const std::string text = std::format("map = {}\nfunction on_create()\ntilemap.set_cell(map, 1, 3, 3, -1, 3)\nend\n",
+										 static_cast<int64_t>(getEntityHandle(*running, copy)));
 	const std::vector<uint8_t> data(text.begin(), text.end());
 	const ScriptInstance instance;
 	instance.setScene(running.get());
@@ -168,7 +167,7 @@ TEST_F(LuaIsometric, slopeAndHeightFollowTheCorners) {
 
 TEST_F(LuaIsometric, entitiesWithoutATilemapAreIgnored) {
 	const auto instance = run("map = 0\ncx = isometric.pick_cell(map, 640, 360)\n"
-							  "done = isometric.set_cell(map, 0, 1, 1, 0, 0)\n"
+							  "done = tilemap.set_cell(map, 0, 1, 1, 0, 0)\n"
 							  "slope = isometric.get_slope(map, 1, 1)\nz = isometric.get_height(map, 1, 1)");
 	EXPECT_FALSE(instance->getPropertyBool("done").value_or(true));
 	EXPECT_EQ(instance->getPropertyInt("slope").value_or(-1), 0);
@@ -181,13 +180,13 @@ TEST_F(LuaIsometric, spriteFrameIsPickedFromTheSheet) {
 	sprite.columns = 8;
 	sprite.rows = 2;
 	const auto id = static_cast<int64_t>(getEntityHandle(*m_scene, vehicle));
-	const auto instance = run(std::format("start = isometric.get_sprite_frame({0})\n"
-										  "done = isometric.set_sprite_frame({0}, 5)\n"
-										  "shown = isometric.get_sprite_frame({0})\n"
-										  "far = isometric.set_sprite_frame({0}, 99)\n"
-										  "last = isometric.get_sprite_frame({0})\n"
-										  "negative = isometric.set_sprite_frame({0}, -3)\n"
-										  "first = isometric.get_sprite_frame({0})",
+	const auto instance = run(std::format("start = entity.get_sprite_frame({0})\n"
+										  "done = entity.set_sprite_frame({0}, 5)\n"
+										  "shown = entity.get_sprite_frame({0})\n"
+										  "far = entity.set_sprite_frame({0}, 99)\n"
+										  "last = entity.get_sprite_frame({0})\n"
+										  "negative = entity.set_sprite_frame({0}, -3)\n"
+										  "first = entity.get_sprite_frame({0})",
 										  id));
 	EXPECT_EQ(instance->getPropertyInt("start").value_or(-1), 0);
 	EXPECT_TRUE(instance->getPropertyBool("done").value_or(false));
@@ -201,9 +200,27 @@ TEST_F(LuaIsometric, spriteFrameIsPickedFromTheSheet) {
 }
 
 TEST_F(LuaIsometric, spriteFrameIgnoresEntitiesWithoutASheet) {
-	const auto instance = run("done = isometric.set_sprite_frame(map, 3)\nframe = isometric.get_sprite_frame(map)");
+	const auto instance = run("done = entity.set_sprite_frame(map, 3)\nframe = entity.get_sprite_frame(map)");
 	EXPECT_FALSE(instance->getPropertyBool("done").value_or(true));
 	EXPECT_EQ(instance->getPropertyInt("frame").value_or(-1), -1);
+}
+
+TEST_F(LuaIsometric, theFormerNamesOfTheTileAndFrameBindingsStillAnswer) {
+	auto vehicle = m_scene->createEntity("Vehicle");
+	auto& sprite = vehicle.addComponent<scene::component::AnimatedSpriteRenderer>();
+	sprite.columns = 4;
+	sprite.rows = 1;
+	const auto instance = run(std::format("w, h = isometric.get_size(map)\n"
+										  "done = isometric.set_cell(map, 0, 1, 1, 6, -1)\n"
+										  "tile = isometric.get_cell(map, 0, 1, 1)\n"
+										  "pinned = isometric.set_sprite_frame({0}, 2)\n"
+										  "frame = isometric.get_sprite_frame({0})",
+										  static_cast<int64_t>(getEntityHandle(*m_scene, vehicle))));
+	EXPECT_EQ(instance->getPropertyInt("w").value_or(0), 8);
+	EXPECT_TRUE(instance->getPropertyBool("done").value_or(false));
+	EXPECT_EQ(instance->getPropertyInt("tile").value_or(0), 6);
+	EXPECT_TRUE(instance->getPropertyBool("pinned").value_or(false));
+	EXPECT_EQ(instance->getPropertyInt("frame").value_or(-1), 2);
 }
 
 TEST_F(LuaIsometric, mouseOverUiFollowsTheHudState) {

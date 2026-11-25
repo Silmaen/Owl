@@ -1,6 +1,6 @@
 # Sokoban: Z takes back a push (the crate, the player and both counters go back), R takes back every step; the crate
 # is where it started, since two pushes still bring it onto its goal.
-scene: ../../../samples/sokoban/scenes/level_01.owl
+scene: ../../../samples/sokoban/scenes/level.owl
 steps:
   - frames: 30
   - input: {key: Right, frames: 2}

@@ -17,8 +17,9 @@ A `.owlpcg` graph, edited on the `NodeCanvas` of Owl Nest, fills a region of a t
 | Diagnostics | Errors `Cycle` and `EmptyRegion`; warnings for unlinked inputs and unknown node types                                    |
 | Heights     | `output.height` (**Write Heights**) fills `pcg::Result::height`, the height map of a `Planet` ([Planets](../planets.md)) |
 | Tilemap     | `TilemapAsset::generator` (graph, seed, layer, origin, size, a zero side reaches the grid end), YAML `generator`         |
+| Lua         | `tilemap.generate(map, graph, seed, ...)` runs `loadGraphAsset` and `generateTilemap` on the `Tilemap` of an entity, colliders rebuilt |
 | Editor      | `PcgGraphDocument`: Nodes panel, Graph panel with the preview of the selected node, undo; tilemap **Procedural** section |
-| Engine Demo | `engine_demo/pcg/caves.owlpcg` and `engine_demo/tilemaps/pcg_caves.owltilemap` (a cave automaton)                        |
+| Engine Demo | `engine_demo/pcg/caves.owlpcg` and `engine_demo/tilemaps/pcg_caves.owltilemap` (a cave automaton), `scenes/pcg_caves.owl` generates it from Lua |
 
 The graph is non-destructive and the output is regular tile content, so a generated tilemap can be edited by hand
 afterwards. The preview is drawn on the canvas of the tilemap document.

@@ -10,6 +10,7 @@
 
 #include "core/Core.h"
 #include "core/Serializer.h"
+#include "data/voxel/Block.h"
 #include "data/voxel/TerrainGenerator.h"
 #include "data/voxel/VoxelWorld.h"
 #include "math/vectors.h"
@@ -32,7 +33,8 @@ namespace owl::scene::component {
  * the renderer maps it to the tile's UV sub-rect. The entity must carry a
  * `RendererTag` routing it to a `RendererVoxel` layer for the world to appear. The
  * data is serialized inline in the scene (registry as a nested YAML string, chunks
- * run-length encoded).
+ * run-length encoded): every chunk of an authored world, the edited chunks alone of
+ * a procedural one, whose other chunks stream from the seed.
  */
 struct OWL_API VoxelWorld {
 	/// Block palette resolving ids to render kind, collision and per-face atlas tile index.
@@ -63,6 +65,44 @@ struct OWL_API VoxelWorld {
 	bool ambientOcclusion = true;
 	/// Runtime set of chunk keys currently being generated asynchronously (not serialized; cleared on regenerate).
 	std::unordered_set<uint64_t> pendingChunks;
+	/// Chunks of a procedural world edited block by block (`chunkKey`): saved with the scene and never streamed out.
+	std::unordered_set<uint64_t> editedChunks;
+
+	/**
+	 * @brief
+	 *  Key of a chunk coordinate in `pendingChunks` and `editedChunks`.
+	 * @param[in] iCoord The chunk coordinate.
+	 * @return The key.
+	 */
+	[[nodiscard]] static auto chunkKey(const math::vec3i& iCoord) -> uint64_t;
+
+	/**
+	 * @brief
+	 *  Chunk coordinate of a key of `chunkKey`.
+	 * @param[in] iKey The key.
+	 * @return The chunk coordinate.
+	 */
+	[[nodiscard]] static auto chunkCoordinate(uint64_t iKey) -> math::vec3i;
+
+	/**
+	 * @brief
+	 *  Edit one block (a player, a script, a brush): write it and re-mesh the chunks reading it.
+	 *
+	 * In a procedural world the chunk becomes an edited one, kept by `serialize`; a block of a chunk that is not
+	 * streamed in is refused, since the terrain generated there later would replace it.
+	 * @param[in] iBlock World block position.
+	 * @param[in] iId The block id to store.
+	 * @param[in] iMeta The packed metadata to store.
+	 * @return True when the block was written.
+	 */
+	auto editBlock(const math::vec3i& iBlock, data::voxel::BlockId iId,
+				   data::voxel::PackedMeta iMeta = data::voxel::g_DefaultMeta) -> bool;
+
+	/**
+	 * @brief
+	 *  Drop every chunk of a procedural world, its edits included, so the terrain streams in again from its parameters.
+	 */
+	void regenerate();
 
 	/**
 	 * @brief

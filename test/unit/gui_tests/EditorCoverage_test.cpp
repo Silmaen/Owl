@@ -123,7 +123,8 @@ const std::map<std::string, std::set<std::string>> g_notDrawn{
 		{"Animator", {"pose", "boneMatrices", "skinMatrices", "source"}},// runtime: the pose computed by the system
 		{"VoxelPlayer",
 		 {"velocityY", "yaw", "pitch", "grounded", "initialized", "flyMode", "superSpeed", "lastMouse", "mouseValid",
-		  "doubleTapTimer", "hasTarget", "targetBlock"}},// runtime: the controller state of the player
+		  "doubleTapTimer", "hasTarget", "targetBlock", "targetNormal"}},// runtime: the controller state of the player
+		{"VoxelWorld", {"pendingChunks"}},// runtime: the chunks being generated
 };
 
 // Headers without an inspector section: `NativeScript` is C++ only, never authored in a scene; `UiStyle` holds the box

@@ -153,10 +153,17 @@ public:
 
 	/**
 	 * @brief
-	 *  Get the zoom level read from the config.
+	 *  Get the zoom level, the one of the config until `setZoomLevel` changes it.
 	 * @return The zoom level.
 	 */
 	[[nodiscard]] auto getZoomLevel() const -> int32_t { return m_zoomLevel; }
+
+	/**
+	 * @brief
+	 *  Set the zoom level used with a non-isometric camera, until the config is applied again (a scene change).
+	 * @param[in] iLevel The zoom level, clamped to the range of `IsometricCamera` (each level doubles the scale).
+	 */
+	void setZoomLevel(int32_t iLevel);
 
 	/**
 	 * @brief

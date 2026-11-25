@@ -440,7 +440,7 @@ VisualScript:
       values:
         variable: wall
     - id: 2088500041
-      type: call.isometric.set_cell
+      type: call.tilemap.set_cell
       position: [3060, 3060]
       values:
         split.cell: "true"
@@ -1315,7 +1315,7 @@ VisualScript:
       values:
         variable: setup_fog_rows_key
     - id: 2088500239
-      type: call.isometric.get_cell
+      type: call.tilemap.get_cell
       position: [1870, 10000]
       values:
         split.cell: "true"
@@ -1409,7 +1409,7 @@ VisualScript:
       values:
         Value: "0"
     - id: 2088500261
-      type: call.isometric.get_cell
+      type: call.tilemap.get_cell
       position: [3230, 10120]
       values:
         split.cell: "true"
@@ -1433,7 +1433,7 @@ VisualScript:
       type: flow.branch
       position: [3740, 9840]
     - id: 2088500267
-      type: call.isometric.set_cell
+      type: call.tilemap.set_cell
       position: [4080, 9840]
       values:
         split.cell: "true"

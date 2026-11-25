@@ -319,6 +319,9 @@ void scanDataFile(const std::string& iPath, const char* iKind, const std::string
 
 auto isSoundFile(const std::string& iName) -> bool;
 
+void scanTilemap(const std::string& iTilemapPath, const std::string& iSceneName, std::vector<AssetReference>& ioAssets,
+				 std::vector<std::string>* ioWarnings);
+
 // A data table carries the tables its Reference columns point into and the assets of its Asset cells, scenes scanned.
 void followDataTable(const std::string& iName, const std::string& iSource,// NOLINT(misc-no-recursion)
 					 std::set<std::string>& ioVisitedScenes, std::vector<AssetReference>& ioAssets,
@@ -355,6 +358,8 @@ void followDataTable(const std::string& iName, const std::string& iSource,// NOL
 				followPrefab(asset, source, ioVisitedScenes, ioAssets, ioWarnings);
 			else if (isSoundFile(asset))
 				followSound(asset, source, ioAssets, ioWarnings);
+			else if (std::filesystem::path(asset).extension() == ".owltilemap")
+				scanTilemap(asset, source, ioAssets, ioWarnings);
 			else
 				scanDataFile(asset, "Asset", source, ioAssets, ioWarnings);
 		}
@@ -455,6 +460,13 @@ void scanLuaScript(const std::filesystem::path& iScriptPath,// NOLINT(misc-no-re
 	static const std::regex prefabPattern(R"(["']([^"'\s]+\.owlprefab)["'])");
 	for (auto it = std::sregex_iterator(scriptContent.begin(), scriptContent.end(), prefabPattern); it != end; ++it)
 		followPrefab((*it)[1].str(), source, ioVisitedScenes, ioAssets, ioWarnings);
+	// The tilemaps `tilemap.set_asset` shows and the graphs `tilemap.generate` runs.
+	static const std::regex tilemapPattern(R"(["']([^"'\s]+\.owltilemap)["'])");
+	for (auto it = std::sregex_iterator(scriptContent.begin(), scriptContent.end(), tilemapPattern); it != end; ++it)
+		scanTilemap((*it)[1].str(), source, ioAssets, ioWarnings);
+	static const std::regex graphPattern(R"(["']([^"'\s]+\.owlpcg)["'])");
+	for (auto it = std::sregex_iterator(scriptContent.begin(), scriptContent.end(), graphPattern); it != end; ++it)
+		scanDataFile((*it)[1].str(), "PCG graph", source, ioAssets, ioWarnings);
 	// The modules it requires (`require("scripts.game.towers")` reads `scripts/game/towers.lua`), scanned in turn.
 	static const std::regex requirePattern(R"(\brequire\s*\(?\s*["']([A-Za-z0-9_.]+)["'])");
 	for (auto it = std::sregex_iterator(scriptContent.begin(), scriptContent.end(), requirePattern); it != end; ++it) {
@@ -505,6 +517,10 @@ void scanScriptProperties(const YAML::Node& iProperties,// NOLINT(misc-no-recurs
 				followDialogue(text, source, ioAssets, ioWarnings);
 			else if (std::filesystem::path(text).extension() == ".owlprefab")
 				followPrefab(text, source, ioVisitedScenes, ioAssets, ioWarnings);
+			else if (std::filesystem::path(text).extension() == ".owltilemap")
+				scanTilemap(text, source, ioAssets, ioWarnings);
+			else if (std::filesystem::path(text).extension() == ".owlpcg")
+				scanDataFile(text, "PCG graph", source, ioAssets, ioWarnings);
 		}
 	}
 }

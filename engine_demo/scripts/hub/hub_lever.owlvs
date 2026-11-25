@@ -91,7 +91,7 @@ VisualScript:
       type: flow.branch
       position: [976, 452]
     - id: 8040000000000000016
-      type: call.isometric.set_sprite_frame
+      type: call.entity.set_sprite_frame
       position: [1242, 452]
     - id: 8040000000000000017
       type: var.get

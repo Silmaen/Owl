@@ -14,7 +14,9 @@
 
 #include <magic_enum/magic_enum.hpp>
 
+#include <algorithm>
 #include <cstdint>
+#include <string>
 
 namespace owl::scene::component {
 
@@ -33,7 +35,26 @@ void RaycastDoor::serialize(const core::Serializer& iOut) const {
 	iOut.getImpl()->emitter << YAML::Key << "closeSpeed" << YAML::Value << closeSpeed;
 	iOut.getImpl()->emitter << YAML::Key << "interactionAction" << YAML::Value << interactionAction;
 	iOut.getImpl()->emitter << YAML::Key << "interactionRange" << YAML::Value << interactionRange;
+	if (state != State::Idle) {
+		iOut.getImpl()->emitter << YAML::Key << "state" << YAML::Value << std::string(magic_enum::enum_name(state));
+		iOut.getImpl()->emitter << YAML::Key << "currentOffset" << YAML::Value << currentOffset;
+		iOut.getImpl()->emitter << YAML::Key << "holdTimer" << YAML::Value << holdTimer;
+	}
 	iOut.getImpl()->emitter << YAML::EndMap;
+}
+
+auto RaycastDoor::getSlideAxis() const -> math::vec2 {
+	switch (openingDirection) {
+		case OpeningDirection::North:
+			return {0.f, 1.f};
+		case OpeningDirection::South:
+			return {0.f, -1.f};
+		case OpeningDirection::East:
+			return {1.f, 0.f};
+		case OpeningDirection::West:
+			return {-1.f, 0.f};
+	}
+	return {0.f, 0.f};
 }
 
 void RaycastDoor::deserialize(const core::Serializer& iNode) {
@@ -62,8 +83,12 @@ void RaycastDoor::deserialize(const core::Serializer& iNode) {
 	if (node["interactionRange"])
 		interactionRange = node["interactionRange"].as<float>();
 	state = State::Idle;
-	currentOffset = 0.0f;
-	holdTimer = 0.0f;
+	if (node["state"])
+		state = magic_enum::enum_cast<State>(node["state"].as<std::string>()).value_or(State::Idle);
+	currentOffset = state != State::Idle && node["currentOffset"]
+							? std::clamp(node["currentOffset"].as<float>(), 0.f, 1.f)
+							: 0.0f;
+	holdTimer = state == State::Open && node["holdTimer"] ? node["holdTimer"].as<float>() : 0.0f;
 	tileset.reset();
 }
 

@@ -12,8 +12,10 @@
 #include <core/SerializerImpl.h>
 #include <core/Timestep.h>
 #include <input/Input.h>
+#include <math/vectors.h>
 #include <physics/PhysicCommand.h>
 #include <scene/Entity.h>
+#include <scene/SaveManager.h>
 #include <scene/Scene.h>
 #include <scene/SceneSerializer.h>
 #include <scene/UiInputSystem.h>
@@ -25,7 +27,9 @@
 #include <scene/systems/EngineSystems.h>
 #include <window/Window.h>
 
+#include <chrono>
 #include <cstdint>
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -324,4 +328,100 @@ TEST_F(RaycastDynamicWallsTest, ShownWindowHoldsTheInteractionBack) {
 			  scene::component::RaycastPushWall::State::Idle);
 	scn.onEndRuntime();
 	input::Input::invalidate();
+}
+
+namespace {
+
+template<typename Component>
+auto yamlRoundTrip(const Component& iSource) -> Component {
+	const core::Serializer out;
+	out.getImpl()->emitter << YAML::BeginMap;
+	iSource.serialize(out);
+	out.getImpl()->emitter << YAML::EndMap;
+	const core::YamlDocument document{std::string{out.getImpl()->emitter.c_str()}};
+	Component restored;
+	const core::Serializer in;
+	in.getImpl()->node = document.getRoot()[Component::key()];
+	restored.deserialize(in);
+	return restored;
+}
+
+}// namespace
+
+TEST_F(RaycastDynamicWallsTest, ASlidPushWallKeepsItsStateThroughYaml) {
+	scene::component::RaycastPushWall source{};
+	source.slideDistance = 3.f;
+	source.state = scene::component::RaycastPushWall::State::Final;
+	source.currentOffset = 3.f;
+	const auto restored = yamlRoundTrip(source);
+	EXPECT_EQ(restored.state, scene::component::RaycastPushWall::State::Final);
+	EXPECT_FLOAT_EQ(restored.currentOffset, 3.f);
+
+	source.state = scene::component::RaycastPushWall::State::Moving;
+	source.currentOffset = 1.25f;
+	const auto moving = yamlRoundTrip(source);
+	EXPECT_EQ(moving.state, scene::component::RaycastPushWall::State::Moving);
+	EXPECT_FLOAT_EQ(moving.currentOffset, 1.25f);
+}
+
+TEST_F(RaycastDynamicWallsTest, AnOpenDoorKeepsItsStateThroughYaml) {
+	scene::component::RaycastDoor source{};
+	source.state = scene::component::RaycastDoor::State::Open;
+	source.currentOffset = 1.f;
+	source.holdTimer = 0.75f;
+	const auto restored = yamlRoundTrip(source);
+	EXPECT_EQ(restored.state, scene::component::RaycastDoor::State::Open);
+	EXPECT_FLOAT_EQ(restored.currentOffset, 1.f);
+	EXPECT_FLOAT_EQ(restored.holdTimer, 0.75f);
+
+	source.state = scene::component::RaycastDoor::State::Closing;
+	source.currentOffset = 0.4f;
+	const auto closing = yamlRoundTrip(source);
+	EXPECT_EQ(closing.state, scene::component::RaycastDoor::State::Closing);
+	EXPECT_FLOAT_EQ(closing.currentOffset, 0.4f);
+	EXPECT_FLOAT_EQ(closing.holdTimer, 0.f);
+}
+
+TEST_F(RaycastDynamicWallsTest, ADoorSlidesAlongItsOpeningDirection) {
+	using Direction = scene::component::RaycastDoor::OpeningDirection;
+	scene::component::RaycastDoor door{};
+	door.openingDirection = Direction::North;
+	EXPECT_EQ(door.getSlideAxis(), (math::vec2{0.f, 1.f}));
+	door.openingDirection = Direction::South;
+	EXPECT_EQ(door.getSlideAxis(), (math::vec2{0.f, -1.f}));
+	door.openingDirection = Direction::East;
+	EXPECT_EQ(door.getSlideAxis(), (math::vec2{1.f, 0.f}));
+	door.openingDirection = Direction::West;
+	EXPECT_EQ(door.getSlideAxis(), (math::vec2{-1.f, 0.f}));
+}
+
+TEST_F(RaycastDynamicWallsTest, ASaveKeepsASlidPushWallAndAnOpenDoor) {
+	scene::SaveManager::setGameName("OwlRaycastWalls_" +
+									std::to_string(std::chrono::steady_clock::now().time_since_epoch().count()));
+	auto scn = mkShared<scene::Scene>();
+	auto push = makePushScene(*scn, 2.f, 4.f);
+	auto door = makeDoorScene(*scn, 1.f, 4.f, 30.f);
+	push.getComponent<scene::component::RaycastPushWall>().state = scene::component::RaycastPushWall::State::Moving;
+	door.getComponent<scene::component::RaycastDoor>().state = scene::component::RaycastDoor::State::Opening;
+	scene::systems::updateRaycastDynamicWalls(*scn, 1.f);
+	ASSERT_TRUE(scene::SaveManager::save(1, scn, "scenes/walls.owl"));
+
+	auto loaded = mkShared<scene::Scene>();
+	ASSERT_TRUE(scene::SaveManager::load(1, loaded).success);
+	const auto loadedPush = loaded->findEntityByUUID(push.getUUID());
+	const auto loadedDoor = loaded->findEntityByUUID(door.getUUID());
+	ASSERT_TRUE(loadedPush);
+	ASSERT_TRUE(loadedDoor);
+	const auto& wall = loadedPush.getComponent<scene::component::RaycastPushWall>();
+	EXPECT_EQ(wall.state, scene::component::RaycastPushWall::State::Final);
+	EXPECT_FLOAT_EQ(loadedPush.getComponent<scene::component::Transform>().transform.translation().y(), 2.f);
+	EXPECT_EQ(loadedDoor.getComponent<scene::component::RaycastDoor>().state,
+			  scene::component::RaycastDoor::State::Open);
+	// A wall at its final position is not pushed again, and the door goes on with its hold time.
+	loadedPush.getComponent<scene::component::RaycastPushWall>().interactionAction = "interact";
+	scene::systems::updateRaycastDynamicWalls(*loaded, 1.f);
+	EXPECT_FLOAT_EQ(loadedPush.getComponent<scene::component::Transform>().transform.translation().y(), 2.f);
+	EXPECT_EQ(loadedDoor.getComponent<scene::component::RaycastDoor>().state,
+			  scene::component::RaycastDoor::State::Open);
+	std::filesystem::remove_all(scene::SaveManager::getSaveDirectory().parent_path());
 }

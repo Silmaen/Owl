@@ -12,6 +12,7 @@
 #include "scene/pcg/PcgGraph.h"
 
 #include <cstdint>
+#include <filesystem>
 
 namespace owl::scene::pcg {
 
@@ -34,6 +35,14 @@ namespace owl::scene::pcg {
  */
 OWL_API auto applyToTilemap(const Result& iResult, TilemapAsset& ioAsset, const TilemapGenerator& iGenerator)
 		-> uint32_t;
+
+/**
+ * @brief
+ *  Read a graph of the project: from the open pack of a packaged game, else from the asset directories, else as given.
+ * @param[in] iPath The `.owlpcg`, relative to the project assets.
+ * @return The graph, or why it cannot be read.
+ */
+[[nodiscard]] OWL_API auto loadGraphAsset(const std::filesystem::path& iPath) -> expected<Graph, PcgError>;
 
 /**
  * @brief

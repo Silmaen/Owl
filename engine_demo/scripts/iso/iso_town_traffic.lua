@@ -5,7 +5,7 @@
 --               overlay (`path.set_debug`, `path.show_route`: F3 draws the road graph and the route of each vehicle in
 --               its own colour, in the game and in the Play view of Owl Nest), vehicles that
 --               re-route when a road is bulldozed or built, the terrain height under them (isometric.get_height), one
---               sprite per vehicle whose frame follows its heading every 45 degrees (isometric.set_sprite_frame),
+--               sprite per vehicle whose frame follows its heading every 45 degrees (entity.set_sprite_frame),
 --               gamestate.
 --
 -- Each vehicle drives to a destination picked at random among the cells of the road that are not a dead end (a generator
@@ -261,7 +261,7 @@ end
 local function place(vehicle, x, y, angle)
     vehicle.x, vehicle.y, vehicle.angle = x, y, angle
     local frame = frame_of(vehicle, angle)
-    isometric.set_sprite_frame(vehicle.id, frame)
+    entity.set_sprite_frame(vehicle.id, frame)
     -- The sprite is drawn centred on its tile, and its entity sits on the front corner of that tile.
     transform.set_position(vehicle.id, x + 0.5, y + 0.5, isometric.get_height(map_id, x, y))
     local heading = frame % HEADINGS
@@ -578,7 +578,7 @@ local function drive(vehicle, dt)
     if not vehicle.stranded and not path.is_walkable(map_id, math.floor(vehicle.x), math.floor(vehicle.y)) then
         count("town_offroad")
     end
-    if isometric.get_sprite_frame(vehicle.id) ~= frame_of(vehicle, vehicle.angle) then
+    if entity.get_sprite_frame(vehicle.id) ~= frame_of(vehicle, vehicle.angle) then
         count("town_frame_errors")
     end
     local moved_x, moved_y = vehicle.x - before_x, vehicle.y - before_y

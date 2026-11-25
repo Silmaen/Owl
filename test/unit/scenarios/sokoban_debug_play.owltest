@@ -1,6 +1,6 @@
-# Sokoban, level_01 started directly with the visual scripts built as Play in Owl Nest builds them (probes of the
+# Sokoban, the level scene started directly (it plays the first level) with the visual scripts built as Play in Owl Nest builds them (probes of the
 # wire values): no script error while it plays.
-scene: ../../../samples/sokoban/scenes/level_01.owl
+scene: ../../../samples/sokoban/scenes/level.owl
 debug_scripts: true
 steps:
   - frames: 120

@@ -61,6 +61,8 @@ auto PhysicCommand::takeCollisionEvents([[maybe_unused]] scene::Scene& ioScene) 
 
 void PhysicCommand::destroyBody([[maybe_unused]] const scene::Entity& iEntity) {}
 
+void PhysicCommand::rebuildTilemapBody([[maybe_unused]] const scene::Entity& iEntity) {}
+
 void PhysicCommand::impulse([[maybe_unused]] const scene::Entity& iEntity,
 							[[maybe_unused]] const math::vec2f& iImpulse) {}
 

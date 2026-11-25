@@ -17,12 +17,16 @@
 #include "scene/Entity.h"
 #include "scene/Scene.h"
 #include "scene/component/components.h"
+#include "script/CallValue.h"
+#include "script/ScriptInstance.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <tuple>
 
 namespace owl::scene::systems {
 
@@ -133,8 +137,28 @@ void applyPlayerMovement(component::VoxelPlayer& ioPlayer, math::Transform& ioTr
 }
 
 
-void updatePlayerInteraction(Scene& ioScene, component::VoxelPlayer& ioPlayer, const math::vec3& iEye,
-							 const bool iCursorCaptured) {
+// A mouse click with a free cursor, on a player asking for the capture, is the click that captures: not an edit.
+auto isCapturingClick(const Scene& iScene, const component::VoxelPlayer& iPlayer, const bool iWasCaptured) -> bool {
+	if (!iPlayer.captureCursor || iWasCaptured)
+		return false;
+	const auto& input = iScene.getInputFrame();
+	return (input.current.mouseButtons & ~input.previous.mouseButtons).any();
+}
+
+void notifyBlockEdit(const Scene& iScene, const Entity& iEntity, const std::string& iFunction,
+					 const math::vec3i& iBlock, const data::voxel::BlockId iId) {
+	if (!iEntity.hasComponent<component::LuaScript>() || iScene.isPendingDestructionInTree(iEntity))
+		return;
+	const auto& script = iEntity.getComponent<component::LuaScript>();
+	if (!script.instance || !script.instance->isValid() || !script.instance->hasFunction(iFunction))
+		return;
+	const std::array<script::CallValue, 4> arguments{int64_t{iBlock.x()}, int64_t{iBlock.y()}, int64_t{iBlock.z()},
+													 int64_t{iId}};
+	std::ignore = script.instance->callFunction(iFunction, arguments);
+}
+
+void updatePlayerInteraction(Scene& ioScene, const Entity& iPlayerEntity, component::VoxelPlayer& ioPlayer,
+							 const math::vec3& iEye, const bool iEditsAllowed) {
 	const float cp = math::cos(ioPlayer.pitch);
 	const math::vec3 forward{-cp * math::sin(ioPlayer.yaw), math::sin(ioPlayer.pitch), -cp * math::cos(ioPlayer.yaw)};
 	const auto worlds = ioScene.registry.view<component::VoxelWorld>();
@@ -149,30 +173,36 @@ void updatePlayerInteraction(Scene& ioScene, component::VoxelPlayer& ioPlayer, c
 	ioPlayer.hasTarget = hit.has_value();
 	if (hit) {
 		ioPlayer.targetBlock = hit->block;
+		ioPlayer.targetNormal = hit->normal;
 		ioScene.setEditorVoxelHighlight(true, hit->block, hit->normal);
 	}
 
 	const auto& actions = ioScene.getActions();
-	const bool breakEdge = iCursorCaptured && actions.isJustPressed("primary");
-	const bool placeEdge = iCursorCaptured && actions.isJustPressed("secondary");
+	const bool breakEdge = iEditsAllowed && actions.isJustPressed("primary");
+	const bool placeEdge = iEditsAllowed && actions.isJustPressed("secondary");
 	if (!hit || !(breakEdge || placeEdge))
 		return;
 
 	for (const auto entity: worlds) {
 		auto& vw = worlds.get<component::VoxelWorld>(entity);
-		if (vw.registry.isAir(vw.world.getBlock(hit->block)))
+		const auto aimed = vw.world.getBlock(hit->block);
+		if (vw.registry.isAir(aimed))
 			continue;
-		if (breakEdge) {
-			vw.world.setBlock(hit->block, data::voxel::g_AirBlock);
-			vw.world.markNeighborChunksDirty(hit->block);
-		} else {
-			const math::vec3i target{hit->block.x() + hit->normal.x(), hit->block.y() + hit->normal.y(),
-									 hit->block.z() + hit->normal.z()};
-			if (vw.registry.isAir(vw.world.getBlock(target)) && !cellOverlapsBox(target, iEye, ioPlayer.halfExtents)) {
-				vw.world.setBlock(target, ioPlayer.placeBlock);
-				vw.world.markNeighborChunksDirty(target);
-			}
-		}
+		const math::vec3i target{hit->block.x() + hit->normal.x(), hit->block.y() + hit->normal.y(),
+								 hit->block.z() + hit->normal.z()};
+		const bool placeable =
+				vw.registry.isAir(vw.world.getBlock(target)) && !cellOverlapsBox(target, iEye, ioPlayer.halfExtents);
+		const Entity worldEntity{entity, &ioScene};
+		const auto notify = [&](const std::string& iFunction, const math::vec3i& iBlock,
+								const data::voxel::BlockId iId) -> void {
+			notifyBlockEdit(ioScene, iPlayerEntity, iFunction, iBlock, iId);
+			if (worldEntity != iPlayerEntity)
+				notifyBlockEdit(ioScene, worldEntity, iFunction, iBlock, iId);
+		};
+		if (breakEdge && vw.editBlock(hit->block, data::voxel::g_AirBlock))
+			notify("on_block_broken", hit->block, aimed);
+		else if (placeEdge && placeable && vw.editBlock(target, ioPlayer.placeBlock))
+			notify("on_block_placed", target, ioPlayer.placeBlock);
 		break;
 	}
 }
@@ -222,10 +252,11 @@ void updateVoxelPlayers(Scene& ioScene, const SystemContext& iContext) {
 			player.pitch = tr.rotation().x();
 			player.initialized = true;
 		}
+		const bool editsAllowed = !isCapturingClick(ioScene, player, player.mouseValid);
 		applyPlayerLook(player, tr, ioScene.getActions(), dt, capturedCursor);
 		if (const auto toast = updatePlayerModes(player, ioScene.getActions(), dt); !toast.empty())
 			ioScene.showToast(toast);
-		updatePlayerInteraction(ioScene, player, tr.translation(), capturedCursor.has_value());
+		updatePlayerInteraction(ioScene, Entity{entity, &ioScene}, player, tr.translation(), editsAllowed);
 
 		// Hold still until the player's chunk has streamed in, so it never falls through an ungenerated world.
 		if (!hasChunk(tr.translation())) {

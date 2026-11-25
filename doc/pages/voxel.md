@@ -190,7 +190,8 @@ A voxel world reaches the screen through two pieces:
 
 - **`scene::component::VoxelWorld`** — the authored object placed on an entity: it holds the `BlockRegistry`, the
   `VoxelWorld` chunks, the per-block texture paths, and the directional-light settings, all serialized inline in the
-  `.owl` scene (block list + run-length-encoded chunks). It is fully inspectable/editable in Owl Nest.
+  `.owl` scene (block list + run-length-encoded chunks: all of them for an authored world, the edited ones for a
+  procedural world). It is fully inspectable/editable in Owl Nest.
 - **`RendererVoxel`** — a render-stack layer (factory key `"RendererVoxel"`) built on [Renderer3D](renderer.md). It
   greedy-meshes each chunk into an opaque and a transparent mesh on the task workers (see *Asynchronous Meshing*
   below), caches both per entity (rebuilt when the chunk revision changes), resolves the per-block textures (the tileset
@@ -229,11 +230,18 @@ Two camera components drive a voxel world in Play (both saved and editable in th
   or a lost viewport focus give it back.
 - **Fly mode**: double-tap Space; WASD keeps the altitude, Space rises, Left-Shift descends, still with collision; **J**
   toggles super speed. A toast of about three seconds confirms each toggle.
-- **World edits** (cursor captured only, so the capturing click is never an edit): a crosshair marks the aim, a ray
-  (`data::voxel::raycastVoxel`, Amanatides & Woo) goes up to `reach` blocks and outlines the camera-facing edges of the
-  target. **Left-click breaks** it, **right-click places** `placeBlock` against the hit face unless it would
-  intersect the player. Edits call `VoxelWorld::markNeighborChunksDirty` (kept off `VoxelWorld::setBlock` so bulk
-  streaming does not pay for it) to re-mesh the touched neighbours.
+- **World edits**: a crosshair marks the aim, a ray (`data::voxel::raycastVoxel`, Amanatides & Woo) goes up to `reach`
+  blocks and outlines the camera-facing edges of the target. The `primary` action (**left click**, right trigger)
+  **breaks** it, `secondary` (**right click**, left trigger) **places** `placeBlock` against the hit face unless it
+  would intersect the player. They fire with or without a captured cursor, so a gamepad player and a headless
+  scenario edit too; only the mouse click that captures the cursor of a **Capture Cursor** player is not an edit.
+  Each edit calls `on_block_broken(x, y, z, block)` or `on_block_placed(x, y, z, block)` in the script of the player
+  entity and in the one of the world entity. Edits go through `component::VoxelWorld::editBlock`, which calls
+  `VoxelWorld::markNeighborChunksDirty` (kept off `VoxelWorld::setBlock` so bulk streaming does not pay for it) to
+  re-mesh the touched neighbours.
+- **Lua**: the `voxel` table reads and writes blocks, gives the aim of a player and chooses the block it places
+  ([Lua API: Voxel worlds](lua-api-voxel.md)); the Engine Demo builds with it
+  (`engine_demo/scripts/voxel/voxel_builder.lua`, played by `test/unit/scenarios/voxel_build.owltest`).
 
 ### Asynchronous Meshing
 
@@ -301,6 +309,11 @@ varies the surface with an optional low-frequency **biome** field (desert, plain
 (seed, frequency, octaves, amplitude, sea level, cave threshold, biomes, block ids, …) is editable in the inspector,
 with a **Regenerate** button.
 
+A chunk edited block by block (the player, `voxel.set_block`, the editor brush) becomes an **edited chunk**
+(`VoxelWorld::editedChunks`): it is written with the scene, so a save or the `.owl` file keeps the edits, it is read
+back instead of being generated, and it stays loaded when the camera leaves. An edit is refused where no chunk is
+streamed in, and **Regenerate** drops the edits with the rest. The inspector shows the number of edited chunks.
+
 ```mermaid
 flowchart LR
     Cam["camera position"] --> St["Scene::updateVoxelStreaming<br/>radius / height around it"]
@@ -340,5 +353,4 @@ to zoom); a corner XYZ gizmo shows the current orientation.
 
 ## What's Next
 
-Chunks are culled on the CPU. A Lua block API (gap G2 of the [Sample games](design/sample-games.md)) and GPU-driven
-culling are on the [roadmap](roadmap.md).
+Chunks are culled on the CPU; GPU-driven culling is on the [roadmap](roadmap.md).

@@ -314,3 +314,9 @@ TEST_F(PcgGraphTest, TheEngineDemoCavesGenerate) {
 	EXPECT_GT(walls, 0u);
 	EXPECT_LT(walls, caves.width * caves.height);
 }
+
+TEST_F(PcgGraphTest, GraphAssetsLoadFromAPathOrFail) {
+	const auto path = test::getRootPath() / "engine_demo" / "pcg" / "caves.owlpcg";
+	EXPECT_TRUE(loadGraphAsset(path).has_value());
+	EXPECT_FALSE(loadGraphAsset(path.parent_path() / "nowhere.owlpcg").has_value());
+}

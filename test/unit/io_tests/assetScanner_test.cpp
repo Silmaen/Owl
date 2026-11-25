@@ -1112,6 +1112,75 @@ TEST_F(AssetScannerTest, ScanDataTableFollowsThePrefabsOfItsAssetCells) {
 	EXPECT_TRUE(warnings.empty());
 }
 
+TEST_F(AssetScannerTest, ScanSceneFollowsTheTilemapsOfADataTable) {
+	// The levels a script shows with `tilemap.set_asset` are rows of a table: each goes in the pack with its tileset.
+	const auto tilesetPath = m_tempDir / "tilesets" / "walls.owltileset";
+	writeFile(tilesetPath, "Tileset: walls\nFormatVersion: 1\ntileWidth: 16\ntileHeight: 16\ncolumns: 1\nrows: 1\n");
+	const auto tilemapPath = m_tempDir / "tilemaps" / "level_02.owltilemap";
+	writeFile(tilemapPath, "Tilemap: level_02\nFormatVersion: 3\ntilesetPath: " + tilesetPath.generic_string() +
+								   "\nwidth: 2\nheight: 2\ncellSize: 1\n");
+	const auto tablePath = m_tempDir / "tables" / "levels.owltable";
+	writeFile(tablePath, "DataTable: ''\nFormatVersion: 1\ncolumns:\n"
+						 "  - {name: tilemap, type: Asset}\n"
+						 "rows:\n"
+						 "  - key: level_02\n"
+						 "    tilemap: " +
+								 tilemapPath.generic_string() + "\n");
+	const auto scenePath = m_tempDir / "scenes" / "level.owl";
+	writeFile(scenePath, "Scene: level\nEntities:\n"
+						 "  - Entity: 1\n"
+						 "    LuaScript:\n"
+						 "      scriptPath: \"\"\n"
+						 "      properties:\n"
+						 "        - {name: levels, type: string, value: " +
+								 tablePath.generic_string() + "}\n");
+	std::vector<std::string> warnings;
+	const auto assets = AssetScanner::scanScene(scenePath, &warnings);
+	const auto has = [&assets](const std::filesystem::path& iPath) -> bool {
+		return std::ranges::any_of(assets, [&](const AssetReference& iRef) -> bool { return iRef.diskPath == iPath; });
+	};
+	EXPECT_TRUE(has(tablePath));
+	EXPECT_TRUE(has(tilemapPath));
+	EXPECT_TRUE(has(tilesetPath));
+}
+
+TEST_F(AssetScannerTest, ScanLuaScriptFollowsTheTilemapsAndGraphsItQuotes) {
+	// `tilemap.set_asset` and `tilemap.generate` name their files in the script: they go in the pack, the tilemap with
+	// its tileset.
+	const auto tilesetPath = m_tempDir / "tilesets" / "walls.owltileset";
+	writeFile(tilesetPath, "Tileset: walls\nFormatVersion: 1\ntileWidth: 16\ntileHeight: 16\ncolumns: 1\nrows: 1\n");
+	const auto tilemapPath = m_tempDir / "tilemaps" / "cave.owltilemap";
+	writeFile(tilemapPath, "Tilemap: cave\nFormatVersion: 3\ntilesetPath: " + tilesetPath.generic_string() +
+								   "\nwidth: 2\nheight: 2\ncellSize: 1\n");
+	const auto graphPath = m_tempDir / "pcg" / "cave.owlpcg";
+	writeFile(graphPath, "FormatVersion: 1\nPcgGraph:\n  nodes: []\n  links: []\n");
+	const auto propertyGraph = m_tempDir / "pcg" / "room.owlpcg";
+	writeFile(propertyGraph, "FormatVersion: 1\nPcgGraph:\n  nodes: []\n  links: []\n");
+	const auto rules = m_tempDir / "scripts" / "rules.lua";
+	writeFile(rules, "function on_create()\n  tilemap.set_asset(map, \"" + tilemapPath.generic_string() +
+							 "\")\n  tilemap.generate(map, '" + graphPath.generic_string() + "', 7)\nend\n");
+	const auto scenePath = m_tempDir / "level.owl";
+	writeFile(scenePath, "Scene: level\nEntities:\n"
+						 "  - Entity: 1\n"
+						 "    LuaScript:\n"
+						 "      scriptPath: " +
+								 rules.generic_string() +
+								 "\n"
+								 "      properties:\n"
+								 "        - {name: room, type: string, value: " +
+								 propertyGraph.generic_string() + "}\n");
+	std::vector<std::string> warnings;
+	const auto assets = AssetScanner::scanScene(scenePath, &warnings);
+	const auto has = [&assets](const std::filesystem::path& iPath) -> bool {
+		return std::ranges::any_of(assets, [&](const AssetReference& iRef) -> bool { return iRef.diskPath == iPath; });
+	};
+	EXPECT_TRUE(has(tilemapPath));
+	EXPECT_TRUE(has(tilesetPath));
+	EXPECT_TRUE(has(graphPath));
+	EXPECT_TRUE(has(propertyGraph));
+	EXPECT_TRUE(warnings.empty());
+}
+
 TEST_F(AssetScannerTest, ScanLuaScriptFollowsTheSpawnedPrefabs) {
 	// A prefab quoted in a script goes in the pack with the script of its entity; a prefab named in a script property
 	// too, and a missing one is reported.

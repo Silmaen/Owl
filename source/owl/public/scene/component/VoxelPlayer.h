@@ -23,9 +23,13 @@ namespace owl::scene::component {
  * runtime frame: WASD moves on the horizontal plane relative to the yaw, the
  * arrow keys look around, Left-Shift runs and Space jumps. The body is an
  * axis-aligned box (`halfExtents`); the entity transform is its centre (the eye).
- * Collision is resolved against every `VoxelWorld` solid block — the player does
- * not edit the world. Tunable speeds / gravity are authored; the motion state
- * (velocity, yaw, pitch, grounded) lives at runtime and is not serialized.
+ * Collision is resolved against every `VoxelWorld` solid block. The `primary`
+ * action breaks the aimed block and `secondary` places `placeBlock` against it,
+ * from the mouse, a gamepad or an injected input; only the click that captures
+ * the cursor is not an edit. Each edit calls `on_block_broken(x, y, z, block)`
+ * or `on_block_placed(x, y, z, block)` in the script of the player entity and
+ * in the one of the edited world. Tunable speeds / gravity are authored; the motion
+ * state (velocity, yaw, pitch, grounded) lives at runtime and is not serialized.
  */
 struct OWL_API VoxelPlayer {
 	/// Walking speed in blocks per second.
@@ -50,7 +54,7 @@ struct OWL_API VoxelPlayer {
 	float reach = 5.f;
 	/// Block id placed on right-click (resolved against the targeted world's registry).
 	data::voxel::BlockId placeBlock = 1;
-	/// When true, clicking the viewport captures (hides / locks) the cursor for mouse-look; off keeps a normal cursor.
+	/// When true, clicking the viewport captures (hides / locks) the cursor for mouse-look, and that click edits nothing; off keeps a normal cursor.
 	bool captureCursor = false;
 
 	/// Vertical velocity (runtime; not serialized).
@@ -77,6 +81,8 @@ struct OWL_API VoxelPlayer {
 	bool hasTarget = false;
 	/// World-grid coordinates of the currently targeted block (runtime; valid when `hasTarget`).
 	math::vec3i targetBlock{0, 0, 0};
+	/// Outward normal of the targeted face (runtime; valid when `hasTarget`): a placed block goes to `targetBlock + targetNormal`.
+	math::vec3i targetNormal{0, 0, 0};
 
 	/**
 	 * @brief

@@ -1,36 +1,36 @@
 DataTable: ''
 FormatVersion: 1
 columns:
-  - {name: scene, type: Asset}
+  - {name: tilemap, type: Asset}
   - {name: name, type: Text}
 rows:
   - key: level_01
-    scene: gid:92d0540fa58f5cf8:scenes/level_01.owl
+    tilemap: tilemaps/level_01.owltilemap
     name: First push
   - key: level_02
-    scene: gid:9fcf1b5fa110b56d:scenes/level_02.owl
+    tilemap: tilemaps/level_02.owltilemap
     name: Two by two
   - key: level_03
-    scene: gid:8185f187e6ebd9dc:scenes/level_03.owl
+    tilemap: tilemaps/level_03.owltilemap
     name: Side door
   - key: level_04
-    scene: gid:dbe5a214af8043c9:scenes/level_04.owl
+    tilemap: tilemaps/level_04.owltilemap
     name: Back room
   - key: level_05
-    scene: gid:d4adf9529559c1a9:scenes/level_05.owl
+    tilemap: tilemaps/level_05.owltilemap
     name: Cellar
   - key: level_06
-    scene: gid:451791c5ff641942:scenes/level_06.owl
+    tilemap: tilemaps/level_06.owltilemap
     name: Four corners
   - key: level_07
-    scene: gid:56ff7fac87268bf9:scenes/level_07.owl
+    tilemap: tilemaps/level_07.owltilemap
     name: Pantry
   - key: level_08
-    scene: gid:5084feeaf931bb04:scenes/level_08.owl
+    tilemap: tilemaps/level_08.owltilemap
     name: Columns
   - key: level_09
-    scene: gid:07b25282016780a5:scenes/level_09.owl
+    tilemap: tilemaps/level_09.owltilemap
     name: Loading bay
   - key: level_10
-    scene: gid:09a306adf86fe89e:scenes/level_10.owl
+    tilemap: tilemaps/level_10.owltilemap
     name: Warehouse

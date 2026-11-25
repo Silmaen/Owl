@@ -282,20 +282,15 @@ A plan is refined when its game is picked. First sketches:
   each (`path.find`, `path.poll`); win on company value before year 5, lose on debt. Reuses the iso town of the Engine
   Demo (`scripts/iso/`, `huds/iso_town.owlhud`, `tilesets/iso_ground.owltileset`, `tools/iso_atlas`).
 - **Mini Minecraft**: a finite island (about 96×96×48) authored in Owl Nest, a non-procedural `VoxelWorld` whose
-  chunks a save keeps; break, collect and build from a 9-slot hotbar; place 3 diamonds on the altar. Blocked by gaps
-  G2 and G13.
+  chunks a save keeps; break, collect and build from a 9-slot hotbar (`voxel.set_place_block`, `on_block_broken`);
+  place 3 diamonds on the altar.
 - **Mini launcher**: assemble a rocket from parts snapped on sockets, launch it and reach a target orbit, then a moon.
 
 ## Open gaps {#sample-games-gaps}
 
-Engine gaps the sample games met and worked around.
-
-| Id  | Gap                                                                                                                 | Games                 | Workaround                                     |
-|-----|---------------------------------------------------------------------------------------------------------------------|-----------------------|------------------------------------------------|
-| G2  | No Lua `voxel` table: get and set a block, aimed block, `placeBlock`, break and place events                        | Minecraft             | None: blocks the hotbar and the inventory      |
-| G4  | A procedural `VoxelWorld` does not serialise its chunks: player edits are lost on save                              | Minecraft             | A finite, non-procedural world                 |
-| G6  | Tile and sprite-frame bindings live in `isometric` although they work on any tilemap                                | Sokoban, Wolfenstein  | Naming only                                    |
-| G13 | `VoxelPlayer` edits fire only with a captured cursor: a gamepad player and headless scenarios cannot break or place | Minecraft             | None: blocks the gamepad rule and CI scenarios |
-| G14 | Lua cannot switch the tilemap asset of an entity                                                                    | Sokoban, Breakout     | One scene per level                            |
-| G17 | A save keeps neither a slid `RaycastPushWall` nor an open door: after a load they are back in place                 | Wolfenstein           | Pushed again, a secret counts once             |
-| G18 | No Lua zoom of the isometric layer: its `Zoom` is a scene override only                                             | Tower defence, Tycoon | The map fits the screen at zoom 0              |
+No engine gap is open: every game of the pool is reachable from scripts, the ones the audit of the pool against the
+engine looked at included. Voxel building and its saves (Mini Minecraft), the isometric zoom (Mini Transport Tycoon),
+3D bodies, gravity sources, trajectory prediction, joints and assemblies (marble, orbital golf, launcher), lockstep
+multiplayer (Bomberman), data tables (station trader), the camera size and field of view (`entity.set_camera_size`,
+`entity.set_camera_fov`), the tilemap switch (`tilemap.set_asset`, Sokoban in one scene) and procedural generation from
+a seed (`tilemap.generate`, Mini roguelike) are all there.

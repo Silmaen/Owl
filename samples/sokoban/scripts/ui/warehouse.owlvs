@@ -175,7 +175,7 @@ VisualScript:
       values:
         variable: crate_tile
     - id: 1373100028
-      type: call.isometric.set_sprite_frame
+      type: call.entity.set_sprite_frame
       position: [2720, 900]
     - id: 1373100029
       type: var.get
@@ -188,7 +188,7 @@ VisualScript:
       values:
         variable: frame_box
     - id: 1373100031
-      type: call.isometric.set_sprite_frame
+      type: call.entity.set_sprite_frame
       position: [3060, 900]
     - id: 1373100032
       type: var.get
@@ -463,7 +463,7 @@ VisualScript:
       values:
         variable: t
     - id: 1373100091
-      type: call.isometric.set_sprite_frame
+      type: call.entity.set_sprite_frame
       position: [4420, 2460]
     - id: 1373100092
       type: var.get
@@ -476,7 +476,7 @@ VisualScript:
       values:
         variable: frame_push
     - id: 1373100094
-      type: call.isometric.set_sprite_frame
+      type: call.entity.set_sprite_frame
       position: [4760, 2460]
     - id: 1373100095
       type: var.get
@@ -599,7 +599,7 @@ VisualScript:
       type: flow.branch
       position: [7140, 2460]
     - id: 1373100122
-      type: call.isometric.set_sprite_frame
+      type: call.entity.set_sprite_frame
       position: [7480, 2460]
     - id: 1373100123
       type: var.get
@@ -612,7 +612,7 @@ VisualScript:
       values:
         variable: frame_box_on_goal
     - id: 1373100125
-      type: call.isometric.set_sprite_frame
+      type: call.entity.set_sprite_frame
       position: [7820, 2460]
     - id: 1373100126
       type: var.get

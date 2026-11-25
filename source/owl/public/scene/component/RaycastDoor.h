@@ -9,6 +9,7 @@
 #pragma once
 
 #include "core/Serializer.h"
+#include "math/vectors.h"
 #include "scene/Tileset.h"
 
 #include <cstdint>
@@ -116,7 +117,7 @@ struct OWL_API RaycastDoor {
 	/// Maximum distance (cells) between the player centre and the door centre for the built-in action to fire.
 	float interactionRange = 1.5f;
 
-	/// Runtime state — not authored, advanced by the `owl.raycast_walls` system (`scene::systems::updateRaycastDynamicWalls`).
+	/// Runtime state, advanced by the `owl.raycast_walls` system (`scene::systems::updateRaycastDynamicWalls`); written with `currentOffset` and `holdTimer` while the door is not closed, so a save keeps an open door.
 	State state = State::Idle;
 	/// Current slide progress, in cells. `0` at closed, `1.0` at open (the renderer adds the +1-pixel margin).
 	float currentOffset = 0.0f;
@@ -138,6 +139,13 @@ struct OWL_API RaycastDoor {
 	 * @return The class title.
 	 */
 	static auto name() -> const char* { return "Raycast Door"; }
+
+	/**
+	 * @brief
+	 *  Unit vector of the opening direction: the plate sits at the cell centre plus this axis times `currentOffset`.
+	 * @return The slide axis, in world cell coordinates.
+	 */
+	[[nodiscard]] auto getSlideAxis() const -> math::vec2;
 
 	/**
 	 * @brief

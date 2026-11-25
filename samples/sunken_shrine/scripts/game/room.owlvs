@@ -214,7 +214,7 @@ VisualScript:
       values:
         name: Chest
     - id: 6700000000000000038
-      type: call.isometric.set_sprite_frame
+      type: call.entity.set_sprite_frame
       position: [900, 420]
       values:
         frame: 91
@@ -732,7 +732,7 @@ VisualScript:
       values:
         name: Chest
     - id: 6700000000000000154
-      type: call.isometric.set_sprite_frame
+      type: call.entity.set_sprite_frame
       position: [3600, 1260]
       values:
         frame: 91

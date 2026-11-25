@@ -14,11 +14,14 @@ are kept between sessions. The project is `samples/sokoban`; play `scenes/title.
 
 ## What it brings
 
-A game whose levels are data, not scenes full of entities.
+A game whose levels are data, not scenes full of entities: one scene plays them all.
 
 - **Tilemaps:** a level is an `.owltilemap` with three layers (`floor`, `goals`, `boxes`); the rules read and move
   the cells from Lua, see [Tilemaps and Tilesets](editor_tilemaps.md). The tiles come from `tilesets/sokoban.owltileset`.
-- **Data tables:** `tables/levels.owltable` lists the levels in play order (scene and name); the title, the level
+- **One level scene:** `scenes/level.owl` shows the tilemap of the level to play in its `Level` entity
+  (`tilemap.set_asset`) and sizes its camera to the grid (`entity.set_camera_size`), see
+  [Lua scripting](scripting.md); the game state `sokoban_level` says which level.
+- **Data tables:** `tables/levels.owltable` lists the levels in play order (tilemap and name); the title, the level
   select and the level before each one follow the table, see [Data Tables](data_tables.md).
 - **Undo stack:** `scripts/game/sokoban.owlvs` records every step and push so the player can undo them; the undo,
   the take-back and the restart are Custom Lua nodes of the graph, the rest of the rules are nodes.
@@ -34,11 +37,10 @@ A game whose levels are data, not scenes full of entities.
 
 | Path                           | Content                                                                     |
 |--------------------------------|-----------------------------------------------------------------------------|
-| `scenes/`                      | `title`, `level_select`, `level_01` to `level_10`, `settings`, `victory`    |
-| `tilemaps/level_01.owltilemap` | One level                                                                   |
+| `scenes/`                      | `title`, `level_select`, `level` (every level), `settings`, `victory`       |
+| `tilemaps/level_01.owltilemap` | One level, `level_01` to `level_10`                                         |
 | `tables/levels.owltable`       | The levels in play order                                                    |
 | `scripts/game/`                | `sokoban.owlvs` (rules, undo) and the module `levels.lua` (table, progress) |
 | `huds/level.owlhud`            | The level HUD and its pause window                                          |
 
-To add a level, duplicate a level scene, point its `Level` entity at a new tilemap, set the `level` property of its
-`Game` entity and add a row to `levels.owltable`.
+To add a level, save a new tilemap and add a row to `levels.owltable`.

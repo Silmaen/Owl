@@ -78,26 +78,10 @@ void updateRaycastDynamicWalls(Scene& ioScene, const float iTimeStep) {
 		}
 		const float delta = door.currentOffset - prevOffset;
 		if (std::abs(delta) > 1e-6f) {
-			using OD = component::RaycastDoor::OpeningDirection;
-			float dx = 0.f;
-			float dy = 0.f;
-			switch (door.openingDirection) {
-				case OD::East:
-					dx = 1.f;
-					break;
-				case OD::West:
-					dx = -1.f;
-					break;
-				case OD::North:
-					dy = 1.f;
-					break;
-				case OD::South:
-					dy = -1.f;
-					break;
-			}
+			const math::vec2 axis = door.getSlideAxis();
 			const math::Transform wt = ioScene.getWorldTransform(ent);
-			const float plateX = wt.translation().x() + dx * door.currentOffset;
-			const float plateY = wt.translation().y() + dy * door.currentOffset;
+			const float plateX = wt.translation().x() + axis.x() * door.currentOffset;
+			const float plateY = wt.translation().y() + axis.y() * door.currentOffset;
 			physics::PhysicCommand::setTransform(ent, math::vec2f{plateX, plateY}, wt.rotation().z());
 		}
 	}

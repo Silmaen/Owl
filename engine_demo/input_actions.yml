@@ -29,6 +29,16 @@ actions:
     bindings:
       - {key: F}
       - {gamepad_button: Back}
+  - name: voxel_next_block
+    type: button
+    bindings:
+      - {key: R}
+      - {gamepad_button: RightBumper}
+  - name: pcg_regenerate
+    type: button
+    bindings:
+      - {key: Space}
+      - {gamepad_button: A}
   - name: quick_save
     type: button
     bindings:
@@ -95,6 +105,16 @@ actions:
       - {mouse_button: Right}
       - {key: X}
       - {gamepad_button: X}
+  - name: town_zoom_in
+    type: button
+    bindings:
+      - {key: Period}
+      - {gamepad_button: RightThumb}
+  - name: town_zoom_out
+    type: button
+    bindings:
+      - {key: Comma}
+      - {gamepad_button: LeftThumb}
   - name: town_tool
     type: button
     bindings:

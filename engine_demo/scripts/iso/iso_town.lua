@@ -1,6 +1,7 @@
 -- Isometric town: the "build road" tool, the funds and the HUD of scenes/iso_town.owl (and of its compact variant).
--- Demonstrates: the `isometric` bindings (pick_cell under the mouse, get_cell / set_cell on the road layer,
---               get_slope, get_height), an edit of the map at runtime (no undo), the mouse, the gamepad stick and the
+-- Demonstrates: the `isometric` and `tilemap` bindings (pick_cell under the mouse, get_cell / set_cell on the road
+--               layer, get_slope, get_height, set_zoom on `town_zoom_in` / `town_zoom_out`, mirrored in `town_zoom`),
+--               an edit of the map at runtime (no undo), the mouse, the gamepad stick and the
 --               keyboard through input actions (`build`, `bulldoze`, `town_tool`, `cursor`), a HUD of its own
 --               (huds/iso_town.owlhud) with tool buttons, ui.is_mouse_over_ui, gamestate, sound effects of the tool
 --               (`sound.play` on the SFX bus, then `sound.set_volume`).
@@ -22,6 +23,8 @@ properties = {
     { name = "road_refund", type = "int", default = 5, min = 0 },
     { name = "tree_cost", type = "int", default = 3, min = 0 },
     { name = "first_steep_slope", type = "int", default = 15, min = 0 },
+    { name = "zoom_min", type = "int", default = -1 },
+    { name = "zoom_max", type = "int", default = 1 },
 }
 
 local ROAD_X, ROAD_Y = 3, 11
@@ -121,7 +124,7 @@ local function road_at(x, y)
     if x < 0 or y < 0 or x >= SIZE or y >= SIZE then
         return false
     end
-    local _, overlay = isometric.get_cell(map_id, ROAD_LAYER, x, y)
+    local _, overlay = tilemap.get_cell(map_id, ROAD_LAYER, x, y)
     return is_road(overlay)
 end
 
@@ -137,7 +140,7 @@ end
 
 local function refresh_cell(x, y)
     if road_at(x, y) then
-        isometric.set_cell(map_id, ROAD_LAYER, x, y, -1, tile_for(x, y))
+        tilemap.set_cell(map_id, ROAD_LAYER, x, y, -1, tile_for(x, y))
     end
 end
 
@@ -151,14 +154,14 @@ end
 
 -- Why a road cannot go on a cell, or nil when it can.
 local function build_problem(x, y)
-    local ground = isometric.get_cell(map_id, GROUND_LAYER, x, y)
+    local ground = tilemap.get_cell(map_id, GROUND_LAYER, x, y)
     if not BUILDABLE[ground] then
         return "Cannot build here"
     end
     if isometric.get_slope(map_id, x, y) >= first_steep_slope then
         return "Too steep"
     end
-    local _, overlay = isometric.get_cell(map_id, ROAD_LAYER, x, y)
+    local _, overlay = tilemap.get_cell(map_id, ROAD_LAYER, x, y)
     if overlay ~= -1 then
         return "Already built"
     end
@@ -175,7 +178,7 @@ local function build_road(x, y)
         play("sounds/town/error.wav", 0.5)
         return
     end
-    isometric.set_cell(map_id, ROAD_LAYER, x, y, -1, ROAD_X) -- any road tile: refresh_around picks the shape
+    tilemap.set_cell(map_id, ROAD_LAYER, x, y, -1, ROAD_X) -- any road tile: refresh_around picks the shape
     refresh_around(x, y)
     built[y * SIZE + x] = true
     gamestate.set("town_money", money() - road_cost)
@@ -200,7 +203,7 @@ local function bulldoze(x, y)
         play("sounds/town/click_bulldoze.wav", 0.7)
         return
     end
-    isometric.set_cell(map_id, ROAD_LAYER, x, y, -1, -1)
+    tilemap.set_cell(map_id, ROAD_LAYER, x, y, -1, -1)
     refresh_around(x, y)
     gamestate.set("town_money", money() + road_refund)
     if built[y * SIZE + x] then
@@ -281,7 +284,7 @@ local function update_cursor(dt)
     gamestate.set("town_cursor_y", cursor_valid and cursor_y or -1)
     local under = -1
     if cursor_valid then
-        under = select(2, isometric.get_cell(map_id, ROAD_LAYER, cursor_x, cursor_y))
+        under = select(2, tilemap.get_cell(map_id, ROAD_LAYER, cursor_x, cursor_y))
     end
     gamestate.set("town_cursor_tile", under)
     ui.set_visible(marker_id, cursor_valid)
@@ -339,6 +342,7 @@ function on_create()
     tool_ids[TOOL_ROAD] = ui.find("ToolRoad")
     tool_ids[TOOL_BULLDOZE] = ui.find("ToolBulldoze")
     gamestate.set("town_money", start_funds)
+    gamestate.set("town_zoom", isometric.get_zoom() or 0)
     gamestate.set("town_roads", 0)
     gamestate.set("town_trips", 0)
     gamestate.set("town_sounds", 0)
@@ -357,6 +361,12 @@ function on_update(dt)
     update_cursor(dt)
     if input.is_action_just_pressed("town_tool") then
         set_tool(tool == TOOL_ROAD and TOOL_BULLDOZE or TOOL_ROAD)
+    end
+    local zoom_step = (input.is_action_just_pressed("town_zoom_in") and 1 or 0)
+        - (input.is_action_just_pressed("town_zoom_out") and 1 or 0)
+    if zoom_step ~= 0 then
+        local level = math.max(zoom_min, math.min(zoom_max, (isometric.get_zoom() or 0) + zoom_step))
+        gamestate.set("town_zoom", isometric.set_zoom(level) or 0)
     end
     local building = input.is_action_pressed("build")
     local removing = input.is_action_pressed("bulldoze")

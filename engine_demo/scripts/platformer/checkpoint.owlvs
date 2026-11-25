@@ -45,7 +45,7 @@ VisualScript:
       type: flow.branch
       position: [600, 20]
     - id: 8020000000000000006
-      type: call.isometric.set_sprite_frame
+      type: call.entity.set_sprite_frame
       position: [1120, 16]
     - id: 8020000000000000007
       type: var.get
@@ -107,7 +107,7 @@ VisualScript:
       values:
         variable: flag_scale
     - id: 8020000000000000020
-      type: call.isometric.set_sprite_frame
+      type: call.entity.set_sprite_frame
       position: [1752, 516]
     - id: 8020000000000000021
       type: var.get
@@ -341,7 +341,7 @@ VisualScript:
       values:
         variable: frame
     - id: 8020000000000000075
-      type: call.isometric.set_sprite_frame
+      type: call.entity.set_sprite_frame
       position: [1696, 1776]
     - id: 8020000000000000076
       type: var.get

@@ -212,7 +212,7 @@ VisualScript:
       type: logic.not
       position: [2890, 160]
     - id: 3288100018
-      type: call.isometric.set_sprite_frame
+      type: call.entity.set_sprite_frame
       position: [3400, 0]
     - id: 3288100019
       type: var.get

@@ -332,7 +332,7 @@ local function animate(dt, vx)
     else
         walk_clock = 0.0
     end
-    isometric.set_sprite_frame(sprite_id, frame)
+    entity.set_sprite_frame(sprite_id, frame)
     if vx > 0.5 then
         transform.set_scale(sprite_id, sprite_scale, sprite_scale, 1)
     elseif vx < -0.5 then

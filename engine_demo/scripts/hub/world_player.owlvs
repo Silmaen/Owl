@@ -528,7 +528,7 @@ VisualScript:
       type: table.get
       position: [1684, 1604]
     - id: 8170000000000000101
-      type: call.isometric.get_cell
+      type: call.tilemap.get_cell
       position: [1374, 1344]
       values:
         layer: 0
@@ -907,7 +907,7 @@ VisualScript:
       values:
         variable: shown_frame
     - id: 8170000000000000186
-      type: call.isometric.set_sprite_frame
+      type: call.entity.set_sprite_frame
       position: [7402, 1088]
     - id: 8170000000000000187
       type: var.get

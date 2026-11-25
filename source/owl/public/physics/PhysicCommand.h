@@ -414,6 +414,15 @@ public:
 
 	/**
 	 * @brief
+	 *  Build the static colliders of the `Tilemap` of an entity again, from the cells its asset holds now.
+	 *
+	 * No-op when the entity's scene has no world.
+	 * @param[in] iEntity The entity carrying the tilemap.
+	 */
+	static void rebuildTilemapBody(const scene::Entity& iEntity);
+
+	/**
+	 * @brief
 	 *  Apply an impulsion to the given entity (if Entity supports it).
 	 * @param iEntity The Entity where to apply impulse.
 	 * @param iImpulse The impulse force and direction.

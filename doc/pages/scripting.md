@@ -70,7 +70,8 @@ flowchart LR
    are kept
 5. Edit property values in the inspector — they are saved with the scene
 6. The **Hooks** list shows each function the engine calls (`on_create`, `on_update`, `on_tick`, `on_destroy`,
-   `on_collision`, `on_trigger_enter`, `on_trigger_exit`, `on_triggered`, `on_interact`, `on_timer`, and the network hooks `on_player_join`, `on_player_leave`, `on_lobby_changed`,
+   `on_collision`, `on_trigger_enter`, `on_trigger_exit`, `on_triggered`, `on_interact`, `on_timer`, the voxel hooks
+   `on_block_broken` and `on_block_placed`, and the network hooks `on_player_join`, `on_player_leave`, `on_lobby_changed`,
    `on_match_start`, `on_desync`, `on_disconnected`): a defined hook
    gives its line and an **Open** button that reveals it in the code editor, an undefined one is dimmed
 7. A HUD widget (button, slider, list, window, focus), a timer, an interaction or a Lua-callback trigger that names a
@@ -139,6 +140,8 @@ end
 | `on_collision(other_id)`      | Body starts touching another entity's body                                           | `other_id`: handle            |
 | `on_collision_exit(other_id)` | Last contact with another entity's body ends                                         | `other_id`: handle            |
 | `on_joint_break(other_id)`    | A breakable joint of the entity, or linked to it, breaks under its load              | `other_id`: handle, 0 = world |
+| `on_block_broken(x, y, z, block)` | A `VoxelPlayer` breaks a block; in the script of the player and of the voxel world | position, the id it held      |
+| `on_block_placed(x, y, z, block)` | A `VoxelPlayer` places a block; in the script of the player and of the voxel world | position, the id placed       |
 | `on_demoted()`                | The entity's `SimulationLod` demotes it                                              | None                          |
 | `on_promoted()`               | The entity's `SimulationLod` promotes it                                             | None                          |
 | `on_coarse_tick(dt)`          | Every `coarseInterval` ticks while demoted, instead of `on_update` and `on_tick`     | `dt`: seconds covered         |
@@ -443,19 +446,45 @@ existed.
 `entity.get_tint(id)` write and read the colour a `SpriteRenderer` or `AnimatedSpriteRenderer` multiplies into its
 texture, which is how a script flashes a sprite on a hit or fades a coin out (false / nothing for an entity without a
 sprite). See `engine_demo/scripts/platformer/platformer_player.lua` and `coin.owlvs`.
+`entity.set_camera_size(id, size)` sets the orthographic size of a `Camera` (the height it shows, in world units) and
+`entity.set_camera_fov(id, fov)` its vertical field of view in radians; `entity.get_camera_size(id)` and
+`entity.get_camera_fov(id)` read them. The Sokoban sample frames each level with the first.
+
+### `tilemap`
+
+The `tilemap` functions take the entity carrying a `Tilemap`, whatever layer draws it (2D, isometric, raycast).
+`tilemap.get_cell(map, layer, x, y)` and `tilemap.set_cell(map, layer, x, y, terrain, overlay)` read and write a cell
+of a layer (layers from 0, -1 for none) without undo, which is how the sample town lays roads and the Sokoban sample
+moves its crates, and `tilemap.get_size(map)` gives the grid width, height and cell size.
+`tilemap.set_asset(map, "tilemaps/level_02.owltilemap")` shows another `.owltilemap` in the same entity: its
+colliders and its navigation graph follow, so one scene plays every level, and a save keeps the path;
+`tilemap.get_asset(map)` reads it. `tilemap.generate(map, "pcg/caves.owlpcg", seed)` fills a layer from a
+[procedural generation graph](pcg_graphs.md#running-a-graph-from-lua): the same seed gives the same cave, the colliders
+follow, and `layer`, `x`, `y`, `width` and `height` limit it to a region.
 
 ### `isometric`
 
 The `isometric` functions take the entity carrying the isometric `Tilemap` (`scene.find_entity("Ground")`, cached).
 `isometric.pick_cell(map)` returns the cell under the mouse (or under a window pixel), slope-aware, nothing when the
-pixel is off the map; `isometric.get_cell(map, layer, x, y)` and `isometric.set_cell(map, layer, x, y, terrain, overlay)`
-read and write a cell of a layer (layers from 0, -1 for none) without undo, which is how the sample town lays roads,
-and `isometric.get_size(map)` gives the grid width, height and cell size; they work on a 2D tilemap too (the Sokoban
-sample keeps its crates in a layer). `isometric.get_slope(map, x, y)` and `isometric.get_height(map, x, y)` give the slope of a cell and the world height of
-the surface under a world position, to stand vehicles on the terrain. `isometric.set_sprite_frame(sprite, frame)` pins an
-`AnimatedSpriteRenderer` on one frame of its sheet (`isometric.get_sprite_frame(sprite)` reads it), so one entity shows
-the picture of its heading. `ui.is_mouse_over_ui()` tells a click on the HUD
-from a click on the map. See `engine_demo/scripts/iso/iso_town.lua` and `iso_town_traffic.lua`.
+pixel is off the map. `isometric.get_slope(map, x, y)` and `isometric.get_height(map, x, y)` give the slope of a cell
+and the world height of the surface under a world position, to stand vehicles on the terrain.
+`isometric.set_zoom(level)` zooms the isometric layer (0 is one texel per pixel, each level doubles the scale, from -4
+to 4) until the level changes and `isometric.get_zoom()` reads it, the `Zoom` of the scene at first.
+`entity.set_sprite_frame(sprite, frame)` pins an `AnimatedSpriteRenderer` on one frame of its sheet
+(`entity.get_sprite_frame(sprite)` reads it), so one entity shows the picture of its heading.
+`ui.is_mouse_over_ui()` tells a click on the HUD from a click on the map. See `engine_demo/scripts/iso/iso_town.lua`
+and `iso_town_traffic.lua`.
+
+### `voxel`
+
+The `voxel` functions take the entity carrying a `VoxelWorld`, or the one carrying the `VoxelPlayer` for its aim (see
+[Voxel](voxel.md)). `voxel.get_block(world, x, y, z)` reads a block id (0 is air) and
+`voxel.set_block(world, x, y, z, block)` writes one and re-meshes around it; `voxel.find_block(world, "stone")` and
+`voxel.get_block_name(world, block)` go between the ids and the names of the palette.
+`voxel.get_target(player)` gives the block the player aims at and the normal of the face it looks at, and
+`voxel.set_place_block(player, block)` chooses the block it places (a hotbar). The edits of the player call
+`on_block_broken(x, y, z, block)` and `on_block_placed(x, y, z, block)`. See
+`engine_demo/scripts/voxel/voxel_builder.lua`.
 
 ### `path`
 
@@ -478,7 +507,9 @@ state as in `settings.set`.
 Save files are stored in `games/<game>/saves/` of the [user directory](architecture.md#architecture-user-directory)
 (`user/` beside the game) as YAML `.owl_save` files. A save holds the game state, the scene, the HUD
 widget values, the body velocities and the cells of every tilemap changed since it was read from its file
-(`isometric.set_cell`, roads and buildings laid in game): the load puts them back before the colliders are built.
+(`tilemap.set_cell`, roads and buildings laid in game): the load puts them back before the colliders are built. The
+scene of a save keeps the edited chunks of a procedural `VoxelWorld`, the tilemap an entity shows, a slid
+`RaycastPushWall` and a `RaycastDoor` that is not closed.
 
 ### `settings`
 

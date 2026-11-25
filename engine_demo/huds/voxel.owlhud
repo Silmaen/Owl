@@ -26,7 +26,7 @@ Entities:
     anchorMin: [0, 0]
     anchorMax: [0, 0]
     pivot: [0, 0]
-    size: [0.62, 0.22]
+    size: [0.62, 0.3]
     sizeUnit: [ScreenWidth, ScreenHeight]
     offset: [16, 16]
   UiLayout:
@@ -48,12 +48,12 @@ Entities:
     anchorMin: [0, 0]
     anchorMax: [0, 0]
     pivot: [0, 0]
-    size: [1, 0.5]
+    size: [1, 0.36]
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiText:
     style: text
-    text: 'WASD: walk    mouse: look    Space: jump    Shift: run    Esc: back to the hub'
+    text: 'WASD: walk    mouse: look    Space: jump    Shift: run    click or triggers: break / place    R: next block    F6 / F9: save / load    Esc: back to the hub'
     color: [1, 1, 1, 0.85]
     fontSize: 24
     horizontalAlignment: Left
@@ -74,7 +74,7 @@ Entities:
     anchorMin: [0, 0]
     anchorMax: [0, 0]
     pivot: [0, 0]
-    size: [1, 0.45]
+    size: [1, 0.32]
     sizeUnit: [ParentWidth, ParentHeight]
     offset: [0, 0]
   UiText:
@@ -82,6 +82,31 @@ Entities:
     text: 'Objective: explore the terrain, 0 / 100 blocks from the landing point'
     color: [1, 0.95, 0.55, 1]
     fontSize: 26
+    horizontalAlignment: Left
+    verticalAlignment: Top
+    wrap: true
+    fit: Shrink
+    minFontSize: 12
+- Entity: 3500000000000000004
+  Tag: {tag: BuildText}
+  Transform:
+    translation: [0, 0, 0]
+    rotation: [0, 0, 0]
+    scale: [1, 1, 1]
+  Visibility: {gameVisible: true}
+  Hierarchy: {parentId: 3500000000000000010}
+  UiRect:
+    anchorMin: [0, 0]
+    anchorMax: [0, 0]
+    pivot: [0, 0]
+    size: [1, 0.28]
+    sizeUnit: [ParentWidth, ParentHeight]
+    offset: [0, 0]
+  UiText:
+    style: text
+    text: 'Aim: nothing    Place: stone    Broken: 0    Placed: 0'
+    color: [1, 1, 1, 0.9]
+    fontSize: 22
     horizontalAlignment: Left
     verticalAlignment: Top
     wrap: true

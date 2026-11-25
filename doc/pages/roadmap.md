@@ -143,9 +143,9 @@ per target, Android and the Web.
   on every target ([Mods and extension packs](mods.md))
 - ![Planned][planned] Owl Nest plugins: panels, commands, inspector drawers, document types, importers
   ([Plugins](design/modding-platforms.md#modding-plugins))
-- ![Planned][planned] Every open engine gap of the sample games closed (Lua voxel table, saved procedural chunks,
-  voxel edits without a captured cursor, tilemap switch, saved raycast walls, isometric zoom), and the pool audited
-  against the engine ([Gaps](design/sample-games.md#sample-games-gaps))
+- ![Done][done] Every engine gap of the sample games closed (Lua voxel table, saved procedural chunks, voxel edits without
+  a captured cursor, tilemap switch, saved raycast walls, isometric zoom, camera size and field of view, PCG graphs at
+  run time), Sokoban on one scene, and the pool audited against the engine ([Gaps](design/sample-games.md#sample-games-gaps))
 
 ## v0.7.0 -- 2026-11-15
 

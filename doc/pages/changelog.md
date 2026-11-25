@@ -69,6 +69,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The **Pack Game** dialog of Owl Nest chooses the target platform (this computer, Android, Web) and plays a Web export in the browser from a local server ([Projects](editor_projects.md)).
 - `OwlNest --export --target web` (`ExportTarget::Web`): WGSL shaders in the pack, the runner page as `index.html` and the `files.json` it fetches, a folder to serve as it is ([Building](building.md#web-build)).
 - Web build: `web-release` and `web-minimal` presets on the emsdk of the Web build image, the engine and its tests in WebAssembly under Node, `OwlGameRunner.html` run in a browser, `tools/web/browser_run.py` to play it in headless Chrome ([Building](building.md#web-build)).
+- `VoxelPlayer` breaks and places blocks without a captured cursor: a gamepad player and a headless scenario edit, only the click that captures the cursor does not ([Voxel](voxel.md)).
+- Lua `voxel` table (`get_block`, `set_block`, `get_block_name`, `find_block`, `get_target`, `get_place_block`, `set_place_block`) and the `on_block_broken` / `on_block_placed` hooks of the `VoxelPlayer` edits ([Lua API: Voxel worlds](lua-api-voxel.md)).
+- A procedural `VoxelWorld` keeps its edited chunks: written with the scene and the saves, read back instead of generated, never streamed out ([Voxel](voxel.md#procedural-terrain)).
+- Lua `tilemap.set_asset` / `get_asset` and `Scene::setTilemapAsset`: an entity shows another `.owltilemap`, colliders and navigation graph rebuilt, so one scene plays every level ([Lua API](lua-api-isometric.md)).
+- Lua `tilemap` table (`get_cell`, `set_cell`, `get_size`) and `entity.set_sprite_frame` / `get_sprite_frame`: the tile and sprite-frame bindings under the names of what they work on.
+- Lua `isometric.set_zoom` / `get_zoom`: a script zooms the isometric layer of the running level ([Lua API](lua-api-isometric.md)).
+- Lua `entity.set_camera_size` / `set_camera_fov`: a script sets the orthographic size or the field of view of a camera ([Lua API](lua-api-entities.md)).
+- Lua `tilemap.generate`: a script runs a PCG graph on the tilemap of an entity from a seed, the same seed giving the same tiles, colliders rebuilt; `scene::pcg::loadGraphAsset` reads a graph for the editor and Lua alike, and the pack keeps the graphs and tilemaps a script quotes ([PCG graphs](pcg_graphs.md#running-a-graph-from-lua)).
+- Engine Demo: generated caves (`pcg_caves.owl`, a door of the hub) drawn from a seed on Space (`pcg_caves.owltest`, `hub_caves.owltest`).
+- A save keeps a slid `RaycastPushWall` and a `RaycastDoor` that is not closed ([Raycaster](raycaster_method.md)).
+- Engine Demo: blocks broken and placed on the voxel terrain with a hotbar and a save (`voxel_build.owltest`), a zoom of the isometric town (`iso_town_zoom.owltest`), secret walls kept by the quick save of the raycast level (`raycast_save_walls.owltest`).
 
 ### Changed
 
@@ -80,6 +91,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bench: the Linux baseline takes the empty physics frame at 174 µs (60 Hz) and 116 µs (144 Hz) measured with Jolt 5.7.0.
 - Slang leaves `libOwlEngine` for the `OwlShaderCompiler` library, linked by Owl Nest, `OwlRunner`, the tools and the tests.
 - An exported game no longer bundles Slang and fails with a clear error on a shader that is not baked.
+- Sokoban plays its ten levels in one scene: `scenes/level.owl` shows the tilemap of the level to play (`tilemap.set_asset`) and sizes its camera, and the level table lists tilemaps instead of scenes ([Sokoban](sample_sokoban.md)).
+- The pack keeps the tilemaps of a data table and the tilemaps and graphs a script or a script property quotes, tilesets included.
+
+### Deprecated
+
+- Lua `isometric.get_cell`, `set_cell`, `get_size`, `set_sprite_frame` and `get_sprite_frame`: use `tilemap.*` and `entity.set_sprite_frame` / `get_sprite_frame`.
 
 ### Removed
 

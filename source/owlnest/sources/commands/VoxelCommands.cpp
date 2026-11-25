@@ -15,6 +15,7 @@
 #include <cstdint>
 #include <ranges>
 #include <string_view>
+#include <tuple>
 #include <utility>
 
 namespace owl::nest::commands {
@@ -30,11 +31,10 @@ void VoxelEditCommand::apply(scene::Scene& ioScene, const bool iUseAfter) const 
 	const auto entity = ioScene.findEntityByUUID(m_entityUuid);
 	if (!entity || !entity.hasComponent<scene::component::VoxelWorld>())
 		return;
-	auto& voxelWorld = entity.getComponent<scene::component::VoxelWorld>().world;
+	auto& voxelWorld = entity.getComponent<scene::component::VoxelWorld>();
 	const auto applyOne = [&](const VoxelBlockEdit& iEdit) -> void {
-		voxelWorld.setBlock(iEdit.coord, iUseAfter ? iEdit.after : iEdit.before,
-							iUseAfter ? iEdit.afterMeta : iEdit.beforeMeta);
-		voxelWorld.markNeighborChunksDirty(iEdit.coord);
+		std::ignore = voxelWorld.editBlock(iEdit.coord, iUseAfter ? iEdit.after : iEdit.before,
+										   iUseAfter ? iEdit.afterMeta : iEdit.beforeMeta);
 	};
 	if (iUseAfter) {
 		for (const auto& edit: m_edits) applyOne(edit);

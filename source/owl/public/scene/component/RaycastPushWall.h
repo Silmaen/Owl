@@ -71,7 +71,7 @@ struct OWL_API RaycastPushWall {
 	/// Maximum distance (cells) between player and pushwall centre for the built-in action to fire.
 	float interactionRange = 1.5f;
 
-	/// Runtime state.
+	/// Runtime state; written with `currentOffset` once the wall left its rest position, so a save keeps a slid wall.
 	State state = State::Idle;
 	/// Current slide progress, in cells. `0` at rest, `slideDistance` at Final.
 	float currentOffset = 0.0f;

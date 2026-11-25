@@ -273,13 +273,6 @@ void keepEnvironment(const std::string& iKey, const EnvironmentResult& iResult) 
 		found->map = iResult;
 }
 
-auto unpackChunkKey(const uint64_t iKey) -> math::vec3i {
-	const auto dec = [](const uint64_t iBits) -> int32_t {
-		return static_cast<int32_t>(static_cast<int64_t>(iBits & 0x1FFFFF) - (1 << 20));
-	};
-	return math::vec3i{dec(iKey), dec(iKey >> 21), dec(iKey >> 42)};
-}
-
 void copyCopiableComponents(Entity& oDst, const Entity& iSrc) {
 	for (const auto& desc: ComponentRegistry::getAll())
 		if (desc.copiable)
@@ -3166,12 +3159,7 @@ void Scene::updateVoxelStreaming(const math::vec3& iCameraWorldPos) {
 	if (!m_voxelStream)
 		m_voxelStream = mkShared<VoxelStreamState>();
 	auto& stream = *m_voxelStream;
-	const auto key = [](const math::vec3i& iCoord) -> uint64_t {
-		const auto enc = [](const int32_t iValue) -> uint64_t {
-			return static_cast<uint64_t>(static_cast<int64_t>(iValue) + (1 << 20)) & 0x1FFFFF;
-		};
-		return enc(iCoord.x()) | (enc(iCoord.y()) << 21) | (enc(iCoord.z()) << 42);
-	};
+	const auto key = &component::VoxelWorld::chunkKey;
 
 	// Install chunks finished on worker threads (main thread; the worlds are only mutated here).
 	std::vector<CompletedVoxelChunk> done;
@@ -3230,16 +3218,18 @@ void Scene::updateVoxelStreaming(const math::vec3& iCameraWorldPos) {
 				}
 			}
 		}
-		// Unload chunks (and forget pending ones) that drifted outside the radius (+1 chunk of hysteresis).
+		// Unload chunks (and forget pending ones) that drifted outside the radius (+1 chunk of hysteresis), edited ones kept.
 		const auto outside = [&](const math::vec3i& iCoord) -> bool {
 			return std::abs(iCoord.x() - camChunk.x()) > r + 1 || std::abs(iCoord.z() - camChunk.z()) > r + 1 ||
 				   std::abs(iCoord.y() - camChunk.y()) > h + 1;
 		};
 		for (const auto& coord: vw.world.chunkCoordinates()) {
-			if (outside(coord))
+			if (outside(coord) && !vw.editedChunks.contains(key(coord)))
 				vw.world.removeChunk(coord);
 		}
-		std::erase_if(vw.pendingChunks, [&](const uint64_t iKey) -> bool { return outside(unpackChunkKey(iKey)); });
+		std::erase_if(vw.pendingChunks, [&](const uint64_t iKey) -> bool {
+			return outside(component::VoxelWorld::chunkCoordinate(iKey));
+		});
 	}
 }
 
@@ -3512,6 +3502,27 @@ void Scene::detachSharedTilemapAssets() {
 			tilemap.asset = std::move(copy);
 		}
 	}
+}
+
+auto Scene::setTilemapAsset(const Entity& iEntity, const std::filesystem::path& iPath) -> bool {
+	if (!iEntity || !iEntity.hasComponent<component::Tilemap>()) {
+		OWL_CORE_WARN("Scene: No Tilemap on the entity given '{}'.", iPath.generic_string())
+		return false;
+	}
+	auto& tilemap = iEntity.getComponent<component::Tilemap>();
+	const auto previousPath = std::exchange(tilemap.tilemapPath, iPath);
+	auto previousAsset = std::exchange(tilemap.asset, nullptr);
+	m_tilemapAssetsDirty = true;
+	resolveAllTilemapAssets();
+	if (!tilemap.asset) {
+		OWL_CORE_WARN("Scene: Tilemap '{}' cannot be loaded, the entity keeps '{}'.", iPath.generic_string(),
+					  previousPath.generic_string())
+		tilemap.tilemapPath = previousPath;
+		tilemap.asset = std::move(previousAsset);
+		return false;
+	}
+	physics::PhysicCommand::rebuildTilemapBody(iEntity);
+	return true;
 }
 
 void Scene::resolveAllTilemapAssets() {

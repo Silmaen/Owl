@@ -3464,11 +3464,12 @@ void renderProps(VoxelWorld& ioComponent) {
 		fieldTooltip("Block id used to fill water up to the sea level; 0 (air) disables water.");
 		if (t.biomes)
 			dragId("Snow Block", t.snow);
-		if (ImGui::Button("Regenerate")) {
-			ioComponent.world.clear();
-			ioComponent.pendingChunks.clear();
-		}
-		fieldTooltip("Clear streamed chunks so they regenerate from the current parameters.");
+		if (ImGui::Button("Regenerate"))
+			ioComponent.regenerate();
+		fieldTooltip("Clear streamed chunks, the edited ones included, so they regenerate from the current "
+					 "parameters.");
+		ImGui::Text("Edited Chunks: %zu", ioComponent.editedChunks.size());
+		fieldTooltip("Chunks whose blocks were edited by a brush, a player or a script: saved with the scene.");
 	}
 }
 
@@ -3487,14 +3488,15 @@ void renderProps(VoxelPlayer& ioComponent) {
 	drawVec3Control("Half Extents", ioComponent.halfExtents, 0.4f);
 	fieldTooltip("Half the player collision box on each axis (the transform is its centre / eye).");
 	prop::DragFloat("Reach", &ioComponent.reach, 0.25f, 1.f, 32.f, "%.2f");
-	fieldTooltip("Targeting-ray length in blocks. Left-click breaks the targeted block, right-click places one.");
+	fieldTooltip("Targeting-ray length in blocks. The primary action (left click, right trigger) breaks the "
+				 "targeted block, the secondary one (right click, left trigger) places one.");
 	int placeBlock = static_cast<int>(ioComponent.placeBlock);
 	if (prop::DragInt("Place Block", &placeBlock, 0.1f, 1, 65535))
 		ioComponent.placeBlock = static_cast<data::voxel::BlockId>(std::max(1, placeBlock));
-	fieldTooltip("Block id placed on right-click (an index into the targeted world's block registry).");
+	fieldTooltip("Block id the secondary action places (an index into the targeted world's block registry).");
 	prop::Checkbox("Capture Cursor", &ioComponent.captureCursor);
-	fieldTooltip("Let clicking the viewport hide/lock the cursor for mouse-look (Esc frees it). Off keeps a normal "
-				 "cursor and disables block break / place.");
+	fieldTooltip("Let clicking the viewport hide/lock the cursor for mouse-look (Esc frees it); the click that "
+				 "captures edits nothing. Off keeps a normal cursor.");
 }
 
 void renderProps(FlyCamera& ioComponent) {

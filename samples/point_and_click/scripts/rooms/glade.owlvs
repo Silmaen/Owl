@@ -123,7 +123,7 @@ VisualScript:
       values:
         variable: clock
     - id: 1362900011
-      type: call.isometric.set_sprite_frame
+      type: call.entity.set_sprite_frame
       position: [1020, 1140]
     - id: 1362900012
       type: var.get

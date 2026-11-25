@@ -428,10 +428,10 @@ local function update_cursor(dt)
     hover = hotspot_at(wx, wy)
     set_glow(hover, dt)
     local verb = verb_of(hover)
-    isometric.set_sprite_frame(ids.Cursor, FRAMES[verb])
+    entity.set_sprite_frame(ids.Cursor, FRAMES[verb])
     if held ~= nil then
         for frame, known in ipairs(ITEMS) do
-            if known == held then isometric.set_sprite_frame(ids.ItemCursor, frame - 1) end
+            if known == held then entity.set_sprite_frame(ids.ItemCursor, frame - 1) end
         end
     end
     local label = ""

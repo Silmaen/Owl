@@ -20,7 +20,8 @@ the isometric sprites are in [2D complete](2d-complete.md).
   `screen.y = (worldX + worldY) · (tileH / 2) − worldZ · zStep`; tiles are 64×32 px by default (layer config).
   This layout is the mirror image of a right-handed world seen from above, so the view mirrors world Y before the
   rotation: distances and depth are unchanged, the pitch is `asin(tileH / tileW)` (30° for 2:1).
-- Layer config keys `TileWidth`, `TileHeight`, `ZStep` and `Zoom` (power-of-two level, −4 to 4). In Play the camera
+- Layer config keys `TileWidth`, `TileHeight`, `ZStep` and `Zoom` (power-of-two level, −4 to 4); a script changes the
+  zoom of the running level with `isometric.set_zoom`. In Play the camera
   target is the scene camera's position, Z dropped; the editor hands its own `IsometricCamera`, used as is.
 
 ## Draw order
@@ -61,7 +62,7 @@ the isometric sprites are in [2D complete](2d-complete.md).
   sprites. The vehicle sheet of `tools/iso_atlas` is an 8 × 2 sheet of 64 × 64 cells (car and truck, one frame every
   45° from +x towards +y); the vehicle is centred on its tile, whose front corner is the bottom centre of the cell and
   where the entity sits (`body + 0.5`). On screen +x runs to the lower right and +y to the lower left, so the right hand
-  of a heading `(dx, dy)` is `(-dy, dx)`; a script picks the frame with `isometric.set_sprite_frame`.
+  of a heading `(dx, dy)` is `(-dy, dx)`; a script picks the frame with `entity.set_sprite_frame`.
 
 ## Terrain {#isometric-terrain}
 

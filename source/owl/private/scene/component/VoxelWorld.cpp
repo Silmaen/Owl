@@ -11,7 +11,10 @@
 #include "data/assets/AssetReference.h"
 #include "scene/component/VoxelWorld.h"
 
+#include <algorithm>
 #include <cstdint>
+#include <tuple>
+#include <vector>
 
 namespace owl::scene::component {
 
@@ -99,6 +102,15 @@ void parseTerrain(const core::YamlNode& iNode, data::voxel::TerrainParams& oTerr
 			oTerrain.snow = ids[5].as<uint16_t>();
 	}
 }
+
+// The chunk coordinates in a fixed order, so the same world always writes the same text.
+auto sortedChunks(const data::voxel::VoxelWorld& iWorld) -> std::vector<math::vec3i> {
+	auto coords = iWorld.chunkCoordinates();
+	std::ranges::sort(coords, [](const math::vec3i& iA, const math::vec3i& iB) -> bool {
+		return std::tuple{iA.y(), iA.z(), iA.x()} < std::tuple{iB.y(), iB.z(), iB.x()};
+	});
+	return coords;
+}
 }// namespace
 
 void VoxelWorld::serialize(const core::Serializer& iOut) const {
@@ -150,12 +162,13 @@ void VoxelWorld::serialize(const core::Serializer& iOut) const {
 		emitter << YAML::EndMap;
 	}
 	emitter << YAML::EndSeq;
-	// Procedural worlds stream their chunks from the seed at runtime, so authored chunks aren't persisted.
-	if (!proceduralTerrain) {
+	// A procedural world streams its chunks from the seed: only the edited ones are kept, emptied ones included.
+	if (!proceduralTerrain || !editedChunks.empty()) {
 		emitter << YAML::Key << "Chunks" << YAML::Value << YAML::BeginSeq;
-		for (const auto& coord: world.chunkCoordinates()) {
+		for (const auto& coord: sortedChunks(world)) {
 			const auto chunk = world.getChunk(coord);
-			if (!chunk || chunk->isEmpty())
+			const bool edited = proceduralTerrain && editedChunks.contains(chunkKey(coord));
+			if (!chunk || (proceduralTerrain ? !edited : chunk->isEmpty()))
 				continue;
 			emitter << YAML::BeginMap;
 			emitter << YAML::Key << "Coord" << YAML::Value << YAML::Flow << YAML::BeginSeq << coord.x() << coord.y()
@@ -210,6 +223,8 @@ void VoxelWorld::deserialize(const core::Serializer& iNode) {
 	if (const auto t = node["Terrain"]; t && t.isMap())
 		parseTerrain(t, terrain);
 	world.clear();
+	editedChunks.clear();
+	pendingChunks.clear();
 	if (const auto chunks = node["Chunks"]; chunks && chunks.isSequence()) {
 		for (const auto chunkNode: chunks) {
 			const auto coordNode = chunkNode["Coord"];
@@ -220,8 +235,43 @@ void VoxelWorld::deserialize(const core::Serializer& iNode) {
 			if (chunkNode["Data"])
 				(void) chunk->decode(chunkNode["Data"].as<std::string>());
 			chunk->markClean();
+			if (proceduralTerrain)
+				editedChunks.insert(chunkKey(coord));
 		}
 	}
+}
+
+auto VoxelWorld::chunkKey(const math::vec3i& iCoord) -> uint64_t {
+	const auto encode = [](const int32_t iValue) -> uint64_t {
+		return static_cast<uint64_t>(static_cast<int64_t>(iValue) + (1 << 20)) & 0x1FFFFF;
+	};
+	return encode(iCoord.x()) | (encode(iCoord.y()) << 21) | (encode(iCoord.z()) << 42);
+}
+
+auto VoxelWorld::chunkCoordinate(const uint64_t iKey) -> math::vec3i {
+	const auto decode = [](const uint64_t iBits) -> int32_t {
+		return static_cast<int32_t>(static_cast<int64_t>(iBits & 0x1FFFFF) - (1 << 20));
+	};
+	return math::vec3i{decode(iKey), decode(iKey >> 21), decode(iKey >> 42)};
+}
+
+auto VoxelWorld::editBlock(const math::vec3i& iBlock, const data::voxel::BlockId iId,
+						   const data::voxel::PackedMeta iMeta) -> bool {
+	if (proceduralTerrain) {
+		const math::vec3i coord = data::voxel::worldToChunk(iBlock);
+		if (!world.hasChunk(coord))
+			return false;
+		editedChunks.insert(chunkKey(coord));
+	}
+	world.setBlock(iBlock, iId, iMeta);
+	world.markNeighborChunksDirty(iBlock);
+	return true;
+}
+
+void VoxelWorld::regenerate() {
+	world.clear();
+	pendingChunks.clear();
+	editedChunks.clear();
 }
 
 }// namespace owl::scene::component

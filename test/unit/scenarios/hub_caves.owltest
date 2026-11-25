@@ -1,0 +1,15 @@
+# The caves door at the east end of the high street of the hub: E at it opens the generated caves, Escape comes back
+# to the hub.
+scene: ../../../engine_demo/scenes/world_map.owl
+steps:
+  - frames: 30
+  - input: {key: W, frames: 168}
+  - input: {key: D, frames: 320}
+  - expect: {player: true, translation.x: {greater: 58.0}}
+  - input: {key: E, frames: 3}
+  - frames: 90
+  - expect: {entity: Caves, exists: true}
+  - expect: {gamestate: pcg_seed, equals: 7}
+  - input: {key: Escape, frames: 2}
+  - frames: 90
+  - expect: {entity: CavesDoor, exists: true}
