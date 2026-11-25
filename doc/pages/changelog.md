@@ -112,6 +112,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - `PackageRunner` finds the runner again after `Package`: the CPack step restores the working directory (it left it in the build tree), so the game-runner archive of every target is written on the default branch.
+- The isometric-zoom script test links on Windows GCC: it compares against copies of `IsometricCamera::minZoomLevel` / `maxZoomLevel`, since MinGW does not export the `static constexpr` members of an `OWL_API` class.
 - A macro saved from the journal replays a command that runs other commands (`macro.run`, a plugin command) once, not with its sub-commands too ([Console](editor_console.md#editor-console)).
 - A first-person walker and a voxel player move at most a tenth of a second per frame: a long frame no longer drops them through the floor.
 - `DependencyReport` no longer takes a bare-number tag (Luau's `696`) for a newer version than a dotted one.

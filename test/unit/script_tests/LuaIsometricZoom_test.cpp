@@ -103,8 +103,8 @@ TEST_F(LuaIsometricZoom, setZoomChangesTheLayerAndThePicking) {
 
 TEST_F(LuaIsometricZoom, setZoomIsClampedToTheRangeOfTheLayer) {
 	const auto instance = run("high = isometric.set_zoom(99)\nlow = isometric.set_zoom(-99)");
-	EXPECT_EQ(instance->getPropertyInt("high").value_or(-9), renderer::IsometricCamera::maxZoomLevel);
-	EXPECT_EQ(instance->getPropertyInt("low").value_or(-9), renderer::IsometricCamera::minZoomLevel);
+	EXPECT_EQ(instance->getPropertyInt("high").value_or(-9), int32_t{renderer::IsometricCamera::maxZoomLevel});
+	EXPECT_EQ(instance->getPropertyInt("low").value_or(-9), int32_t{renderer::IsometricCamera::minZoomLevel});
 }
 
 TEST_F(LuaIsometricZoom, aGameWithoutIsometricLayerGetsNothing) {
@@ -118,5 +118,5 @@ TEST_F(LuaIsometricZoom, theLayerClampsItsZoomLevel) {
 	layer.setZoomLevel(3);
 	EXPECT_EQ(layer.getZoomLevel(), 3);
 	layer.setZoomLevel(40);
-	EXPECT_EQ(layer.getZoomLevel(), renderer::IsometricCamera::maxZoomLevel);
+	EXPECT_EQ(layer.getZoomLevel(), int32_t{renderer::IsometricCamera::maxZoomLevel});
 }
