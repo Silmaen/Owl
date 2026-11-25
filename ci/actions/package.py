@@ -20,7 +20,7 @@ class Package(BaseAction):
         :param extra_args: Optional extra arguments (unused).
         :return: Exit code indicating success or failure.
         """
-        from os import chdir, curdir
+        from os import chdir, getcwd
 
         log.info(f"Deploying project with preset: {preset}")
         build_dir = preset.get_build_dir()
@@ -34,10 +34,12 @@ class Package(BaseAction):
         if sign_result != 0:
             log.error("Code signing failed.")
             return sign_result
-        cwd = curdir
+        cwd = getcwd()
         chdir(build_dir)
-        build_result = run_command(["cpack"], detection_mode=MODE_BY_COLOR)
-        chdir(cwd)
+        try:
+            build_result = run_command(["cpack"], detection_mode=MODE_BY_COLOR)
+        finally:
+            chdir(cwd)
         if build_result != 0:
             log.error("CMake build failed.")
             return build_result
