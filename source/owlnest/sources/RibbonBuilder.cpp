@@ -36,6 +36,7 @@
 #include <string_view>
 #include <tuple>
 #include <utility>
+#include <vector>
 
 namespace owl::nest {
 
@@ -158,6 +159,24 @@ void RibbonBuilder::build() {
 							  .isEnabled = projectLoaded,
 							  .isChecked = [this]() -> bool { return mp_editor->m_extensionPanel.isVisible(); },
 							  .onClick = [this]() -> void { mp_editor->m_extensionPanel.toggle(); }});
+	m_ribbon.addButton(
+			home, gProject,
+			Button{.iconName = gui::icon::panelsTopLeft,
+				   .label = "Plugin Panels",
+				   .tooltip = "Show or hide the panels the Owl Nest plugins of the project add.",
+				   .isEnabled = [this]() -> bool {
+					   return !mp_editor->m_plugins.getContributions(session::PluginContributionKind::Panel).empty();
+				   },
+				   .popupContents = [this]() -> void {
+					   std::vector<std::tuple<std::string, std::string, bool>> panels;
+					   for (const auto* panel:
+							mp_editor->m_plugins.getContributions(session::PluginContributionKind::Panel))
+						   panels.emplace_back(panel->id, panel->title, panel->visible);
+					   for (const auto& [id, title, visible]: panels)
+						   if (ImGui::MenuItem(title.c_str(), nullptr, visible))
+							   mp_editor->runCommandFromUi("plugin.show_panel", {{"id", id}, {"visible", !visible}},
+														   commands::CommandSource::Gesture);
+				   }});
 	m_ribbon.addButton(home, gProject,
 					   Button{.iconName = "ribbon_pack",
 							  .label = "Pack Game",
@@ -328,6 +347,8 @@ void RibbonBuilder::build() {
 			break;
 		case DocumentType::HudTheme:
 			buildHudThemeTab();
+			break;
+		case DocumentType::Plugin:
 			break;
 		case DocumentType::Scene:
 			buildSceneTab();

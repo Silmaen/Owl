@@ -102,7 +102,7 @@ a progress dialog (spaces and reserved characters of the name become `_`):
 | `*.so` / `*.dll`           | The shared libraries of the engine                                                                                                                       |
 | `runner.yml`               | First scene, pack, window, renderer stack, renderer families, ImGui, icon                                                                                |
 | `game_info.yml`            | Name, version, author, description, engine version, date, platform                                                                                       |
-| `mods/<id>.owlmod`         | The enabled extension packs of the project, mounted by the game as mods ([Mods and extension packs](mods.md))                                            |
+| `mods/<id>.owlmod`         | The enabled extension packs of the project, mounted by the game as mods, without their editor side (`editorScript`, `editor/`) ([Mods and extension packs](mods.md))                                            |
 | `launch.sh` (Linux)        | Starts the game with its libraries                                                                                                                       |
 | `<GameName>.zip` (Windows) | The game folder as an archive, next to it                                                                                                                |
 | icon                       | The project icon, or the Owl logo                                                                                                                        |

@@ -186,8 +186,13 @@ auto ExtensionPack::readEntry(const std::string& iPath) const -> std::optional<s
 	return readFile(m_source / iPath);
 }
 
+auto isEditorEntry(const ExtensionManifest& iManifest, const std::string_view iPath) -> bool {
+	return iPath.starts_with("editor/") || (!iManifest.editorScript.empty() && iPath == iManifest.editorScript);
+}
+
 auto writeExtensionPack(const std::filesystem::path& iSourceFolder, const std::filesystem::path& iOutputFile,
-						const PackFlags iFlags) -> expected<size_t, ExtensionLoadError> {
+						const PackFlags iFlags, const ExtensionContent iContent)
+		-> expected<size_t, ExtensionLoadError> {
 	std::error_code error;
 	if (!std::filesystem::is_directory(iSourceFolder, error)) {
 		OWL_CORE_WARN("Extensions: Cannot export '{}', it is not a folder.", iSourceFolder.string())
@@ -197,8 +202,22 @@ auto writeExtensionPack(const std::filesystem::path& iSourceFolder, const std::f
 	if (!pack)
 		return unexpected{pack.error()};
 	PackWriter writer;
-	writer.addFile(iSourceFolder / g_extensionManifestEntry, std::string{g_extensionManifestEntry}, AssetType::Other);
-	for (const auto& entry: pack->listEntries()) writer.addFile(iSourceFolder / entry, entry, getPackAssetType(entry));
+	size_t written = 0;
+	if (iContent == ExtensionContent::Game && !pack->getManifest().editorScript.empty()) {
+		auto manifest = pack->getManifest();
+		manifest.editorScript.clear();
+		const auto text = manifest.serialize();
+		writer.addData({text.begin(), text.end()}, std::string{g_extensionManifestEntry}, AssetType::Other);
+	} else {
+		writer.addFile(iSourceFolder / g_extensionManifestEntry, std::string{g_extensionManifestEntry},
+					   AssetType::Other);
+	}
+	for (const auto& entry: pack->listEntries()) {
+		if (iContent == ExtensionContent::Game && isEditorEntry(pack->getManifest(), entry))
+			continue;
+		writer.addFile(iSourceFolder / entry, entry, getPackAssetType(entry));
+		++written;
+	}
 	if (iOutputFile.has_parent_path())
 		std::filesystem::create_directories(iOutputFile.parent_path(), error);
 	if (!writer.write(iOutputFile, iFlags)) {
@@ -206,8 +225,8 @@ auto writeExtensionPack(const std::filesystem::path& iSourceFolder, const std::f
 		return unexpected{ExtensionLoadError::WriteFailed};
 	}
 	OWL_CORE_INFO("Extensions: '{}' {} written to '{}' ({} entries).", pack->getManifest().id,
-				  pack->getManifest().version.toString(), iOutputFile.string(), pack->listEntries().size())
-	return pack->listEntries().size();
+				  pack->getManifest().version.toString(), iOutputFile.string(), written)
+	return written;
 }
 
 }// namespace owl::data::assets::pack

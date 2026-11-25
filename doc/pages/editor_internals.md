@@ -158,6 +158,7 @@ steps:
 | `command` | An editor command by name, its arguments under `args`:                                        |
 |           | `{command: entity.delete, args: {entity: Crate}}`; a vector or a colour is a list of numbers, |
 |           | a text argument may be a map (`component.set` values)                                         |
+|           | With `mods:`, the commands of the Owl Nest plugins of the mounted packs run too               |
 | `macro`   | A `.owlmacro` file (relative to the scenario) replayed as one undo step                       |
 | `undo`    | Number of commands to undo                                                                    |
 | `redo`    | Number of commands to redo                                                                    |

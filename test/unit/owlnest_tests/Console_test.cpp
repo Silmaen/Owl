@@ -220,6 +220,9 @@ TEST_F(ConsoleTest, LuaLinesRunTheCommandsThroughTheEditorModule) {
 	const auto command = lua.submit(R"(entity.create name="Bush")");
 	EXPECT_EQ(command.back().kind, ConsoleLineKind::Result) << command.back().text;
 	EXPECT_FALSE(last(lua.submit("help(editor.entity)")).text.empty());
+	// An entity id comes back whole: a Lua number would round it.
+	EXPECT_NE(last(lua.submit(R"(editor.entity.rename{entity = tree.entity, name = "Oak"})")).kind,
+			  ConsoleLineKind::Error);
 }
 
 TEST_F(ConsoleTest, AnEditorScriptIsOneUndoStep) {

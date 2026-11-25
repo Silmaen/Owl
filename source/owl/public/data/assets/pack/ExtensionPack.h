@@ -173,15 +173,34 @@ private:
 
 /**
  * @brief
- *  Write the source folder of an extension pack as a `.owlmod` file: its manifest and every entry it holds.
+ *  What a `.owlmod` file holds of its source folder.
+ */
+enum struct ExtensionContent : uint8_t {
+	Everything,///< The manifest and every entry: a pack shared between projects.
+	Game///< What a game loads: the editor entries are left out and the manifest names no editor script.
+};
+
+/**
+ * @brief
+ *  Whether an entry of a pack only serves Owl Nest: the editor script of the manifest, or a file under `editor/`.
+ * @param[in] iManifest The manifest of the pack.
+ * @param[in] iPath The entry, a path relative to the pack.
+ * @return True for an entry a game never reads.
+ */
+[[nodiscard]] OWL_API auto isEditorEntry(const ExtensionManifest& iManifest, std::string_view iPath) -> bool;
+
+/**
+ * @brief
+ *  Write the source folder of an extension pack as a `.owlmod` file: its manifest and the entries it holds.
  * @param[in] iSourceFolder Folder holding `extension.yml`.
  * @param[in] iOutputFile The `.owlmod` written (its folder is created).
  * @param[in] iFlags Pack flags (compression, obfuscation).
+ * @param[in] iContent Whether the editor entries are written too.
  * @return The number of entries written besides the manifest, or why the pack was not written.
  */
-[[nodiscard]] OWL_API auto writeExtensionPack(const std::filesystem::path& iSourceFolder,
-											  const std::filesystem::path& iOutputFile,
-											  PackFlags iFlags = PackFlags::Default)
+[[nodiscard]] OWL_API auto
+writeExtensionPack(const std::filesystem::path& iSourceFolder, const std::filesystem::path& iOutputFile,
+				   PackFlags iFlags = PackFlags::Default, ExtensionContent iContent = ExtensionContent::Everything)
 		-> expected<size_t, ExtensionLoadError>;
 
 }// namespace owl::data::assets::pack

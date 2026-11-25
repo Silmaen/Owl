@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Export report: `GameExporter` returns and writes `export_report.yml` (size by category, shaders baked and their targets, unused project assets, warnings), shown in Owl Nest after a Pack Game and summed up by `OwlNest --export` ([Projects](editor_projects.md#editor-projects-export-report)).
 - `android::writeApk`: Owl Nest writes the signed APK of an Android export on any desktop, without the Android SDK nor a JDK (binary manifest, icon, schemes v2 and v3, debug key made at the first export) ([Projects](editor_projects.md)).
 - **Android Package** in the project settings (`androidPackage`), the identity of the game on Android.
+- Owl Nest plugins: an extension pack with an `editorScript` adds commands, panels, inspector drawers, document types and importers to the editor from Lua (`session::PluginHost`, `nest.*` and `ui.*`); the `demo.notes` pack of the Engine Demo adds one of each ([Mods and extension packs](mods.md#mods-nest-plugins)).
+- Plugins read the scene (`nest.entities`, `nest.components`, `nest.fields`, `nest.field`), and the drawer of a built-in component receives its field values; every write stays an `editor.*` command ([Mods and extension packs](mods.md#mods-nest-plugins)).
+- A headless session loads the Owl Nest plugins of the mounted packs (`HeadlessSession::loadPlugins`), so their commands are MCP tools ([Mods and extension packs](mods.md#mods-nest-plugins)).
+- Pack Game leaves the editor side of a pack out of the exported `.owlmod`: the `editorScript` and the `editor/` folder ([Projects](editor_projects.md)).
+- Commands `component.set_field`, `asset.import`, `plugin.list`, `plugin.reload`, `plugin.show_panel` and `plugin.document_set`; `extension.script editor=true` writes the script of an Owl Nest plugin ([Console](editor_console.md#editor-console)).
+- An entity id reaches the Lua editor scripts as its decimal digits, so `editor.entity.rename{entity = created.entity}` finds the entity whatever its id ([Console](editor_console.md#editor-lua)).
 - `ExportTarget::LinuxX64`, `LinuxArm64` and `WindowsX64`: Owl Nest exports a desktop game for any desktop, from the runner of that target ([Projects](editor_projects.md)).
 - An exported Windows game carries its project icon in its executable, patched in C++ from any host (`setExecutableIcon`) ([Projects](editor_projects.md)).
 - `RunnerStore`: the Pack Game dialog and `OwlNest --export` download the runner of another platform from the runner server (setting **Runner Server**) or import it by hand, checked against the `runners.json` of the Nest package ([Projects](editor_projects.md)).
@@ -105,11 +111,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A macro saved from the journal replays a command that runs other commands (`macro.run`, a plugin command) once, not with its sub-commands too ([Console](editor_console.md#editor-console)).
 - A first-person walker and a voxel player move at most a tenth of a second per frame: a long frame no longer drops them through the floor.
 - `DependencyReport` no longer takes a bare-number tag (Luau's `696`) for a newer version than a dotted one.
 - yaml-cpp writes the doubles beyond 32 bits of mantissa right on 32-bit targets (local recipe with a patch); sizes read from packs and replays checked before they narrow to `size_t` there.
 - The minimal build (`OWL_MODULE_SCRIPT` off) no longer compiles `LuaNetBindings` nor misses `ScriptEngine::extractComponentsFromBuffer`; a static engine keeps its self-registered types (whole archive).
 - `linux-clang-minimal` links again: the no-physics `PhysicCommand` has the 3D angular velocity and joint load stubs, and the one physics-only scene test is skipped there.
+- The Web (wasm) build compiles `ExecutableIcon` again: the section address is cast through `size_t` before narrowing, instead of narrowing `imageEnd` implicitly on a 32-bit target.
 
 ## [0.7.0] - 2026-11-15
 

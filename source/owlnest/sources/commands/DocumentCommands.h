@@ -26,6 +26,7 @@ class DataTableEditor;
 class DialogueEditor;
 class HudThemeEditor;
 class MaterialEditor;
+class PluginDocumentEditor;
 class SequenceEditor;
 class BehaviourTreeEditor;
 
@@ -315,6 +316,15 @@ public:
 	 * @return The editor, null when the file cannot be opened.
 	 */
 	virtual auto openMaterial(const std::filesystem::path& iPath) -> MaterialEditor* = 0;
+
+	/**
+	 * @brief
+	 *  The tab of a document of a type an Owl Nest plugin declares, opened when it is not.
+	 * @param[in] iPath The file.
+	 * @return Its editor; null when no plugin declares a document type for the file, when it cannot be opened, or in a
+	 *  host without plugin documents.
+	 */
+	virtual auto openPluginDocument(const std::filesystem::path& iPath) -> PluginDocumentEditor*;
 };
 
 /**

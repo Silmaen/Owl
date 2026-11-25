@@ -41,6 +41,7 @@
 #include "panel/NetworkPanel.h"
 #include "panel/NewProjectDialog.h"
 #include "panel/Parameters.h"
+#include "panel/PluginUiRenderer.h"
 #include "panel/ProjectSettings.h"
 #include "panel/RecoveryPrompt.h"
 #include "panel/SceneHierarchy.h"
@@ -51,6 +52,7 @@
 #include "panel/StatusBar.h"
 #include "panel/VoxelPalette.h"
 #include "session/EditorSession.h"
+#include "session/PluginHost.h"
 
 #include <gui/widgets/Toast.h>
 
@@ -327,6 +329,28 @@ public:
 	 * @return Its document, or null when it cannot be opened.
 	 */
 	auto openHudTheme(const std::filesystem::path& iPath) -> commands::HudThemeEditor* override;
+
+	/**
+	 * @brief
+	 *  Open a file in the `PluginDocument` of the document type an Owl Nest plugin declares for it (or switch to it).
+	 * @param[in] iPath The file.
+	 */
+	void openPluginDocumentFile(const std::filesystem::path& iPath);
+
+	/**
+	 * @brief
+	 *  The tab of a plugin document, opened when it is not.
+	 * @param[in] iPath The file.
+	 * @return Its editor, or null when no plugin declares a document type for the file.
+	 */
+	auto openPluginDocument(const std::filesystem::path& iPath) -> commands::PluginDocumentEditor* override;
+
+	/**
+	 * @brief
+	 *  The Owl Nest plugins of the project.
+	 * @return The plugin host.
+	 */
+	[[nodiscard]] auto getPlugins() -> session::PluginHost& { return m_plugins; }
 
 	/**
 	 * @brief
@@ -1433,6 +1457,10 @@ private:
 	ActionRegistry m_actionRegistry;
 	/// Named, undoable scene commands, issued by the panels, the shortcuts and the tests.
 	commands::CommandRegistry m_commands;
+	/// Owl Nest plugins of the enabled extension packs: they add commands, panels, drawers, documents and importers.
+	session::PluginHost m_plugins{m_commands};
+	/// Draws the widgets of the plugin panels.
+	panel::PluginUiRenderer m_pluginUi;
 	/// Bounded play of the session in progress.
 	session::PlayDriver m_playDriver;
 	/// Document the bounded play runs in (compared, never dereferenced once it may be closed).

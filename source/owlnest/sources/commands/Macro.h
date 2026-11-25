@@ -107,7 +107,8 @@ public:
 	 * @brief
 	 *  Build a macro from journal entries: the commands that ran, in order, with the entities they created
 	 *  replaced by `$n` references.
-	 * @param[in] iEntries The entries kept (failed ones are skipped).
+	 * @param[in] iEntries The entries kept; failed entries and nested ones (run by another command, which replays
+	 *  them) are skipped.
 	 * @param[in] iRegistry The registry declaring the commands.
 	 * @return The macro.
 	 */

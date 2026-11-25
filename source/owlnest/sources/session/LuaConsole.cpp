@@ -34,107 +34,6 @@ namespace owl::nest::session {
 
 namespace {
 
-auto numbers(const script::HostValue& iValue) -> std::optional<std::vector<double>> {
-	if (const auto* list = std::get_if<std::vector<double>>(&iValue))
-		return *list;
-	return std::nullopt;
-}
-
-auto number(const script::HostValue& iValue) -> std::optional<double> {
-	if (const auto* value = std::get_if<double>(&iValue))
-		return *value;
-	if (const auto* value = std::get_if<int64_t>(&iValue))
-		return static_cast<double>(*value);
-	return std::nullopt;
-}
-
-auto text(const script::HostValue& iValue) -> std::optional<std::string> {
-	if (const auto* value = std::get_if<std::string>(&iValue))
-		return *value;
-	if (const auto* value = std::get_if<int64_t>(&iValue))
-		return std::format("{}", *value);
-	if (const auto* value = std::get_if<double>(&iValue))
-		return std::format("{}", *value);
-	if (const auto* value = std::get_if<bool>(&iValue))
-		return *value ? "true" : "false";
-	return std::nullopt;
-}
-
-// The value of a Lua argument as the command expects it, or why it does not fit.
-auto toArgValue(const commands::ArgSpec& iSpec, const script::HostValue& iValue)
-		-> expected<commands::ArgValue, std::string> {
-	const auto wrong = [&iSpec](const char* iExpected) -> unexpected<std::string> {
-		return unexpected<std::string>{std::format("`{}` takes {}", iSpec.name, iExpected)};
-	};
-	switch (iSpec.type) {
-		case commands::ArgType::Bool:
-			if (const auto* value = std::get_if<bool>(&iValue))
-				return *value;
-			return wrong("a boolean");
-		case commands::ArgType::Integer:
-			if (const auto value = number(iValue); value.has_value())
-				return static_cast<int64_t>(std::llround(*value));
-			return wrong("an integer");
-		case commands::ArgType::Number:
-			if (const auto value = number(iValue); value.has_value())
-				return *value;
-			return wrong("a number");
-		case commands::ArgType::Text:
-		case commands::ArgType::Enum:
-			if (const auto value = text(iValue); value.has_value())
-				return *value;
-			return wrong("a string");
-		case commands::ArgType::Entity:
-			if (const auto* value = std::get_if<int64_t>(&iValue))
-				return *value;
-			if (const auto* value = std::get_if<std::string>(&iValue))
-				return *value;
-			return wrong("an entity id or tag");
-		case commands::ArgType::Vec2:
-			if (const auto list = numbers(iValue); list && list->size() == 2)
-				return math::vec2{static_cast<float>((*list)[0]), static_cast<float>((*list)[1])};
-			return wrong("{x, y}");
-		case commands::ArgType::Vec3:
-			if (const auto list = numbers(iValue); list && list->size() == 3)
-				return math::vec3{static_cast<float>((*list)[0]), static_cast<float>((*list)[1]),
-								  static_cast<float>((*list)[2])};
-			return wrong("{x, y, z}");
-		case commands::ArgType::Vec4:
-		case commands::ArgType::Color:
-			if (const auto list = numbers(iValue); list && (list->size() == 4 || list->size() == 3))
-				return math::vec4{static_cast<float>((*list)[0]), static_cast<float>((*list)[1]),
-								  static_cast<float>((*list)[2]),
-								  list->size() == 4 ? static_cast<float>((*list)[3]) : 1.f};
-			if (const auto* value = std::get_if<std::string>(&iValue);
-				value != nullptr && iSpec.type == commands::ArgType::Color)
-				return *value;
-			return wrong("{r, g, b[, a]}");
-	}
-	return wrong("a value");
-}
-
-auto toDoubles(const std::initializer_list<float> iValues) -> std::vector<double> {
-	std::vector<double> out;
-	out.reserve(iValues.size());
-	for (const float value: iValues) out.push_back(static_cast<double>(value));
-	return out;
-}
-
-auto toHostValue(const commands::ArgValue& iValue) -> script::HostValue {
-	return std::visit(
-			[]<typename T>(const T& iItem) -> script::HostValue {
-				if constexpr (std::is_same_v<T, math::vec2>)
-					return toDoubles({iItem.x(), iItem.y()});
-				else if constexpr (std::is_same_v<T, math::vec3>)
-					return toDoubles({iItem.x(), iItem.y(), iItem.z()});
-				else if constexpr (std::is_same_v<T, math::vec4>)
-					return toDoubles({iItem.x(), iItem.y(), iItem.z(), iItem.w()});
-				else
-					return iItem;
-			},
-			iValue);
-}
-
 auto luaLiteral(const commands::ArgValue& iValue) -> std::string {
 	return std::visit(
 			[]<typename T>(const T& iItem) -> std::string {
@@ -176,46 +75,15 @@ auto toOutput(const script::ScriptConsole::Result& iResult) -> std::vector<Conso
 }// namespace
 
 LuaConsole::LuaConsole(EditorSession& ioSession, Console& ioCommandConsole)
-	: m_session{ioSession}, m_commands{ioCommandConsole} {}
-
-void LuaConsole::registerCommands() {
-	if (m_registered)
-		return;
-	m_registered = true;
-	for (const auto& spec: m_session.getRegistry().getCommands()) {
-		m_lua.addFunction(
-				std::format("editor.{}", spec.name), spec.description,
-				[this, name = spec.name](const std::map<std::string, script::HostValue>& iArgs) -> script::HostResult {
-					const auto* command = m_session.getRegistry().find(name);
-					if (command == nullptr)
-						return {.ok = false, .error = std::format("{}: no such command", name), .fields = {}};
-					commands::CommandArgs args;
-					for (const auto& [key, value]: iArgs) {
-						const auto argSpec = std::ranges::find(command->args, key, &commands::ArgSpec::name);
-						if (argSpec == command->args.end())
-							return {.ok = false, .error = std::format("{}: no argument `{}`", name, key), .fields = {}};
-						auto converted = toArgValue(*argSpec, value);
-						if (!converted)
-							return {.ok = false, .error = std::format("{}: {}", name, converted.error()), .fields = {}};
-						args.set(key, std::move(*converted));
-					}
-					const auto result = m_session.execute(name, args, commands::CommandSource::Script);
-					if (!result)
-						return {.ok = false,
-								.error = std::format("{}: {}", name, result.error().message),
-								.fields = {}};
-					script::HostResult out;
-					for (const auto& [key, value]: result->data) out.fields.emplace(key, toHostValue(value));
-					out.fields.emplace("description", result->description);
-					if (result->entity != core::UUID{0})
-						out.fields.emplace("entity", static_cast<int64_t>(static_cast<uint64_t>(result->entity)));
-					return out;
-				});
-	}
-}
+	: m_session{ioSession}, m_commands{ioCommandConsole},
+	  m_editor{m_lua, ioSession.getRegistry(),
+			   [this](const std::string_view iName, const commands::CommandArgs& iArgs)
+					   -> expected<commands::CommandResult, commands::CommandFailure> {
+				   return m_session.execute(iName, iArgs, commands::CommandSource::Script);
+			   }} {}
 
 auto LuaConsole::submit(const std::string_view iLine) -> std::vector<ConsoleOutput> {
-	registerCommands();
+	m_editor.sync();
 	const auto firstSpace = iLine.find_first_of(" \t");
 	const auto head = iLine.substr(0, firstSpace);
 	if (!m_lua.hasPending() && !head.empty() && m_session.getRegistry().find(head) != nullptr &&
@@ -233,7 +101,7 @@ auto LuaConsole::submit(const std::string_view iLine) -> std::vector<ConsoleOutp
 }
 
 auto LuaConsole::runScript(const std::filesystem::path& iPath) -> std::vector<ConsoleOutput> {
-	registerCommands();
+	m_editor.sync();
 	std::vector<ConsoleOutput> output{{.kind = ConsoleLineKind::Input,
 									   .text = std::format("> run {}", iPath.filename().string()),
 									   .journalIndex = 0}};

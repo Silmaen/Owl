@@ -96,3 +96,48 @@ TEST_F(ScriptConsoleTest, HostFunctionsTakeATableAndReturnOne) {
 	EXPECT_EQ(console.run("total = 3 print(total)", "tools/count.lua").output.front(), "3");
 	EXPECT_EQ(console.run("error('x')", "tools/bad.lua").status, ScriptConsole::Status::Error);
 }
+
+TEST_F(ScriptConsoleTest, CallsAGlobalFunctionWithATable) {
+	ScriptConsole console;
+	ASSERT_EQ(console.run("-- a comment\nfunction double(args)\n  print('doubling')\n  return {value = args.value * 2, "
+						  "name = args.name}\nend\nfunction broken(args) error('boom') end\nfunction silent() end\n"
+						  "answer = 42",
+						  "tools/calls.lua")
+					  .status,
+			  ScriptConsole::Status::Ok);
+	EXPECT_TRUE(console.hasFunction("double"));
+	EXPECT_FALSE(console.hasFunction("answer"));
+	EXPECT_FALSE(console.hasFunction("missing"));
+	EXPECT_FALSE(console.hasFunction("os.exit()"));
+	EXPECT_EQ(console.getFunctionLine("double"), 2u);
+	EXPECT_EQ(console.getFunctionLine("print"), 0u);
+	EXPECT_EQ(console.getFunctionLine("missing"), 0u);
+
+	const auto doubled = console.call("double", {{"value", int64_t{21}}, {"name", std::string{"x"}}});
+	ASSERT_TRUE(doubled.ok) << doubled.error;
+	EXPECT_EQ(std::get<int64_t>(doubled.fields.at("value")), 42);
+	EXPECT_EQ(std::get<std::string>(doubled.fields.at("name")), "x");
+	ASSERT_EQ(doubled.output.size(), 1u);
+	EXPECT_EQ(doubled.output.front(), "doubling");
+
+	ASSERT_EQ(console.run("function names(args) return {count = #args.names, back = args.names} end", "tools/names.lua")
+					  .status,
+			  ScriptConsole::Status::Ok);
+	const auto listed = console.call("names", {{"names", std::vector<std::string>{"Tree", "Rock"}}});
+	ASSERT_TRUE(listed.ok) << listed.error;
+	EXPECT_EQ(std::get<int64_t>(listed.fields.at("count")), 2);
+	EXPECT_EQ(std::get<std::vector<std::string>>(listed.fields.at("back")), (std::vector<std::string>{"Tree", "Rock"}));
+
+	const auto nothing = console.call("silent", {});
+	EXPECT_TRUE(nothing.ok);
+	EXPECT_TRUE(nothing.fields.empty());
+
+	const auto failed = console.call("broken", {});
+	EXPECT_FALSE(failed.ok);
+	EXPECT_TRUE(failed.error.contains("boom")) << failed.error;
+	const auto missing = console.call("missing", {});
+	EXPECT_FALSE(missing.ok);
+	EXPECT_TRUE(missing.error.contains("missing"));
+	// The globals carrying the tables do not stay.
+	EXPECT_EQ(console.evaluate("__owl_call_args == nil and __owl_call_result == nil").output.front(), "true");
+}

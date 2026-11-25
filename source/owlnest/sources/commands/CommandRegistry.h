@@ -15,6 +15,7 @@
 #include <scene/Entity.h>
 #include <scene/Scene.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <functional>
@@ -344,6 +345,21 @@ public:
 
 	/**
 	 * @brief
+	 *  Take a command out of the registry (the commands of an Owl Nest plugin that is unloaded).
+	 * @param[in] iName Command name.
+	 * @return True when the command was registered.
+	 */
+	auto remove(std::string_view iName) -> bool;
+
+	/**
+	 * @brief
+	 *  Number of changes of the command list (`add`, `remove`): tells a client its copy of the list is stale.
+	 * @return The revision.
+	 */
+	[[nodiscard]] auto getRevision() const -> uint64_t { return m_revision; }
+
+	/**
+	 * @brief
 	 *  Find a command by name.
 	 * @param[in] iName Command name.
 	 * @return The command declaration, or nullptr when unknown.
@@ -438,8 +454,12 @@ private:
 
 	/// Registered commands.
 	std::vector<CommandSpec> m_commands;
+	/// Number of changes of the command list.
+	uint64_t m_revision{0};
 	/// Journal recording the executed commands (non-owning, may be null).
 	CommandJournal* mp_journal{nullptr};
+	/// Commands running, one inside the other: what a command runs is journaled as nested.
+	mutable size_t m_depth{0};
 };
 
 /**

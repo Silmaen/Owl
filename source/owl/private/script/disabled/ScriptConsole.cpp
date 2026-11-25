@@ -10,6 +10,8 @@
 
 #include "script/ScriptConsole.h"
 
+#include <cstdint>
+#include <map>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -34,6 +36,15 @@ auto ScriptConsole::run([[maybe_unused]] const std::string_view iSource, [[maybe
 		-> Result {
 	return {.status = Status::Error, .output = {"Lua is not built in (OWL_MODULE_SCRIPT is off)."}};
 }
+
+auto ScriptConsole::call([[maybe_unused]] const std::string_view iFunction,
+						 [[maybe_unused]] const std::map<std::string, HostValue>& iArgs) -> CallResult {
+	return {.ok = false, .error = "Lua is not built in (OWL_MODULE_SCRIPT is off).", .fields = {}, .output = {}};
+}
+
+auto ScriptConsole::hasFunction([[maybe_unused]] const std::string_view iFunction) const -> bool { return false; }
+
+auto ScriptConsole::getFunctionLine([[maybe_unused]] const std::string_view iFunction) const -> uint32_t { return 0; }
 
 auto ScriptConsole::help([[maybe_unused]] const std::string_view iPath) const -> std::vector<std::string> { return {}; }
 

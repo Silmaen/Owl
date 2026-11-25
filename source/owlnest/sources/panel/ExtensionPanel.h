@@ -10,6 +10,7 @@
 
 #include "../UndoManager.h"
 #include "../commands/CommandRegistry.h"
+#include "../session/PluginHost.h"
 
 #include <data/assets/pack/ExtensionManifest.h>
 #include <scene/Scene.h>
@@ -89,6 +90,13 @@ public:
 	 * @return True when visible.
 	 */
 	[[nodiscard]] auto isVisible() const -> bool { return m_visible; }
+
+	/**
+	 * @brief
+	 *  Set the Owl Nest plugins the panel shows the state of (non-owning).
+	 * @param[in] iPlugins The plugin host, null for none.
+	 */
+	void setPlugins(session::PluginHost* iPlugins) { mp_plugins = iPlugins; }
 
 	/**
 	 * @brief
@@ -234,6 +242,14 @@ private:
 
 	/**
 	 * @brief
+	 *  Draw the Owl Nest plugin of a Script pack: its script, what it adds, the Lua function serving each and its
+	 *  errors.
+	 * @param[in] iEntry The pack.
+	 */
+	void renderPlugin(const Entry& iEntry);
+
+	/**
+	 * @brief
 	 *  Draw the assets several mounted packs hold, and the pack serving each one.
 	 */
 	static void renderConflicts();
@@ -279,6 +295,10 @@ private:
 	std::string m_description;
 	/// Draft of the entry script path.
 	std::string m_script;
+	/// Draft of the Owl Nest plugin script path.
+	std::string m_editorScript;
+	/// Owl Nest plugins loaded (non-owning, may be null).
+	session::PluginHost* mp_plugins{nullptr};
 	/// Id of the dependency to add.
 	std::string m_dependencyId;
 	/// Version of the dependency to add.

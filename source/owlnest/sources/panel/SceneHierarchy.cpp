@@ -1012,9 +1012,26 @@ void addComponentPop(scene::Entity& ioEntity, const commands::CommandTarget& iCo
 	}
 }
 
+// The inspector drawers of the Owl Nest plugins and what draws their widgets.
+struct PluginDrawers {
+	session::PluginHost* host{nullptr};
+	PluginUiRenderer* ui{nullptr};
+
+	// Draws the body of a component a plugin has a drawer for; false when the editor draws it itself.
+	[[nodiscard]] auto draw(const scene::Entity& iEntity, const std::string& iKey) const -> bool {
+		if (host == nullptr || ui == nullptr ||
+			host->findContribution(session::PluginContributionKind::Drawer, iKey) == nullptr)
+			return false;
+		ui->begin(iKey, true);
+		std::ignore = host->drawComponent(iEntity, iKey, *ui);
+		ui->end();
+		return true;
+	}
+};
+
 template<isNamedComponent T>
 void drawComponent(scene::Entity& ioEntity, SceneUndoManager* iUndoManager, const commands::CommandTarget& iCommands,
-				   InspectorEditTracker& ioInspector) {
+				   InspectorEditTracker& ioInspector, const PluginDrawers& iPlugins) {
 	if (ioEntity.hasComponent<T>()) {
 		ImGui::PushID(T::name());
 		auto& component = ioEntity.getComponent<T>();
@@ -1038,15 +1055,17 @@ void drawComponent(scene::Entity& ioEntity, SceneUndoManager* iUndoManager, cons
 				removeComponent = true;
 			ImGui::EndPopup();
 		}
-		if (open) {
+		// A plugin drawer edits through commands of its own: the edit tracker stays out of it.
+		if (open && !iPlugins.draw(ioEntity, std::string{T::key()})) {
 			ioInspector.beginComponent(ioEntity, T::key());
 			if constexpr (requires { gui::component::renderProps(component, ioEntity); })
 				gui::component::renderProps(component, ioEntity);
 			else
 				gui::component::renderProps(component);
 			ioInspector.endComponent(T::key(), T::name(), iCommands);
-			gui::widgets::endSection();
 		}
+		if (open)
+			gui::widgets::endSection();
 		if (revertComponent)
 			revertComponentToPrefab(ioEntity, T::key(), T::name(), iUndoManager);
 		if (removeComponent)
@@ -1065,8 +1084,8 @@ void addComponentsFromTuple(scene::Entity& ioEntity, const commands::CommandTarg
 template<isNamedComponent... Component>
 void drawComponentsFromTuple(scene::Entity& ioEntity, SceneUndoManager* iUndoManager,
 							 const commands::CommandTarget& iCommands, InspectorEditTracker& ioInspector,
-							 const std::tuple<Component...>&) {
-	(..., drawComponent<Component>(ioEntity, iUndoManager, iCommands, ioInspector));
+							 const PluginDrawers& iPlugins, const std::tuple<Component...>&) {
+	(..., drawComponent<Component>(ioEntity, iUndoManager, iCommands, ioInspector, iPlugins));
 }
 
 void addGameComponentItems(scene::Entity& ioEntity, const commands::CommandTarget& iCommands) {
@@ -1082,7 +1101,7 @@ void addGameComponentItems(scene::Entity& ioEntity, const commands::CommandTarge
 }
 
 void drawGameComponents(scene::Entity& ioEntity, const commands::CommandTarget& iCommands,
-						InspectorEditTracker& ioInspector) {
+						InspectorEditTracker& ioInspector, const PluginDrawers& iPlugins) {
 	for (const auto& desc: scene::ComponentRegistry::getAll()) {
 		if (desc.builtin || !desc.has(ioEntity))
 			continue;
@@ -1097,7 +1116,7 @@ void drawGameComponents(scene::Entity& ioEntity, const commands::CommandTarget& 
 												{{"entity", entityArgOf(ioEntity)}, {"component", desc.name}});
 			ImGui::EndPopup();
 		}
-		if (open) {
+		if (open && !iPlugins.draw(ioEntity, desc.key)) {
 			ioInspector.beginComponent(ioEntity, desc.key);
 			if (desc.inspect)
 				std::ignore = desc.inspect(ioEntity);
@@ -1106,8 +1125,9 @@ void drawGameComponents(scene::Entity& ioEntity, const commands::CommandTarget& 
 			else
 				ImGui::TextDisabled("No inspector registered for this component.");
 			ioInspector.endComponent(desc.key, desc.name, iCommands);
-			gui::widgets::endSection();
 		}
+		if (open)
+			gui::widgets::endSection();
 		ImGui::PopID();
 	}
 }
@@ -1178,9 +1198,10 @@ void SceneHierarchy::drawComponents(const scene::Entity& iEntity) {
 		addGameComponentItems(m_selection, getCommandTarget());
 		ImGui::EndPopup();
 	}
-	drawComponentsFromTuple(m_selection, mp_undoManager, getCommandTarget(), m_inspector,
+	const PluginDrawers plugins{.host = mp_plugins, .ui = &m_pluginUi};
+	drawComponentsFromTuple(m_selection, mp_undoManager, getCommandTarget(), m_inspector, plugins,
 							gui::component::DrawableComponents{});
-	drawGameComponents(m_selection, getCommandTarget(), m_inspector);
+	drawGameComponents(m_selection, getCommandTarget(), m_inspector, plugins);
 }
 
 }// namespace owl::nest::panel

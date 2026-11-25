@@ -11,6 +11,7 @@
 #include "commands/Macro.h"
 #include "session/HeadlessSession.h"
 #include "session/HeldInput.h"
+#include "session/PluginHost.h"
 
 #include <app/Application.h>
 #include <app/EngineContext.h>
@@ -119,15 +120,25 @@ auto parseCheck(const std::string& iField, const YAML::Node& iNode, ScenarioChec
 	return false;
 }
 
+// The text `CommandRegistry::parseArg` reads: a scalar as it is, a list as its numbers.
+auto argText(const YAML::Node& iValue) -> std::optional<std::string> {
+	if (iValue.IsScalar())
+		return iValue.as<std::string>();
+	if (!iValue.IsSequence())
+		return std::nullopt;
+	std::string numbers;
+	for (const auto& item: iValue) {
+		if (!item.IsScalar())
+			return std::nullopt;
+		numbers += std::format("{} ", item.as<std::string>());
+	}
+	return numbers;
+}
+
 auto parseArgValue(const commands::ArgSpec& iSpec, const YAML::Node& iValue) -> std::optional<commands::ArgValue> {
 	if (iValue.IsSequence()) {
-		std::string numbers;
-		for (const auto& item: iValue) {
-			if (!item.IsScalar())
-				return std::nullopt;
-			numbers += std::format("{} ", item.as<std::string>());
-		}
-		return commands::CommandRegistry::parseArg(iSpec.type, numbers);
+		const auto numbers = argText(iValue);
+		return numbers ? commands::CommandRegistry::parseArg(iSpec.type, *numbers) : std::nullopt;
 	}
 	if (iValue.IsMap() && iSpec.type == commands::ArgType::Text) {
 		YAML::Emitter out;
@@ -143,13 +154,22 @@ auto parseCommand(const YAML::Node& iNode, ScenarioStep& oStep) -> std::string {
 	oStep.command = iNode["command"].as<std::string>();
 	static const commands::CommandRegistry s_registry;
 	const auto* spec = s_registry.find(oStep.command);
-	if (spec == nullptr)
-		return std::format("unknown command `{}`", oStep.command);
+	oStep.pluginCommand = spec == nullptr;
 	const auto args = iNode["args"];
 	if (!args)
 		return "";
 	if (!args.IsMap())
 		return "`args` is a map of the command arguments";
+	if (spec == nullptr) {
+		for (const auto& item: args) {
+			const auto text = argText(item.second);
+			if (!text)
+				return std::format("`{}`: `{}` is neither a value nor a list", oStep.command,
+								   item.first.as<std::string>());
+			oStep.pluginArgs.emplace_back(item.first.as<std::string>(), *text);
+		}
+		return "";
+	}
 	for (const auto& item: args) {
 		const auto key = item.first.as<std::string>();
 		const auto arg = std::ranges::find(spec->args, key, &commands::ArgSpec::name);
@@ -455,6 +475,8 @@ auto ScenarioTest::load(const std::filesystem::path& iFile) -> expected<Scenario
 			ScenarioStep step;
 			if (const auto error = parseStep(node, step); !error.empty())
 				return unexpected<std::string>{std::format("line {}: {}", step.line, error)};
+			if (step.pluginCommand && scenario.m_mods.empty())
+				return unexpected<std::string>{std::format("line {}: unknown command `{}`", step.line, step.command)};
 			if (const auto error = resolveActions(step, actionMap); !error.empty())
 				return unexpected<std::string>{std::format("line {}: {}", step.line, error)};
 			if (!step.macro.empty()) {
@@ -467,6 +489,14 @@ auto ScenarioTest::load(const std::filesystem::path& iFile) -> expected<Scenario
 		}
 	} catch (const std::exception& iEx) { return unexpected<std::string>{iEx.what()}; }
 	return scenario;
+}
+
+void ScenarioTest::loadPlugins() {
+	if (!app::Application::instanced())
+		return;
+	if (!mp_plugins)
+		mp_plugins = mkUniq<session::PluginHost>(m_commands);
+	std::ignore = mp_plugins->load(app::Application::get().getExtensions());
 }
 
 auto ScenarioTest::runStep(const ScenarioStep& iStep, const shared<scene::Scene>& iScene) -> std::string {
@@ -498,7 +528,22 @@ auto ScenarioTest::runStep(const ScenarioStep& iStep, const shared<scene::Scene>
 		return "";
 	}
 	if (!iStep.command.empty()) {
-		if (const auto result = m_commands.execute(iStep.command, iStep.args, iScene, *m_undo); !result)
+		auto args = iStep.args;
+		if (iStep.pluginCommand) {
+			const auto* spec = m_commands.find(iStep.command);
+			if (spec == nullptr)
+				return std::format("line {}: unknown command `{}`", iStep.line, iStep.command);
+			for (const auto& [key, text]: iStep.pluginArgs) {
+				const auto arg = std::ranges::find(spec->args, key, &commands::ArgSpec::name);
+				const auto value =
+						arg != spec->args.end() ? commands::CommandRegistry::parseArg(arg->type, text) : std::nullopt;
+				if (!value)
+					return std::format("line {}: `{}` has no argument `{}` of that type", iStep.line, iStep.command,
+									   key);
+				args.set(key, *value);
+			}
+		}
+		if (const auto result = m_commands.execute(iStep.command, args, iScene, *m_undo); !result)
 			return std::format("line {}: {}", iStep.line, result.error().message);
 		return "";
 	}

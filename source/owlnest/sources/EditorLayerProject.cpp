@@ -22,6 +22,7 @@
 #include "document/MeshDocument.h"
 #include "document/NodeGraphDocument.h"
 #include "document/PcgGraphDocument.h"
+#include "document/PluginDocument.h"
 #include "document/SequenceDocument.h"
 #include "document/SoundDocument.h"
 #include "document/TilemapDocument.h"
@@ -53,7 +54,13 @@
 namespace owl::nest {
 
 void EditorLayer::openAssetFile(const std::filesystem::path& iPath) {
-	switch (classifyAsset(iPath)) {
+	const auto kind = classifyAsset(iPath);
+	// The built-in types keep their files: a plugin document type only takes what would open as text.
+	if ((kind == AssetKind::Code || kind == AssetKind::Unsupported) && m_plugins.findDocumentType(iPath) != nullptr) {
+		openPluginDocumentFile(iPath);
+		return;
+	}
+	switch (kind) {
 		case AssetKind::Scene:
 		case AssetKind::Hud:
 			openScene(iPath);
@@ -647,6 +654,37 @@ void EditorLayer::openHudThemeFile(const std::filesystem::path& iPath) {
 	syncActiveDocumentPanels();
 }
 
+void EditorLayer::openPluginDocumentFile(const std::filesystem::path& iPath) {
+	const auto path = normalised(iPath);
+	const auto* type = m_plugins.findDocumentType(path);
+	if (type == nullptr || !exists(path))
+		return;
+	if (auto* open = findOpenDocument<PluginDocument>(m_documents, DocumentType::Plugin, path); open != nullptr) {
+		m_documents.setActive(open);
+		open->requestFocus();
+		syncActiveDocumentPanels();
+		return;
+	}
+	auto doc = mkUniq<PluginDocument>(type->id);
+	doc->onAttach(this);
+	if (!doc->loadFromFile(path)) {
+		OWL_CORE_ERROR("Editor: Cannot open the plugin document '{}'.", path.string())
+		doc->onDetach();
+		return;
+	}
+	auto* raw = m_documents.add(std::move(doc));
+	m_documents.setActive(raw);
+	syncActiveDocumentPanels();
+}
+
+auto EditorLayer::openPluginDocument(const std::filesystem::path& iPath) -> commands::PluginDocumentEditor* {
+	const auto path = normalised(iPath);
+	if (auto* doc = findOpenDocument<PluginDocument>(m_documents, DocumentType::Plugin, path); doc != nullptr)
+		return doc;
+	openPluginDocumentFile(path);
+	return findOpenDocument<PluginDocument>(m_documents, DocumentType::Plugin, path);
+}
+
 auto EditorLayer::openHudTheme(const std::filesystem::path& iPath) -> commands::HudThemeEditor* {
 	const auto path = normalised(iPath);
 	if (auto* doc = findOpenDocument<HudThemeDocument>(m_documents, DocumentType::HudTheme, path); doc != nullptr)
@@ -1084,6 +1122,7 @@ void EditorLayer::saveProjectAs() {
 void EditorLayer::mountProjectExtensions() {
 	const auto sources = m_project.isLoaded() ? m_project.getEnabledExtensions() : std::vector<std::filesystem::path>{};
 	std::ignore = app::Application::get().setExtensionSources(sources);
+	std::ignore = m_plugins.load(app::Application::get().getExtensions());
 }
 
 void EditorLayer::closeProject() {
@@ -1107,6 +1146,7 @@ void EditorLayer::closeProject() {
 	auto& app = app::Application::get();
 	app.getEngineContext().getScreenTransition().reset();
 	std::ignore = app.setExtensionSources({});
+	m_plugins.unload();
 	app.removeAssetDirectory(m_project.projectDirectory);
 	// These libraries key their assets by project-relative path: two projects both have a `tables/waves.owltable`.
 	auto& context = app.getEngineContext();

@@ -43,6 +43,8 @@ struct JournalEntry {
 	CommandResult result;
 	/// Why it did not run, otherwise.
 	CommandFailure failure;
+	/// True when another command ran it: that command replays it, a macro built from the journal leaves it out.
+	bool nested{false};
 };
 
 /**
@@ -78,9 +80,10 @@ public:
 	 * @param[in] iArgs The arguments given.
 	 * @param[in] iSource Who asked for it.
 	 * @param[in] iResult What it did, or why it did not run.
+	 * @param[in] iNested Whether another command was running it.
 	 */
 	void record(const CommandSpec* iSpec, std::string_view iName, const CommandArgs& iArgs, CommandSource iSource,
-				const expected<CommandResult, CommandFailure>& iResult);
+				const expected<CommandResult, CommandFailure>& iResult, bool iNested = false);
 
 	/**
 	 * @brief

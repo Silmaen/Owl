@@ -64,6 +64,7 @@ auto readFields(const YAML::Node& iNode, ExtensionManifest& oManifest, const std
 	get(iNode, "description", oManifest.description);
 	get(iNode, "loadOrder", oManifest.loadOrder);
 	get(iNode, "script", oManifest.script);
+	get(iNode, "editorScript", oManifest.editorScript);
 	if (const auto version = iNode["version"]; version) {
 		const auto parsed = ExtensionVersion::parse(version.as<std::string>());
 		if (!parsed) {
@@ -218,6 +219,8 @@ auto ExtensionManifest::serialize() const -> std::string {
 		out << YAML::Key << "description" << YAML::Value << description;
 	if (!script.empty())
 		out << YAML::Key << "script" << YAML::Value << script;
+	if (!editorScript.empty())
+		out << YAML::Key << "editorScript" << YAML::Value << editorScript;
 	if (!dependencies.empty()) {
 		out << YAML::Key << "dependencies" << YAML::Value << YAML::BeginSeq;
 		for (const auto& dependency: dependencies) {

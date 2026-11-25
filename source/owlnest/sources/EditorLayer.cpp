@@ -24,6 +24,7 @@
 #include "document/MaterialDocument.h"
 #include "document/MeshDocument.h"
 #include "document/NodeGraphDocument.h"
+#include "document/PluginDocument.h"
 #include "document/SequenceDocument.h"
 #include "document/SoundDocument.h"
 #include "document/TilemapDocument.h"
@@ -198,6 +199,8 @@ void EditorLayer::syncActiveDocumentPanels() {
 	m_sceneSettings.setCommandRegistry(&m_commands);
 	m_mixerPanel.setCommandRegistry(&m_commands);
 	m_extensionPanel.setCommandRegistry(&m_commands);
+	m_extensionPanel.setPlugins(&m_plugins);
+	m_sceneHierarchy.setPlugins(&m_plugins);
 	m_extensionPanel.setContextProvider([this]() -> commands::CommandContext { return makeCommandContext(); });
 	m_extensionPanel.setDisabledExtensions(m_project.isLoaded() ? &m_project.disabledExtensions : nullptr);
 	m_extensionPanel.setProjectDirectory(m_project.isLoaded() ? m_project.projectDirectory : std::filesystem::path{});
@@ -1020,6 +1023,8 @@ auto consumeTabClose(Document* ioDocument) -> bool {
 			return consumeClose<SequenceDocument>(ioDocument);
 		case DocumentType::HudTheme:
 			return consumeClose<HudThemeDocument>(ioDocument);
+		case DocumentType::Plugin:
+			return consumeClose<PluginDocument>(ioDocument);
 	}
 	return false;
 }
@@ -1120,6 +1125,7 @@ void EditorLayer::onImGuiRender(const core::Timestep& iTimeStep) {
 	m_mixerPanel.onImGuiRender();
 	m_networkPanel.onImGuiRender(app::Application::get().getEngineContext());
 	m_extensionPanel.onImGuiRender();
+	panel::renderPluginPanels(m_plugins, m_pluginUi);
 	if (m_sceneSettings.consumeDirtyFlag()) {
 		syncActiveDocumentPanels();
 	}
@@ -1540,6 +1546,19 @@ void EditorLayer::renderScriptDebug() {
 }
 
 void EditorLayer::bindScriptCallbacks() {
+	m_plugins.setContextProvider([this]() -> commands::CommandContext { return makeCommandContext(); });
+	m_plugins.setSelectionProvider([this]() -> core::UUID {
+		const auto selected = getSelectedEntity();
+		return activeSceneDocument() != nullptr && selected ? selected.getUUID() : core::UUID{0};
+	});
+	m_contentBrowser.setPluginImporters(
+			[this](const std::filesystem::path& iPath) -> std::string {
+				const auto* importer = m_plugins.findImporter(iPath);
+				return importer != nullptr ? importer->title : std::string{};
+			},
+			[this](const std::filesystem::path& iPath) -> void {
+				runCommandFromUi("asset.import", {{"path", iPath.string()}}, commands::CommandSource::Gesture);
+			});
 	m_contentBrowser.setEditorScriptRunCallback(
 			[this](const std::filesystem::path& iPath) -> void { m_consolePanel.runEditorScript(iPath); });
 	m_contentBrowser.setMacroExportCallback([this](const std::filesystem::path& iPath) -> void {

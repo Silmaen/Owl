@@ -391,6 +391,18 @@ public:
 
 	/**
 	 * @brief
+	 *  Set the importers of the Owl Nest plugins, offered in the context menu of the files they take.
+	 * @param[in] iLookup Function giving the description of the importer of a file, empty when no plugin takes it.
+	 * @param[in] iImport Function importing a file with that importer.
+	 */
+	void setPluginImporters(std::function<std::string(const std::filesystem::path&)> iLookup,
+							std::function<void(const std::filesystem::path&)> iImport) {
+		m_pluginImporterLookup = std::move(iLookup);
+		m_pluginImportCallback = std::move(iImport);
+	}
+
+	/**
+	 * @brief
 	 *  Set a callback invoked when a mesh (`.gltf`, `.glb`, `.obj`) is double-clicked or placed from its context menu.
 	 * @param[in] iCallback Function taking the mesh file path.
 	 */
@@ -739,6 +751,10 @@ private:
 	std::function<void(const std::filesystem::path&)> m_macroExportCallback;
 	/// Called to run an editor script.
 	std::function<void(const std::filesystem::path&)> m_editorScriptRunCallback;
+	/// Gives the description of the plugin importer of a file, empty when none takes it.
+	std::function<std::string(const std::filesystem::path&)> m_pluginImporterLookup;
+	/// Called to import a file with the importer of a plugin.
+	std::function<void(const std::filesystem::path&)> m_pluginImportCallback;
 	/// Called when a mesh is double-clicked or placed from its context menu.
 	std::function<void(const std::filesystem::path&)> m_meshPlaceCallback;
 	/// Called when a mesh is opened from its context menu.

@@ -106,7 +106,8 @@ TEST(ExtensionManifest, serializeRoundTrips) {
 			.author = "Silmaen",
 			.description = "Items in other colours.",
 			.dependencies = {{.id = "base.items", .minVersion = *ExtensionVersion::parse("0.5")}},
-			.script = "scripts/items/main.lua"};
+			.script = "scripts/items/main.lua",
+			.editorScript = "editor/items/main.lua"};
 	const auto text = manifest.serialize();
 	EXPECT_NE(text.find("OwlExtension:"), std::string::npos);
 	EXPECT_NE(text.find("FormatVersion: 1"), std::string::npos);
@@ -280,6 +281,42 @@ TEST_F(ExtensionPackFixture, writtenPackReadsLikeItsFolder) {
 	EXPECT_EQ(pack->listEntries(), (std::vector<std::string>{"scripts/rule.lua", "textures/hero.png"}));
 	EXPECT_EQ(textOf(pack->readEntry("scripts/rule.lua")), "-- rule of script.pack");
 	EXPECT_EQ(writeExtensionPack(folder, m_dir / "out").error(), ExtensionLoadError::WriteFailed);
+}
+
+TEST_F(ExtensionPackFixture, aGamePackLeavesTheEditorEntriesOut) {
+	const auto folder = makeFolder("tools.pack", "  kind: Script\n  editorScript: tools/panel.lua\n");
+	writeText(folder / "tools" / "panel.lua", "-- editor script");
+	writeText(folder / "editor" / "lib" / "shared.lua", "-- editor module");
+	const auto manifest = ExtensionPack::readManifest(folder);
+	ASSERT_TRUE(manifest.has_value());
+	EXPECT_TRUE(isEditorEntry(*manifest, "tools/panel.lua"));
+	EXPECT_TRUE(isEditorEntry(*manifest, "editor/lib/shared.lua"));
+	EXPECT_FALSE(isEditorEntry(*manifest, "scripts/rule.lua"));
+	EXPECT_FALSE(isEditorEntry(*manifest, "editors/rule.lua"));
+
+	const auto full = writeExtensionPack(folder, m_dir / "out" / "full.owlmod");
+	ASSERT_TRUE(full.has_value());
+	EXPECT_EQ(*full, 4u);
+	const auto shared = ExtensionPack::open(m_dir / "out" / "full.owlmod");
+	ASSERT_TRUE(shared.has_value());
+	EXPECT_TRUE(shared->contains("tools/panel.lua"));
+	EXPECT_EQ(shared->getManifest().editorScript, "tools/panel.lua");
+
+	const auto game =
+			writeExtensionPack(folder, m_dir / "out" / "game.owlmod", PackFlags::Default, ExtensionContent::Game);
+	ASSERT_TRUE(game.has_value());
+	EXPECT_EQ(*game, 2u);
+	const auto played = ExtensionPack::open(m_dir / "out" / "game.owlmod");
+	ASSERT_TRUE(played.has_value());
+	EXPECT_EQ(played->listEntries(), (std::vector<std::string>{"scripts/rule.lua", "textures/hero.png"}));
+	EXPECT_TRUE(played->getManifest().editorScript.empty());
+	EXPECT_EQ(played->getManifest().id, "tools.pack");
+	EXPECT_EQ(played->getManifest().kind, ExtensionKind::Script);
+	// The game mounts it like any pack.
+	ExtensionRegistry registry;
+	EXPECT_EQ(registry.mount({m_dir / "out" / "game.owlmod"}), 1u);
+	EXPECT_EQ(textOf(registry.readEntry("scripts/rule.lua")), "-- rule of tools.pack");
+	EXPECT_FALSE(registry.contains("tools/panel.lua"));
 }
 
 TEST_F(ExtensionPackFixture, registryOverridesInLoadOrder) {

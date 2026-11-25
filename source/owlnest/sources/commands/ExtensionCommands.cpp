@@ -134,6 +134,8 @@ auto applyArgs(const CommandArgs& iArgs, ExtensionManifest& ioManifest) -> std::
 		ioManifest.description = iArgs.getText("description");
 	if (iArgs.has("script"))
 		ioManifest.script = iArgs.getText("script");
+	if (iArgs.has("editor_script"))
+		ioManifest.editorScript = iArgs.getText("editor_script");
 	if (const auto order = iArgs.get<int64_t>("load_order"); order)
 		ioManifest.loadOrder = static_cast<int32_t>(*order);
 	if (iArgs.has("version")) {
@@ -245,6 +247,28 @@ function on_entity_destroy(id)
 end
 )";
 
+constexpr auto g_editorScriptTemplate =
+		R"(-- Owl Nest plugin of the {0} pack: run by the editor when the pack is enabled.
+-- What it adds is declared here with `nest.*`; each handler is a global function of this script.
+
+nest.command{{name = "{0}.hello", description = "Create an entity named Hello", handler = "hello"}}
+
+function hello(args)
+    return editor.entity.create{{name = "Hello"}}
+end
+
+nest.panel{{id = "{0}.panel", title = "{0}", handler = "draw_panel"}}
+
+function draw_panel(args)
+    if ui.section{{label = "Scene"}}.open then
+        ui.value{{label = "Entities", value = args.entity_count}}
+        if ui.button{{label = "Hello", primary = true}}.clicked then
+            editor.{0}.hello{{}}
+        end
+    end
+end
+)";
+
 auto createEntryScript(const CommandContext& iContext, const CommandArgs& iArgs)
 		-> expected<CommandResult, CommandFailure> {
 	const auto folder = resolvePackFolder(iArgs.getText("path"), iContext.projectDirectory);
@@ -254,14 +278,19 @@ auto createEntryScript(const CommandContext& iContext, const CommandArgs& iArgs)
 	if (!read)
 		return fail(CommandError::NotApplicable, std::format("the manifest of `{}` cannot be read", folder->string()));
 	auto manifest = read->second;
-	if (manifest.script.empty())
+	const bool editor = iArgs.getBool("editor");
+	if (manifest.script.empty() && !editor)
 		manifest.script = std::format("scripts/{}/main.lua", manifest.id);
+	if (manifest.editorScript.empty() && editor)
+		manifest.editorScript = std::format("editor/{}/main.lua", manifest.id);
 	manifest.kind = ExtensionKind::Script;
-	const auto file = *folder / manifest.script;
+	const auto file = *folder / (editor ? manifest.editorScript : manifest.script);
 	std::error_code error;
 	if (!std::filesystem::exists(file, error)) {
 		std::filesystem::create_directories(file.parent_path(), error);
-		if (!platform::writeFileAtomic(file, std::format(g_entryScriptTemplate, manifest.id)))
+		const auto text = editor ? std::format(g_editorScriptTemplate, manifest.id)
+								 : std::format(g_entryScriptTemplate, manifest.id);
+		if (!platform::writeFileAtomic(file, text))
 			return fail(CommandError::NotApplicable, std::format("cannot write `{}`", file.string()));
 	}
 	if (manifest != read->second &&
@@ -269,9 +298,10 @@ auto createEntryScript(const CommandContext& iContext, const CommandArgs& iArgs)
 		return fail(CommandError::NotApplicable, std::format("cannot write the manifest of `{}`", manifest.id));
 	if (iContext.onExtensionsChanged)
 		iContext.onExtensionsChanged();
-	return CommandResult{.entity = core::UUID{0},
-						 .description = std::format("Create the entry script of `{}`", manifest.id),
-						 .data = {{"path", file.string()}}};
+	return CommandResult{
+			.entity = core::UUID{0},
+			.description = std::format("Create the {} script of `{}`", editor ? "Owl Nest" : "entry", manifest.id),
+			.data = {{"path", file.string()}}};
 }
 
 auto enableExtension(const CommandContext& iContext, const CommandArgs& iArgs)
@@ -387,6 +417,10 @@ void addExtensionCommands(CommandRegistry& ioRegistry) {
 			 .type = ArgType::Text,
 			 .description = "Entry script of a Script pack, an asset path inside the pack (`scripts/<id>/main.lua`); "
 							"empty for none."},
+			{.name = "editor_script",
+			 .type = ArgType::Text,
+			 .description = "Entry script of the Owl Nest plugin of a Script pack, an asset path inside the pack "
+							"(`editor/<id>/main.lua`); empty for none."},
 			{.name = "dependencies",
 			 .type = ArgType::Text,
 			 .description = "Packs needed, `id@version` separated by commas (`id` alone for any version)."}};
@@ -419,8 +453,13 @@ void addExtensionCommands(CommandRegistry& ioRegistry) {
 	ioRegistry.add({.name = "extension.script",
 					.description = "Give an extension pack its entry script: written from a template when missing "
 								   "(`scripts/<id>/main.lua` when the manifest names none), and the pack made a "
-								   "Script pack (writes files, not an undo entry).",
-					.args = {pathSpec},
+								   "Script pack (writes files, not an undo entry). With `editor`, the script of its "
+								   "Owl Nest plugin instead (`editor/<id>/main.lua`).",
+					.args = {pathSpec,
+							 {.name = "editor",
+							  .type = ArgType::Bool,
+							  .description = "True for the Owl Nest plugin script, false for the game entry script.",
+							  .defaultValue = false}},
 					.factory = {},
 					.run = createEntryScript,
 					.allowedInPlay = false,

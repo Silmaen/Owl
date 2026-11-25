@@ -59,14 +59,15 @@ Besides MinGW (kept), a Windows build with the MSVC ABI so the SDK links from Vi
 Plugins extend the engine and Owl Nest; teams of developers and designers share them. Mods and plugins are one
 mechanism: an extension pack (manifest, version, dependencies, load order) that a game loads as a mod, a project or
 Owl Nest as a plugin ([Mods and extension packs](../mods.md)). Data and script plugins are done
-([Plugins](../mods.md#mods-plugins)); Owl Nest plugins are planned; native plugins are to be evaluated after 1.0.
+([Plugins](../mods.md#mods-plugins)), Owl Nest plugins too ([Owl Nest plugins](../mods.md#mods-nest-plugins)); native
+plugins are to be evaluated after 1.0.
 
 | Kind     | What it adds                                                                     | Targets                          |
 |----------|----------------------------------------------------------------------------------|----------------------------------|
 | Data     | Material nodes (done), script nodes (done), templates (done), assets             | Every target                     |
 | Script   | Game rules, domain functions, components, in the scripting language (done)       | Every target                     |
 | Native   | Engine functions, render layers, renderers, backends, in C++                     | The binaries its authors provide |
-| Owl Nest | Panels, `CommandRegistry` commands, inspector drawers, document types, importers | The editor hosts                 |
+| Owl Nest | Panels, commands, inspector drawers, document types, importers, in Lua (done)    | The editor hosts                 |
 
 - A native plugin ships built for each platform by its authors, never built from its sources by Owl; a target without
   its binary runs without it
@@ -74,7 +75,11 @@ Owl Nest as a plugin ([Mods and extension packs](../mods.md)). Data and script p
   C++ header on top of it
 - One node registry: every plugin adds its nodes, each graph kind (visual scripts, materials, PCG, behaviour trees)
   reads its own
-- Until then, new extension points are registries filled at runtime, not lists fixed at compile time
+- Until then, new extension points are registries filled at runtime, not lists fixed at compile time: the Owl Nest
+  plugins fill the `CommandRegistry` and the contributions of `session::PluginHost` (panels, drawers, document types,
+  importers), which the editor asks before its built-in lists
+- An Owl Nest plugin draws through widgets the editor styles (`session::PluginUi`), never through ImGui, and edits
+  through registry commands only: the same script would drive another editor front end
 
 WASM game modules and compiled mods (C++, Rust or Zig built once, run by the runner on every target) are to be
 evaluated after 1.0 too.

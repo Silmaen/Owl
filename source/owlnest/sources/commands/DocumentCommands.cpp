@@ -29,6 +29,10 @@ LocalisationEditor::~LocalisationEditor() = default;
 
 DocumentHost::~DocumentHost() = default;
 
+auto DocumentHost::openPluginDocument([[maybe_unused]] const std::filesystem::path& iPath) -> PluginDocumentEditor* {
+	return nullptr;
+}
+
 namespace {
 
 auto trimmed(std::string_view iText) -> std::string_view {

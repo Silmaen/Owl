@@ -59,12 +59,14 @@ HeadlessSession::HeadlessSession(const math::vec2ui iSize)
 	  m_previousActions{app::Application::instanced() ? app::Application::get().getEngineContext().getActionMap()
 													  : input::ActionMap::getDefault()} {
 	m_registry.setJournal(&getJournal());
+	m_plugins.setContextProvider([this]() -> commands::CommandContext { return makeCommandContext(); });
 	// Without a window the GLFW input has nothing to poll: the Null input also takes the injected keys.
 	if (app::Application::instanced() && app::Application::get().getWindow().getType() == window::Type::Null)
 		input::Input::init(window::Type::Null);
 }
 
 HeadlessSession::~HeadlessSession() {
+	m_plugins.unload();
 	if (m_playing && m_activeScene)
 		m_activeScene->onEndRuntime();
 	input::Input::resetInjection();
@@ -79,6 +81,12 @@ HeadlessSession::~HeadlessSession() {
 		app.removeAssetDirectory(m_project);
 	app.getEngineContext().setSimulationSettings(m_previousSimulation);
 	app.getEngineContext().setActionMap(*m_previousActions);
+}
+
+auto HeadlessSession::loadPlugins() -> size_t {
+	if (!app::Application::instanced())
+		return 0;
+	return m_plugins.load(app::Application::get().getExtensions());
 }
 
 void HeadlessSession::newScene() {

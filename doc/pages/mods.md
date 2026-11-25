@@ -7,8 +7,9 @@
 An extension pack adds assets and scripts to a game, or replaces some of them. One format serves both roles: a game
 loads a pack as a **mod**, a project or Owl Nest as a **plugin**. The manifest only says what the pack is; the host
 decides the role. A pack can run a script and add components ([entry script](#mods-script)), the player orders the mods of a game with
-the [mod manager](#mods-manager), and a project shares nodes and templates as [plugins](#mods-plugins). Plan of what
-comes next (Owl Nest plugins, native plugins): [Modding and platforms](design/modding-platforms.md#modding-plugins).
+the [mod manager](#mods-manager), a project shares nodes and templates as [plugins](#mods-plugins), and a pack extends
+the editor itself as an [Owl Nest plugin](#mods-nest-plugins). Plan of what comes next (native plugins):
+[Modding and platforms](design/modding-platforms.md#modding-plugins).
 
 ## A pack
 
@@ -31,6 +32,7 @@ OwlExtension:
   version: 1.0.0               # major.minor.patch
   kind: Data                   # Data: assets only; Script: assets and scripts
   # script: scripts/mods/demo.bounty/main.lua   # Script packs: entry script, an asset path in the pack
+  # editorScript: editor/demo.notes/main.lua    # Script packs: script of the Owl Nest plugin
   loadOrder: 0                 # rank among the packs that do not depend on each other
   author: Silmaen
   description: Overrides the first-aid kit of the raycast level with a blue one.
@@ -47,6 +49,7 @@ OwlExtension:
 | `kind`         | `Data`: its scripts (`.lua`, `.owlvs`) are not mounted; `Script`: they are                      |
 | `loadOrder`    | Lower first; of two packs holding the same asset, the later one wins                            |
 | `script`       | `Script` packs: asset path of the entry script, run while a scene plays ([below](#mods-script)) |
+| `editorScript` | `Script` packs: asset path of the Owl Nest plugin script ([below](#mods-nest-plugins))          |
 | `dependencies` | Each one mounted before the pack; a missing, older or left out dependency leaves the pack out   |
 
 The manifest, the `.owlmeta` sidecars and the hidden files (a name starting with `.`) are never entries of a pack.
@@ -165,6 +168,111 @@ serve. The `demo.nodes` pack holds one of each:
 - **Templates**: `engine_demo/extensions/demo.nodes/prefabs/demo_nodes/spinning_coin.owlprefab`. The hierarchy right-click **Plugins** submenu
   instantiates the prefabs of folder packs (`prefab.instantiate`).
 
+## Owl Nest plugins {#mods-nest-plugins}
+
+A `kind: Script` pack that names an `editorScript` is an Owl Nest plugin: enabled in a project, it adds to the editor,
+while it runs, commands, panels, inspector drawers, document types and importers. The script is Lua; it runs once when
+the pack is mounted, in a Lua state of its own with the sandbox of every script (no file system) and the `editor`
+module of the [Lua console](editor_console.md#editor-lua).
+
+```mermaid
+flowchart LR
+    Pack["Enabled pack<br/>editorScript"] --> Host["session::PluginHost<br/>one Lua state per plugin"]
+    Host -->|nest.command| Registry["CommandRegistry<br/>console, journal, macros, MCP"]
+    Host -->|nest.panel| Panels["Plugin panels"]
+    Host -->|nest.drawer| Inspector["Inspector"]
+    Host -->|nest.document| Tabs["Document tabs"]
+    Host -->|nest.importer| Import["asset.import"]
+    Panels & Inspector & Tabs -->|ui.*| Ui["PluginUi<br/>section headers, property grid"]
+    Host -->|editor.*| Registry
+```
+
+The script declares what it adds with the `nest` module; each declaration names a global function of the script, its
+**handler**, which receives one table and may return one:
+
+| Declaration     | Fields                                                                     | The handler receives                                           | Role                                                   |
+|-----------------|----------------------------------------------------------------------------|----------------------------------------------------------------|--------------------------------------------------------|
+| `nest.command`  | `name`, `description`, `handler`, `play`, `scene`                          | The arguments of the command                                   | A registry command; the table returned is its result   |
+| `nest.argument` | `command`, `name`, `type`, `description`, `required`, `default`, `choices` | -                                                              | One argument of a command declared above               |
+| `nest.panel`    | `id`, `title`, `handler`                                                   | `playing`, `entity_count`, `selection`, `selection_name`       | A panel, shown from **Home > Project > Plugin Panels** |
+| `nest.drawer`   | `component`, `handler`                                                     | `entity`, `name`, `component`, the fields of a Lua component   | The body of that component in the inspector            |
+| `nest.document` | `id`, `extension`, `title`, `handler`                                      | `path`, `name`, `text`                                         | The tab the files of that extension open in            |
+| `nest.importer` | `id`, `extension`, `description`, `handler`                                | `path`, `name`, `text`; returns `path` and `text` of the asset | **Import: ...** in the Content Browser, `asset.import` |
+
+- A command name and the ids start with `<pack id>.`; a declaration the host refuses stops the script, and the plugin
+  then adds nothing.
+- Argument types: `bool`, `integer`, `number`, `text`, `entity`, `vec2`, `vec3`, `vec4`, `color`, `enum` (with
+  `choices = "a, b"`). `play = true` lets the command run during Play, `scene = false` without a scene.
+- A plugin command is one undo step whatever it runs, and is undone when its handler raises an error. It appears in
+  the console, the command palette, the journal, macros, the MCP tools and `editor.<name>` of the other scripts.
+- A document type only takes files that would open as text: the built-in types keep theirs. The handler changes the
+  text with `editor.plugin.document_set{path = args.path, text = ...}`, one undo step of the tab.
+- An importer returns the file to write, relative to the folder of the source; it stays inside the project.
+  `asset.import` writes it, and undo puts the previous file back or removes it.
+- An entity id is a text of digits in Lua: pass it back as it is.
+
+A handler reads the scene with the `nest` functions below, from a panel, a drawer, a document or a command. They only
+read: every change goes through an `editor.*` command. A component is read through the serialisation of the scene (the
+one of the scene files and of `component.set_field`), so a built-in component and one declared in Lua read alike; a
+vector or a colour is a list of numbers, a map or a list of maps its YAML on one line.
+
+| Function          | Fields                      | Returns                                                                                  |
+|-------------------|-----------------------------|------------------------------------------------------------------------------------------|
+| `nest.entity`     | `entity` (id or name), `component` | `exists`, `entity`, `name`, `has` (with `component`)                                |
+| `nest.entities`   | `component`, `max` (1000)   | `count`, `ids`, `names` (lists), `selection`, `selection_name`; with `component`, only the entities that have it |
+| `nest.components` | `entity`                    | `exists`, `keys` (the components the entity has)                                         |
+| `nest.fields`     | `entity`, `component`       | `exists`, `has`, `names` (the fields of the component)                                   |
+| `nest.field`      | `entity`, `component`, `field` | `exists`, `has`, `found`, `value`                                                     |
+
+The handler of a drawer also receives the fields of its component by name, a built-in component (`translation` of a
+`Transform`) as well as a Lua one; `entity`, `name` and `component` keep their meaning.
+
+A handler that draws (panel, drawer, document) asks for widgets with the `ui` module, called again on every frame;
+Owl Nest draws them with its panel style. A row returns `value` (the value shown, the one being typed included) and
+`changed`, true once when the edit ends:
+
+| Widget        | Fields                                 | Returns            |
+|---------------|----------------------------------------|--------------------|
+| `ui.section`  | `label`                                | `open`             |
+| `ui.text`     | `text`, `dim`                          | -                  |
+| `ui.value`    | `label`, `value`                       | -                  |
+| `ui.button`   | `label`, `tooltip`, `primary`          | `clicked`          |
+| `ui.checkbox` | `label`, `value`                       | `value`, `changed` |
+| `ui.number`   | `label`, `value`, `min`, `max`, `step` | `value`, `changed` |
+| `ui.integer`  | `label`, `value`, `min`, `max`, `step` | `value`, `changed` |
+| `ui.input`    | `label`, `value`                       | `value`, `changed` |
+| `ui.vec3`     | `label`, `value` (`{x, y, z}`)         | `value`, `changed` |
+| `ui.color`    | `label`, `value` (`{r, g, b, a}`)      | `value`, `changed` |
+| `ui.choice`   | `label`, `value`, `choices` (`"a, b"`) | `value`, `changed` |
+
+A plugin never writes a scene or an asset itself: it runs commands (`editor.component.set_field{...}`,
+`editor.entity.create{...}`), so every change is in the journal and can be undone.
+
+```lua
+nest.command{name = "demo.notes.pin", description = "Pin a design note on an entity", handler = "pin_note"}
+nest.argument{command = "demo.notes.pin", name = "entity", type = "entity", required = true}
+
+function pin_note(args)
+    editor.component.add{entity = args.entity, component = "demo.notes.Note"}
+    return {description = "Pin a note"}
+end
+
+nest.drawer{component = "demo.notes.Note", handler = "draw_note"}
+
+function draw_note(args)
+    local done = ui.checkbox{label = "Done", value = args.done}
+    if done.changed then
+        editor.component.set_field{entity = args.entity, component = args.component, field = "done", value = done.value}
+    end
+end
+```
+
+The Engine Demo pack `demo.notes` adds one of each: the command `demo.notes.pin`, the panel **Design Notes** (it lists
+the entities of the scene that carry a note, read with `nest.entities`), the
+drawer of its `demo.notes.Note` component, the `.owlnote` check list document
+(`engine_demo/extensions/demo.notes/notes/demo_level.owlnote`) and an importer turning a `.txt` file into a `.owlnote`.
+`test/unit/scenarios/nest_plugin.owltest` runs its command: a scenario loads the plugins of its `mods:`.
+
 ## In Owl Nest
 
 **Home > Project > Extensions** shows the panel of the packs of the project, the sub-folders of
@@ -178,14 +286,24 @@ serve. The `demo.nodes` pack holds one of each:
   **Add**.
 - **Entry script** (Script packs): the `script` field, then a section with **Open**, **Create** from a template
   (`extension.script`), the game events defined or not with a jump to their line, and the declared components.
+- **Owl Nest plugin** (Script packs): the `Editor script` field, then a section with **Open**, **Create** from a
+  template (`extension.script editor=true`) and **Reload** (`plugin.reload`, after a change of the script); the errors
+  of the plugin; and everything it adds, each with its handler, defined or not, and a jump to its line. The check box
+  of a panel shows it (`plugin.show_panel`).
 - **Conflicts**: the assets held by several enabled packs, with the pack serving each.
 - **Export .owlmod** writes `exports/<id>.owlmod` of the project (`extension.export`), the file a player drops in the
   `mods` folder of the game.
 
 The enabled packs of the project are its plugins: Owl Nest mounts them when the project opens, so their overrides show
 in the viewport, the documents and Play, and mounts them again after a change of the panel or of a file under
-`extensions/` (the textures already loaded take the new pixels). **Pack Game** writes each enabled pack as
-`mods/<id>.owlmod` of the exported game, which mounts them as mods.
+`extensions/` (the textures already loaded take the new pixels). The Owl Nest plugins are loaded with them: disabling
+a pack takes its commands, panels, drawers, document types and importers out of the editor. **Pack Game** writes each enabled pack as
+`mods/<id>.owlmod` of the exported game, which mounts them as mods; the editor side stays out of it: the file of the
+manifest's `editorScript`, everything under `editor/`, and the `editorScript` field itself.
+
+A headless session (the one the [MCP](mcp.md) tests and the scenario runner use) loads the plugins of the mounted packs
+with `HeadlessSession::loadPlugins`: the same host, sandbox and rules as Owl Nest, so the commands of the plugins are
+MCP tools, with the panels, drawers and document types left out for want of a window.
 
 The same commands run from the console, the command palette, macros and the MCP server
 ([Console](editor_console.md#editor-console)). The assets of a pack are edited like any other asset of the project, in
@@ -208,3 +326,8 @@ the content browser.
 | `app::Application::hasPackedAssets()`    | A pack is open or extension packs are mounted                                                         |
 | `app::Application::setExtensionSources`  | Replace the mounted packs and reload the assets they change                                           |
 | `pack::ExportSettings::extensionSources` | Packs written to the `mods` folder of a game by `GameExporter`                                        |
+| `script::ScriptConsole::call`            | Calls a global function of a tool script with a table (the handlers of the Owl Nest plugins)          |
+
+Owl Nest side (`source/owlnest/sources/session/`): `PluginHost` loads the plugins and holds what they add,
+`EditorModule` gives a Lua state the `editor` functions, `PluginUi` is the widget surface (`panel::PluginUiRenderer`
+draws it), `PluginDocument` is the tab of a plugin document type.

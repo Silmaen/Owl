@@ -68,7 +68,16 @@ panel; user documentation in [Editor](../editor_console.md#editor-lua).
 - **Separate Lua state** from the game: editor scripts never run inside Play and cannot reach the game state directly.
   The game sandbox rules apply (no `io`, `os`, `debug`, `package`).
 - **Editor scripts as assets** (`.lua` under `editor/` in the project): run from the Console menu **Editor Scripts** or
-  the Content Browser (**Run as Editor Script**); a script cannot add a menu entry or a tool button.
+  the Content Browser (**Run as Editor Script**); a script cannot add a menu entry or a tool button. What stays in
+  the editor (a command, a panel, an inspector drawer, a document type, an importer) is an
+  [Owl Nest plugin](../mods.md#mods-nest-plugins): the same `editor` module (`session::EditorModule`) in a Lua state
+  per plugin.
+- **Reading the scene**: a plugin reads entities, their components and their fields with `nest.entities`,
+  `nest.components`, `nest.fields` and `nest.field`, through the serialisation of the scene; there is no write path
+  besides the `editor.*` commands.
+- **Nested commands**: a command run by another command (a macro line, a plugin command step) is journaled as nested and
+  left out of a macro built from the journal, which replays the parent once.
+- **Entity ids** reach Lua as their decimal digits: a Lua number only holds 53 bits exactly.
 - **Export a macro to Lua**: a `.owlmacro` converted into the equivalent script, the first step from recording to
   editing.
 - A whole script is one undo group, and an error undoes it.

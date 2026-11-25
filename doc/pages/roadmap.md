@@ -141,8 +141,8 @@ per target, Android and the Web.
 - ![Done][done] In-game mod manager (enable / disable / reorder, conflict detection) ([Mods and extension packs](mods.md))
 - ![Done][done] Data and script plugins: material and script nodes, templates, game rules, shared by a project
   on every target ([Mods and extension packs](mods.md))
-- ![Planned][planned] Owl Nest plugins: panels, commands, inspector drawers, document types, importers
-  ([Plugins](design/modding-platforms.md#modding-plugins))
+- ![Done][done] Owl Nest plugins: panels, commands, inspector drawers, document types, importers
+  ([Owl Nest plugins](mods.md#mods-nest-plugins))
 - ![Done][done] Every engine gap of the sample games closed (Lua voxel table, saved procedural chunks, voxel edits without
   a captured cursor, tilemap switch, saved raycast walls, isometric zoom, camera size and field of view, PCG graphs at
   run time), Sokoban on one scene, and the pool audited against the engine ([Gaps](design/sample-games.md#sample-games-gaps))

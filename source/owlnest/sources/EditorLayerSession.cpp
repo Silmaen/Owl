@@ -172,6 +172,9 @@ auto EditorLayer::openDocumentForRecovery(const RecoveryEntry& iEntry) -> Docume
 		case DocumentType::HudTheme:
 			openHudThemeFile(path);
 			break;
+		case DocumentType::Plugin:
+			openPluginDocumentFile(path);
+			break;
 		case DocumentType::Scene:
 			break;
 	}

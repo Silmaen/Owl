@@ -66,6 +66,10 @@ Select lines of the journal and **Save as Macro**: a `.owlmacro` file replays th
 as `$n` references. A double-click on the file in the Content Browser (which also offers **Edit as Text**) or
 `macro.run path=...` replays it as one undo step; the first failing line stops it, undoes it and reports its line.
 
+A command that runs other commands (`macro.run`, a command of an [Owl Nest plugin](mods.md#mods-nest-plugins)) is
+journaled with the commands it ran, marked as nested: a macro saved from the journal keeps the command and leaves its
+nested commands out, so it replays the command once.
+
 ## Command palette
 
 `Shift` twice (outside a text field), or a click in the search box of the ribbon, opens a search over every editor
@@ -98,6 +102,7 @@ A refused command changes nothing and logs why (a bad argument, an edit during P
 | `component.add`                   | `entity`, `component` (display name `Circle Renderer` or file key)                                      |
 | `component.remove`                | `entity`, `component`                                                                                   |
 | `component.set`                   | `entity`, `component`, `values` (a YAML / JSON map merged into the component), `replace`                |
+| `component.set_field`             | `entity`, `component`, `field`, `value` (a number, a boolean, a text, or a list `[1, 0, 0]`)            |
 | `prefab.instantiate`              | `path` (prefab file), `asset_path`                                                                      |
 | `mesh.create`                     | `path` (mesh file), `asset_path`, `name`, `translation` (world), `parent`, `layer`                      |
 | `material.create`                 | `path` (new `.owlmat`), `parent` (an instance when given), `graph` (a material graph)                   |
@@ -188,6 +193,12 @@ A refused command changes nothing and logs why (a bad argument, an edit during P
 | `extension.set`                   | `path`, `name`, `version`, `kind`, `load_order`, `author`, `description`, `dependencies`; undoable      |
 | `extension.enable`                | `path`, `enabled`; saved in the project, the packs mounted again (not an undo step)                     |
 | `extension.export`                | `path`, `output` (`exports/<id>.owlmod` when absent)                                                    |
+| `extension.script`                | `path`, `editor` (true: the script of the Owl Nest plugin, else the game entry script)                  |
+| `plugin.list`                     | none; the Owl Nest plugins loaded and what they add (`ids`, `commands`, `panels`, `drawers`...)         |
+| `plugin.reload`                   | none; runs the editor scripts of the enabled packs again                                                |
+| `plugin.show_panel`               | `id` (a plugin panel), `visible`                                                                        |
+| `plugin.document_set`             | `path` (an open plugin document), `text`; undoable in the tab                                           |
+| `asset.import`                    | `path` (a source file), `importer` (a plugin importer, the first fitting one when absent); undoable     |
 | `edit.undo`, `edit.redo`          | none                                                                                                    |
 | `macro.run`                       | `path` (`.owlmacro`)                                                                                    |
 | `hud.add_widget`                  | `kind` (`panel`, `label`...), `name`, `parent`, `size`, `anchor`, `offset`, `size_unit`, `offset_unit`  |

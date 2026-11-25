@@ -60,6 +60,8 @@ auto documentLabel(const DocumentType iType) -> DocumentLabel {
 			return {.glyph = gui::icon::clapperboard, .kind = "sequence"};
 		case DocumentType::HudTheme:
 			return {.glyph = gui::icon::palette, .kind = "hudtheme"};
+		case DocumentType::Plugin:
+			return {.glyph = gui::icon::puzzle, .kind = "plugin"};
 	}
 	return {.glyph = gui::icon::file, .kind = "doc"};
 }

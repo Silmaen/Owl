@@ -1059,6 +1059,23 @@ auto setComponent(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs)
 						   .data = {{"component", desc->key}}};
 }
 
+auto setComponentField(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
+	const auto value = iArgs.getText("value");
+	YAML::Emitter values;
+	values << YAML::Flow << YAML::BeginMap << YAML::Key << iArgs.getText("field") << YAML::Value;
+	// A list or a map is given as YAML; anything else is one scalar, quoted so a text keeps its punctuation.
+	if (value.starts_with('[') || value.starts_with('{'))
+		values << YAML::Load(value);
+	else
+		values << YAML::DoubleQuoted << value;
+	values << YAML::EndMap;
+	const CommandArgs args{{"entity", iArgs.getValues().at("entity")},
+						   {"component", iArgs.getText("component")},
+						   {"values", std::string{values.c_str()}},
+						   {"replace", false}};
+	return setComponent(ioScene, args);
+}
+
 auto assignMaterial(const shared<scene::Scene>& ioScene, const CommandArgs& iArgs) -> Prepared {
 	const auto entity = entityArg(*ioScene, iArgs, "entity");
 	if (!entity)
@@ -1684,6 +1701,20 @@ CommandRegistry::CommandRegistry() {
 				   .description = "Replace every field by `values` instead of merging them (the inspector edits).",
 				   .defaultValue = false}},
 		 .factory = setComponent});
+	add({.name = "component.set_field",
+		 .description = "Change one field of a component of an entity, without writing YAML.",
+		 .args = {entitySpec("Entity changed."),
+				  {.name = "component",
+				   .type = ArgType::Text,
+				   .required = true,
+				   .description = "Component name or file key."},
+				  {.name = "field", .type = ArgType::Text, .required = true, .description = "Name of the field."},
+				  {.name = "value",
+				   .type = ArgType::Text,
+				   .required = true,
+				   .description = "The value: a number, `true` / `false` or a text as they are, a vector or a colour "
+								  "as a list (`[1, 0, 0, 1]`)."}},
+		 .factory = setComponentField});
 	add({.name = "scene.set_hud",
 		 .description = "Choose the HUD asset (`.owlhud`) the scene draws: a path, none, or the project's default HUD.",
 		 .args = {{.name = "path",
@@ -1937,11 +1968,21 @@ CommandRegistry::CommandRegistry() {
 }
 
 void CommandRegistry::add(CommandSpec iSpec) {
+	++m_revision;
 	if (auto found = std::ranges::find(m_commands, iSpec.name, &CommandSpec::name); found != m_commands.end()) {
 		*found = std::move(iSpec);
 		return;
 	}
 	m_commands.push_back(std::move(iSpec));
+}
+
+auto CommandRegistry::remove(const std::string_view iName) -> bool {
+	const auto found = std::ranges::find(m_commands, iName, &CommandSpec::name);
+	if (found == m_commands.end())
+		return false;
+	m_commands.erase(found);
+	++m_revision;
+	return true;
 }
 
 auto CommandRegistry::find(const std::string_view iName) const -> const CommandSpec* {
@@ -1982,9 +2023,12 @@ auto CommandRegistry::execute(const std::string_view iName, const CommandArgs& i
 							  const CommandContext& iContext) const -> expected<CommandResult, CommandFailure> {
 	CommandContext context = iContext;
 	context.registry = this;
+	const bool nested = m_depth > 0;
+	++m_depth;
 	auto result = run(iName, iArgs, context);
+	--m_depth;
 	if (mp_journal != nullptr)
-		mp_journal->record(find(iName), iName, iArgs, iContext.source, result);
+		mp_journal->record(find(iName), iName, iArgs, iContext.source, result, nested);
 	return result;
 }
 

@@ -146,7 +146,7 @@ enum struct ManifestError : uint8_t {
 
 /**
  * @brief
- *  Manifest of an extension pack (`extension.yml`): one format for game mods and for data and script plugins.
+ *  Manifest of an extension pack (`extension.yml`): one format for game mods and for data, script and Owl Nest plugins.
  *
  * The same pack is loaded by a game as a mod, by a project or Owl Nest as a plugin; the host decides the role, the
  * manifest only says what the pack is.
@@ -170,6 +170,8 @@ struct OWL_API ExtensionManifest {
 	std::vector<ExtensionDependency> dependencies;
 	/// Entry script of a `Script` pack (asset path, `scripts/mymod/main.lua`), run while a scene plays; empty for none.
 	std::string script;
+	/// Entry script of an Owl Nest plugin (asset path, `editor/mymod/main.lua`), run by the editor; empty for none.
+	std::string editorScript{};// NOLINT(readability-redundant-member-init) callers may omit it
 
 	/**
 	 * @brief

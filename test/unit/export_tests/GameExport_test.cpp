@@ -355,7 +355,14 @@ TEST_F(GameExporterFixture, ExportEmbedsTheExtensionPacksAsMods) {
 	const auto gameDir = settings.outputDirectory / "My_Game__Deluxe";
 	writeFile(m_project / "extensions" / "recolour" / "extension.yml", "OwlExtension:\n  id: recolour\n");
 	writeFile(m_project / "extensions" / "recolour" / "textures" / "a.png", "PNG-MOD");
-	writeFile(m_root / "extra" / "extension.yml", "OwlExtension:\n  id: extra\n");
+	writeFile(m_project / "extensions" / "recolour" / "extension.yml",
+			  "OwlExtension:\n  id: recolour\n  kind: Script\n  editorScript: editor/recolour/main.lua\n");
+	writeFile(m_project / "extensions" / "recolour" / "editor" / "recolour" / "main.lua", "-- editor only");
+	writeFile(m_project / "extensions" / "recolour" / "scripts" / "rule.lua", "-- game rule");
+	writeFile(m_root / "extra" / "extension.yml",
+			  "OwlExtension:\n  id: extra\n  kind: Script\n  editorScript: tools/panel.lua\n");
+	writeFile(m_root / "extra" / "tools" / "panel.lua", "-- editor only");
+	writeFile(m_root / "extra" / "scripts" / "extra.lua", "-- game rule");
 	ASSERT_TRUE(writeExtensionPack(m_root / "extra", m_root / "extra.owlmod").has_value());
 	writeFile(gameDir / "mods" / "stale.owlmod", "STALE");
 	settings.extensionSources = {m_project / "extensions" / "recolour", m_root / "extra.owlmod"};
@@ -369,7 +376,17 @@ TEST_F(GameExporterFixture, ExportEmbedsTheExtensionPacksAsMods) {
 		ASSERT_TRUE(mod.has_value());
 		EXPECT_EQ(mod->getManifest().id, "recolour");
 		EXPECT_TRUE(mod->contains("textures/a.png"));
-		EXPECT_TRUE(ExtensionPack::open(gameDir / "mods" / "extra.owlmod").has_value());
+		// The game gets the pack without what only Owl Nest reads, from a folder as from a `.owlmod`.
+		EXPECT_TRUE(mod->contains("scripts/rule.lua"));
+		EXPECT_FALSE(mod->contains("editor/recolour/main.lua"));
+		EXPECT_TRUE(mod->getManifest().editorScript.empty());
+		const auto extra = ExtensionPack::open(gameDir / "mods" / "extra.owlmod");
+		ASSERT_TRUE(extra.has_value());
+		EXPECT_TRUE(extra->contains("scripts/extra.lua"));
+		EXPECT_FALSE(extra->contains("tools/panel.lua"));
+		EXPECT_TRUE(extra->getManifest().editorScript.empty());
+		ExtensionRegistry registry;
+		EXPECT_EQ(registry.mount({gameDir / "mods" / "recolour.owlmod", gameDir / "mods" / "extra.owlmod"}), 2u);
 	}
 
 	settings.extensionSources = {m_root / "missing"};
@@ -721,7 +738,11 @@ TEST_F(GameExporterFixture, ExportWritesItsReport) {
 	EXPECT_EQ(result->sizes.pack, result->packBytes);
 	EXPECT_GT(result->sizes.other, 0u);
 #ifdef OWL_PLATFORM_LINUX
+#ifdef OWL_PLATFORM_ARM64
+	EXPECT_EQ(result->platform, "linux-arm64");
+#else
 	EXPECT_EQ(result->platform, "linux-x64");
+#endif
 	EXPECT_EQ(result->sizes.runner, std::string{"RUNNER"}.size());
 	EXPECT_EQ(result->sizes.libraries, std::string{"NEW-LIB"}.size());
 #endif

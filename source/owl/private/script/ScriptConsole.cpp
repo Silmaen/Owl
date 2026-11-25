@@ -15,6 +15,7 @@
 #include "script/LuaValues.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cstddef>
 #include <cstdint>
 #include <exception>
@@ -39,6 +40,9 @@ struct ScriptConsole::Impl {
 namespace {
 
 constexpr std::string_view g_chunkName = "=console";
+// Globals carrying the table given to a called function and the one it returns.
+constexpr std::string_view g_callArgs = "__owl_call_args";
+constexpr std::string_view g_callResult = "__owl_call_result";
 
 auto readValue(lua_State* iState, const int iIndex) -> HostValue {
 	switch (lua_type(iState, iIndex)) {
@@ -53,12 +57,18 @@ auto readValue(lua_State* iState, const int iIndex) -> HostValue {
 		case LUA_TTABLE:
 			{
 				std::vector<double> numbers;
+				std::vector<std::string> strings;
 				const auto size = static_cast<int64_t>(lua_objlen(iState, iIndex));
 				for (int64_t i = 1; i <= size; ++i) {
 					lua_rawgeti(iState, iIndex, static_cast<int>(i));
-					numbers.push_back(static_cast<double>(lua_tonumber(iState, -1)));
+					if (lua_type(iState, -1) == LUA_TSTRING)
+						strings.emplace_back(lua_tostring(iState, -1));
+					else
+						numbers.push_back(static_cast<double>(lua_tonumber(iState, -1)));
 					lua_pop(iState, 1);
 				}
+				if (!strings.empty() && numbers.empty())
+					return strings;
 				return numbers;
 			}
 		default:
@@ -79,7 +89,13 @@ void pushValue(lua_State* iState, const HostValue& iValue) {
 					lua_pushnumber(iState, static_cast<lua_Number>(iItem));
 				else if constexpr (std::is_same_v<T, std::string>)
 					lua_pushlstring(iState, iItem.data(), iItem.size());
-				else {
+				else if constexpr (std::is_same_v<T, std::vector<std::string>>) {
+					lua_createtable(iState, static_cast<int>(iItem.size()), 0);
+					for (size_t i = 0; i < iItem.size(); ++i) {
+						lua_pushlstring(iState, iItem[i].data(), iItem[i].size());
+						lua_rawseti(iState, -2, static_cast<int>(i) + 1);
+					}
+				} else {
 					lua_createtable(iState, static_cast<int>(iItem.size()), 0);
 					for (size_t i = 0; i < iItem.size(); ++i) {
 						lua_pushnumber(iState, static_cast<lua_Number>(iItem[i]));
@@ -237,6 +253,67 @@ auto ScriptConsole::run(const std::string_view iSource, const std::string_view i
 		result.output.push_back(firstLine(chunk.message));
 	}
 	return result;
+}
+
+auto ScriptConsole::call(const std::string_view iFunction, const std::map<std::string, HostValue>& iArgs)
+		-> CallResult {
+	CallResult result;
+	auto* state = mp_impl->engine.getState();
+	if (state == nullptr || !hasFunction(iFunction)) {
+		result.error = std::format("no function `{}`", iFunction);
+		return result;
+	}
+	// The call runs as a chunk, hence under the quotas and with the error kept; the table goes through a global.
+	lua_createtable(state, 0, static_cast<int>(iArgs.size()));
+	for (const auto& [key, value]: iArgs) {
+		pushValue(state, value);
+		lua_setfield(state, -2, key.c_str());
+	}
+	lua_setglobal(state, g_callArgs.data());
+	mp_impl->output = &result.output;
+	const auto chunk = mp_impl->engine.runChunk(std::format("{} = {}({})", g_callResult, iFunction, g_callArgs),
+												std::string{iFunction});
+	mp_impl->output = nullptr;
+	if (chunk.ok) {
+		result.ok = true;
+		lua_getglobal(state, g_callResult.data());
+		if (lua_istable(state, -1)) {
+			const int table = lua_gettop(state);
+			lua_pushnil(state);
+			while (lua_next(state, table) != 0) {
+				if (lua_type(state, -2) == LUA_TSTRING)
+					result.fields.emplace(lua_tostring(state, -2), readValue(state, lua_gettop(state)));
+				lua_pop(state, 1);
+			}
+		}
+		lua_pop(state, 1);
+	} else {
+		result.error = firstLine(chunk.message);
+	}
+	for (const auto global: {g_callArgs, g_callResult}) {
+		lua_pushnil(state);
+		lua_setglobal(state, global.data());
+	}
+	return result;
+}
+
+auto ScriptConsole::hasFunction(const std::string_view iFunction) const -> bool {
+	const bool isName = !iFunction.empty() && std::isdigit(static_cast<unsigned char>(iFunction.front())) == 0 &&
+						std::ranges::all_of(iFunction, [](const char iChar) -> bool {
+							return std::isalnum(static_cast<unsigned char>(iChar)) != 0 || iChar == '_';
+						});
+	return isName && mp_impl->engine.hasFunction(std::string{iFunction});
+}
+
+auto ScriptConsole::getFunctionLine(const std::string_view iFunction) const -> uint32_t {
+	auto* state = mp_impl->engine.getState();
+	if (state == nullptr || !hasFunction(iFunction))
+		return 0;
+	lua_getglobal(state, std::string{iFunction}.c_str());
+	lua_Debug info{};
+	const bool written = lua_getinfo(state, -1, "s", &info) != 0 && std::string_view{info.what} == "Lua";
+	lua_pop(state, 1);
+	return written ? static_cast<uint32_t>(std::max(info.linedefined, 0)) : 0;
 }
 
 auto ScriptConsole::help(const std::string_view iPath) const -> std::vector<std::string> {

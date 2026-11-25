@@ -59,6 +59,8 @@ constexpr auto network = "###Network";
 constexpr auto extensions = "###Extensions";
 /// Bundled documentation.
 constexpr auto help = "###Help";
+/// Start of the window name of a panel an Owl Nest plugin adds; the id of the panel follows.
+constexpr std::string_view pluginPrefix = "###PluginPanel_";
 
 /**
  * @brief

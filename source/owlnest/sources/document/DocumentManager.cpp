@@ -119,6 +119,8 @@ auto typeShortName(const DocumentType iType) -> const char* {
 			return "Sequence";
 		case DocumentType::HudTheme:
 			return "Theme";
+		case DocumentType::Plugin:
+			return "Plugin";
 	}
 	return "Doc";
 }

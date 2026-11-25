@@ -108,6 +108,12 @@ level. The pack is enabled: Owl Nest mounts it as a plugin (the blue kit shows i
 embeds it as `mods/demo.recolour.owlmod` of the exported demo; untick it in the *Extensions* panel to play the original
 kit. `test/unit/scenarios/mod_recolour.owltest` mounts it as a mod.
 
+`extensions/demo.notes` is an Owl Nest plugin ([Owl Nest plugins](../doc/pages/mods.md#mods-nest-plugins)): design
+notes for the team. It adds the command `demo.notes.pin`, the panel **Design Notes** (*Home > Project > Plugin
+Panels*), the inspector of its `demo.notes.Note` component, the `.owlnote` check list document
+(`extensions/demo.notes/notes/demo_level.owlnote`) and an importer turning a `.txt` file into a `.owlnote`.
+`test/unit/scenarios/nest_plugin.owltest` runs its command.
+
 ## Layout
 
 ```

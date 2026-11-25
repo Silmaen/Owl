@@ -643,6 +643,31 @@ void report(const GameExporter::ProgressCallback& iProgress, const float iFracti
 
 auto isCancelled(const GameExporter::CancelCheck& iCancel) -> bool { return iCancel && iCancel(); }
 
+// Copies a `.owlmod` into the game; one holding editor entries is written again without them.
+auto copyGamePack(const std::filesystem::path& iSource, const std::filesystem::path& iFile, const PackFlags iFlags)
+		-> bool {
+	std::error_code error;
+	const auto pack = ExtensionPack::open(iSource);
+	const bool editorOnly =
+			pack && (!pack->getManifest().editorScript.empty() ||
+					 std::ranges::any_of(pack->listEntries(), [&pack](const std::string& iEntry) -> bool {
+						 return isEditorEntry(pack->getManifest(), iEntry);
+					 }));
+	if (!editorOnly)
+		return std::filesystem::copy_file(iSource, iFile, std::filesystem::copy_options::overwrite_existing, error);
+	auto manifest = pack->getManifest();
+	manifest.editorScript.clear();
+	const auto text = manifest.serialize();
+	PackWriter writer;
+	writer.addData({text.begin(), text.end()}, std::string{g_extensionManifestEntry}, AssetType::Other);
+	for (const auto& entry: pack->listEntries()) {
+		const auto data = pack->readEntry(entry);
+		if (!isEditorEntry(pack->getManifest(), entry) && data)
+			writer.addData(*data, entry, getPackAssetType(entry));
+	}
+	return writer.write(iFile, iFlags);
+}
+
 // The extension packs as `mods/<id>.owlmod`; the `.owlmod` files of an earlier export are replaced.
 auto writeMods(const ExportSettings& iSettings, const std::filesystem::path& iGameDir)
 		-> expected<std::vector<std::filesystem::path>, ExportError> {
@@ -666,14 +691,15 @@ auto writeMods(const ExportSettings& iSettings, const std::filesystem::path& iGa
 		}
 		const auto file = folder / (manifest->id + std::string{g_extensionPackExtension});
 		if (std::filesystem::is_directory(source, error)) {
-			if (const auto written = writeExtensionPack(source, file, iSettings.packFlags); !written) {
+			if (const auto written = writeExtensionPack(source, file, iSettings.packFlags, ExtensionContent::Game);
+				!written) {
 				OWL_CORE_ERROR("GameExporter: Extension pack '{}' not written: {}.", manifest->id,
 							   describe(written.error()))
 				return unexpected{ExportError::ExtensionWrite};
 			}
-		} else if (std::filesystem::create_directories(folder, error); !std::filesystem::copy_file(
-						   source, file, std::filesystem::copy_options::overwrite_existing, error)) {
-			OWL_CORE_ERROR("GameExporter: Extension pack '{}' not copied: {}.", manifest->id, error.message())
+		} else if (std::filesystem::create_directories(folder, error);
+				   !copyGamePack(source, file, iSettings.packFlags)) {
+			OWL_CORE_ERROR("GameExporter: Extension pack '{}' not copied.", manifest->id)
 			return unexpected{ExportError::ExtensionWrite};
 		}
 		mods.push_back(file);

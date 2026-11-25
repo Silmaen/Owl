@@ -105,7 +105,7 @@ TEST_F(CommandRegistryTest, DeclaresTheBuiltinCommands) {
 		EXPECT_FALSE(spec->allowedInPlay) << name;
 	}
 	EXPECT_EQ(m_registry.find("entity.explode"), nullptr);
-	EXPECT_EQ(m_registry.getCommands().size(), 174u);
+	EXPECT_EQ(m_registry.getCommands().size(), 175u);
 }
 
 TEST_F(CommandRegistryTest, CreateUnderAParentThenUndoRedo) {
@@ -299,7 +299,7 @@ TEST_F(CommandRegistryTest, IncompleteTargetRefusesCommands) {
 TEST_F(CommandRegistryTest, AddReplacesACommandOfTheSameName) {
 	m_registry.add({.name = "entity.create", .description = "Replaced.", .args = {}, .factory = {}});
 	EXPECT_EQ(m_registry.find("entity.create")->description, "Replaced.");
-	EXPECT_EQ(m_registry.getCommands().size(), 174u);
+	EXPECT_EQ(m_registry.getCommands().size(), 175u);
 }
 
 TEST_F(CommandRegistryTest, ParsesVectorColourAndEnumArguments) {
@@ -370,6 +370,46 @@ TEST_F(CommandRegistryTest, ResultsCarryStructuredData) {
 	EXPECT_EQ(std::get<int64_t>(created->data.at("entity")),
 			  static_cast<int64_t>(static_cast<uint64_t>(created->entity)));
 	EXPECT_EQ(m_scene->findEntityByUUID(created->entity).getName(), "Empty Entity");
+}
+
+TEST_F(CommandRegistryTest, SetComponentFieldTakesOneValue) {
+	auto entity = m_scene->createEntity("Ring");
+	entity.addComponent<scene::component::CircleRenderer>();
+	const auto args = [&entity](const char* iField, const char* iValue) -> CommandArgs {
+		return {{"entity", idOf(entity)},
+				{"component", std::string{"CircleRenderer"}},
+				{"field", std::string{iField}},
+				{"value", std::string{iValue}}};
+	};
+	const auto thickness = run("component.set_field", args("thickness", "0.25"));
+	ASSERT_TRUE(thickness.has_value()) << thickness.error().message;
+	ASSERT_TRUE(run("component.set_field", args("color", "[1, 0, 0, 0.5]")));
+	const auto& circle = entity.getComponent<scene::component::CircleRenderer>();
+	EXPECT_FLOAT_EQ(circle.thickness, 0.25f);
+	EXPECT_FLOAT_EQ(circle.color.w(), 0.5f);
+	m_undo.undo(*m_scene);
+	m_undo.undo(*m_scene);
+	EXPECT_FLOAT_EQ(entity.getComponent<scene::component::CircleRenderer>().thickness, 1.f);
+	EXPECT_EQ(run("component.set_field", args("nope", "1")).error().error, CommandError::InvalidArgument);
+	entity.getComponent<scene::component::Tag>().tag = "x";
+	ASSERT_TRUE(run("component.set_field", {{"entity", idOf(entity)},
+											{"component", std::string{"Tag"}},
+											{"field", std::string{"tag"}},
+											{"value", std::string{"Ring: \"the\" one"}}}));
+	EXPECT_EQ(entity.getName(), "Ring: \"the\" one");
+}
+
+TEST_F(CommandRegistryTest, CommandsCanLeaveTheRegistry) {
+	CommandRegistry registry;
+	const auto revision = registry.getRevision();
+	registry.add({.name = "test.noop", .description = "Nothing.", .args = {}, .factory = {}});
+	EXPECT_EQ(registry.getRevision(), revision + 1);
+	EXPECT_NE(registry.find("test.noop"), nullptr);
+	EXPECT_TRUE(registry.remove("test.noop"));
+	EXPECT_EQ(registry.getRevision(), revision + 2);
+	EXPECT_EQ(registry.find("test.noop"), nullptr);
+	EXPECT_FALSE(registry.remove("test.noop"));
+	EXPECT_EQ(registry.getRevision(), revision + 2);
 }
 
 TEST_F(CommandRegistryTest, SetComponentMergesFieldsAndUndoes) {

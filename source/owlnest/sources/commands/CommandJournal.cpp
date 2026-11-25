@@ -17,7 +17,8 @@
 namespace owl::nest::commands {
 
 void CommandJournal::record(const CommandSpec* iSpec, const std::string_view iName, const CommandArgs& iArgs,
-							const CommandSource iSource, const expected<CommandResult, CommandFailure>& iResult) {
+							const CommandSource iSource, const expected<CommandResult, CommandFailure>& iResult,
+							const bool iNested) {
 	JournalEntry entry{.index = m_nextIndex++,
 					   .source = iSource,
 					   .name = std::string{iName},
@@ -25,7 +26,8 @@ void CommandJournal::record(const CommandSpec* iSpec, const std::string_view iNa
 					   .line = printCommandLine(iName, iArgs, iSpec),
 					   .succeeded = iResult.has_value(),
 					   .result = iResult.has_value() ? *iResult : CommandResult{},
-					   .failure = iResult.has_value() ? CommandFailure{} : iResult.error()};
+					   .failure = iResult.has_value() ? CommandFailure{} : iResult.error(),
+					   .nested = iNested};
 	if (m_entries.size() >= maxEntries)
 		m_entries.erase(m_entries.begin(),
 						m_entries.begin() + static_cast<std::ptrdiff_t>(m_entries.size() - maxEntries + 1));

@@ -512,7 +512,8 @@ auto appendSection(std::vector<uint8_t>& ioData, const PeLayout& iLayout) -> exp
 	ioData.resize(alignUp(ioData.size(), iLayout.fileAlignment), 0);
 	return Section{.headerOffset = header,
 				   .virtualSize = 0,
-				   .virtualAddress = static_cast<uint32_t>(alignUp(imageEnd, iLayout.sectionAlignment)),
+				   .virtualAddress =
+						   static_cast<uint32_t>(alignUp(static_cast<size_t>(imageEnd), iLayout.sectionAlignment)),
 				   .rawSize = 0,
 				   .rawPointer = static_cast<uint32_t>(ioData.size())};
 }

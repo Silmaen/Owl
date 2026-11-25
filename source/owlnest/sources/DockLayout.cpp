@@ -130,7 +130,8 @@ auto DockLayout::collectDocumentWindows(const uint32_t iDockSpaceId) -> std::vec
 	std::vector<std::string> names;
 	std::vector<ImGuiID> seen;
 	const auto keep = [&](const ImGuiID iId, const char* iName, const ImGuiID iDockId) -> void {
-		if (isPanelWindow(iId) || std::ranges::contains(seen, iId) || !isInDockSpace(iDockId, iDockSpaceId))
+		if (isPanelWindow(iId) || std::string_view{iName}.contains(panelWindow::pluginPrefix) ||
+			std::ranges::contains(seen, iId) || !isInDockSpace(iDockId, iDockSpaceId))
 			return;
 		seen.push_back(iId);
 		names.emplace_back(iName);

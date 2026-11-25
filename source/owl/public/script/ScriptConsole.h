@@ -22,10 +22,11 @@ namespace owl::script {
 
 /**
  * @brief
- *  A value passed between a ScriptConsole and its host functions: nil, a boolean, an integer, a number, a string, or
- *  a list of numbers (a vector, a colour).
+ *  A value passed between a ScriptConsole and its host functions: nil, a boolean, an integer, a number, a string, a
+ *  list of numbers (a vector, a colour) or a list of strings (names, ids).
  */
-using HostValue = std::variant<std::monostate, bool, int64_t, double, std::string, std::vector<double>>;
+using HostValue =
+		std::variant<std::monostate, bool, int64_t, double, std::string, std::vector<double>, std::vector<std::string>>;
 
 /**
  * @brief
@@ -136,6 +137,46 @@ public:
 	 * @return The outcome and what it printed.
 	 */
 	auto run(std::string_view iSource, std::string_view iName) -> Result;
+
+	/**
+	 * @brief
+	 *  What a call of a script function gives back.
+	 */
+	struct CallResult {
+		/// Whether the function exists and ran without error.
+		bool ok{false};
+		/// Why it failed: the function is missing, or the message of Lua.
+		std::string error;
+		/// Fields of the table the function returned (none when it returned no table).
+		std::map<std::string, HostValue> fields;
+		/// Lines the function printed.
+		std::vector<std::string> output;
+	};
+
+	/**
+	 * @brief
+	 *  Call a global function of the scripts with one table, under the quotas.
+	 * @param[in] iFunction Name of the global function.
+	 * @param[in] iArgs Fields of the table passed as only argument.
+	 * @return The fields of the table it returned, or why the call failed.
+	 */
+	auto call(std::string_view iFunction, const std::map<std::string, HostValue>& iArgs) -> CallResult;
+
+	/**
+	 * @brief
+	 *  Whether the scripts define a global function.
+	 * @param[in] iFunction Name of the global.
+	 * @return True when the global is a function.
+	 */
+	[[nodiscard]] auto hasFunction(std::string_view iFunction) const -> bool;
+
+	/**
+	 * @brief
+	 *  Line of the definition of a global function written in Lua.
+	 * @param[in] iFunction Name of the global.
+	 * @return The line in its chunk, 0 when the global is no Lua function.
+	 */
+	[[nodiscard]] auto getFunctionLine(std::string_view iFunction) const -> uint32_t;
 
 	/**
 	 * @brief

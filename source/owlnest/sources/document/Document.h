@@ -44,6 +44,7 @@ enum struct DocumentType : uint8_t {
 	Dialogue,///< A `.owldlg` dialogue: a branching conversation edited as a graph.
 	Sequence,///< A `.owlseq` cutscene: camera and event tracks on a timeline.
 	HudTheme,///< A `.owlhudtheme` HUD theme: the named styles of the widgets.
+	Plugin,///< A file of a document type an Owl Nest plugin declares, drawn by the plugin.
 };
 
 /**

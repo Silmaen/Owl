@@ -9,6 +9,7 @@
 #pragma once
 
 #include "Console.h"
+#include "EditorModule.h"
 
 #include <script/ScriptConsole.h>
 
@@ -109,14 +110,8 @@ private:
 	Console& m_commands;
 	/// The Lua state.
 	script::ScriptConsole m_lua;
-	/// Whether the `editor` module holds the commands of the registry.
-	bool m_registered{false};
-
-	/**
-	 * @brief
-	 *  Give the Lua state one function per registry command, on first use.
-	 */
-	void registerCommands();
+	/// The `editor` module of the state: the commands of the registry.
+	EditorModule m_editor;
 };
 
 }// namespace owl::nest::session

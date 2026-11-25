@@ -12,7 +12,9 @@
 
 #include "../UndoManager.h"
 #include "../commands/CommandRegistry.h"
+#include "../session/PluginHost.h"
 #include "InspectorEditTracker.h"
+#include "PluginUiRenderer.h"
 
 #include <optional>
 #include <string>
@@ -124,6 +126,13 @@ public:
 
 	/**
 	 * @brief
+	 *  Set the Owl Nest plugins whose inspector drawers replace the body of the components they name (non-owning).
+	 * @param[in] iPlugins The plugin host, null for none.
+	 */
+	void setPlugins(session::PluginHost* iPlugins) { mp_plugins = iPlugins; }
+
+	/**
+	 * @brief
 	 *  The registry bound to the edited scene and its undo manager.
 	 * @return The command target (invalid while no scene or undo manager is set).
 	 */
@@ -223,6 +232,10 @@ private:
 	SceneUndoManager* mp_undoManager = nullptr;
 	/// Command registry (non-owning, optional).
 	const commands::CommandRegistry* mp_commands = nullptr;
+	/// Owl Nest plugins, for their inspector drawers (non-owning, optional).
+	session::PluginHost* mp_plugins = nullptr;
+	/// Draws the widgets of the plugin drawers.
+	PluginUiRenderer m_pluginUi;
 	/// Active document — when it `overridesGlobalPanels()` the panel delegates its content to it.
 	Document* mp_activeDocument = nullptr;
 	/// Owning editor layer — used for cross-document actions (e.g. opening a referenced asset).

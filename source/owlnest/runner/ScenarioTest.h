@@ -11,6 +11,7 @@
 #include "UndoManager.h"
 #include "commands/CommandRegistry.h"
 #include "session/HeldInput.h"
+#include "session/PluginHost.h"
 
 #include <core/expected.h>
 #include <input/Gamepad.h>
@@ -23,6 +24,7 @@
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 /**
@@ -99,6 +101,10 @@ struct ScenarioStep {
 	std::string command;
 	/// Arguments of the command.
 	commands::CommandArgs args;
+	/// True when no built-in command has this name: a command of an Owl Nest plugin, found when the step runs.
+	bool pluginCommand{false};
+	/// Arguments of a plugin command, as text until its declaration is known.
+	std::vector<std::pair<std::string, std::string>> pluginArgs;
 	/// Macro file replayed by the step (`macro:`, relative to the scenario file), empty otherwise.
 	std::filesystem::path macro;
 	/// Commands undone by the step (`undo: N`).
@@ -194,6 +200,12 @@ public:
 
 	/**
 	 * @brief
+	 *  Load the Owl Nest plugins of the mounted extension packs: their commands serve the `command` steps.
+	 */
+	void loadPlugins();
+
+	/**
+	 * @brief
 	 *  Check one expectation step against a scene.
 	 * @param[in] iStep The expectation.
 	 * @param[in] iScene The scene.
@@ -260,6 +272,8 @@ private:
 	commands::CommandRegistry m_commands;
 	/// Undo history of the commands run.
 	uniq<SceneUndoManager> m_undo = mkUniq<SceneUndoManager>();
+	/// Owl Nest plugins of the mounted packs, adding their commands to `m_commands` (null until `loadPlugins`).
+	uniq<session::PluginHost> mp_plugins;
 };
 
 }// namespace owl::nest::runner

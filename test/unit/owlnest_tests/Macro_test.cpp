@@ -205,6 +205,15 @@ TEST_F(MacroTest, MacroRunCommandReplaysAFile) {
 	EXPECT_EQ(m_journal.getEntries().back().name, "macro.run");
 	EXPECT_EQ(m_journal.getEntries().back().source, CommandSource::Console);
 	EXPECT_EQ(m_journal.resolveReference(std::nullopt).value(), result->entity);
+	// The three lines ran under `macro.run`: a macro built from the journal replays the file once.
+	ASSERT_EQ(m_journal.getEntries().size(), 4u);
+	std::vector<const JournalEntry*> recorded;
+	for (const auto& entry: m_journal.getEntries()) recorded.push_back(&entry);
+	for (size_t i = 0; i < 3; ++i) EXPECT_TRUE(recorded[i]->nested);
+	EXPECT_FALSE(recorded[3]->nested);
+	const auto again = Macro::fromJournal(recorded, m_registry);
+	ASSERT_EQ(again.getLines().size(), 1u);
+	EXPECT_TRUE(again.getLines().front().starts_with("macro.run path=")) << again.getLines().front();
 	ASSERT_TRUE(run("edit.undo", {}).has_value());
 	EXPECT_EQ(count(), 0u);
 

@@ -1,0 +1,11 @@
+FormatVersion: 1
+OwlExtension:
+  id: demo.notes
+  name: Design notes
+  version: 1.0.0
+  kind: Script
+  loadOrder: 0
+  author: Silmaen
+  description: An Owl Nest plugin for design notes, pinned on entities and kept in `.owlnote` documents.
+  script: scripts/mods/demo.notes/main.lua
+  editorScript: editor/demo.notes/main.lua

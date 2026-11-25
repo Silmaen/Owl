@@ -95,7 +95,7 @@ auto Macro::fromJournal(const std::span<const JournalEntry* const> iEntries, con
 	};
 	size_t count = 0;
 	for (const auto* entry: iEntries) {
-		if (entry == nullptr || !entry->succeeded)
+		if (entry == nullptr || !entry->succeeded || entry->nested)
 			continue;
 		lines.push_back(printCommandLine(entry->name, entry->args, iRegistry.find(entry->name), namer));
 		++count;

@@ -9,12 +9,14 @@
 #pragma once
 
 #include "EditorSession.h"
+#include "PluginHost.h"
 
 #include <input/ActionMap.h>
 #include <renderer/RenderStack.h>
 #include <renderer/gpu/Framebuffer.h>
 #include <scene/SimulationClock.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <filesystem>
 #include <optional>
@@ -86,6 +88,23 @@ public:
 	 * @return The project directory, empty when the scene has none.
 	 */
 	[[nodiscard]] auto getProjectDirectory() const -> const std::filesystem::path& { return m_project; }
+
+	/**
+	 * @brief
+	 *  Load the Owl Nest plugins of the extension packs mounted in the application, as the editor does when it opens
+	 *  a project: the sandbox, the declarations and the commands are the same, so the commands a plugin declares are
+	 *  in the registry (the MCP tools, the console, the macros) and run on the scene of the session. Panels, drawers,
+	 *  document types and importers have no window to show in; `asset.import` serves the importers.
+	 * @return Number of plugins loaded without error.
+	 */
+	auto loadPlugins() -> size_t;
+
+	/**
+	 * @brief
+	 *  Get the plugin host of the session.
+	 * @return The host.
+	 */
+	[[nodiscard]] auto getPlugins() const -> const PluginHost& { return m_plugins; }
 
 	/**
 	 * @brief
@@ -223,6 +242,8 @@ private:
 
 	/// Command registry (built-in commands).
 	commands::CommandRegistry m_registry;
+	/// Owl Nest plugins of the mounted packs: their commands join the registry (declared after it, destroyed first).
+	PluginHost m_plugins{m_registry};
 	/// The edited scene.
 	shared<scene::Scene> m_editScene;
 	/// The scene shown: the edited one, or its running copy.

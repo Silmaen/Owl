@@ -14,6 +14,7 @@
 
 #include <app/Application.h>
 #include <scene/Entity.h>
+#include <scene/ScriptedComponents.h>
 
 #include <nlohmann/json.hpp>
 
@@ -24,6 +25,8 @@
 #include <format>
 #include <string>
 #include <string_view>
+#include <tuple>
+#include <variant>
 
 using namespace owl;
 using namespace owl::nest;
@@ -207,6 +210,41 @@ TEST_F(McpDispatcherTest, ReportsCommandFailuresAsToolErrors) {
 	EXPECT_EQ(result["structuredContent"]["error"], "RefusedDuringPlay");
 	EXPECT_FALSE(result["content"][0]["text"].get<std::string>().empty());
 	ASSERT_TRUE(session.stopPlay().has_value());
+}
+
+TEST_F(McpDispatcherTest, ThePluginCommandsOfTheMountedPacksAreTools) {
+	OWL_REQUIRE_MODULE(SCRIPT);
+	const auto pack = owl::test::getRootPath() / "engine_demo" / "extensions" / "demo.notes";
+	ASSERT_EQ(m_app->setExtensionSources({pack}), 1u);
+	{
+		session::HeadlessSession session;
+		session.newScene();
+		EXPECT_EQ(session.getRegistry().find("demo.notes.pin"), nullptr);
+		// The same host as the editor: the plugin of the pack runs its script in its sandbox and declares its command.
+		ASSERT_EQ(session.loadPlugins(), 1u);
+		EXPECT_EQ(session.getPlugins().getPlugins().size(), 1u);
+		McpDispatcher dispatcher{session};
+		const auto tools = request(dispatcher, "tools/list")["result"]["tools"];
+		const auto pin = std::ranges::find_if(
+				tools, [](const json& iTool) -> bool { return iTool["name"] == "demo.notes.pin"; });
+		ASSERT_NE(pin, tools.end());
+		EXPECT_EQ((*pin)["inputSchema"]["properties"].size(), 2u);
+
+		ASSERT_FALSE(callTool(dispatcher, "entity.create", {{"name", "Crate"}})["isError"].get<bool>());
+		const auto pinned = callTool(dispatcher, "demo.notes.pin", {{"entity", "Crate"}, {"text", "Paint it"}});
+		ASSERT_FALSE(pinned["isError"].get<bool>()) << pinned.dump();
+		const auto crate = session.getSessionScene()->getAllEntities().front();
+		const auto* note = scene::ScriptedComponents::get(crate, "demo.notes.Note");
+		ASSERT_NE(note, nullptr);
+		EXPECT_EQ(std::get<std::string>(note->find("text")->value), "Paint it");
+		EXPECT_TRUE(callTool(dispatcher, "demo.notes.pin", {{"entity", "Nobody"}})["isError"].get<bool>());
+		// The plugin command is one undo step.
+		EXPECT_FALSE(callTool(dispatcher, "edit.undo", json::object())["isError"].get<bool>());
+		EXPECT_EQ(scene::ScriptedComponents::get(crate, "demo.notes.Note"), nullptr);
+		const auto listed = callTool(dispatcher, "plugin.list", json::object());
+		EXPECT_EQ(listed["structuredContent"]["commands"], "demo.notes.pin");
+	}
+	std::ignore = m_app->setExtensionSources({});
 }
 
 TEST_F(McpDispatcherTest, AnswersProtocolErrorsWithTheirCodes) {

@@ -136,6 +136,7 @@ void ExtensionPanel::loadDrafts() {
 	m_author = entry->manifest.author;
 	m_description = entry->manifest.description;
 	m_script = entry->manifest.script;
+	m_editorScript = entry->manifest.editorScript;
 	std::error_code error;
 	m_manifestTime =
 			std::filesystem::last_write_time(entry->folder / data::assets::pack::g_extensionManifestEntry, error);
@@ -154,7 +155,8 @@ auto ExtensionPanel::isEnabled(const std::string& iId) const -> bool {
 auto ExtensionPanel::run(const std::string& iName, commands::CommandArgs iArgs) -> bool {
 	if (mp_commands == nullptr)
 		return false;
-	if (const auto* entry = getSelected(); entry != nullptr && iName != "extension.create" && !iArgs.has("path"))
+	if (const auto* entry = getSelected();
+		entry != nullptr && iName != "extension.create" && !iName.starts_with("plugin.") && !iArgs.has("path"))
 		iArgs.set("path", entry->folder.string());
 	const auto context = makeContext();
 	const auto* spec = mp_commands->find(iName);
@@ -250,6 +252,10 @@ void ExtensionPanel::renderManifest(const Entry& iEntry) {
 			textField("Entry script", m_script, "script", "scripts/<id>/main.lua",
 					  "Script run while a scene plays: the game events of the mod and its components, an asset path "
 					  "inside the pack.");
+		if (manifest.kind == data::assets::pack::ExtensionKind::Script)
+			textField("Editor script", m_editorScript, "editor_script", "editor/<id>/main.lua",
+					  "Script of the Owl Nest plugin: run by the editor, it adds commands, panels, inspector drawers, "
+					  "document types and importers; an asset path inside the pack.");
 		gui::widgets::endProperties();
 	}
 	gui::widgets::endSection();
@@ -351,6 +357,84 @@ void ExtensionPanel::renderScript(const Entry& iEntry) {
 	gui::widgets::endSection();
 }
 
+void ExtensionPanel::renderPlugin(const Entry& iEntry) {
+	if (iEntry.manifest.kind != data::assets::pack::ExtensionKind::Script)
+		return;
+	if (!gui::widgets::sectionHeader("Owl Nest plugin", gui::icon::panelsTopLeft, false).open)
+		return;
+	const auto file = iEntry.folder / iEntry.manifest.editorScript;
+	std::error_code error;
+	if (iEntry.manifest.editorScript.empty() || !std::filesystem::is_regular_file(file, error)) {
+		gui::widgets::notice("No editor script: the pack adds nothing to Owl Nest.", gui::widgets::BadgeKind::Info);
+		if (gui::widgets::button("##createEditorScript",
+								 {.glyph = gui::icon::filePlus,
+								  .label = "Create",
+								  .tooltip = "Create the editor script",
+								  .description = "A script declaring a command and a panel, named by the manifest."}))
+			std::ignore = run("extension.script", {{"editor", true}});
+		gui::widgets::endSection();
+		return;
+	}
+	if (gui::widgets::button("##openEditorScript", {.glyph = gui::icon::externalLink,
+													.label = "Open",
+													.tooltip = "Open the editor script in the code editor"}))
+		std::ignore = gui::component::openAsset(file);
+	ImGui::SameLine();
+	if (gui::widgets::button("##reloadPlugins", {.glyph = gui::icon::refreshCw,
+												 .label = "Reload",
+												 .tooltip = "Load the plugins again",
+												 .description = "Run the editor scripts of the enabled packs again, "
+																"after a change."}))
+		std::ignore = run("plugin.reload", {});
+	ImGui::SameLine();
+	ImGui::TextDisabled("%s", iEntry.manifest.editorScript.c_str());
+	const auto* plugin = mp_plugins != nullptr ? mp_plugins->find(iEntry.manifest.id) : nullptr;
+	if (plugin == nullptr) {
+		gui::widgets::notice("Not loaded: the pack is disabled, or left out by its dependencies.",
+							 gui::widgets::BadgeKind::Info);
+		gui::widgets::endSection();
+		return;
+	}
+	for (const auto& message: plugin->errors) gui::widgets::notice(message.c_str(), gui::widgets::BadgeKind::Error);
+	if (plugin->contributions.empty() && plugin->errors.empty())
+		ImGui::TextDisabled("The script declares nothing.");
+	// The panel toggles run a command that may reload the plugins: the list is drawn from a copy.
+	const auto contributions = plugin->contributions;
+	for (size_t index = 0; index < contributions.size(); ++index) {
+		const auto& contribution = contributions[index];
+		ImGui::PushID(static_cast<int>(index));
+		const bool defined = contribution.line > 0;
+		if (gui::widgets::iconButton("##openHandler",
+									 {.glyph = gui::icon::externalLink,
+									  .tooltip = defined ? "Open the code editor at the function" : "Not defined",
+									  .disabled = !defined}))
+			std::ignore = gui::component::openAssetAtLine(file, contribution.line);
+		ImGui::SameLine();
+		if (contribution.kind == session::PluginContributionKind::Panel) {
+			if (bool visible = contribution.visible; gui::widgets::checkbox("##shown", &visible))
+				std::ignore = run("plugin.show_panel", {{"id", contribution.id}, {"visible", visible}});
+			if (ImGui::IsItemHovered())
+				ImGui::SetTooltip("Show the panel.");
+			ImGui::SameLine();
+		}
+		const auto kind = session::getContributionKindName(contribution.kind);
+		const auto extension =
+				contribution.extension.empty() ? std::string{} : std::format(" ({})", contribution.extension);
+		if (defined)
+			ImGui::Text("%s", std::format("{}  {}{}  -  {} (line {})", kind, contribution.id, extension,
+										  contribution.handler, contribution.line)
+									  .c_str());
+		else
+			ImGui::TextDisabled("%s", std::format("{}  {}{}  -  {} (not defined)", kind, contribution.id, extension,
+												  contribution.handler)
+											  .c_str());
+		if (ImGui::IsItemHovered())
+			ImGui::SetTooltip("%s", contribution.title.c_str());
+		ImGui::PopID();
+	}
+	gui::widgets::endSection();
+}
+
 void ExtensionPanel::renderConflicts() {
 	if (!app::Application::instanced())
 		return;
@@ -399,6 +483,7 @@ void ExtensionPanel::onImGuiRender() {
 	if (const auto* entry = getSelected(); entry != nullptr) {
 		renderManifest(*entry);
 		renderScript(*entry);
+		renderPlugin(*entry);
 		renderDependencies(*entry);
 		if (gui::widgets::button("##exportPack",
 								 {.glyph = gui::icon::upload,

@@ -1,0 +1,20 @@
+# The demo Owl Nest plugin: `demo.notes` adds the command `demo.notes.pin` to the editor commands; it pins the Note
+# component of the pack on an entity as one undo step, and its panel Design Notes lists the pinned entities.
+scene: ../../../engine_demo/scenes/platformer_house.owl
+mods: ../../../engine_demo/extensions/demo.notes
+steps:
+  - frames: 5
+  - {command: entity.create, args: {name: Crate}}
+  - {command: demo.notes.pin, args: {entity: Crate, text: Move me to the attic}}
+  - expect: {entity: Crate, exists: true}
+  # Removing the component only works when the plugin command added it.
+  - {command: component.remove, args: {entity: Crate, component: demo.notes.Note}}
+  # One undo for the removal, one for the whole pin: the component can be added again.
+  - undo: 2
+  - {command: component.add, args: {entity: Crate, component: demo.notes.Note}}
+  - expect: {entity: Crate, exists: true}
+  # The panel reads the scene (`nest.entities`) and is shown by a command; two notes are pinned for it to list.
+  - {command: plugin.show_panel, args: {id: demo.notes.panel}}
+  - {command: entity.create, args: {name: Lamp}}
+  - {command: demo.notes.pin, args: {entity: Lamp, text: Swap the bulb}}
+  - expect: {entity: Lamp, exists: true}
