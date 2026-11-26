@@ -43,6 +43,9 @@ default:
     # "Reference already exists". One home per concurrent slot of the runner.
     - '[ -z "$CONAN_HOME" ] || export CONAN_HOME="$CONAN_HOME/slot-$CI_CONCURRENT_ID"'
     - poetry sync --no-root
+    # An interrupted job can leave a half-written library in this persistent slot; the next job reusing it then
+    # fails to load it (ldd). Drop the slot when its integrity check fails, so the build re-fills it clean.
+    - '[ -z "$CONAN_HOME" ] || [ ! -d "$CONAN_HOME/p" ] || poetry run conan cache check-integrity "*" >/tmp/conan-integrity.log 2>&1 || { echo "Conan slot $CONAN_HOME failed its integrity check (interrupted job?); dropping it:"; tail -n 5 /tmp/conan-integrity.log; rm -rf "$CONAN_HOME"; }'
 
 .windows:
   tags: [windows]
@@ -56,6 +59,8 @@ default:
   before_script:
     - if ($env:CONAN_HOME) { $env:CONAN_HOME = "$env:CONAN_HOME/slot-$env:CI_CONCURRENT_ID" }
     - poetry sync --no-root
+    # Drop the per-slot Conan cache when its integrity check fails (a half-written library left by an interrupted job).
+    - if ($env:CONAN_HOME -and (Test-Path "$env:CONAN_HOME/p")) { poetry run conan cache check-integrity "*" 2>&1 | Out-Null; if ($LASTEXITCODE -ne 0) { Write-Host "Conan slot $env:CONAN_HOME failed its integrity check; dropping it."; Remove-Item -Recurse -Force $env:CONAN_HOME } }
 
 # --- What a job keeps -------------------------------------------------------------------------------------------
 

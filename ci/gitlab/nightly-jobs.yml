@@ -118,14 +118,14 @@
 # documentation): an archive never comes from untested code. Only `main` publishes: a branch stops at the archives.
 # The engine SDK and the game runner leave from the job; the Owl Nest packages wait for every runner (`assemble-nest`).
 
-# The archives of a release tree (`main` only writes them), for `assemble-nest`; the reports of `.build-artifacts`.
+# The Owl Nest archive of a release tree (`main` only writes it), for `assemble-nest`, plus the test report. The
+# documentation and coverage are published from the job itself, so they stay out of the artifact (it would blow the
+# upload size, HTTP 413).
 .release-archives:
   artifacts:
     when: always
     expire_in: 1 week
     paths:
-      - output/build/*/Coverage/
-      - output/build/*/Documentation/html/
       - output/build/*/OwlNest-*
     reports:
       junit: output/build/*/test/test/*_Report.xml
