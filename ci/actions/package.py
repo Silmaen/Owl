@@ -43,4 +43,8 @@ class Package(BaseAction):
         if build_result != 0:
             log.error("CMake build failed.")
             return build_result
+        # Log each package's size: the artifact upload fails (HTTP 413) when it exceeds the runner's limit,
+        # and the GitLab log never says how big it was.
+        for pkg in sorted(p for p in build_dir.glob("Owl*-*") if p.is_file() and p.suffix in (".zip", ".gz")):
+            log.info(f"Package: {pkg.name}, {pkg.stat().st_size / 1e6:.1f} MB.")
         return 0

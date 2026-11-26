@@ -29,6 +29,9 @@ MANIFEST_NAME = "runners.json"
 WEB_RUNNER_FILES = ("OwlGameRunner.html", "OwlGameRunner.js", "OwlGameRunner.wasm")
 """The files of the Web runner (`GameExporter`)."""
 
+DOWNLOAD_TIMEOUT = 300.0
+"""The timeout in seconds of the download of a runner archive."""
+
 ANDROID_LIBRARIES = Path("android-runner")
 """The folder of the build tree where `OwlGameRunnerLibraries` writes the stripped libraries of the APK."""
 
@@ -43,6 +46,42 @@ def archive_name(version: str, git_hash: str, target: str) -> str:
     :return: `OwlGameRunner-<version>-<hash>-<target>.<ext>`.
     """
     return f"{RUNNER_BASE_NAME}-{version}-{git_hash}-{target}.{TARGETS[target]}"
+
+
+def download_runner(
+    server: str, version: str, git_hash: str, target: str, dest_dir: Path, timeout: float = DOWNLOAD_TIMEOUT
+) -> Path | None:
+    """
+    Download the runner archive of a target from the delivery server (public GET, no authentication).
+
+    :param server: The delivery server base URL.
+    :param version: The project version.
+    :param git_hash: The abbreviated commit hash.
+    :param target: One of :data:`TARGETS`.
+    :param dest_dir: The folder receiving the archive.
+    :param timeout: The request timeout in seconds.
+    :return: The downloaded archive, or None when the download failed.
+    """
+    import requests
+
+    from ci import log
+    from ci.utils.secrets import redact
+
+    name = archive_name(version, git_hash, target)
+    url = f"{server.rstrip('/')}/runners/{version}/{git_hash}/{name}"
+    try:
+        # The server answers 403 to any user agent but the one of Owl Nest.
+        response = requests.get(url, headers={"User-Agent": f"OwlNest/{version}"}, timeout=timeout)
+    except Exception as err:
+        log.error(redact(f"Runners: download of {url} failed: {type(err).__name__}: {err}"))
+        return None
+    if response.status_code != 200:
+        log.error(redact(f"Runners: {url} answered {response.status_code} {response.reason}."))
+        return None
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    archive = dest_dir / name
+    archive.write_bytes(response.content)
+    return archive
 
 
 def target_of(archive: Path, version: str, git_hash: str) -> str | None:

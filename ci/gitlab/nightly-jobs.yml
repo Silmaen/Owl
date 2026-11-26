@@ -126,7 +126,6 @@
     paths:
       - output/build/*/Coverage/
       - output/build/*/Documentation/html/
-      - output/build/*/OwlGameRunner-*
       - output/build/*/OwlNest-*
     reports:
       junit: output/build/*/test/test/*_Report.xml
@@ -180,7 +179,7 @@
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   script:
-    - poetry run python3 ci_action.py AssembleNest linux-clang-release -- --input=output/build --output=output/assembled
+    - poetry run python3 ci_action.py AssembleNest linux-clang-release -- --input=output/build --output=output/assembled --url=$OWL_DEPLOY_URL
     - poetry run python3 ci_action.py PublishPackage linux-clang-release -- "--url=$OWL_DEPLOY_URL" "--login=$OWL_DEPLOY_LOGIN" --folder=output/assembled --components=OwlNest
   artifacts:
     expire_in: 1 week

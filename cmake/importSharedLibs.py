@@ -78,6 +78,61 @@ def ldd_command(binary: Path, sysroot: str) -> tuple[list[str], dict[str, str] |
     return [str(loaders[0]), "--list", str(binary)], {**environ, "QEMU_LD_PREFIX": sysroot}
 
 
+def declared_dependencies(binary: Path) -> list[str]:
+    """
+    The shared libraries a binary directly declares it needs (ELF ``DT_NEEDED``), read with readelf.
+
+    Used to report what a binary wants when the loader (``ldd``) itself fails to list anything.
+
+    :param binary: The binary file to inspect.
+    :return: The SONAMEs declared, in order; empty when readelf is missing or cannot read the file.
+    """
+    from subprocess import run, PIPE, STDOUT
+
+    try:
+        out = run(["readelf", "-d", str(binary)], stdout=PIPE, stderr=STDOUT)
+    except Exception as err:
+        print(f"Could not read the declared dependencies of {binary}: {err}", file=stderr)
+        return []
+    if out.returncode != 0:
+        return []
+    needed = []
+    for line in out.stdout.decode(errors="replace").splitlines():
+        if "(NEEDED)" not in line:
+            continue
+        start = line.find("[")
+        end = line.find("]", start + 1)
+        if start != -1 and end > start:
+            needed.append(line[start + 1 : end])
+    return needed
+
+
+def report_failed_ldd(binary: Path, returncode: int, output: str, roots: list[str]) -> None:
+    """
+    Print everything known about a binary's dependencies when ``ldd`` failed, so the cause is visible.
+
+    Lists the full ``ldd`` output and every library the binary declares it needs, flagging the ones that
+    are neither beside the binary nor in a package root (the ones this script would have to provide).
+
+    :param binary: The binary whose dependencies could not be listed.
+    :param returncode: The non-zero exit code ``ldd`` returned.
+    :param output: The merged stdout/stderr of ``ldd`` (often empty on failure).
+    :param roots: Package cache roots whose libraries are copied.
+    """
+    print(f"Error while searching dependencies: ldd exited with {returncode}.", file=stderr)
+    print(f"ldd output:\n{output}" if output.strip() else "ldd produced no output.", file=stderr)
+    needed = declared_dependencies(binary)
+    if not needed:
+        print("Could not read the binary's declared dependencies (readelf unavailable?).", file=stderr)
+        return
+    print("Libraries the binary declares it needs (readelf DT_NEEDED):", file=stderr)
+    for name in needed:
+        beside = (binary.parent / name).exists()
+        packaged = beside or any(next(Path(r).rglob(name), None) is not None for r in roots)
+        suffix = "" if packaged else "   <-- not beside the binary nor in a package root"
+        print(f"  {name}{suffix}", file=stderr)
+
+
 def list_missing_so(binary: Path, has_missing: bool, roots: list[str], sysroot: str = ""):
     """
     List missing and external shared object dependencies for a given binary.
@@ -94,10 +149,7 @@ def list_missing_so(binary: Path, has_missing: bool, roots: list[str], sysroot: 
         command, env = ldd_command(binary, sysroot)
         out = run(command, stdout=PIPE, stderr=STDOUT, env=env)
         if out.returncode != 0:
-            print(
-                f"Error while searching dependencies: {out.returncode}\n{out.stdout.decode()}",
-                file=stderr,
-            )
+            report_failed_ldd(binary, out.returncode, out.stdout.decode(errors="replace"), roots)
             exit(1)
         lines = out.stdout.decode().replace("\t", "").splitlines(keepends=False)
         missing_so = []

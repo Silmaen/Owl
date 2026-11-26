@@ -89,6 +89,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The nightly no longer uploads the runner archives as GitLab artifacts: `AssembleNest` downloads them from the delivery server.
+- `importSharedLibs` prints the full `ldd` output and every `DT_NEEDED` library (via `readelf`) when `ldd` fails, flagging those absent from the binary dir and the package roots, instead of an opaque error.
+- `Package` logs the size of each archive CPack produces, so a `413` artifact-upload rejection shows what was too large.
 - Conan picks its build profile from the build machine, not the target: an Android tree builds its tools with `linux-clang`.
 - Dependencies: Slang 2026.22, Jolt 5.7.0, Luau 0.747, Tracy 0.14.1, freetype 2.15.0, msdfgen 1.13.1, md4c 0.6.0, cpp-httplib 0.65.0, imgui-color-text-edit 1.93.0, stb cci.20261021, zlib 1.4, libpng 1.6.59, wayland-protocols 1.50; EnTT from ConanCenter.
 - freetype is built without brotli and bzip2, and tinygltf without `stb_image_write`: two packages and an override less.

@@ -37,3 +37,20 @@ def test_package_restores_the_working_directory_on_failure(mocked: None, monkeyp
     before = getcwd()
     assert Package().run(PresetConfig("linux-clang-release")) == 1
     assert getcwd() == before
+
+
+def test_package_logs_each_package_size(
+    mocked: None, monkeypatch: pytest.MonkeyPatch, tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    (tmp_path / "OwlNest-0.8.0-abc1234-linux-x64.tar.gz").write_bytes(b"x" * 2_500_000)
+    (tmp_path / "OwlEngine-0.8.0-abc1234-linux-x64.tar.gz").write_bytes(b"x" * 500_000)
+
+    def fake_run(_cmd: list[str], **_: object) -> int:
+        return 0
+
+    monkeypatch.setattr(package, "run_command", fake_run)
+    with caplog.at_level("INFO"):
+        assert Package().run(PresetConfig("linux-clang-release")) == 0
+    messages = "\n".join(caplog.messages)
+    assert "Package: OwlNest-0.8.0-abc1234-linux-x64.tar.gz, 2.5 MB." in messages
+    assert "Package: OwlEngine-0.8.0-abc1234-linux-x64.tar.gz, 0.5 MB." in messages
