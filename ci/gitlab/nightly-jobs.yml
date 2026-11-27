@@ -181,7 +181,3 @@
   script:
     - poetry run python3 ci_action.py AssembleNest linux-clang-release -- --input=output/build --output=output/assembled --url=$OWL_DEPLOY_URL
     - poetry run python3 ci_action.py PublishPackage linux-clang-release -- "--url=$OWL_DEPLOY_URL" "--login=$OWL_DEPLOY_LOGIN" --folder=output/assembled --components=OwlNest
-  artifacts:
-    expire_in: 1 week
-    paths:
-      - output/assembled/

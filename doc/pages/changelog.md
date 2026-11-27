@@ -91,6 +91,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - The nightly no longer uploads the runner archives as GitLab artifacts: `AssembleNest` downloads them from the delivery server.
 - The package jobs keep only the Owl Nest archive as an artifact, not the documentation nor the coverage (published from the job), so the upload stays under the size limit.
+- `assemble-nest` no longer keeps the assembled Nest packages as an artifact: they are published to the delivery server and no job consumes them, so the upload stays under the size limit.
 - `importSharedLibs` resolves the shared libraries to bundle statically from the ELF `DT_NEEDED` (readelf), without executing the binary, so it no longer fails under a loaded runner nor needs qemu for a foreign architecture; `ldd` is only a last-resort check.
 - `importSharedLibs` retries `ldd` a few times before failing: on a loaded runner the loader exec can fail transiently though every library is present.
 - `importSharedLibs` prints the full `ldd` output and every `DT_NEEDED` library (via `readelf`) when `ldd` fails, flagging those absent from the binary dir and the package roots, instead of an opaque error.
