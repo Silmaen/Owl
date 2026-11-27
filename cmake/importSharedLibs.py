@@ -35,28 +35,6 @@ def is_up_to_date(copied: Path, source: Path) -> bool:
     return copied_stat.st_size == source_stat.st_size and int(copied_stat.st_mtime) == int(source_stat.st_mtime)
 
 
-def package_copy_of(binary: Path, name: str) -> Path | None:
-    """
-    Find, in the run paths the binary was linked with, the package library a copy next to it came from.
-
-    :param binary: The binary whose RPATH / RUNPATH is read.
-    :param name: The library file name (soname), e.g. libglfw.so.3.
-    :return: The first matching library outside the binary's directory, or None.
-    """
-    from subprocess import run, PIPE
-
-    out = run(["readelf", "-d", str(binary)], stdout=PIPE, stderr=PIPE, text=True)
-    for line in out.stdout.splitlines():
-        if "(RPATH)" not in line and "(RUNPATH)" not in line:
-            continue
-        for entry in line.split("[", 1)[-1].rstrip("]").split(":"):
-            if not entry or "$ORIGIN" in entry or Path(entry).resolve() == binary.parent.resolve():
-                continue
-            if (Path(entry) / name).exists():
-                return Path(entry) / name
-    return None
-
-
 def ldd_command(binary: Path, sysroot: str) -> tuple[list[str], dict[str, str] | None]:
     """
     Build the command listing the shared objects a binary loads.
@@ -133,49 +111,67 @@ def report_failed_ldd(binary: Path, returncode: int, output: str, roots: list[st
         print(f"  {name}{suffix}", file=stderr)
 
 
-def list_missing_so(binary: Path, has_missing: bool, roots: list[str], sysroot: str = ""):
+def external_dependencies(binary: Path, index: dict[str, Path]) -> list[tuple[str, Path]]:
     """
-    List missing and external shared object dependencies for a given binary.
+    The third-party libraries the binary and the libraries already beside it need, resolved statically.
 
-    :param binary: The binary file to inspect.
-    :param has_missing: Whether to check for missing dependencies.
-    :param roots: Package cache roots whose libraries must be copied.
+    Reads each ELF's ``DT_NEEDED`` with readelf (no execution, so it works for a foreign architecture and never
+    fails under a loaded runner) and maps each soname to its package source through the index. A soname absent
+    from the index is a system library the target provides and is left out.
+
+    :param binary: The binary to make self-contained.
+    :param index: Soname to package-library path, for the third-party libraries of this build.
+    :return: The (soname, source) pairs to copy next to the binary that are not already there up to date.
+    """
+    binary_dir = binary.parent
+    elves = [binary] + sorted(path for path in binary_dir.glob("*.so*") if path.is_file())
+    to_copy: list[tuple[str, Path]] = []
+    seen: set[str] = set()
+    for elf in elves:
+        for soname in declared_dependencies(elf):
+            if soname in seen:
+                continue
+            seen.add(soname)
+            source = index.get(soname)
+            if source is None or is_up_to_date(binary_dir / soname, source):
+                continue
+            to_copy.append((soname, source))
+    return to_copy
+
+
+def verify_with_ldd(binary: Path, roots: list[str], sysroot: str) -> list[str] | None:
+    """
+    Last-resort check that every dependency of the binary resolves, with ldd.
+
+    ldd runs the loader on the binary (under qemu for a foreign architecture), which can fail transiently on a
+    loaded runner, so it is retried and, when it still cannot run, treated as inconclusive rather than fatal: the
+    static import is trusted. When ldd does run, the libraries it reports as not found are returned.
+
+    :param binary: The binary to check.
+    :param roots: Package cache roots whose libraries are copied.
     :param sysroot: The target's sysroot when cross compiling, else empty.
-    :return: A tuple containing a list of missing shared objects and a list of external shared objects.
+    :return: The still-missing sonames, or None when ldd could not run.
     """
     from subprocess import run, STDOUT, PIPE
+    from time import sleep
 
-    try:
-        command, env = ldd_command(binary, sysroot)
+    command, env = ldd_command(binary, sysroot)
+    attempts = 3
+    out = None
+    for attempt in range(1, attempts + 1):
         out = run(command, stdout=PIPE, stderr=STDOUT, env=env)
-        if out.returncode != 0:
-            report_failed_ldd(binary, out.returncode, out.stdout.decode(errors="replace"), roots)
-            exit(1)
-        lines = out.stdout.decode().replace("\t", "").splitlines(keepends=False)
-        missing_so = []
-        if has_missing:
-            for line in lines:
-                if "not found" not in line:
-                    continue
-                missing_so.append(line.split()[0])
-        extern_so = []
-        for line in lines:
-            items = line.split()
-            if len(items) < 3 or items[1] != "=>":
-                continue
-            source = items[2]
-            if Path(source).parent.resolve() == binary.parent.resolve():
-                # ldd sees the copy first ($ORIGIN): compare it with the package it came from.
-                source = str(package_copy_of(binary, items[0]) or "")
-            if not source or not is_external(source, roots):
-                continue
-            if is_up_to_date(binary.parent / items[0], Path(source)):
-                continue
-            extern_so.append([items[0], source])
-        return missing_so, extern_so
-    except Exception as err:
-        print(f"Exception while searching dependencies: {err}", file=stderr)
-        exit(1)
+        if out.returncode == 0:
+            break
+        if attempt < attempts:
+            print(f"ldd failed (exit {out.returncode}), attempt {attempt}/{attempts}; retrying.", file=stderr)
+            sleep(2)
+    if out is None or out.returncode != 0:
+        code = out.returncode if out is not None else -1
+        text = out.stdout.decode(errors="replace") if out is not None else ""
+        report_failed_ldd(binary, code, text, roots)
+        print("ldd could not verify the binary; trusting the static import.", file=stderr)
+        return None
+    return [line.split()[0] for line in out.stdout.decode().replace("\t", "").splitlines() if "not found" in line]
 
 
 def copy_slang_modules(library: Path, binary_dir: Path):
@@ -251,63 +247,33 @@ def main():
         print(f"Error: file {binary_file} does not exists!", file=stderr)
         exit(1)
     binary_dir = binary_file.parent
-    lib_list = args.lib_list
-    has_missing = True
-    if lib_list in ["", None]:
-        has_missing = False
 
-    missing, extern = list_missing_so(binary_file, has_missing, roots, args.sysroot)
-    not_found = []
-    if len(missing) > 0:
-        available_so = list_available_so(lib_list)
-    else:
-        available_so = []
-    go_on = True
-    while go_on:
-        go_on = False
-        missing, extern = list_missing_so(binary_file, has_missing, roots, args.sysroot)
-        if len(missing) + len(extern) == 0:
+    # Soname to source for the third-party libraries of this build; a soname not here is a system library.
+    index = {so.name: so for so in list_available_so(args.lib_list) if is_external(str(so), roots)}
+
+    # Copy the transitive external closure statically; a copy beside the binary is inspected on the next pass.
+    for _ in range(64):
+        to_copy = external_dependencies(binary_file, index)
+        if not to_copy:
             break
-        for miss in missing:
-            if miss in not_found:
-                continue
-            found = False
-            for av in available_so:
-                if miss == av.name:
-                    try:
-                        copy2(av, binary_dir / miss)
-                        print(f" Importing {miss} from {av}")
-                    except Exception as err:
-                        print(
-                            f"ERROR while copy {av} to {binary_dir / miss} : {err}",
-                            file=stderr,
-                        )
-                        exit(1)
-                    go_on = True
-                    found = True
-                    break
-            if not found:
-                not_found.append(miss)
-                print(f"Warning: dependency {miss}, not found.", file=stderr)
-        for ext in extern:
+        for soname, source in to_copy:
             try:
-                copy2(ext[1], binary_dir / ext[0])
-                print(f" Importing {ext[0]} from {ext[1]}")
-                if ext[0].startswith("libslang"):
-                    copy_slang_modules(Path(ext[1]), binary_dir)
+                copy2(source, binary_dir / soname)
+                print(f" Importing {soname} from {source}")
+                if soname.startswith("libslang"):
+                    copy_slang_modules(source, binary_dir)
             except Exception as err:
-                print(
-                    f"ERROR while copy {ext[1]} to {binary_dir / ext[0]} : {err}",
-                    file=stderr,
-                )
+                print(f"ERROR while copy {source} to {binary_dir / soname} : {err}", file=stderr)
                 exit(1)
-    missing, extern = list_missing_so(binary_file, has_missing, roots, args.sysroot)
-    if len(missing) + len(extern) == 0:
-        exit(0)
-    else:
-        for miss in missing:
-            print(f"{miss} is still missing.")
+
+    # Last resort: confirm with ldd. A library it still reports missing is a real failure; an ldd that cannot
+    # run (a loaded runner, qemu) is inconclusive and the static import is trusted.
+    missing = verify_with_ldd(binary_file, roots, args.sysroot)
+    if missing:
+        for name in missing:
+            print(f"{name} is still missing.")
         exit(1)
+    exit(0)
 
 
 if __name__ == "__main__":

@@ -5,6 +5,9 @@
 
 # Clang Debug measures its own coverage, beside the GCC one of the merge requests.
 .night-linux-clang-debug:
+  # Shared with the other heavy nightly jobs: they run one at a time on the small runner, instead
+  # of swamping it (parallel builds exhausted memory, causing ldd SIGBUS and slow, flaky tests).
+  resource_group: nightly
   extends: .build-linux
   stage: build
   variables:
@@ -13,6 +16,9 @@
 # The whole suite, the `slow` tests the other builds leave out included, on the release tree where a slow scenario
 # takes seconds (in Debug with coverage, minutes). Neither documented nor packaged.
 .night-slow-suite:
+  # Shared with the other heavy nightly jobs: they run one at a time on the small runner, instead
+  # of swamping it (parallel builds exhausted memory, causing ldd SIGBUS and slow, flaky tests).
+  resource_group: nightly
   extends: .linux
   stage: build
   variables:
@@ -27,35 +33,53 @@
       junit: output/build/*/test/test/*_Report.xml
 
 .night-sanitizer-thread:
+  # Shared with the other heavy nightly jobs: they run one at a time on the small runner, instead
+  # of swamping it (parallel builds exhausted memory, causing ldd SIGBUS and slow, flaky tests).
+  resource_group: nightly
   extends: .build-linux
   stage: build
   variables:
     PRESET: linux-sanitizer-thread
 
 .night-sanitizer-undefined-behavior:
+  # Shared with the other heavy nightly jobs: they run one at a time on the small runner, instead
+  # of swamping it (parallel builds exhausted memory, causing ldd SIGBUS and slow, flaky tests).
+  resource_group: nightly
   extends: .build-linux
   stage: build
   variables:
     PRESET: linux-sanitizer-undefined-behavior
 
 .night-clang-tidy:
+  # Shared with the other heavy nightly jobs: they run one at a time on the small runner, instead
+  # of swamping it (parallel builds exhausted memory, causing ldd SIGBUS and slow, flaky tests).
+  resource_group: nightly
   extends: .analysis
   stage: build
   variables:
     TOOL: tidy
 
 .night-static-analyzer:
+  # Shared with the other heavy nightly jobs: they run one at a time on the small runner, instead
+  # of swamping it (parallel builds exhausted memory, causing ldd SIGBUS and slow, flaky tests).
+  resource_group: nightly
   extends: .analysis
   stage: build
   variables:
     TOOL: analyzer
 
 .night-bench:
+  # Shared with the other heavy nightly jobs: they run one at a time on the small runner, instead
+  # of swamping it (parallel builds exhausted memory, causing ldd SIGBUS and slow, flaky tests).
+  resource_group: nightly
   extends: .bench
   stage: build
 
 # Each libFuzzer target for a fixed time; the failing inputs are kept to replay them locally.
 .night-fuzz:
+  # Shared with the other heavy nightly jobs: they run one at a time on the small runner, instead
+  # of swamping it (parallel builds exhausted memory, causing ldd SIGBUS and slow, flaky tests).
+  resource_group: nightly
   extends: .linux
   stage: build
   variables:
@@ -71,6 +95,9 @@
 
 # Every header and source compiled alone on strict libc++: up to 26 minutes for a check that rarely fails.
 .night-include-check:
+  # Shared with the other heavy nightly jobs: they run one at a time on the small runner, instead
+  # of swamping it (parallel builds exhausted memory, causing ldd SIGBUS and slow, flaky tests).
+  resource_group: nightly
   extends: .linux
   stage: build
   variables:
@@ -82,6 +109,9 @@
 # The engine and the game runner cross compiled with the NDK; no device reaches the CI yet, so the preset builds
 # without the tests.
 .night-android-arm64:
+  # Shared with the other heavy nightly jobs: they run one at a time on the small runner, instead
+  # of swamping it (parallel builds exhausted memory, causing ldd SIGBUS and slow, flaky tests).
+  resource_group: nightly
   extends: [.build-linux, .release-archives]
   stage: build
   image: registry.argawaen.net/builder/builder-android-ubuntu2604
@@ -93,6 +123,9 @@
 
 # The engine and the game runner compiled to WebAssembly with Emscripten; the tests run under Node.
 .night-web-release:
+  # Shared with the other heavy nightly jobs: they run one at a time on the small runner, instead
+  # of swamping it (parallel builds exhausted memory, causing ldd SIGBUS and slow, flaky tests).
+  resource_group: nightly
   extends: [.build-linux, .release-archives]
   stage: build
   image: registry.argawaen.net/builder/builder-web-ubuntu2604
@@ -131,6 +164,9 @@
       junit: output/build/*/test/test/*_Report.xml
 
 .night-package-linux-x64:
+  # Shared with the other heavy nightly jobs: they run one at a time on the small runner, instead
+  # of swamping it (parallel builds exhausted memory, causing ldd SIGBUS and slow, flaky tests).
+  resource_group: nightly
   extends: [.build-linux, .release-archives]
   stage: publish
   # Its own build is its gate: it does not wait for the rest of the night.
@@ -145,6 +181,9 @@
 # Cross compiled on x64 (Clang --target=aarch64-linux-gnu, the arm64 sysroot of the image); the tests run under
 # qemu-user, in release because QEMU multiplies the cost of every instruction.
 .night-package-linux-arm64:
+  # Shared with the other heavy nightly jobs: they run one at a time on the small runner, instead
+  # of swamping it (parallel builds exhausted memory, causing ldd SIGBUS and slow, flaky tests).
+  resource_group: nightly
   extends: [.build-linux, .release-archives]
   stage: publish
   needs: []
@@ -156,6 +195,9 @@
     - '[ "$CI_COMMIT_BRANCH" != "$CI_DEFAULT_BRANCH" ] || poetry run python3 ci_action.py PublishPackage "$PRESET" -- "--url=$OWL_DEPLOY_URL" "--login=$OWL_DEPLOY_LOGIN" --components=OwlEngine,OwlGameRunner'
 
 .night-package-windows-x64:
+  # Shared with the other heavy nightly jobs: they run one at a time on the small runner, instead
+  # of swamping it (parallel builds exhausted memory, causing ldd SIGBUS and slow, flaky tests).
+  resource_group: nightly
   extends: [.build-windows, .release-archives]
   stage: publish
   needs: []
