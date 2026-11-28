@@ -154,3 +154,22 @@ TEST(EditorSettings, RotationSnapStepRoundTripsAndClamps) {
 	EXPECT_FLOAT_EQ(loaded.snapRotationDegrees, 180.f);
 	std::filesystem::remove_all(dir);
 }
+
+TEST(EditorSettings, SigningSettingsRoundTrip) {
+	const auto dir = std::filesystem::temp_directory_path() / "owl_editor_settings_signing_test";
+	std::filesystem::remove_all(dir);
+	std::filesystem::create_directories(dir);
+	EditorSettings settings;
+	EXPECT_TRUE(settings.signWindowsPfx.empty());
+	settings.signWindowsPfx = "/keys/studio.pfx";
+	settings.signWindowsCommand = "sign-tool {file}";
+	settings.signAndroidKeystore = "/keys/release.p12";
+	settings.saveToFile(dir / "settings.yml");
+
+	EditorSettings loaded;
+	loaded.loadFromFile(dir / "settings.yml");
+	EXPECT_EQ(loaded.signWindowsPfx, "/keys/studio.pfx");
+	EXPECT_EQ(loaded.signWindowsCommand, "sign-tool {file}");
+	EXPECT_EQ(loaded.signAndroidKeystore, "/keys/release.p12");
+	std::filesystem::remove_all(dir);
+}

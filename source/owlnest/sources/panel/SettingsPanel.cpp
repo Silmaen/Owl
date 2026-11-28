@@ -56,7 +56,8 @@ auto editedFields(Settings& ioSettings) -> auto {
 					ioSettings.snapAutoFromTilemap, ioSettings.cameraRotatePercent, ioSettings.cameraPanPercent,
 					ioSettings.cameraZoomPercent, ioSettings.cameraInvertY, ioSettings.cameraDeadZone,
 					ioSettings.cameraFlySpeed, ioSettings.themePreset, ioSettings.logLevel, ioSettings.mcpEnabled,
-					ioSettings.mcpPort, ioSettings.runnerServer);
+					ioSettings.mcpPort, ioSettings.runnerServer, ioSettings.signWindowsPfx,
+					ioSettings.signWindowsCommand, ioSettings.signAndroidKeystore);
 }
 
 auto currentFrameLogFrequency() -> uint64_t {
@@ -244,6 +245,18 @@ void SettingsPanel::renderGeneralSection(EditorSettings& ioSettings) {
 			"Runner Server", ioSettings.runnerServer, defaults.runnerServer.c_str(),
 			"Where Pack Game downloads the runners of the other platforms (https://host[:port]); a mirror of the "
 			"site answers the same /runners/ paths.");
+	std::ignore = gui::widgets::propertyText(
+			"Windows Certificate", ioSettings.signWindowsPfx, defaults.signWindowsPfx.c_str(),
+			"PKCS #12 file (.pfx) with the RSA key and the certificate that sign the exported Windows games "
+			"(Authenticode, SHA-256). The password is asked at export, never stored. Empty: no signature.");
+	std::ignore = gui::widgets::propertyText(
+			"Windows Sign Command", ioSettings.signWindowsCommand, defaults.signWindowsCommand.c_str(),
+			"Command that signs the exported Windows game when no certificate is set, for a cloud service or a "
+			"hardware token. {file} is the executable (added at the end when missing).");
+	std::ignore = gui::widgets::propertyText(
+			"Android Keystore", ioSettings.signAndroidKeystore, defaults.signAndroidKeystore.c_str(),
+			"PKCS #12 keystore (.p12, .pfx) that signs the Android APK as a release. The password is asked at "
+			"export, never stored. Empty: the debug key of Owl Nest.");
 	gui::widgets::endProperties();
 }
 

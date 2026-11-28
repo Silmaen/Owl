@@ -148,6 +148,12 @@ struct EditorSettings {
 	int mcpPort = 47800;
 	/// Server of the game runners Owl Nest downloads (`https://host[:port]`, the `/runners/` paths of the site).
 	std::string runnerServer{RunnerStore::defaultServer};
+	/// PKCS #12 file (`.pfx`) with the key and certificate that sign the Windows games (empty: unsigned).
+	std::string signWindowsPfx;
+	/// Command signing a Windows game when no `.pfx` is set (`{file}` is the executable; empty: none).
+	std::string signWindowsCommand;
+	/// PKCS #12 keystore (`.p12`, `.pfx`) that signs the Android release APK (empty: the debug key of Owl Nest).
+	std::string signAndroidKeystore;
 	/// Panel arrangement (`DockLayout::getPresetName`).
 	std::string layoutPreset = "Default";
 	/// Generation of the saved dock layout; an older one is rebuilt once (`DockLayout::version`).

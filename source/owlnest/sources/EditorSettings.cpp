@@ -175,6 +175,9 @@ void EditorSettings::loadFromFile(const std::filesystem::path& iFile) {
 		if (config["mcpPort"])
 			mcpPort = std::clamp(config["mcpPort"].as<int>(), 1024, 65535);
 		readKey(config, "runnerServer", runnerServer);
+		readKey(config, "signWindowsPfx", signWindowsPfx);
+		readKey(config, "signWindowsCommand", signWindowsCommand);
+		readKey(config, "signAndroidKeystore", signAndroidKeystore);
 		readKey(config, "layoutPreset", layoutPreset);
 		readKey(config, "layoutVersion", layoutVersion);
 		if (const auto bindings = config["keybindings"]; bindings && bindings.IsMap()) {
@@ -237,6 +240,9 @@ void EditorSettings::saveToFile(const std::filesystem::path& iFile) const {
 	out << YAML::Key << "mcpEnabled" << YAML::Value << mcpEnabled;
 	out << YAML::Key << "mcpPort" << YAML::Value << mcpPort;
 	out << YAML::Key << "runnerServer" << YAML::Value << runnerServer;
+	out << YAML::Key << "signWindowsPfx" << YAML::Value << signWindowsPfx;
+	out << YAML::Key << "signWindowsCommand" << YAML::Value << signWindowsCommand;
+	out << YAML::Key << "signAndroidKeystore" << YAML::Value << signAndroidKeystore;
 	out << YAML::Key << "layoutPreset" << YAML::Value << layoutPreset;
 	out << YAML::Key << "layoutVersion" << YAML::Value << layoutVersion;
 	if (!keybindingOverrides.empty()) {

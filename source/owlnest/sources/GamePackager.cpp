@@ -8,6 +8,8 @@
 
 #include "GamePackager.h"
 
+#include "signing/AuthenticodeSigner.h"
+
 #include <data/assets/pack/GameExporter.h>
 #include <data/assets/pack/PackWriter.h>
 #include <gui/IconBank.h>
@@ -202,6 +204,7 @@ void GamePackager::renderWizardModal() {
 		ImGui::Separator();
 
 		renderTargetChoice();
+		renderSigningState();
 
 		// Destination folder with Browse button.
 		ImGui::Spacing();
@@ -337,13 +340,21 @@ void GamePackager::startPacking() {
 	const bool playInBrowser = m_target == data::assets::pack::ExportTarget::Web && m_runInBrowser;
 	const bool makeApk = m_target == data::assets::pack::ExportTarget::Android;
 	const Project project = *mp_project;
+	const ExportSigning signing{.windowsPfx = mp_settings->signWindowsPfx,
+								.windowsPassword = std::move(m_windowsPassword),
+								.windowsCommand = mp_settings->signWindowsCommand,
+								.androidKeystore = mp_settings->signAndroidKeystore,
+								.androidPassword = std::move(m_androidPassword)};
+	m_windowsPassword.clear();
+	m_androidPassword.clear();
+	const bool signWindows = m_target == data::assets::pack::ExportTarget::WindowsX64;
 	auto exported = mkShared<std::optional<data::assets::pack::ExportReport>>();
 	auto apkNote = mkShared<std::string>();
 	auto state = mkShared<AsyncProgressState>();
 	mp_progress->open("Packing Game...", state, true);
 	app::Application::get().getTaskScheduler().pushTask(core::task::Task(
-			[state, exportSettings = std::move(settings), preScanned, exported, apkNote, makeApk, project,
-			 warnings = std::move(validationWarnings)]() -> void {
+			[state, exportSettings = std::move(settings), preScanned, exported, apkNote, makeApk, signWindows, project,
+			 signing, warnings = std::move(validationWarnings)]() -> void {
 				auto result = data::assets::pack::GameExporter::exportGame(
 						exportSettings, *preScanned,
 						[&state](const float iFraction, const std::string& iMessage) -> void {
@@ -360,9 +371,19 @@ void GamePackager::startPacking() {
 					result->addWarnings(warnings);
 					std::ignore = result->write();
 				}
+				if (signWindows) {
+					state->setMessage("Signing the executable...");
+					const auto signedGame = signWindowsGame(signing, result->executable);
+					if (!signedGame) {
+						state->setError(std::format("Signing failed: {}.", signedGame.error()));
+						return;
+					}
+					*apkNote = *signedGame;
+				}
 				if (makeApk) {
 					state->setMessage("Writing the APK...");
-					const auto apk = writeAndroidApk(project, result->gameDirectory, exportSettings.runnerDirectory);
+					const auto apk =
+							writeAndroidApk(project, result->gameDirectory, exportSettings.runnerDirectory, signing);
 					if (!apk) {
 						state->setError(std::format("Packaging failed: {}.", android::getErrorMessage(apk.error())));
 						return;
@@ -494,13 +515,39 @@ void GamePackager::renderTargetChoice() {
 		m_runnerMessage.clear();
 	}
 	if (m_target == ExportTarget::Android && ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
-		ImGui::SetTooltip("Writes the APK of the game, signed with the debug key of Owl Nest.");
+		ImGui::SetTooltip("Writes the APK of the game, signed with the keystore of the settings or the debug key.");
 	if (m_target == ExportTarget::Web) {
 		gui::widgets::checkbox("Run in browser when done", &m_runInBrowser);
 		if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal | ImGuiHoveredFlags_NoSharedDelay))
 			ImGui::SetTooltip("Serve the game on 127.0.0.1 and open it in the default browser.");
 	}
 	renderRunnerState();
+}
+
+void GamePackager::renderSigningState() {
+	using data::assets::pack::ExportTarget;
+	const auto& theme = gui::UiLayer::getTheme();
+	const bool windows = m_target == ExportTarget::WindowsX64;
+	const auto& file = windows ? mp_settings->signWindowsPfx : mp_settings->signAndroidKeystore;
+	if (!windows && m_target != ExportTarget::Android)
+		return;
+	if (file.empty()) {
+		const bool unsignedWindows = windows && mp_settings->signWindowsCommand.empty();
+		const char* text = "Signed with the debug key: set a keystore in the Settings for a release.";
+		if (unsignedWindows)
+			text = "Unsigned: set a certificate or a command in the Settings.";
+		else if (windows)
+			text = "Signed by the command of the Settings.";
+		ImGui::TextColored(gui::vec(unsignedWindows ? theme.warning : theme.textMuted), "%s", text);
+		return;
+	}
+	ImGui::Text("%s password:", windows ? "Certificate" : "Keystore");
+	ImGui::SameLine();
+	ImGui::SetNextItemWidth(-1);
+	ImGui::InputText(windows ? "##windowsPassword" : "##androidPassword",
+					 windows ? &m_windowsPassword : &m_androidPassword, ImGuiInputTextFlags_Password);
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
+		ImGui::SetTooltip("%s\nThe password is kept for this export only.", file.c_str());
 }
 
 void GamePackager::renderRunnerState() {
@@ -596,10 +643,31 @@ auto GamePackager::makeSettings() -> data::assets::pack::ExportSettings {
 	return settings;
 }
 
+auto GamePackager::signWindowsGame(const ExportSigning& iSigning, const std::filesystem::path& iExecutable)
+		-> expected<std::string, std::string> {
+	if (!iSigning.windowsPfx.empty()) {
+		const auto key = android::SigningKey::load(iSigning.windowsPfx, iSigning.windowsPassword);
+		if (!key)
+			return unexpected{
+					std::format("the certificate '{}' cannot be opened (file or password)", iSigning.windowsPfx)};
+		if (const auto signedFile = signing::signExecutable(iExecutable, *key); !signedFile)
+			return unexpected{std::string{signing::getErrorMessage(signedFile.error())}};
+		return "Signed with the certificate " + std::filesystem::path{iSigning.windowsPfx}.filename().string();
+	}
+	if (iSigning.windowsCommand.empty())
+		return std::string{};
+	if (const auto signedFile = signing::signExecutableWithCommand(iExecutable, iSigning.windowsCommand); !signedFile)
+		return unexpected{std::string{signing::getErrorMessage(signedFile.error())}};
+	return std::string{"Signed by the signing command"};
+}
+
 auto GamePackager::writeAndroidApk(const Project& iProject, const std::filesystem::path& iGameDirectory,
-								   const std::filesystem::path& iRunnerDirectory)
+								   const std::filesystem::path& iRunnerDirectory, const ExportSigning& iSigning)
 		-> expected<std::filesystem::path, android::ApkError> {
-	const auto key = android::SigningKey::loadOrCreateDebug(platform::getUserDirectory() / "android" / "debug.p12");
+	const bool release = !iSigning.androidKeystore.empty();
+	const auto key =
+			release ? android::SigningKey::load(iSigning.androidKeystore, iSigning.androidPassword)
+					: android::SigningKey::loadOrCreateDebug(platform::getUserDirectory() / "android" / "debug.p12");
 	if (!key)
 		return unexpected{android::ApkError::Signing};
 	const auto version = iProject.getGameVersion();
@@ -609,7 +677,7 @@ auto GamePackager::writeAndroidApk(const Project& iProject, const std::filesyste
 										.versionCode = android::getVersionCode(version),
 										.minSdk = 33,
 										.targetSdk = 36,
-										.debuggable = true,
+										.debuggable = !release,
 										.hasIcon = false};
 	// The export copies the icon into the game folder, at the path `runner.yml` names.
 	const auto icon = iProject.icon.empty() || std::filesystem::path{iProject.icon}.extension() != ".png"

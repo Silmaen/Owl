@@ -50,6 +50,23 @@ struct ExportReportRow {
 
 /**
  * @brief
+ *  What signs an export: the settings of Owl Nest and the passwords typed in the wizard.
+ */
+struct ExportSigning {
+	/// PKCS #12 file signing a Windows game, empty for none.
+	std::string windowsPfx;
+	/// Password of `windowsPfx`.
+	std::string windowsPassword;
+	/// Command signing a Windows game when `windowsPfx` is empty, empty for none.
+	std::string windowsCommand;
+	/// PKCS #12 keystore signing the APK, empty for the debug key of Owl Nest.
+	std::string androidKeystore;
+	/// Password of `androidKeystore`.
+	std::string androidPassword;
+};
+
+/**
+ * @brief
  *  Packages a scene or the whole project: the packaging wizard, the validation report, the background export and the
  *  export report.
  *
@@ -112,14 +129,27 @@ public:
 
 	/**
 	 * @brief
-	 *  Write the signed APK of a game exported for Android, next to its folder, with the debug key of Owl Nest.
+	 *  Sign the executable of a game exported for Windows, with the certificate or the command of the settings.
+	 * @param[in] iSigning What signs the export.
+	 * @param[in] iExecutable The game executable.
+	 * @return A line for the report (empty when nothing signs), the reason of the failure otherwise.
+	 */
+	[[nodiscard]] static auto signWindowsGame(const ExportSigning& iSigning, const std::filesystem::path& iExecutable)
+			-> expected<std::string, std::string>;
+
+	/**
+	 * @brief
+	 *  Write the signed APK of a game exported for Android, next to its folder, with the keystore of the settings
+	 *  (a release APK) or the debug key of Owl Nest.
 	 * @param[in] iProject The project (package name, label, version, icon).
 	 * @param[in] iGameDirectory The folder written by the export for `ExportTarget::Android`.
 	 * @param[in] iRunnerDirectory The Android runner (`lib/arm64-v8a/`).
+	 * @param[in] iSigning What signs the export.
 	 * @return The APK, the error otherwise.
 	 */
 	[[nodiscard]] static auto writeAndroidApk(const Project& iProject, const std::filesystem::path& iGameDirectory,
-											  const std::filesystem::path& iRunnerDirectory)
+											  const std::filesystem::path& iRunnerDirectory,
+											  const ExportSigning& iSigning)
 			-> expected<std::filesystem::path, android::ApkError>;
 
 	/**
@@ -147,6 +177,12 @@ private:
 	 *  Draw the state of the runner of the chosen platform, with its download and import buttons when it is missing.
 	 */
 	void renderRunnerState();
+
+	/**
+	 * @brief
+	 *  Draw what signs the export of the chosen platform, with the password of the certificate or keystore.
+	 */
+	void renderSigningState();
 
 	/**
 	 * @brief
@@ -220,6 +256,10 @@ private:
 	std::filesystem::path m_destDir;
 	/// Platform chosen in the wizard.
 	data::assets::pack::ExportTarget m_target = data::assets::pack::ExportTarget::Host;
+	/// Password of the Windows certificate, typed in the wizard and wiped when the export starts.
+	std::string m_windowsPassword;
+	/// Password of the Android keystore, typed in the wizard and wiped when the export starts.
+	std::string m_androidPassword;
 	/// Whether a Web export opens in the browser once written.
 	bool m_runInBrowser = true;
 	/// Serves the last Web export to the browser.

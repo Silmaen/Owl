@@ -8,6 +8,7 @@
 
 #include "testHelper.h"
 
+#include "GamePackager.h"
 #include "Project.h"
 #include "android/AndroidApk.h"
 
@@ -208,4 +209,21 @@ TEST(ApkSigner, ANonZipIsRefused) {
 	ASSERT_FALSE(signedApk.has_value());
 	EXPECT_EQ(signedApk.error(), SigningError::Archive);
 	std::filesystem::remove_all(std::filesystem::temp_directory_path() / "owl_apk_key");
+}
+
+TEST_F(AndroidApkFixture, AReleaseApkIsSignedWithTheKeystoreOfTheSettings) {
+	ASSERT_TRUE(SigningKey::loadOrCreateDebug(m_root / "keys" / "release.p12").has_value());
+	Project project;
+	project.name = "Test Game";
+	const auto keystore = (m_root / "keys" / "release.p12").string();
+	ExportSigning signing;
+	signing.androidKeystore = keystore;
+	signing.androidPassword = "nope";
+	const auto wrong = GamePackager::writeAndroidApk(project, m_root / "game", m_root / "runner", signing);
+	ASSERT_FALSE(wrong.has_value());
+	EXPECT_EQ(wrong.error(), ApkError::Signing);
+	signing.androidPassword = "android";
+	const auto apk = GamePackager::writeAndroidApk(project, m_root / "game", m_root / "runner", signing);
+	ASSERT_TRUE(apk.has_value());
+	EXPECT_TRUE(std::filesystem::exists(*apk));
 }

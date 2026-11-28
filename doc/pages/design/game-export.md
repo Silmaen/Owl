@@ -197,9 +197,9 @@ Owl never signs a game for its developer.
 
 | Target          | Signature                                                                                                                                                                              |
 |-----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Windows         | The export signs the game executable from any host: Authenticode in C++ on OpenSSL with a `.pfx`, or a custom signing command (covers cloud services); last step, after the icon patch |
+| Windows         | The export signs the game executable from any host: Authenticode in C++ on OpenSSL with a `.pfx` (`signing::signExecutable`, SHA-256, no time stamp), or a custom signing command (`{file}`, covers cloud services); last step, after the icon patch |
 | Android debug   | APK signature schemes v2 and v3 in C++ (no JDK); the Nest generates a debug keystore on the first Android export, kept in the Nest settings, never in the project                      |
-| Android release | Keystore provided by the developer, path in the Nest settings outside the project; password asked at export or kept in the OS keychain (libsecret, Windows Credential Manager)         |
+| Android release | Keystore provided by the developer, path in the Nest settings outside the project; password asked at export, kept for that export only (no OS keychain)                              |
 | Google Play     | AAB, signed with the release keystore                                                                                                                                                  |
 
 - Owl's own binaries (Nest, runners) are signed with a Certum open-source code-signing certificate; it blocks no

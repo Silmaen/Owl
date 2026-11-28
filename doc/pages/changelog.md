@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Signing at export: a Windows game is signed with Authenticode (SHA-256, RSA) from a `.pfx` or a custom command, an Android APK with a release keystore; the three are **Settings** entries and the password is asked in Pack Game, never stored ([Projects](editor_projects.md#editor-projects-signing)).
 - Export report: `GameExporter` returns and writes `export_report.yml` (size by category, shaders baked and their targets, unused project assets, warnings), shown in Owl Nest after a Pack Game and summed up by `OwlNest --export` ([Projects](editor_projects.md#editor-projects-export-report)).
 - `android::writeApk`: Owl Nest writes the signed APK of an Android export on any desktop, without the Android SDK nor a JDK (binary manifest, icon, schemes v2 and v3, debug key made at the first export) ([Projects](editor_projects.md)).
 - **Android Package** in the project settings (`androidPackage`), the identity of the game on Android.

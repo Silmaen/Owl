@@ -136,6 +136,15 @@ release of this Owl Nest are accepted: their size and SHA-256 come from the `run
 ([Game export](design/game-export.md#game-export-templates)). The command line downloads a missing runner the same way:
 `OwlNest --export <project> <dir> --target windows-x64 [--runner-server <url>]`.
 
+### Signing at export {#editor-projects-signing}
+
+Pack Game signs what the Settings name, under **Windows Certificate**, **Windows Sign Command** and **Android
+Keystore**. A Windows game is signed with Authenticode (SHA-256, no time stamp) from a PKCS #12 `.pfx`, or by the command
+(`{file}` stands for the executable) when no certificate is set, which covers cloud signing services and tokens. The
+APK is a release (not debuggable) signed with the keystore; without one it is signed with the debug key. The wizard asks
+the password of the certificate or keystore and keeps it for this export only. `OwlNest --export` does not sign.
+([Game export](design/game-export.md#game-export-signing)).
+
 The **Android Package** of the project settings is the identity of the game on Android (`com.studio.game`); empty, it
 is `org.owlengine.` followed by the project name. The version of the project gives the version code of the APK (`1.2.3`
 is 10203).
